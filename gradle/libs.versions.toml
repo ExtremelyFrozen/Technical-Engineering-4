@@ -1,7 +1,9 @@
 [versions]
-minecraft = "26.1.2"
-neoForge = "26.1.2.41-beta"
+minecraft = "1.21.1"
+neoForge = "21.1.194"
 loader = "4"
+parchment = "2024.11.17" # https://parchmentmc.org/docs/getting-started
+shadow = "8.3.5"
 spotless = "8.4.0"
 modDevGradle = "2.0.141"
 lombok = "9.5.0"
@@ -19,5 +21,6 @@ mixin                   = { module = "org.spongepowered:mixin", version.ref = "m
 
 [plugins]
 modDevGradle            = { id = "net.neoforged.moddev", version.ref = "modDevGradle" }
+shadow                  = { id = "com.gradleup.shadow", version.ref = "shadow" }
 spotless                = { id = "com.diffplug.spotless", version.ref = "spotless" }
 lombok                  = { id = "io.freefair.lombok", version.ref = "lombok" }
