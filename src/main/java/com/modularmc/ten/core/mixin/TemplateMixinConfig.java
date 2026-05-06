@@ -1,4 +1,4 @@
-package com.modularmc.template.mixin;
+package com.modularmc.ten.core.mixin;
 
 import org.spongepowered.asm.mixin.MixinEnvironment;
 import org.spongepowered.asm.mixin.extensibility.IMixinConfig;
@@ -8,6 +8,7 @@ import org.spongepowered.asm.mixin.extensibility.IMixinConfigSource;
 import java.util.Set;
 
 public class TemplateMixinConfig implements IMixinConfig {
+
     @Override
     public MixinEnvironment getEnvironment() {
         return null;
@@ -54,9 +55,7 @@ public class TemplateMixinConfig implements IMixinConfig {
     }
 
     @Override
-    public <V> void decorate(String key, V value) {
-
-    }
+    public <V> void decorate(String key, V value) {}
 
     @Override
     public boolean hasDecoration(String key) {
