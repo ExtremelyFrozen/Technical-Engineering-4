@@ -1,0 +1,7 @@
+# All other changes require the primary team
+* @ModularMCLib/admin
+
+# Specific files requiring admin approval
+CODEOWNERS @ModularMCLib/admin
+LICENSE @ModularMCLib/admin
+/README.md @ModularMCLib/admin

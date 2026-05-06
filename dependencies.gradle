@@ -1,0 +1,19 @@
+dependencies {
+    compileOnly(libs.jetbrains.annotations)
+
+    testImplementation(libs.testframework.get())
+
+
+    // Runtime Recipe Viewers - uncomment whichever one you want to use //
+
+    // Client-only runtime mods //
+
+    renderNurseCfg(libs.renderNurse)
+
+    //////////////////////////////////////////////////////
+    // Runtime mods for dev testing with unclean client //
+    //////////////////////////////////////////////////////
+
+    //////////////////////////
+
+}
