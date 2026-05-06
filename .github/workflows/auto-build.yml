@@ -2,7 +2,7 @@ name: Latest Build
 
 on:
   push:
-    branches: ['26.1']
+    branches: ['1.21']
     paths: ['src/**', '**/*.gradle', 'gradle.properties']
 
 concurrency:
@@ -65,7 +65,7 @@ jobs:
           name: '${{ github.ref_name }}-${{ steps.ver.outputs.version}} SNAPSHOT ${{ env.VERSION_SUFFIX }}'
           prerelease: true
           body: |
-            The latest build of Template for Minecraft ${{ github.ref_name }}.
-            Please report any [issues](https://github.com/ModularMCLib/SyncedData-Lib/issues).
+            The latest build of Technical-Engineering for Minecraft ${{ github.ref_name }}.
+            Please report any [issues](https://github.com/QiuYe-123/Technical-Engineering-4/issues).
             ${{ steps.changelog.outputs.changelog }}
           files: build/libs/*.jar

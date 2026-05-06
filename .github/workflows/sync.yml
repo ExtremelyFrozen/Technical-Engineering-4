@@ -2,7 +2,7 @@ name: Sync Github Folder
 
 on:
   push:
-    branches: ['26.1']
+    branches: ['1.21']
     paths: ['.github/**']
 
 jobs:

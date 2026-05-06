@@ -1,6 +1,11 @@
 neoForge {
     version = libs.versions.neoForge.get()
 
+    parchment {
+        minecraftVersion = libs.versions.minecraft.get()
+        mappingsVersion = libs.versions.parchment.get()
+    }
+
     accessTransformers {
         var file = project.file('src/main/resources/META-INF/accesstransformer.cfg')
         from(file)
@@ -75,8 +80,7 @@ neoForge {
         }
 
         data {
-            clientData()
-            serverData()
+            data()
             sourceSet = sourceSets.main
             ideName = "Data Generation"
 

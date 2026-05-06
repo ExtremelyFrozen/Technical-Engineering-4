@@ -21,8 +21,8 @@ body:
   - type: input
     id: template-version
     attributes:
-      label: Template Version / Template 版本
-      description: The version of Template you were using when this bug was encountered. If you do not know where to find this, look for the mod jar file in the mods folder, or in the mods viewer in-game. / 遇到此错误时使用的 Template 版本。如果不知道如何查找，请查看 mods 文件夹中的 mod jar 文件，或游戏内的模组查看器。
+      label: Technical-Engineering Version / Technical-Engineering 版本
+      description: The version of Technical-Engineering you were using when this bug was encountered. If you do not know where to find this, look for the mod jar file in the mods folder, or in the mods viewer in-game. / 遇到此错误时使用的 Technical-Engineering 版本。如果不知道如何查找，请查看 mods 文件夹中的 mod jar 文件，或游戏内的模组查看器。
       placeholder: "Example: v2.3.4 / 例如：v2.3.4"
     validations:
       required: true
@@ -32,7 +32,7 @@ body:
       label: Minecraft Version / Minecraft 版本
       description: The version of Minecraft you were using when this bug was encountered. If you do not know where to find this, it is in the bottom left of the main menu. Any version not listed is not supported. / 遇到此错误时使用的 Minecraft 版本。如果不知道如何查找，它位于主菜单的左下角。未列出的任何版本均不受支持。
       options:
-        - "26.1 NeoForge"
+        - "1.21 NeoForge"
     validations:
       required: true
   - type: dropdown

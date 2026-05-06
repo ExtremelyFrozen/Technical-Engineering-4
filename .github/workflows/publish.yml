@@ -11,7 +11,7 @@ on:
         required: true
         type: string
       version:
-        description: 'Version identifier;'
+        description: 'Version identifier; 1.21'
         required: true
         type: string
       release-body:
