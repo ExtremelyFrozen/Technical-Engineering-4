@@ -1,5 +1,6 @@
 package com.modularmc.ten.client;
 
+import com.modularmc.ten.TEN;
 import com.modularmc.ten.api.option.MachineType;
 import com.modularmc.ten.client.gui.CmContainerMachine;
 import com.modularmc.ten.client.gui.screen.*;
@@ -18,14 +19,20 @@ public class ClientProxy {
     }
 
     private static void onRegisterScreens(RegisterMenuScreensEvent event) {
-        event.register(TENMenuTypes.MACHINE.get(), ClientProxy::createScreen);
+        var menuType = TENMenuTypes.MACHINE.get();
+        TEN.LOGGER.info("[TEN-GUI] Registering screens for menuType={}", menuType);
+        event.register(menuType, ClientProxy::createScreen);
+        TEN.LOGGER.info("[TEN-GUI] Screen registration complete");
     }
 
     private static AbstractContainerScreen<CmContainerMachine> createScreen(
-                                                                            CmContainerMachine container, Inventory inv, Component title) {
+            CmContainerMachine container, Inventory inv, Component title) {
         var be = container.machine;
+        int type = be != null ? be.machineType() : -1;
+        TEN.LOGGER.info("[TEN-GUI] createScreen: machine={} type={}",
+                be != null ? be.getClass().getSimpleName() : "null", type);
         if (be != null) {
-            return switch (be.machineType()) {
+            return switch (type) {
                 case MachineType.FURNACE -> new FurnaceScreen(container, inv, title);
                 case MachineType.PULVERIZER -> new PulverizerScreen(container, inv, title);
                 case MachineType.COMPRESSOR -> new CompressorScreen(container, inv, title);
@@ -33,9 +40,13 @@ public class ClientProxy {
                 case MachineType.INDUCTION_FURNACE -> new IndfurScreen(container, inv, title);
                 case MachineType.PSIONICANT -> new PsionicantScreen(container, inv, title);
                 case MachineType.MATTER_CONDENSER -> new CondenserScreen(container, inv, title);
-                default -> new FurnaceScreen(container, inv, title);
+                default -> {
+                    TEN.LOGGER.warn("[TEN-GUI] Unknown machine type {}, falling back to FurnaceScreen", type);
+                    yield new FurnaceScreen(container, inv, title);
+                }
             };
         }
+        TEN.LOGGER.warn("[TEN-GUI] Machine is null, falling back to FurnaceScreen");
         return new FurnaceScreen(container, inv, title);
     }
 }

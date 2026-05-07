@@ -44,6 +44,7 @@ public class CmScreenMachine extends CmScreen<CmContainerMachine> {
     }
 
     private void cycleRedstone() {
+        if (container.pos == null) return;
         int m = container.data.get(CmMachineBlockEntity.RED_MODE);
         m++;
         if (m > RedstoneMode.HIGH) m = RedstoneMode.OFF;
@@ -54,6 +55,7 @@ public class CmScreenMachine extends CmScreen<CmContainerMachine> {
     @Override
     public void containerTick() {
         super.containerTick();
+        if (container.data == null) return;
         var data = container.data;
 
         rsHigh.setVisible(false);

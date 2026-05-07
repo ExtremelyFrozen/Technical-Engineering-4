@@ -102,25 +102,30 @@ public class CmScreen<T extends CmContainerMachine> extends AbstractContainerScr
     }
 
     public double pFuel() {
+        if (container.data == null) return 0;
         var d = container.data;
         return d.get(CmMachineBlockEntity.MAX_FUEL) != 0 ? (double) d.get(CmMachineBlockEntity.FUEL) / d.get(CmMachineBlockEntity.MAX_FUEL) : 0;
     }
 
     public double pProgress() {
+        if (container.data == null) return 0;
         var d = container.data;
         return d.get(CmMachineBlockEntity.MAX_PROGRESS) != 0 ? (double) d.get(CmMachineBlockEntity.PROGRESS) / d.get(CmMachineBlockEntity.MAX_PROGRESS) : 0;
     }
 
     public double pEnergy() {
+        if (container.data == null) return 0;
         var d = container.data;
         return d.get(CmMachineBlockEntity.MAX_ENERGY) != 0 ? (double) d.get(CmMachineBlockEntity.ENERGY) / d.get(CmMachineBlockEntity.MAX_ENERGY) : 0;
     }
 
     public int energy() {
+        if (container.data == null) return 0;
         return container.data.get(CmMachineBlockEntity.ENERGY);
     }
 
     public int maxEnergy() {
+        if (container.data == null) return 0;
         return container.data.get(CmMachineBlockEntity.MAX_ENERGY);
     }
 }

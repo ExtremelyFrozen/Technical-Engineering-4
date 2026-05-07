@@ -165,6 +165,7 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements Menu
 
     public void doBaseData() {
         initMachine();
+        if (energyStorage == null) return;
         energyStorage.setMaxReceive(maxReceiveEnergy);
         energyStorage.setMaxExtract(maxExtractEnergy);
 
@@ -284,7 +285,7 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements Menu
     // MenuProvider
     @Override
     public Component getDisplayName() {
-        return component;
+        return component != null ? component : getBlockState().getBlock().getName();
     }
 
     @Override
