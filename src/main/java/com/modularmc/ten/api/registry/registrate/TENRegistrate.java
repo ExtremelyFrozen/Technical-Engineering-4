@@ -13,14 +13,13 @@ import com.tterrag.registrate.AbstractRegistrate;
 import com.tterrag.registrate.builders.NoConfigBuilder;
 import com.tterrag.registrate.util.entry.RegistryEntry;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-
-import org.jetbrains.annotations.Nullable;
 
 public class TENRegistrate extends AbstractRegistrate<TENRegistrate> {
 
@@ -73,7 +72,7 @@ public class TENRegistrate extends AbstractRegistrate<TENRegistrate> {
     }
 
     public <P> NoConfigBuilder<CreativeModeTab, CreativeModeTab, P> defaultCreativeTab(P parent, String name,
-                                                                                        Consumer<CreativeModeTab.Builder> config) {
+                                                                                       Consumer<CreativeModeTab.Builder> config) {
         return createCreativeModeTab(parent, name, config);
     }
 
@@ -102,7 +101,7 @@ public class TENRegistrate extends AbstractRegistrate<TENRegistrate> {
     }
 
     public void setCreativeTab(RegistryEntry<?, ?> entry,
-                                @Nullable RegistryEntry<CreativeModeTab, ? extends CreativeModeTab> tab) {
+                               @Nullable RegistryEntry<CreativeModeTab, ? extends CreativeModeTab> tab) {
         TAB_LOOKUP.put(entry, tab);
     }
 }

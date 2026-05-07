@@ -1,6 +1,5 @@
 package com.modularmc.ten.common;
 
-import com.modularmc.ten.TEN;
 import com.modularmc.ten.common.registry.*;
 import com.modularmc.ten.config.ConfigHolder;
 

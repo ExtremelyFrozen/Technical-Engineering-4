@@ -10,5 +10,4 @@ public class TENConstants {
 
     public static int WORLD_MIN = -64;
     public static int WORLD_MAX = 256;
-
 }
