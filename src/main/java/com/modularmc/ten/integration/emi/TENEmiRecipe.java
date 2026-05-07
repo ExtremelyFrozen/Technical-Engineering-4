@@ -5,6 +5,7 @@ import com.modularmc.ten.integration.xei.TENRecipeWidget;
 
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.neoforged.neoforge.fluids.FluidStack;
 
 import dev.emi.emi.api.recipe.EmiRecipe;
 import dev.emi.emi.api.recipe.EmiRecipeCategory;
@@ -12,35 +13,25 @@ import dev.emi.emi.api.stack.EmiIngredient;
 import dev.emi.emi.api.stack.EmiStack;
 import dev.emi.emi.api.widget.WidgetHolder;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class TENEmiRecipe implements EmiRecipe {
 
     private final EmiRecipeCategory category;
     private final FormsCombinedRecipe recipe;
     private final ResourceLocation id;
+    private final TENRecipeWidget.Layout layout;
     private final List<EmiIngredient> inputs;
     private final List<EmiStack> outputs;
 
-    public TENEmiRecipe(EmiRecipeCategory category, FormsCombinedRecipe recipe) {
+    public TENEmiRecipe(ResourceLocation categoryId, EmiRecipeCategory category, FormsCombinedRecipe recipe) {
         this.category = category;
         this.recipe = recipe;
         this.id = recipe.getId();
-        this.inputs = recipe.allInputItems().stream()
-                .filter(ing -> !ing.symbolItem().isEmpty())
-                .map(ing -> EmiStack.of(ing.symbolItem()))
-                .collect(Collectors.toList());
-        this.outputs = recipe.allOutputItems().stream()
-                .filter(ing -> !ing.symbolItem().isEmpty())
-                .map(ing -> {
-                    var stack = EmiStack.of(ing.symbolItem());
-                    if (ing.chance() < 1.0f) {
-                        stack.setChance((float) ing.chance());
-                    }
-                    return stack;
-                })
-                .collect(Collectors.toList());
+        this.layout = TENRecipeWidget.layout(categoryId);
+        this.inputs = emiInputs(recipe);
+        this.outputs = emiOutputs(recipe);
     }
 
     @Override
@@ -65,31 +56,127 @@ public class TENEmiRecipe implements EmiRecipe {
 
     @Override
     public int getDisplayWidth() {
-        return 160;
+        return layout.width();
     }
 
     @Override
     public int getDisplayHeight() {
-        return 80;
+        return layout.height();
     }
 
     @Override
     public void addWidgets(WidgetHolder widgets) {
-        widgets.addTexture(TENRecipeWidget.JEI_BG, 0, 0, 160, 80, 0, 0, 160, 80, 256, 256);
+        widgets.addTexture(
+                layout.background(),
+                0,
+                0,
+                layout.width(),
+                layout.height(),
+                layout.u(),
+                layout.v(),
+                layout.width(),
+                layout.height(),
+                256,
+                256);
 
-        int x = 10, y = 10;
-        for (int i = 0; i < inputs.size(); i++) {
-            widgets.addSlot(inputs.get(i), x, y + i * 22);
+        for (var slot : layout.slots()) {
+            var ingredient = TENRecipeWidget.ingredientFor(recipe, slot);
+            if (ingredient == null) {
+                continue;
+            }
+            var emiIngredient = toEmiIngredient(ingredient);
+            if (emiIngredient.isEmpty()) {
+                continue;
+            }
+            if (slot.kind() == TENRecipeWidget.SlotKind.ITEM) {
+                var emiSlot = widgets.addSlot(emiIngredient, slot.x() + 1, slot.y() + 1);
+                if (slot.role() == TENRecipeWidget.SlotRole.OUTPUT) {
+                    emiSlot.recipeContext(this);
+                }
+                if (slot.role() == TENRecipeWidget.SlotRole.OUTPUT && ingredient.chance() < 1.0d) {
+                    emiSlot.appendTooltip(Component.literal(TENRecipeWidget.formatChance(ingredient.chance())));
+                }
+            } else {
+                var emiTank = widgets.addTank(
+                        emiIngredient,
+                        slot.x() + 1,
+                        slot.y() + 1,
+                        slot.width() - 2,
+                        slot.height() - 2,
+                        Math.max(1, TENRecipeWidget.fluidCapacity(ingredient)));
+                if (slot.role() == TENRecipeWidget.SlotRole.OUTPUT) {
+                    emiTank.recipeContext(this);
+                }
+                if (slot.role() == TENRecipeWidget.SlotRole.OUTPUT && ingredient.chance() < 1.0d) {
+                    emiTank.appendTooltip(Component.literal(TENRecipeWidget.formatChance(ingredient.chance())));
+                }
+            }
         }
 
-        x = 90;
-        for (int i = 0; i < outputs.size(); i++) {
-            widgets.addSlot(outputs.get(i), x + (i % 2) * 22, y + (i / 2) * 22).recipeContext(this);
+        widgets.addFillingArrow(layout.arrowX(), layout.arrowY(), 2000);
+        widgets.addText(Component.literal("15 FE/t"), layout.energyX(), layout.energyY() + 3, 0xFF5555, false);
+        widgets.addText(Component.literal(String.format("%.1fs", recipe.time() / 20.0d)), layout.timeX(), layout.timeY(), 0x555555, false);
+    }
+
+    private static List<EmiIngredient> emiInputs(FormsCombinedRecipe recipe) {
+        List<EmiIngredient> inputs = new ArrayList<>();
+        for (var ingredient : recipe.input()) {
+            var emiIngredient = toEmiIngredient(ingredient);
+            if (!emiIngredient.isEmpty()) {
+                inputs.add(emiIngredient);
+            }
         }
+        return inputs;
+    }
 
-        widgets.addFillingArrow(65, 30, 2000);
+    private static List<EmiStack> emiOutputs(FormsCombinedRecipe recipe) {
+        List<EmiStack> outputs = new ArrayList<>();
+        for (var ingredient : recipe.output()) {
+            var emiStack = toPrimaryEmiStack(ingredient);
+            if (!emiStack.isEmpty()) {
+                outputs.add(emiStack);
+            }
+        }
+        return outputs;
+    }
 
-        widgets.addText(Component.literal("15 FE/t"), 5, 60, 0xFF5555, true);
-        widgets.addText(Component.literal(String.format("%.1fs", recipe.time() / 20.0)), 80, 65, 0x555555, true);
+    private static EmiIngredient toEmiIngredient(com.modularmc.ten.api.recipe.FormsCombinedIngredient ingredient) {
+        if (ingredient.form().equals("fluid")) {
+            List<EmiIngredient> fluidOptions = ingredient.fluidStacks().stream()
+                    .filter(stack -> !stack.isEmpty())
+                    .map(stack -> EmiStack.of(stack.getFluid(), stack.getComponentsPatch(), stack.getAmount()))
+                    .map(emiStack -> (EmiIngredient) emiStack)
+                    .toList();
+            return EmiIngredient.of(fluidOptions, Math.max(1, ingredient.amountOrCount()));
+        }
+        List<EmiIngredient> itemOptions = ingredient.itemStacks().stream()
+                .filter(stack -> !stack.isEmpty())
+                .map(EmiStack::of)
+                .map(emiStack -> (EmiIngredient) emiStack)
+                .toList();
+        return EmiIngredient.of(itemOptions, Math.max(1, ingredient.amountOrCount()));
+    }
+
+    private static EmiStack toPrimaryEmiStack(com.modularmc.ten.api.recipe.FormsCombinedIngredient ingredient) {
+        if (ingredient.form().equals("fluid")) {
+            FluidStack stack = ingredient.symbolFluid();
+            if (stack.isEmpty()) {
+                return EmiStack.EMPTY;
+            }
+            var emiStack = EmiStack.of(stack.getFluid(), stack.getComponentsPatch(), stack.getAmount());
+            if (ingredient.chance() < 1.0d) {
+                emiStack.setChance((float) ingredient.chance());
+            }
+            return emiStack;
+        }
+        var stack = ingredient.symbolItem();
+        if (stack.isEmpty()) {
+            return EmiStack.EMPTY;
+        }
+        var emiStack = EmiStack.of(stack);
+        if (ingredient.chance() < 1.0d) {
+            emiStack.setChance((float) ingredient.chance());
+        }
+        return emiStack;
     }
 }

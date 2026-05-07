@@ -5,7 +5,6 @@ import com.modularmc.ten.api.recipe.FormsCombinedRecipe;
 import com.modularmc.ten.common.data.TENRecipeTypes;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -56,8 +55,7 @@ public class TENJeiPlugin implements IModPlugin {
         IGuiHelper helper = registration.getJeiHelpers().getGuiHelper();
         for (var data : buildCategories()) {
             RecipeType<FormsCombinedRecipe> type = new RecipeType<>(data.id, FormsCombinedRecipe.class);
-            registration.addRecipeCategories(new TENJeiCategory(helper, type,
-                    Component.translatable("jei.ten." + data.name), data.icon));
+            registration.addRecipeCategories(new TENJeiCategory(helper, data.id, type, data.icon));
         }
     }
 

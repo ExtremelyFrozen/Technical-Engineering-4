@@ -4,6 +4,7 @@ import com.modularmc.ten.TEN;
 import com.modularmc.ten.api.recipe.FormsCombinedRecipe;
 import com.modularmc.ten.common.data.TENBlocks;
 import com.modularmc.ten.common.data.TENRecipeTypes;
+import com.modularmc.ten.integration.xei.TENRecipeWidget;
 
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -46,7 +47,7 @@ public class TENEmiPlugin implements EmiPlugin {
 
         @Override
         public Component getName() {
-            return Component.translatable("emi.category." + id.getNamespace() + "." + id.getPath());
+            return TENRecipeWidget.title(id);
         }
     }
 
@@ -111,7 +112,7 @@ public class TENEmiPlugin implements EmiPlugin {
                             recipe.allOutputFluids().size(),
                             recipe.time());
                 }
-                registry.addRecipe(new TENEmiRecipe(category, recipe));
+                registry.addRecipe(new TENEmiRecipe(def.id(), category, recipe));
                 index++;
             }
             TEN.LOGGER.info("[EMI] Category {} finished registering {} recipes", def.id(), index);
