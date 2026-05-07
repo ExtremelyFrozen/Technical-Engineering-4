@@ -2,6 +2,7 @@ package com.modularmc.ten.common.blockentity.machine;
 
 import com.modularmc.ten.api.blockentity.RadiusMachineBlockEntity;
 import com.modularmc.ten.api.option.IngredientType;
+import com.modularmc.ten.api.option.MachineType;
 import com.modularmc.ten.utils.ItemNBTHelper;
 import com.modularmc.ten.utils.SafeOperationHelper;
 
@@ -26,6 +27,11 @@ public class MobRipBlockEntity extends RadiusMachineBlockEntity {
         setEfficiency(15);
         initialRadius = 8;
         radius = 8;
+    }
+
+    @Override
+    public int machineType() {
+        return MachineType.MOB_RIPPER;
     }
 
     @Override

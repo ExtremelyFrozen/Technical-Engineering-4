@@ -2,6 +2,7 @@ package com.modularmc.ten.common.blockentity.machine;
 
 import com.modularmc.ten.api.blockentity.ProcessingMachineBlockEntity;
 import com.modularmc.ten.api.option.IngredientType;
+import com.modularmc.ten.api.option.MachineType;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.item.ItemStack;
@@ -20,6 +21,11 @@ public class FurnaceBlockEntity extends ProcessingMachineBlockEntity {
         super(type, pos, state);
         setCapacity(kFE(20));
         setEfficiency(15);
+    }
+
+    @Override
+    public int machineType() {
+        return MachineType.FURNACE;
     }
 
     @Override

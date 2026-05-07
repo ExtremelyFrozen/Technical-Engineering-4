@@ -1,14 +1,21 @@
 package com.modularmc.ten.common.data;
 
 import com.modularmc.ten.TEN;
+import com.modularmc.ten.client.gui.CmContainerMachine;
 
 import net.minecraft.core.registries.Registries;
+import net.minecraft.world.flag.FeatureFlags;
 import net.minecraft.world.inventory.MenuType;
 import net.neoforged.neoforge.registries.DeferredRegister;
+
+import java.util.function.Supplier;
 
 public class TENMenuTypes {
 
     public static final DeferredRegister<MenuType<?>> MENUS = DeferredRegister.create(Registries.MENU, TEN.MOD_ID);
+
+    public static final Supplier<MenuType<CmContainerMachine>> MACHINE = MENUS.register("machine",
+            () -> new MenuType<>((id, inv) -> new CmContainerMachine(null, id, inv, null, null), FeatureFlags.DEFAULT_FLAGS));
 
     public static void init() {}
 }

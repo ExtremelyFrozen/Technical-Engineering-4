@@ -2,6 +2,7 @@ package com.modularmc.ten.common.block.machine;
 
 import com.modularmc.ten.api.blockentity.CmBlockEntity;
 import com.modularmc.ten.api.blockentity.CmMachineBlockEntity;
+import com.modularmc.ten.common.data.TENMenuTypes;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -83,7 +84,8 @@ public class BaseMachineBlock extends Block implements EntityBlock {
             BlockEntity be = level.getBlockEntity(pos);
             if (be instanceof CmMachineBlockEntity machine) {
                 player.openMenu(new SimpleMenuProvider(
-                        (id, inv, p) -> new com.modularmc.ten.client.gui.CmContainerMachine(null, id, inv, machine, pos),
+                        (id, inv, p) -> new com.modularmc.ten.client.gui.CmContainerMachine(
+                                TENMenuTypes.MACHINE.get(), id, inv, machine, pos),
                         machine.getDisplayName()));
             }
         }

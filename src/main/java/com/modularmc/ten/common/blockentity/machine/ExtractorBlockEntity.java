@@ -2,6 +2,7 @@ package com.modularmc.ten.common.blockentity.machine;
 
 import com.modularmc.ten.api.blockentity.EngineBlockEntity;
 import com.modularmc.ten.api.option.IngredientType;
+import com.modularmc.ten.api.option.MachineType;
 import com.modularmc.ten.common.blockentity.MatchFuel;
 
 import net.minecraft.core.BlockPos;
@@ -16,6 +17,11 @@ public class ExtractorBlockEntity extends EngineBlockEntity {
         super(type, pos, state);
         setCapacity(kFE(60));
         setEfficiency(30);
+    }
+
+    @Override
+    public int machineType() {
+        return MachineType.ENGINE_EXTRACTION;
     }
 
     @Override

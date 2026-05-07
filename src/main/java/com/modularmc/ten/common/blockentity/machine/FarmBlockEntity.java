@@ -2,6 +2,7 @@ package com.modularmc.ten.common.blockentity.machine;
 
 import com.modularmc.ten.api.blockentity.RadiusMachineBlockEntity;
 import com.modularmc.ten.api.option.IngredientType;
+import com.modularmc.ten.api.option.MachineType;
 import com.modularmc.ten.utils.WorkingHelper;
 
 import net.minecraft.core.BlockPos;
@@ -24,6 +25,11 @@ public class FarmBlockEntity extends RadiusMachineBlockEntity {
         setEfficiency(10);
         initialRadius = 4;
         radius = 4;
+    }
+
+    @Override
+    public int machineType() {
+        return MachineType.FARM;
     }
 
     @Override

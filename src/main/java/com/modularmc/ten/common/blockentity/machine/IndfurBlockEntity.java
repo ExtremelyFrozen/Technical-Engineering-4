@@ -3,6 +3,7 @@ package com.modularmc.ten.common.blockentity.machine;
 import com.modularmc.ten.api.blockentity.RecipeMachineBlockEntity;
 import com.modularmc.ten.api.blockentity.SlotInfo;
 import com.modularmc.ten.api.option.IngredientType;
+import com.modularmc.ten.api.option.MachineType;
 import com.modularmc.ten.api.recipe.FormsCombinedRecipe;
 import com.modularmc.ten.common.data.TENRecipeTypes;
 
@@ -18,6 +19,11 @@ public class IndfurBlockEntity extends RecipeMachineBlockEntity {
         super(type, pos, state, new SlotInfo(0, 2, 3, 3, 0, -1, 0, -1));
         setCapacity(kFE(20));
         setEfficiency(15);
+    }
+
+    @Override
+    public int machineType() {
+        return MachineType.INDUCTION_FURNACE;
     }
 
     @Override

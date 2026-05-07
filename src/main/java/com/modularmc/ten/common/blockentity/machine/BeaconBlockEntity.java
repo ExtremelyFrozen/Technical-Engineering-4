@@ -2,6 +2,7 @@ package com.modularmc.ten.common.blockentity.machine;
 
 import com.modularmc.ten.api.blockentity.RadiusMachineBlockEntity;
 import com.modularmc.ten.api.option.IngredientType;
+import com.modularmc.ten.api.option.MachineType;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -23,6 +24,11 @@ public class BeaconBlockEntity extends RadiusMachineBlockEntity {
         setEfficiency(300);
         initialRadius = 32;
         radius = 32;
+    }
+
+    @Override
+    public int machineType() {
+        return MachineType.BEACON;
     }
 
     @Override

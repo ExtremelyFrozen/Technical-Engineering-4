@@ -2,6 +2,7 @@ package com.modularmc.ten.common.blockentity.machine;
 
 import com.modularmc.ten.api.blockentity.EngineBlockEntity;
 import com.modularmc.ten.api.option.IngredientType;
+import com.modularmc.ten.api.option.MachineType;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.item.ItemStack;
@@ -15,6 +16,11 @@ public class SolarBlockEntity extends EngineBlockEntity {
         super(type, pos, state);
         setCapacity(kFE(80));
         setEfficiency(10);
+    }
+
+    @Override
+    public int machineType() {
+        return MachineType.ENGINE_SOLAR;
     }
 
     @Override
