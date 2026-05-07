@@ -82,5 +82,10 @@ public class TENBlockEntities {
             .validBlocks(TENBlocks.ENGINE_METAL)
             .register();
 
+    public static final BlockEntityEntry<CellBlockEntity> CELL = REGISTRATE
+            .blockEntity("cell", CellBlockEntity::new)
+            .validBlocks(TENBlocks.CELL)
+            .register();
+
     public static void init() {}
 }

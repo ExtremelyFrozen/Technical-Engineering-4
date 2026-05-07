@@ -13,6 +13,7 @@ public class ComponentHelper {
     }
 
     public static String exceptMachineOrGiveCell(String s) {
+        if (s == null || s.isEmpty()) return "";
         if (s.startsWith("cell")) {
             return "cell";
         }

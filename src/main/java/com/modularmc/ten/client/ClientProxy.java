@@ -26,27 +26,30 @@ public class ClientProxy {
     }
 
     private static AbstractContainerScreen<CmContainerMachine> createScreen(
-            CmContainerMachine container, Inventory inv, Component title) {
-        var be = container.machine;
-        int type = be != null ? be.machineType() : -1;
+                                                                            CmContainerMachine container, Inventory inv, Component title) {
+        int type = container.machine != null ? container.machine.machineType() : container.machineType;
         TEN.LOGGER.info("[TEN-GUI] createScreen: machine={} type={}",
-                be != null ? be.getClass().getSimpleName() : "null", type);
-        if (be != null) {
-            return switch (type) {
-                case MachineType.FURNACE -> new FurnaceScreen(container, inv, title);
-                case MachineType.PULVERIZER -> new PulverizerScreen(container, inv, title);
-                case MachineType.COMPRESSOR -> new CompressorScreen(container, inv, title);
-                case MachineType.REFINER -> new RefinerScreen(container, inv, title);
-                case MachineType.INDUCTION_FURNACE -> new IndfurScreen(container, inv, title);
-                case MachineType.PSIONICANT -> new PsionicantScreen(container, inv, title);
-                case MachineType.MATTER_CONDENSER -> new CondenserScreen(container, inv, title);
-                default -> {
-                    TEN.LOGGER.warn("[TEN-GUI] Unknown machine type {}, falling back to FurnaceScreen", type);
-                    yield new FurnaceScreen(container, inv, title);
-                }
-            };
-        }
-        TEN.LOGGER.warn("[TEN-GUI] Machine is null, falling back to FurnaceScreen");
-        return new FurnaceScreen(container, inv, title);
+                container.machine != null ? container.machine.getClass().getSimpleName() : "null", type);
+        return switch (type) {
+            case MachineType.FURNACE -> new FurnaceScreen(container, inv, title);
+            case MachineType.PULVERIZER -> new PulverizerScreen(container, inv, title);
+            case MachineType.COMPRESSOR -> new CompressorScreen(container, inv, title);
+            case MachineType.REFINER -> new RefinerScreen(container, inv, title);
+            case MachineType.INDUCTION_FURNACE -> new IndfurScreen(container, inv, title);
+            case MachineType.PSIONICANT -> new PsionicantScreen(container, inv, title);
+            case MachineType.MATTER_CONDENSER -> new CondenserScreen(container, inv, title);
+            case MachineType.ENCHANTMENT_FLUSHER -> new EncfluScreen(container, inv, title);
+            case MachineType.BEACON -> new BeaconScreen(container, inv, title);
+            case MachineType.MOB_RIPPER -> new MobRipScreen(container, inv, title);
+            case MachineType.QUARRY -> new QuarryScreen(container, inv, title);
+            case MachineType.FARM -> new FarmScreen(container, inv, title);
+            case MachineType.CELL -> new CellScreen(container, inv, title);
+            case MachineType.ENGINE_SOLAR -> new SolarScreen(container, inv, title);
+            case MachineType.ENGINE_EXTRACTION, MachineType.ENGINE_METAL, MachineType.ENGINE_BIOMASS -> new EngineScreen(container, inv, title);
+            default -> {
+                TEN.LOGGER.warn("[TEN-GUI] Unknown machine type {}, falling back to FurnaceScreen", type);
+                yield new FurnaceScreen(container, inv, title);
+            }
+        };
     }
 }

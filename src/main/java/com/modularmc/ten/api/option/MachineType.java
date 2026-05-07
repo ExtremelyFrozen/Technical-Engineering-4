@@ -23,4 +23,5 @@ public class MachineType {
     public static final int ENGINE_EXTRACTION = 31;
     public static final int ENGINE_METAL = 32;
     public static final int ENGINE_BIOMASS = 33;
+    public static final int CELL = 40;
 }

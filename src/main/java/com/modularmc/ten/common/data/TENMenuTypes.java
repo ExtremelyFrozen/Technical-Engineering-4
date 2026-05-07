@@ -4,7 +4,6 @@ import com.modularmc.ten.TEN;
 import com.modularmc.ten.client.gui.CmContainerMachine;
 
 import net.minecraft.core.registries.Registries;
-import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.world.flag.FeatureFlags;
 import net.minecraft.world.inventory.MenuType;
 import net.neoforged.neoforge.network.IContainerFactory;

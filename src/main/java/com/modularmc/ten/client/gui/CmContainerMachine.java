@@ -5,6 +5,7 @@ import com.modularmc.ten.api.option.MachineType;
 import com.modularmc.ten.api.wrapper.SyncedIntArray;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -12,7 +13,6 @@ import net.minecraft.world.inventory.DataSlot;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.SimpleContainer;
 import net.neoforged.neoforge.items.SlotItemHandler;
 
 import org.jetbrains.annotations.Nullable;
@@ -23,6 +23,8 @@ public class CmContainerMachine extends AbstractContainerMenu {
     public final BlockPos pos;
     @Nullable
     public final CmMachineBlockEntity machine;
+    public final int machineType;
+    public final int slotCount;
 
     public CmContainerMachine(@Nullable MenuType<?> type, int id, Inventory playerInv, @Nullable CmMachineBlockEntity machine, @Nullable BlockPos pos) {
         this(type, id, playerInv, machine, pos,
@@ -31,11 +33,13 @@ public class CmContainerMachine extends AbstractContainerMenu {
     }
 
     public CmContainerMachine(@Nullable MenuType<?> type, int id, Inventory playerInv,
-                               @Nullable CmMachineBlockEntity machine, @Nullable BlockPos pos,
-                               int machineType, int slotCount) {
+                              @Nullable CmMachineBlockEntity machine, @Nullable BlockPos pos,
+                              int machineType, int slotCount) {
         super(type, id);
         this.machine = machine;
         this.pos = pos;
+        this.machineType = machineType;
+        this.slotCount = slotCount;
         this.data = machine != null ? machine.data : new SyncedIntArray(40);
 
         // Machine slots - must match on both client and server

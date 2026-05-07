@@ -3,7 +3,6 @@ package com.modularmc.ten.client.gui;
 import com.modularmc.ten.TEN;
 import com.modularmc.ten.api.blockentity.CmMachineBlockEntity;
 import com.modularmc.ten.client.gui.element.ElementBase;
-import com.modularmc.ten.utils.GuiHelper;
 import com.modularmc.ten.utils.RenderHelper;
 
 import net.minecraft.client.Minecraft;
@@ -59,6 +58,8 @@ public class CmScreen<T extends CmContainerMachine> extends AbstractContainerScr
 
     @Override
     protected void init() {
+        this.imageWidth = xSize;
+        this.imageHeight = ySize;
         super.init();
         if (!init) addWidgets();
         init = true;
@@ -66,20 +67,20 @@ public class CmScreen<T extends CmContainerMachine> extends AbstractContainerScr
     }
 
     protected void updateIJ() {
-        int i = GuiHelper.getI(width, xSize);
-        int j = GuiHelper.getJ(height, ySize);
+        int i = getGuiLeft();
+        int j = getGuiTop();
         for (var e : widgets) e.updateLocWhenFrameResize(i, j);
     }
 
     @Override
     protected void renderBg(GuiGraphics guiGraphics, float partialTicks, int mouseX, int mouseY) {
-        int i = GuiHelper.getI(width, xSize);
-        int j = GuiHelper.getJ(height, ySize);
+        int i = getGuiLeft() + getExtras();
+        int j = getGuiTop();
         RenderHelper.renderBackGround(guiGraphics, i, j, texW, texH, BG);
     }
 
-    protected void renderBackGround(GuiGraphics guiGraphics, int w, int h, int i, int j) {
-        RenderHelper.renderBackGround(guiGraphics, w, h, i, j, texW, texH, BG);
+    public int getExtras() {
+        return 0;
     }
 
     public ElementBase getElementFromLocation(int mouseX, int mouseY) {
