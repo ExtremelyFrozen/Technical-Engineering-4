@@ -1,0 +1,25 @@
+﻿{
+"type": "minecraft:crafting_shaped",
+"pattern": [
+	" B ",
+	"DAD",
+	" C "
+],
+"key": {
+	"A": {
+	"item": "minecraft:emerald"
+	},
+	"B": {
+	"tag": "forge:gears/chlorium"
+	},
+	"C": {
+	"item": "minecraft:hopper"
+	},
+	"D": {
+	"item": "kenergyengineering:bizarrerie"
+	}
+},
+"result": {
+	"item": "kenergyengineering:potion_levelup"
+}
+}

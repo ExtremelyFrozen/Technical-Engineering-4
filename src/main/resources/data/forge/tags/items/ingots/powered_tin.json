@@ -1,6 +1,6 @@
 ﻿{
-  "replace": false,
-  "values": [
-    "technicalengineering:powered_tin_ingot"
-  ]
+"replace": false,
+"values": [
+	"kenergyengineering:powered_tin_ingot"
+]
 }

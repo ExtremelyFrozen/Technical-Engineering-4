@@ -1,10 +1,10 @@
 package com.modularmc.ten.utils;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Queues;
-
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+
+import com.google.common.collect.Lists;
+import com.google.common.collect.Queues;
 
 import java.util.Queue;
 

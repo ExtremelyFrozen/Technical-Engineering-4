@@ -1,6 +1,6 @@
 ﻿{
-  "replace": false,
-  "values": [
-    "technicalengineering:raw_tin"
-  ]
+"replace": false,
+"values": [
+	"kenergyengineering:raw_tin"
+]
 }

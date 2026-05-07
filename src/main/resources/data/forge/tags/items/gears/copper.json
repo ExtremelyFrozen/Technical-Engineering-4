@@ -1,6 +1,6 @@
 ﻿{
-  "replace": false,
-  "values": [
-    "technicalengineering:copper_gear"
-  ]
+"replace": false,
+"values": [
+	"kenergyengineering:copper_gear"
+]
 }

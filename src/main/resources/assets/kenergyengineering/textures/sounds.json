@@ -1,0 +1,11 @@
+﻿{
+"starlight": {
+	"category": "neutral",
+	"sounds": [
+	{
+		"name": "kenergyengineering:starlight",
+		"stream": false
+	}
+	]
+}
+}

@@ -1,6 +1,6 @@
 ﻿{
-  "replace": false,
-  "values": [
-    "technicalengineering:gold_dust"
-  ]
+"replace": false,
+"values": [
+	"kenergyengineering:gold_dust"
+]
 }

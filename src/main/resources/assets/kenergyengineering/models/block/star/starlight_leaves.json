@@ -1,0 +1,7 @@
+﻿{
+	"parent": "block/cube_all",
+	"textures": {
+		"all": "kenergyengineering:block/starlight/starlight_leaves",
+		"particle": "kenergyengineering:block/starlight/starlight_leaves"
+	}
+}

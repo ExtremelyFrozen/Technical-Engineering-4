@@ -1,9 +1,9 @@
 ﻿{
-  "replace": false,
-  "values": [
-    "technicalengineering:liquid_xp",
-    "technicalengineering:liquid_xp_flowing",
-    "technicalengineering:liquid_bizarrerie",
-    "technicalengineering:liquid_bizarrerie_flowing"
-  ]
+"replace": false,
+"values": [
+	"kenergyengineering:liquid_xp",
+	"kenergyengineering:liquid_xp_flowing",
+	"kenergyengineering:liquid_bizarrerie",
+	"kenergyengineering:liquid_bizarrerie_flowing"
+]
 }

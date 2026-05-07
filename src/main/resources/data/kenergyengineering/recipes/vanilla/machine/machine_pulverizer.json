@@ -1,0 +1,28 @@
+﻿{
+"type": "minecraft:crafting_shaped",
+"pattern": [
+	"BDB",
+	"ACA",
+	"BVB"
+],
+"key": {
+	"A": {
+	"item": "minecraft:flint"
+	},
+	"B": {
+	"tag": "forge:plates/iron"
+	},
+	"C": {
+	"item": "kenergyengineering:redstone_storer"
+	},
+	"V": {
+	"item": "kenergyengineering:redstone_ai"
+	},
+	"D": {
+	"item": "kenergyengineering:redstone_converter"
+	}
+},
+"result": {
+	"item": "kenergyengineering:machine_pulverizer"
+}
+}

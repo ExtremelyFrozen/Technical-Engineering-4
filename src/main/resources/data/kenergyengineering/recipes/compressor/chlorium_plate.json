@@ -1,0 +1,22 @@
+﻿{
+"type": "kenergyengineering:compressor",
+"inputs": [
+	{
+	"form": "item",
+	"type": "tag",
+	"key": "forge:ingots/chlorium"
+	},
+	{
+	"form": "item",
+	"type": "static",
+	"key": "kenergyengineering:mould_plate"
+	}
+],
+"outputs": [
+	{
+	"form": "item",
+	"key": "kenergyengineering:chlorium_plate"
+	}
+],
+"time": 100
+}

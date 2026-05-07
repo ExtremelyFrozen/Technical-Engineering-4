@@ -1,0 +1,18 @@
+﻿{
+"type": "kenergyengineering:pulverizer",
+"inputs": [
+	{
+	"form": "item",
+	"type": "tag",
+	"key": "forge:cobblestone"
+	}
+],
+"outputs": [
+	{
+	"form": "item",
+	"key": "minecraft:gravel",
+	"count": 1
+	}
+],
+"time": 120
+}

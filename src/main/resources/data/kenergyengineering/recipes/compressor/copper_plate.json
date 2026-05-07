@@ -1,0 +1,22 @@
+﻿{
+"type": "kenergyengineering:compressor",
+"inputs": [
+	{
+	"form": "item",
+	"type": "tag",
+	"key": "forge:ingots/copper"
+	},
+	{
+	"form": "item",
+	"type": "static",
+	"key": "kenergyengineering:mould_plate"
+	}
+],
+"outputs": [
+	{
+	"form": "item",
+	"key": "kenergyengineering:copper_plate"
+	}
+],
+"time": 100
+}

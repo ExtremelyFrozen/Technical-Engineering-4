@@ -1,0 +1,22 @@
+﻿{
+"type": "kenergyengineering:compressor",
+"inputs": [
+	{
+	"form": "item",
+	"type": "tag",
+	"key": "forge:ingots/powered_tin"
+	},
+	{
+	"form": "item",
+	"type": "static",
+	"key": "kenergyengineering:mould_plate"
+	}
+],
+"outputs": [
+	{
+	"form": "item",
+	"key": "kenergyengineering:powered_tin_plate"
+	}
+],
+"time": 100
+}

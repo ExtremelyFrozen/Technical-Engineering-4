@@ -1,0 +1,6 @@
+﻿{
+	"parent": "kenergyengineering:block/cable/ccn",
+	"textures": {
+		"texture": "kenergyengineering:machine/cable_azure"
+	}
+}

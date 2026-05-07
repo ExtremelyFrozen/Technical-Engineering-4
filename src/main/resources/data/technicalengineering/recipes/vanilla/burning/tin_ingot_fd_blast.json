@@ -1,9 +1,0 @@
-﻿{
-  "type": "minecraft:blasting",
-  "ingredient": {
-    "item": "technicalengineering:tin_dust"
-  },
-  "result": "technicalengineering:tin_ingot",
-  "experience": 0,
-  "cookingtime": 100
-}

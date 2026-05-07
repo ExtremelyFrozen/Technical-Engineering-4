@@ -1,0 +1,9 @@
+﻿{
+"type": "minecraft:blasting",
+"ingredient": {
+	"item": "kenergyengineering:raw_nickel"
+},
+"result": "kenergyengineering:nickel_ingot",
+"experience": 1,
+"cookingtime": 100
+}

@@ -1,8 +1,8 @@
 package com.modularmc.ten;
 
 import com.modularmc.ten.common.CommonProxy;
+import com.modularmc.ten.common.network.TENNetwork;
 import com.modularmc.ten.config.ConfigHolder;
-import com.modularmc.ten.core.network.TENNetwork;
 
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.bus.api.IEventBus;
@@ -16,8 +16,8 @@ import org.jetbrains.annotations.ApiStatus;
 @Mod(TEN.MOD_ID)
 public class TEN {
 
-    public static final String MOD_ID = "technicalengineering";
-    public static final String MOD_NAME = "Technical-Engineering";
+    public static final String MOD_ID = "kenergyengineering";
+    public static final String MOD_NAME = "Kenergy Engineering：Retechnicalized";
     public static final Logger LOGGER = LogManager.getLogger(MOD_NAME);
 
     @ApiStatus.Internal
@@ -29,7 +29,7 @@ public class TEN {
         ConfigHolder.init();
         CommonProxy.init(modBus);
 
-        modBus.addListener(TENNetwork::registerPayloads);
+        modBus.addListener(TENNetwork::register);
     }
 
     public static ResourceLocation id(String path) {

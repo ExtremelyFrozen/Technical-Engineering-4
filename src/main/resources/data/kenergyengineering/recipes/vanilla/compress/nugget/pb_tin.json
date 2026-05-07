@@ -1,0 +1,16 @@
+﻿{
+"type": "minecraft:crafting_shaped",
+"pattern": [
+	"CCC",
+	"CCC",
+	"CCC"
+],
+"key": {
+	"C": {
+	"tag": "forge:nuggets/tin"
+	}
+},
+"result": {
+	"item": "kenergyengineering:tin_ingot"
+}
+}

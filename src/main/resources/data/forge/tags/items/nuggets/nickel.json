@@ -1,6 +1,6 @@
 ﻿{
-  "replace": false,
-  "values": [
-    "technicalengineering:nickel_nugget"
-  ]
+"replace": false,
+"values": [
+	"kenergyengineering:nickel_nugget"
+]
 }

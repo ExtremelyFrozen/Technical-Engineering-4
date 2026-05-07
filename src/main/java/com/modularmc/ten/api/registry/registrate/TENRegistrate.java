@@ -2,16 +2,22 @@ package com.modularmc.ten.api.registry.registrate;
 
 import com.modularmc.ten.TEN;
 
+import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.ModList;
+import net.neoforged.neoforge.registries.DeferredHolder;
 
 import com.tterrag.registrate.AbstractRegistrate;
+import com.tterrag.registrate.builders.Builder;
 import com.tterrag.registrate.builders.NoConfigBuilder;
 import com.tterrag.registrate.util.entry.RegistryEntry;
+import com.tterrag.registrate.util.nullness.NonNullFunction;
+import com.tterrag.registrate.util.nullness.NonNullSupplier;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import org.jetbrains.annotations.Nullable;
 
@@ -103,5 +109,14 @@ public class TENRegistrate extends AbstractRegistrate<TENRegistrate> {
     public void setCreativeTab(RegistryEntry<?, ?> entry,
                                @Nullable RegistryEntry<CreativeModeTab, ? extends CreativeModeTab> tab) {
         TAB_LOOKUP.put(entry, tab);
+    }
+
+    @Override
+    protected <R, T extends R> RegistryEntry<R, T> accept(String name, ResourceKey<? extends Registry<R>> type, Builder<R, T, ?, ?> builder, NonNullSupplier<? extends T> creator, NonNullFunction<DeferredHolder<R, T>, ? extends RegistryEntry<R, T>> entryFactory) {
+        RegistryEntry<R, T> entry = super.accept(name, type, builder, creator, entryFactory);
+        if (currentTab != null) {
+            setCreativeTab(entry, currentTab);
+        }
+        return entry;
     }
 }

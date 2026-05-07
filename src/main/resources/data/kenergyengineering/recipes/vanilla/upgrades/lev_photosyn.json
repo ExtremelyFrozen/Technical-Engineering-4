@@ -1,0 +1,25 @@
+﻿{
+"type": "minecraft:crafting_shaped",
+"pattern": [
+	" B ",
+	"DAD",
+	" C "
+],
+"key": {
+	"A": {
+	"tag": "minecraft:leaves"
+	},
+	"B": {
+	"tag": "forge:gears/chlorium"
+	},
+	"C": {
+	"tag": "forge:glass"
+	},
+	"D": {
+	"item": "minecraft:glowstone_dust"
+	}
+},
+"result": {
+	"item": "kenergyengineering:photosyn_levelup"
+}
+}

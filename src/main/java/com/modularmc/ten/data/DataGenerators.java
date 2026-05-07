@@ -11,6 +11,6 @@ public class DataGenerators {
 
     @SubscribeEvent
     public static void gatherData(GatherDataEvent event) {
-        // TODO: register data providers during content migration
+        // Registrate handles block/item models, blockstates, and lang entries automatically.
     }
 }

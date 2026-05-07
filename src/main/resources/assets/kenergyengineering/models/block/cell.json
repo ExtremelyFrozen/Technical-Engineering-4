@@ -1,0 +1,12 @@
+{
+	"parent": "minecraft:block/cube",
+	"textures": {
+		"down": "kenergyengineering:machine/cell_frame",
+		"up": "kenergyengineering:machine/cell_frame",
+		"north": "kenergyengineering:machine/cell_meter",
+		"south": "kenergyengineering:machine/cell_meter",
+		"west": "kenergyengineering:machine/cell_meter",
+		"east": "kenergyengineering:machine/cell_meter",
+		"particle": "kenergyengineering:machine/cell_meter"
+	}
+}

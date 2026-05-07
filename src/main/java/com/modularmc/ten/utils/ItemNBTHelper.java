@@ -9,7 +9,6 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.level.Level;
-
 import net.neoforged.neoforge.items.wrapper.InvWrapper;
 
 import java.util.function.Consumer;
@@ -22,9 +21,9 @@ public class ItemNBTHelper {
         inv.setItem(0, i1.copy());
         ItemStack sr = wrapper.insertItem(0, i2.copy(), false);
         if (sr.isEmpty()) {
-            return new ItemStack[] {inv.getItem(0)};
+            return new ItemStack[] { inv.getItem(0) };
         }
-        return new ItemStack[] {inv.getItem(0), sr};
+        return new ItemStack[] { inv.getItem(0), sr };
     }
 
     public static void damage(ItemStack stack, Level world, int am) {

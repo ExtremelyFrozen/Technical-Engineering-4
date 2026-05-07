@@ -1,6 +1,6 @@
 ﻿{
-  "replace": false,
-  "values": [
-    "technicalengineering:copper_plate"
-  ]
+"replace": false,
+"values": [
+	"kenergyengineering:copper_plate"
+]
 }

@@ -63,6 +63,7 @@ public class WorkingHelper {
     }
 
     public interface RunWithPos {
+
         boolean run(BlockPos pos);
     }
 }

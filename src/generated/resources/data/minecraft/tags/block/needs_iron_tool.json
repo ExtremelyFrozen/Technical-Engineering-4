@@ -1,14 +1,14 @@
 {
   "values": [
-    "technicalengineering:tin_ore",
-    "technicalengineering:nickel_ore",
-    "technicalengineering:deep_tin_ore",
-    "technicalengineering:deep_nickel_ore",
-    "technicalengineering:tin_block",
-    "technicalengineering:nickel_block",
-    "technicalengineering:powered_tin_block",
-    "technicalengineering:chlorium_block",
-    "technicalengineering:raw_tin_block",
-    "technicalengineering:raw_nickel_block"
+    "kenergyengineering:tin_ore",
+    "kenergyengineering:nickel_ore",
+    "kenergyengineering:deep_tin_ore",
+    "kenergyengineering:deep_nickel_ore",
+    "kenergyengineering:tin_block",
+    "kenergyengineering:nickel_block",
+    "kenergyengineering:powered_tin_block",
+    "kenergyengineering:chlorium_block",
+    "kenergyengineering:raw_tin_block",
+    "kenergyengineering:raw_nickel_block"
   ]
 }

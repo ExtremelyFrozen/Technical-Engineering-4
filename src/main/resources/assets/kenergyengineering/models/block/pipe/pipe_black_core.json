@@ -1,0 +1,6 @@
+﻿{
+	"parent": "kenergyengineering:block/pipe/pco",
+	"textures": {
+		"texture": "kenergyengineering:machine/pipe_black"
+	}
+}

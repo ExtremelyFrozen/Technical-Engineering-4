@@ -1,10 +1,10 @@
 package com.modularmc.ten.common.data;
 
-import com.modularmc.ten.core.item.upgrades.*;
-
-import com.tterrag.registrate.util.entry.ItemEntry;
+import com.modularmc.ten.common.item.upgrades.*;
 
 import net.minecraft.world.item.Item;
+
+import com.tterrag.registrate.util.entry.ItemEntry;
 
 import static com.modularmc.ten.common.registry.Registration.REGISTRATE;
 

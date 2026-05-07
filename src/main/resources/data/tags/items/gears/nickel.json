@@ -1,6 +1,6 @@
 ﻿{
-  "replace": false,
-  "values": [
-    "technicalengineering:nickel_gear"
-  ]
+"replace": false,
+"values": [
+	"kenergyengineering:nickel_gear"
+]
 }

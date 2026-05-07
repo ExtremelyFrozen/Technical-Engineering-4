@@ -1,6 +1,6 @@
 ﻿{
-  "replace": false,
-  "values": [
-    "technicalengineering:tin_nugget"
-  ]
+"replace": false,
+"values": [
+	"kenergyengineering:tin_nugget"
+]
 }

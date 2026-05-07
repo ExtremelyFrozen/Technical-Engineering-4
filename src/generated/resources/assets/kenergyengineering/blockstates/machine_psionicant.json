@@ -1,0 +1,34 @@
+{
+  "variants": {
+    "active=false,facing=east": {
+      "model": "kenergyengineering:block/machine_psionicant",
+      "y": 90
+    },
+    "active=false,facing=north": {
+      "model": "kenergyengineering:block/machine_psionicant"
+    },
+    "active=false,facing=south": {
+      "model": "kenergyengineering:block/machine_psionicant",
+      "y": 180
+    },
+    "active=false,facing=west": {
+      "model": "kenergyengineering:block/machine_psionicant",
+      "y": 270
+    },
+    "active=true,facing=east": {
+      "model": "kenergyengineering:block/machine_psionicant_active",
+      "y": 90
+    },
+    "active=true,facing=north": {
+      "model": "kenergyengineering:block/machine_psionicant_active"
+    },
+    "active=true,facing=south": {
+      "model": "kenergyengineering:block/machine_psionicant_active",
+      "y": 180
+    },
+    "active=true,facing=west": {
+      "model": "kenergyengineering:block/machine_psionicant_active",
+      "y": 270
+    }
+  }
+}
