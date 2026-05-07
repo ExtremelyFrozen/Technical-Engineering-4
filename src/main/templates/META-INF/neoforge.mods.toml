@@ -18,8 +18,6 @@ enumExtensions = "META-INF/enum_extensions.json"
 [[mixins]]
     config = "${mod_id}.mixins.json"
 
-[[mixins]]
-    config = "${mod_id}.mixins.json"
 [[accessTransformers]]
     file = "META-INF/accesstransformer.cfg"
 
@@ -36,3 +34,15 @@ enumExtensions = "META-INF/enum_extensions.json"
     versionRange = "${minecraft_version}"
     ordering = "NONE"
     side = "BOTH"
+
+[[dependencies.${mod_id}]]
+    modId = "configuration"
+    type = "required"
+    embedded = true
+    versionRange = "[${configuration_version},)"
+    ordering = "AFTER"
+    side = "BOTH"
+    [dependencies.${mod_id}.mc-publish]
+        ignore = false
+        modrinth = "configuration"
+        curseforge = "configuration"

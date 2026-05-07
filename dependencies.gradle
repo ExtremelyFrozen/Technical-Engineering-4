@@ -3,10 +3,39 @@ dependencies {
 
     testImplementation(libs.testframework.get())
 
+    // Registrate
+    jarJar(api(forge.registrate.get()))
+
+    // Configuration
+    jarJar(api(forge.configuration.get()))
+
+    // Recipe Viewers
+    compileOnly(forge.bundles.jei)
+    compileOnly(forge.emi)
+
+    // WAILA-likes
+    compileOnly(forge.jade)
+
+    // Rendering / Optimizations
+    compileOnly(forge.sodium)
+    compileOnly(forge.iris)
+    compileOnly(forge.modernfix)
+
+    // Standard runtime mods //
+    localRuntime(libs.testframework)
+
+    localRuntime(forge.jade)
+    localRuntime(forge.spark)
+    localRuntime(forge.modernfix)
 
     // Runtime Recipe Viewers - uncomment whichever one you want to use //
+    localRuntime(forge.emi)
+    localRuntime(forge.jei.neoforge.impl)
 
     // Client-only runtime mods //
+    clientLocalRuntime(forge.sodium)
+    clientLocalRuntime(forge.iris)
+    renderNurseCfg(libs.renderNurse)
 
     renderNurseCfg(libs.renderNurse)
 
