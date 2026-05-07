@@ -16,9 +16,11 @@ import net.neoforged.neoforge.fluids.FluidStack;
 public class RefinerBlockEntity extends RecipeMachineBlockEntity {
 
     public RefinerBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
-        super(type, pos, state, new SlotInfo(0, 1, 2, 3, 0, -1, 0, -1));
+        super(type, pos, state, new SlotInfo(0, 0, 1, 1, 0, 0, 1, 1));
         setCapacity(kFE(20));
         setEfficiency(15);
+        tanks.add(new com.modularmc.ten.api.capability.MachineFluidTank(6000));
+        tanks.add(new com.modularmc.ten.api.capability.MachineFluidTank(6000));
     }
 
     @Override
@@ -28,13 +30,13 @@ public class RefinerBlockEntity extends RecipeMachineBlockEntity {
 
     @Override
     public int inventorySize() {
-        return 4;
+        return 2;
     }
 
     @Override
     public IngredientType slotType(int slot) {
-        if (slot <= 1) return IngredientType.INPUT;
-        if (slot >= 2) return IngredientType.OUTPUT;
+        if (slot == 0) return IngredientType.INPUT;
+        if (slot == 1) return IngredientType.OUTPUT;
         return IngredientType.IGNORE;
     }
 
@@ -45,6 +47,8 @@ public class RefinerBlockEntity extends RecipeMachineBlockEntity {
 
     @Override
     public IngredientType tankType(int tank) {
+        if (tank == 0) return IngredientType.INPUT;
+        if (tank == 1) return IngredientType.OUTPUT;
         return IngredientType.IGNORE;
     }
 

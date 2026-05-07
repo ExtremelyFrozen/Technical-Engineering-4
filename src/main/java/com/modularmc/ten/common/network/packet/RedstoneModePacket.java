@@ -4,6 +4,7 @@ import com.modularmc.ten.TEN;
 import com.modularmc.ten.api.blockentity.CmMachineBlockEntity;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
@@ -31,7 +32,14 @@ public record RedstoneModePacket(int mode, BlockPos pos) implements CustomPacket
         ctx.enqueueWork(() -> {
             Level level = ctx.player().level();
             if (level.getBlockEntity(p.pos) instanceof CmMachineBlockEntity machine) {
+                machine.redstoneMode = p.mode;
                 machine.data.set(CmMachineBlockEntity.RED_MODE, p.mode);
+                machine.setChanged();
+                for (Direction direction : Direction.values()) {
+                    net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(
+                            (net.minecraft.server.level.ServerPlayer) ctx.player(),
+                            new FaceInfoPacket(machine, direction));
+                }
             }
         });
     }

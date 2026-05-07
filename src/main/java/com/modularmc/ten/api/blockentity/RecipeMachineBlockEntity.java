@@ -80,8 +80,10 @@ public abstract class RecipeMachineBlockEntity extends ProcessingMachineBlockEnt
     protected boolean canFitFluidOutput(FormsCombinedIngredient ing) {
         FluidStack stack = ing.symbolFluid();
         if (stack.isEmpty()) return true;
-        for (var tank : tanks) {
-            if (tank.fill(stack, IFluidHandler.FluidAction.SIMULATE) >= stack.getAmount()) return true;
+        for (int i = slotInfo.fo1(); i <= slotInfo.fo2() && i < tanks.size(); i++) {
+            if (tankType(i).canOut() && tanks.get(i).fill(stack, IFluidHandler.FluidAction.SIMULATE) >= stack.getAmount()) {
+                return true;
+            }
         }
         return false;
     }
@@ -102,8 +104,9 @@ public abstract class RecipeMachineBlockEntity extends ProcessingMachineBlockEnt
     }
 
     protected void giveFluidOutput(FluidStack stack) {
-        for (var tank : tanks) {
-            int filled = tank.fill(stack, IFluidHandler.FluidAction.EXECUTE);
+        for (int i = slotInfo.fo1(); i <= slotInfo.fo2() && i < tanks.size(); i++) {
+            if (!tankType(i).canOut()) continue;
+            int filled = tanks.get(i).fill(stack, IFluidHandler.FluidAction.EXECUTE);
             stack.shrink(filled);
             if (stack.isEmpty()) break;
         }
@@ -124,13 +127,13 @@ public abstract class RecipeMachineBlockEntity extends ProcessingMachineBlockEnt
         }
         for (var ing : currentRecipe.allInputFluids()) {
             int needed = ing.amountOrCount();
-            for (var tank : tanks) {
-                FluidStack fluid = tank.getFluid();
+            for (int i = slotInfo.fi1(); i <= slotInfo.fi2() && i < tanks.size() && needed > 0; i++) {
+                if (!tankType(i).canIn()) continue;
+                FluidStack fluid = tanks.get(i).getFluid();
                 if (ing.contains(fluid.getFluid())) {
                     int toRemove = Math.min(needed, fluid.getAmount());
                     fluid.shrink(toRemove);
                     needed -= toRemove;
-                    if (needed <= 0) break;
                 }
             }
         }

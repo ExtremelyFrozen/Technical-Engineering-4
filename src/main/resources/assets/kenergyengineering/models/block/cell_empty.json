@@ -1,12 +1,12 @@
 {
 	"parent": "minecraft:block/cube",
 	"textures": {
-		"down": "kenergyengineering:machine/cell_frame",
-		"up": "kenergyengineering:machine/cell_frame",
-		"north": "kenergyengineering:machine/cell_meter",
-		"south": "kenergyengineering:machine/cell_meter",
-		"west": "kenergyengineering:machine/cell_meter",
-		"east": "kenergyengineering:machine/cell_meter",
-		"particle": "kenergyengineering:machine/cell_meter"
+		"down": "kenergyengineering:block/cell_frame",
+		"up": "kenergyengineering:block/cell_frame",
+		"north": "kenergyengineering:block/cell_meter",
+		"south": "kenergyengineering:block/cell_meter",
+		"west": "kenergyengineering:block/cell_meter",
+		"east": "kenergyengineering:block/cell_meter",
+		"particle": "kenergyengineering:block/cell_meter"
 	}
 }

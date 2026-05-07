@@ -20,7 +20,8 @@ public class TENMenuTypes {
                     (IContainerFactory<CmContainerMachine>) (id, inv, buf) -> {
                         int mType = buf != null && buf.readableBytes() > 0 ? buf.readInt() : -1;
                         int slots = buf != null && buf.readableBytes() > 0 ? buf.readInt() : 0;
-                        return new CmContainerMachine(null, id, inv, null, null, mType, slots);
+                        var pos = buf != null && buf.readableBytes() > 0 ? buf.readBlockPos() : null;
+                        return new CmContainerMachine(null, id, inv, null, pos, mType, slots);
                     },
                     FeatureFlags.DEFAULT_FLAGS));
 

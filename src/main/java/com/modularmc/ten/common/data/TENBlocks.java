@@ -72,21 +72,21 @@ public class TENBlocks {
     // === Cell ===
     public static final BlockEntry<HorizontalMachineBlock> CELL = REGISTRATE
             .block("cell", HorizontalMachineBlock::new)
-            .blockstate((ctx, prov) -> {})
+            .blockstate((ctx, prov) -> TENModels.cellBlockstate(prov, ctx.getEntry()))
             .item().model((ctx, prov) -> prov.blockItem(ctx::getEntry)).build().register();
 
     // === Channels ===
     public static final BlockEntry<DirectionalMachineBlock> CHANNEL_ENERGY = REGISTRATE
             .block("channel_energy", DirectionalMachineBlock::new)
-            .blockstate((ctx, prov) -> {})
+            .blockstate((ctx, prov) -> TENModels.channelBlockstate(prov, ctx.getEntry(), "channel_energy"))
             .item().model((ctx, prov) -> prov.blockItem(ctx::getEntry)).build().register();
     public static final BlockEntry<DirectionalMachineBlock> CHANNEL_ITEM = REGISTRATE
             .block("channel_item", DirectionalMachineBlock::new)
-            .blockstate((ctx, prov) -> {})
+            .blockstate((ctx, prov) -> TENModels.channelBlockstate(prov, ctx.getEntry(), "channel_item"))
             .item().model((ctx, prov) -> prov.blockItem(ctx::getEntry)).build().register();
     public static final BlockEntry<DirectionalMachineBlock> CHANNEL_FLUID = REGISTRATE
             .block("channel_fluid", DirectionalMachineBlock::new)
-            .blockstate((ctx, prov) -> {})
+            .blockstate((ctx, prov) -> TENModels.channelBlockstate(prov, ctx.getEntry(), "channel_fluid"))
             .item().model((ctx, prov) -> prov.blockItem(ctx::getEntry)).build().register();
 
     // === Helpers ===
@@ -148,7 +148,7 @@ public class TENBlocks {
 
     private static BlockEntry<CableBased> cable(String n) {
         return REGISTRATE.block(n, CableBased::new)
-                .blockstate((ctx, prov) -> {})
+                .blockstate((ctx, prov) -> TENModels.cableMultipart(prov, ctx.getEntry(), n))
                 .item().model((ctx, prov) -> prov.blockItem(ctx::getEntry)).build().register();
     }
 

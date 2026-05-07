@@ -16,6 +16,7 @@ public class PipeBlockEntity extends CmBlockEntity {
 
     public PipeBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
+        itemHandler.setChangeListener(this::markDirty);
     }
 
     public IItemHandler getItemHandler() {

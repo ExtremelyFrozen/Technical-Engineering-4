@@ -1,12 +1,12 @@
 {
   "parent": "minecraft:block/cube",
   "textures": {
-    "down": "kenergyengineering:machine/machine_bottom",
-    "east": "kenergyengineering:machine/machine_side",
-    "north": "kenergyengineering:machine/refiner_active",
-    "particle": "kenergyengineering:machine/machine_side",
-    "south": "kenergyengineering:machine/machine_side",
-    "up": "kenergyengineering:machine/machine_top",
-    "west": "kenergyengineering:machine/machine_side"
+    "down": "kenergyengineering:block/machine_bottom",
+    "east": "kenergyengineering:block/machine_side",
+    "north": "kenergyengineering:block/machine_refiner_active",
+    "particle": "kenergyengineering:block/machine_side",
+    "south": "kenergyengineering:block/machine_side",
+    "up": "kenergyengineering:block/machine_top",
+    "west": "kenergyengineering:block/machine_side"
   }
 }

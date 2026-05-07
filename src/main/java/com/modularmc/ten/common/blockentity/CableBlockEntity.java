@@ -24,6 +24,10 @@ public class CableBlockEntity extends CmBlockEntity {
 
     @Override
     protected void readTileData(CompoundTag tag, HolderLookup.Provider registries) {
+        int stored = storage.getEnergyStored();
+        if (stored > 0) {
+            storage.extractEnergy(stored, false);
+        }
         storage.receiveEnergy(tag.getInt("energy"), false);
     }
 

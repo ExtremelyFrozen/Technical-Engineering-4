@@ -1,6 +1,6 @@
 {
 	"parent": "kenergyengineering:block/cable/ccpa",
 	"textures": {
-		"texture": "kenergyengineering:machine/cable"
+		"texture": "kenergyengineering:block/cable"
 	}
 }

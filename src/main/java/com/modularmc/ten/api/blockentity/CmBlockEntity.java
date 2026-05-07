@@ -50,6 +50,14 @@ public abstract class CmBlockEntity extends BlockEntity {
 
     protected void tick() {}
 
+    protected void markDirty() {
+        setChanged();
+        if (level != null && !level.isClientSide()) {
+            BlockState state = getBlockState();
+            level.sendBlockUpdated(worldPosition, state, state, 3);
+        }
+    }
+
     public Component getDisplayName() {
         return component;
     }

@@ -1,16 +1,15 @@
 package com.modularmc.ten.common.block.machine;
 
-import com.modularmc.ten.TEN;
 import com.modularmc.ten.api.blockentity.CmBlockEntity;
 import com.modularmc.ten.api.blockentity.CmMachineBlockEntity;
 import com.modularmc.ten.client.gui.CmContainerMachine;
 import com.modularmc.ten.common.data.TENMenuTypes;
+import com.modularmc.ten.common.network.packet.FaceInfoPacket;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.Containers;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.ItemInteractionResult;
@@ -30,6 +29,8 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.material.MapColor;
 import net.minecraft.world.phys.BlockHitResult;
+import net.neoforged.neoforge.fluids.FluidUtil;
+import net.neoforged.neoforge.network.PacketDistributor;
 
 import org.jetbrains.annotations.Nullable;
 
@@ -62,7 +63,9 @@ public class BaseMachineBlock extends Block implements EntityBlock {
         for (BlockEntityType<?> type : BuiltInRegistries.BLOCK_ENTITY_TYPE) {
             if (type.isValid(state)) {
                 BlockEntity be = type.create(pos, state);
-                if (be != null) return be;
+                if (be != null) {
+                    return be;
+                }
             }
         }
         return null;
@@ -80,7 +83,6 @@ public class BaseMachineBlock extends Block implements EntityBlock {
 
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
-        TEN.LOGGER.info("[TEN-GUI] useWithoutItem called at {} side={} hand=EMPTY", pos, level.isClientSide() ? "CLIENT" : "SERVER");
         if (!level.isClientSide()) {
             openGui(level, pos, player);
         }
@@ -89,37 +91,35 @@ public class BaseMachineBlock extends Block implements EntityBlock {
 
     @Override
     protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
-        TEN.LOGGER.info("[TEN-GUI] useItemOn called at {} side={} hand={} item={}", pos, level.isClientSide() ? "CLIENT" : "SERVER", hand, stack.getItem());
+        BlockEntity be = level.getBlockEntity(pos);
+        if (be instanceof CmMachineBlockEntity machine && !player.isShiftKeyDown() && !machine.tanks.isEmpty()) {
+            if (FluidUtil.interactWithFluidHandler(player, hand, machine.getFluidHandler(hit.getDirection()))) {
+                return ItemInteractionResult.sidedSuccess(level.isClientSide());
+            }
+        }
         if (!level.isClientSide()) {
             openGui(level, pos, player);
         }
-        return ItemInteractionResult.SUCCESS;
+        return ItemInteractionResult.sidedSuccess(level.isClientSide());
     }
 
     private void openGui(Level level, BlockPos pos, Player player) {
         BlockEntity be = level.getBlockEntity(pos);
-        TEN.LOGGER.info("[TEN-GUI] openGui BE at {} = {}", pos, be != null ? be.getClass().getSimpleName() : "null");
         if (be instanceof CmMachineBlockEntity machine && player instanceof ServerPlayer sp) {
             var menuType = TENMenuTypes.MACHINE.get();
             int mType = machine.machineType();
             int slots = machine.itemHandler != null ? machine.itemHandler.getSlots() : 0;
-            TEN.LOGGER.info("[TEN-GUI] openGui machine={} menuType={} itemHandler={} displayName={}",
-                    machine.getClass().getSimpleName(),
-                    menuType != null ? "OK" : "NULL", slots,
-                    machine.getDisplayName().getString());
             sp.openMenu(new SimpleMenuProvider(
-                    (id, inv, p) -> {
-                        TEN.LOGGER.info("[TEN-GUI] Creating CmContainerMachine id={} player={}", id, p.getGameProfile().getName());
-                        return new CmContainerMachine(
-                                menuType, id, inv, machine, pos);
-                    },
+                    (id, inv, p) -> new CmContainerMachine(menuType, id, inv, machine, pos),
                     machine.getDisplayName()),
                     buf -> {
                         buf.writeInt(mType);
                         buf.writeInt(slots);
+                        buf.writeBlockPos(pos);
                     });
-        } else {
-            TEN.LOGGER.warn("[TEN-GUI] BE is not CmMachineBlockEntity: {}", be != null ? be.getClass().getName() : "null");
+            for (Direction direction : Direction.values()) {
+                PacketDistributor.sendToPlayer(sp, new FaceInfoPacket(machine, direction));
+            }
         }
     }
 
@@ -128,11 +128,7 @@ public class BaseMachineBlock extends Block implements EntityBlock {
         if (!state.is(newState.getBlock())) {
             BlockEntity be = level.getBlockEntity(pos);
             if (be instanceof CmMachineBlockEntity machine) {
-                if (machine.itemHandler != null) {
-                    for (int i = 0; i < machine.itemHandler.getSlots(); i++) {
-                        Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), machine.itemHandler.getStackInSlot(i));
-                    }
-                }
+                machine.dropAllContents();
             }
             super.onRemove(state, level, pos, newState, movedByPiston);
         }

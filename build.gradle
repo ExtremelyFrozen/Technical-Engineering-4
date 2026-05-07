@@ -74,9 +74,9 @@ apply from: "$rootDir/gradle/scripts/resources.gradle"
 apply from: "$rootDir/gradle/scripts/publishing.gradle"
 apply from: "$rootDir/gradle/scripts/spotless.gradle"
 
-
 processResources {
-    duplicatesStrategy = DuplicatesStrategy.WARN
+    // DataGen output and hand-written runtime resources must never share the same path.
+    duplicatesStrategy = DuplicatesStrategy.FAIL
 }
 
 tasks.withType(JavaCompile).configureEach {

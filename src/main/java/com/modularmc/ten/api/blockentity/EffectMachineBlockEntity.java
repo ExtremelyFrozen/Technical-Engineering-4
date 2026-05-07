@@ -26,8 +26,13 @@ public abstract class EffectMachineBlockEntity extends CmMachineBlockEntity {
     public void process() {
         if (energyAllowRun() && signalAllowRun() && conditionStart()) {
             setActive(true);
-            data.translate(PROGRESS, getActualEfficiency());
-            energyStorage.extractEnergy(getActualEfficiency(), false);
+            int energyConsumed = Math.min(getActualEfficiency(), energyStorage.getEnergyStored());
+            if (energyConsumed <= 0) {
+                setActive(false);
+                return;
+            }
+            data.translate(PROGRESS, energyConsumed);
+            energyStorage.extractEnergy(energyConsumed, false);
             data.set(MAX_PROGRESS, (int) (effectInterval() * 20 * Math.max(initialEfficientIn, 1)));
 
             if (data.get(PROGRESS) > data.get(MAX_PROGRESS)) {

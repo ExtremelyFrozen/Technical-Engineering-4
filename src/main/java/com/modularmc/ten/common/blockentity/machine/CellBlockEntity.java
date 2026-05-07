@@ -12,13 +12,13 @@ public class CellBlockEntity extends CmMachineBlockEntity {
 
     public CellBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
-        setCapacity(kFE(100));
+        setCapacity(kFE(1000));
         setEfficiency(100);
     }
 
     @Override
     public int inventorySize() {
-        return 0;
+        return 2;
     }
 
     @Override
@@ -33,14 +33,45 @@ public class CellBlockEntity extends CmMachineBlockEntity {
 
     @Override
     public boolean valid(int slot, ItemStack stack) {
+        var energy = stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM);
+        if (energy == null) return false;
+        if (slot == 0) {
+            return energy.canExtract() && energy.getEnergyStored() >= energy.getMaxEnergyStored();
+        }
+        if (slot == 1) {
+            return energy.canReceive() && energy.getEnergyStored() < energy.getMaxEnergyStored();
+        }
         return false;
     }
 
     @Override
     public void tick() {
         doBaseData();
-        if (energyStorage != null) {
-            data.set(com.modularmc.ten.api.blockentity.CmMachineBlockEntity.ENERGY, energyStorage.getEnergyStored());
+        if (!signalAllowRun() || energyStorage == null || itemHandler == null) {
+            return;
+        }
+
+        ItemStack stack0 = itemHandler.getStackInSlot(0);
+        ItemStack stack1 = itemHandler.getStackInSlot(1);
+
+        if (stack0.getCount() == 1) {
+            var energy0 = stack0.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM);
+            if (energy0 != null && energy0.canExtract()) {
+                int diff = energy0.extractEnergy(Math.min(maxReceiveEnergy, maxStorageEnergy - energyStorage.getEnergyStored()), false);
+                if (diff > 0) {
+                    energyStorage.receiveEnergy(diff, false);
+                }
+            }
+        }
+
+        if (stack1.getCount() == 1) {
+            var energy1 = stack1.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM);
+            if (energy1 != null && energy1.canReceive()) {
+                int diff = energy1.receiveEnergy(Math.min(maxExtractEnergy, energyStorage.getEnergyStored()), false);
+                if (diff > 0) {
+                    energyStorage.extractEnergy(diff, false);
+                }
+            }
         }
     }
 

@@ -1,6 +1,6 @@
 {
 	"parent": "kenergyengineering:block/cable/ccp",
 	"textures": {
-		"texture": "kenergyengineering:machine/cable_quartz"
+		"texture": "kenergyengineering:block/cable_quartz"
 	}
 }

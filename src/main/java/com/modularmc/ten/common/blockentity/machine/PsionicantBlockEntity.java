@@ -45,7 +45,7 @@ public class PsionicantBlockEntity extends RecipeMachineBlockEntity {
 
     @Override
     public IngredientType tankType(int tank) {
-        return IngredientType.IGNORE;
+        return IngredientType.OUTPUT;
     }
 
     @Override

@@ -1,9 +1,8 @@
 {
 	"credit": "Made with Blockbench",
-	"parent": "channel",
 	"textures": {
 		"0": "#texture",
-		"1": "kenergyengineering:machine/channel/channel_base",
+		"1": "kenergyengineering:block/channel_base",
 		"particle": "#texture"
 	},
 	"elements": [

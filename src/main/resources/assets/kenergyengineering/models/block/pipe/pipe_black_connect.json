@@ -1,6 +1,6 @@
 {
 	"parent": "kenergyengineering:block/pipe/pcn",
 	"textures": {
-		"texture": "kenergyengineering:machine/pipe_black"
+		"texture": "kenergyengineering:block/pipe_black"
 	}
 }

@@ -1,6 +1,6 @@
 {
 	"parent": "kenergyengineering:block/pipe/pct",
 	"textures": {
-		"texture": "kenergyengineering:machine/pipe_white"
+		"texture": "kenergyengineering:block/pipe_white"
 	}
 }

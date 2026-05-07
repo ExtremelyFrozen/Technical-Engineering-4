@@ -40,7 +40,14 @@ public class CompressorBlockEntity extends RecipeMachineBlockEntity {
 
     @Override
     public boolean valid(int slot, ItemStack stack) {
-        return true;
+        boolean mould = stack.is(com.modularmc.ten.common.data.TENItems.MOULD_GEAR.get()) || stack.is(com.modularmc.ten.common.data.TENItems.MOULD_PLATE.get()) || stack.is(com.modularmc.ten.common.data.TENItems.MOULD_ROD.get()) || stack.is(com.modularmc.ten.common.data.TENItems.MOULD_STRING.get());
+        if (slot == 0) {
+            return !mould;
+        }
+        if (slot == 1) {
+            return mould;
+        }
+        return false;
     }
 
     @Override

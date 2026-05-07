@@ -11,6 +11,7 @@ import java.util.function.BiPredicate;
 public class MachineItemHandler extends ItemStackHandler {
 
     private BiPredicate<Integer, ItemStack> validator;
+    private Runnable changeListener = () -> {};
 
     public MachineItemHandler(int slots) {
         super(slots);
@@ -22,8 +23,18 @@ public class MachineItemHandler extends ItemStackHandler {
         this.validator = validator;
     }
 
+    public void setChangeListener(Runnable changeListener) {
+        this.changeListener = changeListener != null ? changeListener : () -> {};
+    }
+
     @Override
     public boolean isItemValid(int slot, ItemStack stack) {
         return validator.test(slot, stack);
+    }
+
+    @Override
+    protected void onContentsChanged(int slot) {
+        super.onContentsChanged(slot);
+        changeListener.run();
     }
 }

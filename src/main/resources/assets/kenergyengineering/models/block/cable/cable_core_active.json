@@ -1,6 +1,6 @@
 {
 	"parent": "kenergyengineering:block/cable/ccoa",
 	"textures": {
-		"texture": "kenergyengineering:machine/cable"
+		"texture": "kenergyengineering:block/cable"
 	}
 }

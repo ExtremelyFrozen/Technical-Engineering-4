@@ -139,7 +139,9 @@ public class CmContainerMachine extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        if (pos == null) return true; // Client-side dummy container
-        return pos.closerThan(player.getOnPos(), 12);
+        if (player.level().isClientSide()) return true;
+        if (pos == null) return false;
+        return player.level().getBlockEntity(pos) == machine && player.distanceToSqr(
+                pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D) <= 64.0D;
     }
 }

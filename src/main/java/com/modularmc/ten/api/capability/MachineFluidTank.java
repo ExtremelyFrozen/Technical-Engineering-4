@@ -7,6 +7,8 @@ import java.util.function.Predicate;
 
 public class MachineFluidTank extends FluidTank {
 
+    private Runnable changeListener = () -> {};
+
     public MachineFluidTank(int capacity) {
         super(capacity);
     }
@@ -15,13 +17,25 @@ public class MachineFluidTank extends FluidTank {
         super(capacity, validator);
     }
 
+    public void setChangeListener(Runnable changeListener) {
+        this.changeListener = changeListener != null ? changeListener : () -> {};
+    }
+
     @Override
     public FluidStack drain(int maxDrain, FluidAction action) {
-        return super.drain(maxDrain, action);
+        FluidStack drained = super.drain(maxDrain, action);
+        if (!drained.isEmpty() && action.execute()) {
+            changeListener.run();
+        }
+        return drained;
     }
 
     @Override
     public int fill(FluidStack resource, FluidAction action) {
-        return super.fill(resource, action);
+        int filled = super.fill(resource, action);
+        if (filled > 0 && action.execute()) {
+            changeListener.run();
+        }
+        return filled;
     }
 }

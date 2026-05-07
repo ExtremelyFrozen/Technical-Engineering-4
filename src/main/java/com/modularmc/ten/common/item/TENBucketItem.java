@@ -13,6 +13,10 @@ public class TENBucketItem extends BucketItem {
         super(fluid, new Properties().stacksTo(1).craftRemainder(Items.BUCKET));
     }
 
+    public TENBucketItem(Fluid fluid, Properties properties) {
+        super(fluid, properties);
+    }
+
     @Override
     public String getDescriptionId() {
         return ComponentHelper.getKey(SafeOperationHelper.regNameOf(this));

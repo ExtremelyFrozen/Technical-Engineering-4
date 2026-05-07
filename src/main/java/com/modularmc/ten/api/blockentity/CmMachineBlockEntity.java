@@ -13,11 +13,13 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.Containers;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.energy.IEnergyStorage;
@@ -82,6 +84,9 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements Menu
 
     public int redstoneMode = RedstoneMode.OFF;
     private boolean active = false;
+    private int facing = Direction.NORTH.get3DDataValue();
+    private boolean machineInitialised = false;
+    private IFluidHandler combinedFluidHandler;
 
     public CmMachineBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
@@ -105,7 +110,12 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements Menu
     public void setCapacity(int energy) {
         initialEnergyStorage = energy;
         maxStorageEnergy = energy;
+        initialEnergyReceive = Math.max(energy / 200, 1);
+        maxReceiveEnergy = initialEnergyReceive;
+        initialEnergyExtract = Math.max(energy / 200, 1);
+        maxExtractEnergy = initialEnergyExtract;
         energyStorage = new MachineEnergyStorage(energy, Math.max(energy / 100, 1), Math.max(energy / 100, 1));
+        energyStorage.setChangeListener(this::markDirty);
     }
 
     public void setEfficiency(int eff) {
@@ -113,15 +123,61 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements Menu
     }
 
     public void initMachine() {
-        if (energyStorage == null) {
-            energyStorage = new MachineEnergyStorage(
-                    initialEnergyStorage > 0 ? initialEnergyStorage : 10000,
-                    maxReceiveEnergy > 0 ? maxReceiveEnergy : 100,
-                    maxExtractEnergy > 0 ? maxExtractEnergy : 100);
+        if (machineInitialised) return;
+        machineInitialised = true;
+
+        if (initialEnergyStorage <= 0) {
+            initialEnergyStorage = 10000;
+        }
+        if (initialEnergyReceive <= 0) {
+            initialEnergyReceive = Math.max(initialEnergyStorage / 200, 1);
+        }
+        if (initialEnergyExtract <= 0) {
+            initialEnergyExtract = Math.max(initialEnergyStorage / 200, 1);
+        }
+        if (maxStorageEnergy <= 0) {
+            maxStorageEnergy = initialEnergyStorage;
+        }
+        if (maxReceiveEnergy <= 0) {
+            maxReceiveEnergy = initialEnergyReceive;
+        }
+        if (maxExtractEnergy <= 0) {
+            maxExtractEnergy = initialEnergyExtract;
         }
         if (itemHandler == null) {
-            itemHandler = new MachineItemHandler(inventorySize());
+            itemHandler = new MachineItemHandler(inventorySize(), this::valid);
+        } else {
+            itemHandler.setValidator(this::valid);
         }
+        itemHandler.setChangeListener(this::markDirty);
+
+        if (energyStorage == null) {
+            energyStorage = new MachineEnergyStorage(maxStorageEnergy, maxReceiveEnergy, maxExtractEnergy);
+        }
+        energyStorage.setChangeListener(this::markDirty);
+
+        if (maxReceiveItem <= 0) {
+            maxReceiveItem = initialItemReceive > 0 ? initialItemReceive : 8;
+        }
+        if (maxExtractItem <= 0) {
+            maxExtractItem = initialItemExtract > 0 ? initialItemExtract : 8;
+        }
+        initialItemReceive = maxReceiveItem;
+        initialItemExtract = maxExtractItem;
+
+        if (maxReceiveFluid <= 0) {
+            maxReceiveFluid = initialFluidReceive > 0 ? initialFluidReceive : 100;
+        }
+        if (maxExtractFluid <= 0) {
+            maxExtractFluid = initialFluidExtract > 0 ? initialFluidExtract : 100;
+        }
+        initialFluidReceive = maxReceiveFluid;
+        initialFluidExtract = maxExtractFluid;
+
+        for (var tank : tanks) {
+            tank.setChangeListener(this::markDirty);
+        }
+        combinedFluidHandler = createCombinedFluidHandler();
     }
 
     public boolean hasUpgrade() {
@@ -146,7 +202,100 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements Menu
     }
 
     public void setActive(boolean a) {
+        if (active == a) return;
         active = a;
+        if (level != null) {
+            BlockState state = getBlockState();
+            if (state.hasProperty(com.modularmc.ten.common.block.machine.BaseMachineBlock.ACTIVE) && state.getValue(com.modularmc.ten.common.block.machine.BaseMachineBlock.ACTIVE) != a) {
+                level.setBlock(worldPosition,
+                        state.setValue(com.modularmc.ten.common.block.machine.BaseMachineBlock.ACTIVE, a), Block.UPDATE_ALL);
+            }
+        }
+        markDirty();
+    }
+
+    public void setFacing(Direction direction) {
+        if (direction == null) return;
+        int value = direction.get3DDataValue();
+        if (facing == value) return;
+        facing = value;
+        if (level != null) {
+            BlockState state = getBlockState();
+            if (state.hasProperty(com.modularmc.ten.common.block.machine.HorizontalMachineBlock.FACING) && direction.getAxis().isHorizontal()) {
+                level.setBlock(worldPosition,
+                        state.setValue(com.modularmc.ten.common.block.machine.HorizontalMachineBlock.FACING, direction),
+                        Block.UPDATE_ALL);
+            } else if (state.hasProperty(com.modularmc.ten.common.block.machine.DirectionalMachineBlock.FACING)) {
+                level.setBlock(worldPosition,
+                        state.setValue(com.modularmc.ten.common.block.machine.DirectionalMachineBlock.FACING, direction),
+                        Block.UPDATE_ALL);
+            }
+        }
+        markDirty();
+    }
+
+    public Direction getFacing() {
+        return Direction.from3DDataValue(facing);
+    }
+
+    public int initialFaceModeEnergy() {
+        return FaceOption.BOTH;
+    }
+
+    public int initialFaceModeItem() {
+        return FaceOption.BOTH;
+    }
+
+    public int initialFaceModeFluid() {
+        return FaceOption.BOTH;
+    }
+
+    public boolean hasFaceCapabilityEnergy(@Nullable Direction side) {
+        return true;
+    }
+
+    public boolean hasFaceCapabilityItem(@Nullable Direction side) {
+        return true;
+    }
+
+    public boolean hasFaceCapabilityFluid(@Nullable Direction side) {
+        return !tanks.isEmpty();
+    }
+
+    protected boolean canReceiveEnergy(@Nullable Direction side) {
+        if (!hasFaceCapabilityEnergy(side)) return false;
+        if (side == null) return true;
+        return FaceOption.isIn(energyFaceMode.getOrDefault(side, FaceOption.OFF)) || energyFaceMode.getOrDefault(side, FaceOption.OFF) == FaceOption.BOTH;
+    }
+
+    protected boolean canExtractEnergy(@Nullable Direction side) {
+        if (!hasFaceCapabilityEnergy(side)) return false;
+        if (side == null) return true;
+        return FaceOption.isOut(energyFaceMode.getOrDefault(side, FaceOption.OFF)) || energyFaceMode.getOrDefault(side, FaceOption.OFF) == FaceOption.BOTH;
+    }
+
+    protected boolean canReceiveItem(@Nullable Direction side) {
+        if (!hasFaceCapabilityItem(side)) return false;
+        if (side == null) return true;
+        return FaceOption.isIn(itemFaceMode.getOrDefault(side, FaceOption.OFF)) || itemFaceMode.getOrDefault(side, FaceOption.OFF) == FaceOption.BOTH;
+    }
+
+    protected boolean canExtractItem(@Nullable Direction side) {
+        if (!hasFaceCapabilityItem(side)) return false;
+        if (side == null) return true;
+        return FaceOption.isOut(itemFaceMode.getOrDefault(side, FaceOption.OFF)) || itemFaceMode.getOrDefault(side, FaceOption.OFF) == FaceOption.BOTH;
+    }
+
+    protected boolean canReceiveFluid(@Nullable Direction side) {
+        if (!hasFaceCapabilityFluid(side)) return false;
+        if (side == null) return true;
+        return FaceOption.isIn(fluidFaceMode.getOrDefault(side, FaceOption.OFF)) || fluidFaceMode.getOrDefault(side, FaceOption.OFF) == FaceOption.BOTH;
+    }
+
+    protected boolean canExtractFluid(@Nullable Direction side) {
+        if (!hasFaceCapabilityFluid(side)) return false;
+        if (side == null) return true;
+        return FaceOption.isOut(fluidFaceMode.getOrDefault(side, FaceOption.OFF)) || fluidFaceMode.getOrDefault(side, FaceOption.OFF) == FaceOption.BOTH;
     }
 
     public boolean signalAllowRun() {
@@ -160,16 +309,30 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements Menu
     }
 
     public boolean energyAllowRun() {
-        return energyStorage.getEnergyStored() >= efficientIn;
+        if (energyStorage == null) return false;
+        return switch (machineType()) {
+            case com.modularmc.ten.api.option.MachineType.GENERATOR, com.modularmc.ten.api.option.MachineType.ENGINE_SOLAR, com.modularmc.ten.api.option.MachineType.ENGINE_EXTRACTION, com.modularmc.ten.api.option.MachineType.ENGINE_METAL, com.modularmc.ten.api.option.MachineType.ENGINE_BIOMASS -> energyStorage.getEnergyStored() + getActualEfficiency() <= maxStorageEnergy;
+            default -> energyStorage.getEnergyStored() >= efficientIn;
+        };
     }
 
     public void doBaseData() {
         initMachine();
         if (energyStorage == null) return;
+        maxStorageEnergy = initialEnergyStorage;
+        maxReceiveEnergy = initialEnergyReceive;
+        maxExtractEnergy = initialEnergyExtract;
+        maxReceiveItem = initialItemReceive;
+        maxExtractItem = initialItemExtract;
+        maxReceiveFluid = initialFluidReceive;
+        maxExtractFluid = initialFluidExtract;
+
         energyStorage.setMaxReceive(maxReceiveEnergy);
         energyStorage.setMaxExtract(maxExtractEnergy);
 
+        data.set(PROGRESS, Math.max(data.get(PROGRESS), 0));
         data.set(MAX_ENERGY, maxStorageEnergy);
+        data.set(ENERGY, energyStorage.getEnergyStored());
         data.set(E_REC, maxReceiveEnergy);
         data.set(E_EXT, maxExtractEnergy);
         data.set(EFF, efficientIn);
@@ -177,9 +340,11 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements Menu
         data.set(I_EXT, maxExtractItem);
         data.set(F_REC, maxReceiveFluid);
         data.set(F_EXT, maxExtractFluid);
+        data.set(RED_MODE, redstoneMode);
+        data.set(FACE, facing);
 
-        if (data.get(ENERGY) > maxStorageEnergy) {
-            data.set(ENERGY, maxStorageEnergy);
+        if (energyStorage.getEnergyStored() > maxStorageEnergy) {
+            energyStorage.setEnergy(maxStorageEnergy);
         }
         data.set(EFF_AUC, efficientIn);
 
@@ -207,62 +372,127 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements Menu
 
     // Capability access
     public IEnergyStorage getEnergyStorage(@Nullable Direction side) {
-        return energyStorage;
+        if (energyStorage == null) return null;
+        return new IEnergyStorage() {
+
+            @Override
+            public int receiveEnergy(int maxReceive, boolean simulate) {
+                if (!signalAllowRun() || !canReceiveEnergy(side)) return 0;
+                return energyStorage.receiveEnergy(Math.min(maxReceive, maxReceiveEnergy), simulate);
+            }
+
+            @Override
+            public int extractEnergy(int maxExtract, boolean simulate) {
+                if (!signalAllowRun() || !canExtractEnergy(side)) return 0;
+                return energyStorage.extractEnergy(Math.min(maxExtract, maxExtractEnergy), simulate);
+            }
+
+            @Override
+            public int getEnergyStored() {
+                return signalAllowRun() || side == null ? energyStorage.getEnergyStored() : 0;
+            }
+
+            @Override
+            public int getMaxEnergyStored() {
+                return maxStorageEnergy;
+            }
+
+            @Override
+            public boolean canExtract() {
+                return canExtractEnergy(side);
+            }
+
+            @Override
+            public boolean canReceive() {
+                return canReceiveEnergy(side);
+            }
+        };
     }
 
     public IItemHandler getItemHandler(@Nullable Direction side) {
-        return itemHandler;
+        if (itemHandler == null) return null;
+        if (side == null) return itemHandler;
+        return new IItemHandler() {
+
+            @Override
+            public int getSlots() {
+                return itemHandler.getSlots();
+            }
+
+            @Override
+            public ItemStack getStackInSlot(int slot) {
+                return canExtractItem(side) ? itemHandler.getStackInSlot(slot) : ItemStack.EMPTY;
+            }
+
+            @Override
+            public ItemStack insertItem(int slot, ItemStack stack, boolean simulate) {
+                if (!signalAllowRun() || !canReceiveItem(side)) return stack;
+                if (!slotType(slot).canIn() || !valid(slot, stack)) return stack;
+                return itemHandler.insertItem(slot, stack, simulate);
+            }
+
+            @Override
+            public ItemStack extractItem(int slot, int amount, boolean simulate) {
+                if (!signalAllowRun() || !canExtractItem(side) || !slotType(slot).canOut()) return ItemStack.EMPTY;
+                return itemHandler.extractItem(slot, Math.min(amount, maxExtractItem), simulate);
+            }
+
+            @Override
+            public int getSlotLimit(int slot) {
+                return itemHandler.getSlotLimit(slot);
+            }
+
+            @Override
+            public boolean isItemValid(int slot, ItemStack stack) {
+                return slotType(slot).canIn() && valid(slot, stack) && itemHandler.isItemValid(slot, stack);
+            }
+        };
     }
 
     public IFluidHandler getFluidHandler(@Nullable Direction side) {
-        if (tanks.isEmpty()) return null;
-        return tanks.size() == 1 ? tanks.get(0) : new IFluidHandler() {
+        if (combinedFluidHandler == null && !tanks.isEmpty()) {
+            combinedFluidHandler = createCombinedFluidHandler();
+        }
+        if (combinedFluidHandler == null) return null;
+        if (side == null) return combinedFluidHandler;
+        return new IFluidHandler() {
 
             @Override
             public int getTanks() {
-                return tanks.size();
+                return combinedFluidHandler.getTanks();
             }
 
             @Override
             public FluidStack getFluidInTank(int tank) {
-                return tanks.get(tank).getFluid();
+                return canExtractFluid(side) ? combinedFluidHandler.getFluidInTank(tank) : FluidStack.EMPTY;
             }
 
             @Override
             public int getTankCapacity(int tank) {
-                return tanks.get(tank).getCapacity();
+                return combinedFluidHandler.getTankCapacity(tank);
             }
 
             @Override
             public boolean isFluidValid(int tank, FluidStack stack) {
-                return tanks.get(tank).isFluidValid(stack);
+                return tankType(tank).canIn() && valid(tank, stack) && combinedFluidHandler.isFluidValid(tank, stack);
             }
 
             @Override
             public int fill(FluidStack resource, FluidAction action) {
-                for (var t : tanks) {
-                    int f = t.fill(resource, action);
-                    if (f > 0) return f;
-                }
-                return 0;
+                if (!signalAllowRun() || !canReceiveFluid(side)) return 0;
+                return fillFluidRange(resource, action, true);
             }
 
             @Override
             public FluidStack drain(FluidStack resource, FluidAction action) {
-                for (var t : tanks) {
-                    var d = t.drain(resource.getAmount(), action);
-                    if (!d.isEmpty()) return d;
-                }
-                return FluidStack.EMPTY;
+                if (!signalAllowRun() || !canExtractFluid(side)) return FluidStack.EMPTY;
+                return drainFluid(resource, action);
             }
 
             @Override
             public FluidStack drain(int maxDrain, FluidAction action) {
-                for (var t : tanks) {
-                    var d = t.drain(maxDrain, action);
-                    if (!d.isEmpty()) return d;
-                }
-                return FluidStack.EMPTY;
+                if (!signalAllowRun() || !canExtractFluid(side)) return FluidStack.EMPTY;
+                return drainFluid(maxDrain, action);
             }
         };
     }
@@ -270,9 +500,22 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements Menu
     // NBT
     @Override
     protected void readTileData(CompoundTag tag, HolderLookup.Provider registries) {
+        initMachine();
         if (energyStorage != null) energyStorage.setEnergy(tag.getInt("energy"));
         if (itemHandler != null) itemHandler.deserializeNBT(registries, tag.getCompound("inventory"));
         redstoneMode = tag.getInt("redstone");
+        data.set(PROGRESS, tag.getInt("progress"));
+        data.set(MAX_PROGRESS, tag.getInt("max_progress"));
+        data.set(FUEL, tag.getInt("fuel"));
+        data.set(MAX_FUEL, tag.getInt("max_fuel"));
+        facing = tag.contains("face") ? tag.getInt("face") : getFacing().get3DDataValue();
+        active = tag.getBoolean("active");
+        for (Direction direction : Direction.values()) {
+            energyFaceMode.put(direction, tag.getInt("direEnergy" + direction.get3DDataValue()));
+            itemFaceMode.put(direction, tag.getInt("direItem" + direction.get3DDataValue()));
+            fluidFaceMode.put(direction, tag.getInt("direFluid" + direction.get3DDataValue()));
+        }
+        loadSerializedHandlers(tag, registries);
     }
 
     @Override
@@ -280,6 +523,18 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements Menu
         if (energyStorage != null) tag.putInt("energy", energyStorage.getEnergyStored());
         if (itemHandler != null) tag.put("inventory", itemHandler.serializeNBT(registries));
         tag.putInt("redstone", redstoneMode);
+        tag.putInt("progress", data.get(PROGRESS));
+        tag.putInt("max_progress", data.get(MAX_PROGRESS));
+        tag.putInt("fuel", data.get(FUEL));
+        tag.putInt("max_fuel", data.get(MAX_FUEL));
+        tag.putInt("face", facing);
+        tag.putBoolean("active", active);
+        for (Direction direction : Direction.values()) {
+            tag.putInt("direEnergy" + direction.get3DDataValue(), energyFaceMode.getOrDefault(direction, initialFaceModeEnergy()));
+            tag.putInt("direItem" + direction.get3DDataValue(), itemFaceMode.getOrDefault(direction, initialFaceModeItem()));
+            tag.putInt("direFluid" + direction.get3DDataValue(), fluidFaceMode.getOrDefault(direction, initialFaceModeFluid()));
+        }
+        saveSerializedHandlers(tag, registries);
     }
 
     // MenuProvider
@@ -290,6 +545,119 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements Menu
 
     @Override
     public AbstractContainerMenu createMenu(int id, Inventory inv, Player player) {
-        return null; // Will be implemented when container system is ported
+        return new com.modularmc.ten.client.gui.CmContainerMachine(
+                com.modularmc.ten.common.data.TENMenuTypes.MACHINE.get(), id, inv, this, worldPosition);
+    }
+
+    protected void loadSerializedHandlers(CompoundTag tag, HolderLookup.Provider registries) {
+        for (int i = 0; i < tanks.size(); i++) {
+            CompoundTag tankTag = tag.getCompound("tank" + i);
+            if (!tankTag.isEmpty()) {
+                tanks.get(i).readFromNBT(registries, tankTag);
+            }
+        }
+    }
+
+    protected void saveSerializedHandlers(CompoundTag tag, HolderLookup.Provider registries) {
+        for (int i = 0; i < tanks.size(); i++) {
+            tag.put("tank" + i, tanks.get(i).writeToNBT(registries, new CompoundTag()));
+        }
+    }
+
+    protected IFluidHandler createCombinedFluidHandler() {
+        return new IFluidHandler() {
+
+            @Override
+            public int getTanks() {
+                return tanks.size();
+            }
+
+            @Override
+            public FluidStack getFluidInTank(int tank) {
+                return tank >= 0 && tank < tanks.size() ? tanks.get(tank).getFluid() : FluidStack.EMPTY;
+            }
+
+            @Override
+            public int getTankCapacity(int tank) {
+                return tank >= 0 && tank < tanks.size() ? tanks.get(tank).getCapacity() : 0;
+            }
+
+            @Override
+            public boolean isFluidValid(int tank, FluidStack stack) {
+                return tank >= 0 && tank < tanks.size() && tankType(tank).canIn() && valid(tank, stack) && tanks.get(tank).isFluidValid(stack);
+            }
+
+            @Override
+            public int fill(FluidStack resource, FluidAction action) {
+                return fillFluidRange(resource, action, true);
+            }
+
+            @Override
+            public FluidStack drain(FluidStack resource, FluidAction action) {
+                return drainFluid(resource, action);
+            }
+
+            @Override
+            public FluidStack drain(int maxDrain, FluidAction action) {
+                return drainFluid(maxDrain, action);
+            }
+        };
+    }
+
+    protected int fillFluidRange(FluidStack resource, IFluidHandler.FluidAction action, boolean respectSlotType) {
+        FluidStack remaining = resource.copy();
+        for (int i = 0; i < tanks.size() && !remaining.isEmpty(); i++) {
+            if (respectSlotType && !tankType(i).canIn()) continue;
+            if (!valid(i, remaining)) continue;
+            int filled = tanks.get(i).fill(remaining, action);
+            remaining.shrink(filled);
+        }
+        return resource.getAmount() - remaining.getAmount();
+    }
+
+    protected FluidStack drainFluid(FluidStack resource, IFluidHandler.FluidAction action) {
+        FluidStack drained = FluidStack.EMPTY;
+        for (int i = 0; i < tanks.size(); i++) {
+            if (!tankType(i).canOut()) continue;
+            FluidStack current = tanks.get(i).getFluid();
+            if (current.isEmpty() || !current.is(resource.getFluid())) continue;
+            FluidStack piece = tanks.get(i).drain(resource.getAmount() - drained.getAmount(), action);
+            if (piece.isEmpty()) continue;
+            if (drained.isEmpty()) {
+                drained = piece.copy();
+            } else {
+                drained.grow(piece.getAmount());
+            }
+            if (drained.getAmount() >= resource.getAmount()) {
+                break;
+            }
+        }
+        return drained;
+    }
+
+    protected FluidStack drainFluid(int maxDrain, IFluidHandler.FluidAction action) {
+        FluidStack drained = FluidStack.EMPTY;
+        for (int i = 0; i < tanks.size(); i++) {
+            if (!tankType(i).canOut()) continue;
+            FluidStack piece = tanks.get(i).drain(maxDrain - drained.getAmount(), action);
+            if (piece.isEmpty()) continue;
+            if (drained.isEmpty()) {
+                drained = piece.copy();
+            } else if (drained.is(piece.getFluid())) {
+                drained.grow(piece.getAmount());
+            }
+            if (drained.getAmount() >= maxDrain) {
+                break;
+            }
+        }
+        return drained;
+    }
+
+    public void dropAllContents() {
+        if (level == null || itemHandler == null) return;
+        for (int i = 0; i < itemHandler.getSlots(); i++) {
+            Containers.dropItemStack(level, worldPosition.getX(), worldPosition.getY(), worldPosition.getZ(),
+                    itemHandler.getStackInSlot(i));
+        }
     }
 }

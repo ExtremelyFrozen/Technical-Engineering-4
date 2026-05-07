@@ -1,6 +1,6 @@
 {
 	"parent": "kenergyengineering:block/channel/channel",
 	"textures": {
-		"texture": "kenergyengineering:machine/channel/channel_fluid_active"
+		"texture": "kenergyengineering:block/channel_fluid_active"
 	}
 }
