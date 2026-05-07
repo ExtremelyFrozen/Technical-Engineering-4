@@ -3,9 +3,7 @@
 	"minVersion": "0.8",
 	"package": "com.modularmc.ten.core.mixin",
 	"compatibilityLevel": "JAVA_21",
-	"client": [
-		"dev.client.KeyboardHandlerMixin"
-	],
+	"client": ["dev.client.KeyboardHandlerMixin"],
 	"mixins": [],
 	"injectors": {
 		"defaultRequire": 1,

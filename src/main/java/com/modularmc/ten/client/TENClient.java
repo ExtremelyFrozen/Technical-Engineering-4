@@ -17,7 +17,5 @@ public class TENClient {
     }
 
     @SubscribeEvent
-    public static void onRegisterEntityRenderers(EntityRenderersEvent.RegisterRenderers event) {
-
-    }
+    public static void onRegisterEntityRenderers(EntityRenderersEvent.RegisterRenderers event) {}
 }

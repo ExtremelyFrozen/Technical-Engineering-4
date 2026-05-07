@@ -13,9 +13,6 @@ public class CommonProxy {
         modBus.register(CommonProxy.class);
     }
 
-
     @SubscribeEvent
-    public static void onRegister(RegisterEvent event) {
-
-    }
+    public static void onRegister(RegisterEvent event) {}
 }
