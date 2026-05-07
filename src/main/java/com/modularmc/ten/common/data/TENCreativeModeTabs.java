@@ -5,10 +5,13 @@ import com.modularmc.ten.TEN;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 
 import com.tterrag.registrate.util.entry.RegistryEntry;
 
+import static com.modularmc.ten.common.data.TENBlocks.MACHINE_SMELTER;
+import static com.modularmc.ten.common.data.TENBlocks.TIN_BLOCK;
+import static com.modularmc.ten.common.data.TENItems.MOULD_GEAR;
+import static com.modularmc.ten.common.data.TENItems.TIN_INGOT;
 import static com.modularmc.ten.common.registry.Registration.REGISTRATE;
 
 public class TENCreativeModeTabs {
@@ -21,7 +24,7 @@ public class TENCreativeModeTabs {
     static {
         BLOCK_TAB = REGISTRATE
                 .defaultCreativeTab("block",
-                        builder -> builder.icon(() -> new ItemStack(Items.STONE))
+                        builder -> builder.icon(TIN_BLOCK::asStack)
                                 .title(REGISTRATE.addLang("itemGroup", TEN.id("block"), "Technical Engineering - Blocks"))
                                 .displayItems((params, output) -> {
                                     var tab = BLOCK_TAB;
@@ -38,7 +41,7 @@ public class TENCreativeModeTabs {
 
         MACHINE_TAB = REGISTRATE
                 .defaultCreativeTab("machine",
-                        builder -> builder.icon(() -> new ItemStack(Items.FURNACE))
+                        builder -> builder.icon(MACHINE_SMELTER::asStack)
                                 .title(REGISTRATE.addLang("itemGroup", TEN.id("machine"), "Technical Engineering - Machines"))
                                 .displayItems((params, output) -> {
                                     var tab = MACHINE_TAB;
@@ -55,7 +58,7 @@ public class TENCreativeModeTabs {
 
         ITEM_TAB = REGISTRATE
                 .defaultCreativeTab("item",
-                        builder -> builder.icon(() -> new ItemStack(Items.IRON_INGOT))
+                        builder -> builder.icon(TIN_INGOT::asStack)
                                 .title(REGISTRATE.addLang("itemGroup", TEN.id("item"), "Technical Engineering - Items"))
                                 .displayItems((params, output) -> {
                                     var tab = ITEM_TAB;
@@ -72,7 +75,7 @@ public class TENCreativeModeTabs {
 
         TOOL_TAB = REGISTRATE
                 .defaultCreativeTab("tool",
-                        builder -> builder.icon(() -> new ItemStack(Items.IRON_PICKAXE))
+                        builder -> builder.icon(MOULD_GEAR::asStack)
                                 .title(REGISTRATE.addLang("itemGroup", TEN.id("tool"), "Technical Engineering - Tools"))
                                 .displayItems((params, output) -> {
                                     var tab = TOOL_TAB;
