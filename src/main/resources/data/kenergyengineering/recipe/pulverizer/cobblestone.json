@@ -1,19 +1,19 @@
 {
-  "type": "kenergyengineering:pulverizer",
-  "inputs": [
-    {
-      "form": "item",
-      "type": "tag",
-      "key": "c:stones"
-    }
-  ],
-  "outputs": [
-    {
-      "form": "item",
-      "type": "static",
-      "key": "minecraft:cobblestone",
-      "count": 1
-    }
-  ],
-  "time": 120
+	"type": "kenergyengineering:pulverizer",
+	"inputs": [
+		{
+			"form": "item",
+			"type": "tag",
+			"key": "c:stones"
+		}
+	],
+	"outputs": [
+		{
+			"form": "item",
+			"type": "static",
+			"key": "minecraft:cobblestone",
+			"count": 1
+		}
+	],
+	"time": 120
 }

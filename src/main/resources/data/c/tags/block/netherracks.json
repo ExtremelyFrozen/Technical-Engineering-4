@@ -1,6 +1,4 @@
 {
 	"replace": false,
-	"values": [
-		"minecraft:netherrack"
-	]
+	"values": ["minecraft:netherrack"]
 }

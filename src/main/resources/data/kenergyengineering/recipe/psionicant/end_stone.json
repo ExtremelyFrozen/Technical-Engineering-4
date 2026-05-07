@@ -1,26 +1,26 @@
 {
-  "type": "kenergyengineering:psionicant",
-  "inputs": [
-    {
-      "form": "item",
-      "type": "tag",
-      "key": "c:stones",
-      "count": 1
-    },
-    {
-      "form": "item",
-      "type": "static",
-      "key": "minecraft:chorus_fruit",
-      "count": 1
-    }
-  ],
-  "outputs": [
-    {
-      "form": "item",
-      "type": "static",
-      "key": "minecraft:end_stone",
-      "count": 1
-    }
-  ],
-  "time": 100
+	"type": "kenergyengineering:psionicant",
+	"inputs": [
+		{
+			"form": "item",
+			"type": "tag",
+			"key": "c:stones",
+			"count": 1
+		},
+		{
+			"form": "item",
+			"type": "static",
+			"key": "minecraft:chorus_fruit",
+			"count": 1
+		}
+	],
+	"outputs": [
+		{
+			"form": "item",
+			"type": "static",
+			"key": "minecraft:end_stone",
+			"count": 1
+		}
+	],
+	"time": 100
 }

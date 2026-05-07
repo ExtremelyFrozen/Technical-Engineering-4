@@ -1,26 +1,26 @@
 {
-  "type": "kenergyengineering:psionicant",
-  "inputs": [
-    {
-      "form": "item",
-      "type": "tag",
-      "key": "c:stones",
-      "count": 1
-    },
-    {
-      "form": "item",
-      "type": "tag",
-      "key": "c:dyes/black",
-      "count": 1
-    }
-  ],
-  "outputs": [
-    {
-      "form": "item",
-      "type": "static",
-      "key": "minecraft:obsidian",
-      "count": 1
-    }
-  ],
-  "time": 200
+	"type": "kenergyengineering:psionicant",
+	"inputs": [
+		{
+			"form": "item",
+			"type": "tag",
+			"key": "c:stones",
+			"count": 1
+		},
+		{
+			"form": "item",
+			"type": "tag",
+			"key": "c:dyes/black",
+			"count": 1
+		}
+	],
+	"outputs": [
+		{
+			"form": "item",
+			"type": "static",
+			"key": "minecraft:obsidian",
+			"count": 1
+		}
+	],
+	"time": 200
 }

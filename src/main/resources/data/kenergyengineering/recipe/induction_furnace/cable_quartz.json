@@ -1,23 +1,23 @@
 {
-  "type": "kenergyengineering:induction_furnace",
-  "inputs": [
-    {
-      "form": "item",
-      "type": "static",
-      "key": "minecraft:quartz"
-    },
-    {
-      "form": "item",
-      "type": "static",
-      "key": "kenergyengineering:cable"
-    }
-  ],
-  "outputs": [
-    {
-      "form": "item",
-      "type": "static",
-      "key": "kenergyengineering:cable_quartz"
-    }
-  ],
-  "time": 50
+	"type": "kenergyengineering:induction_furnace",
+	"inputs": [
+		{
+			"form": "item",
+			"type": "static",
+			"key": "minecraft:quartz"
+		},
+		{
+			"form": "item",
+			"type": "static",
+			"key": "kenergyengineering:cable"
+		}
+	],
+	"outputs": [
+		{
+			"form": "item",
+			"type": "static",
+			"key": "kenergyengineering:cable_quartz"
+		}
+	],
+	"time": 50
 }

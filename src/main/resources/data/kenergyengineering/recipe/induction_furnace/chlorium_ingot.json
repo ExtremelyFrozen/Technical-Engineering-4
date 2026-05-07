@@ -1,31 +1,31 @@
 {
-  "type": "kenergyengineering:induction_furnace",
-  "inputs": [
-    {
-      "form": "item",
-      "type": "tag",
-      "key": "kenergyengineering:mats/powered_tin",
-      "count": 2
-    },
-    {
-      "form": "item",
-      "type": "tag",
-      "key": "kenergyengineering:mats/nickel"
-    },
-    {
-      "form": "item",
-      "type": "static",
-      "key": "minecraft:glowstone_dust",
-      "count": 2
-    }
-  ],
-  "outputs": [
-    {
-      "form": "item",
-      "type": "static",
-      "key": "kenergyengineering:chlorium_ingot",
-      "count": 3
-    }
-  ],
-  "time": 300
+	"type": "kenergyengineering:induction_furnace",
+	"inputs": [
+		{
+			"form": "item",
+			"type": "tag",
+			"key": "kenergyengineering:mats/powered_tin",
+			"count": 2
+		},
+		{
+			"form": "item",
+			"type": "tag",
+			"key": "kenergyengineering:mats/nickel"
+		},
+		{
+			"form": "item",
+			"type": "static",
+			"key": "minecraft:glowstone_dust",
+			"count": 2
+		}
+	],
+	"outputs": [
+		{
+			"form": "item",
+			"type": "static",
+			"key": "kenergyengineering:chlorium_ingot",
+			"count": 3
+		}
+	],
+	"time": 300
 }

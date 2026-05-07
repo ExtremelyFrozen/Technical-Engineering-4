@@ -1,24 +1,24 @@
 {
-  "type": "kenergyengineering:compressor",
-  "inputs": [
-    {
-      "form": "item",
-      "type": "tag",
-      "key": "c:ingots/gold",
-      "count": 4
-    },
-    {
-      "form": "item",
-      "type": "static",
-      "key": "kenergyengineering:mould_gear"
-    }
-  ],
-  "outputs": [
-    {
-      "form": "item",
-      "type": "static",
-      "key": "kenergyengineering:gold_gear"
-    }
-  ],
-  "time": 100
+	"type": "kenergyengineering:compressor",
+	"inputs": [
+		{
+			"form": "item",
+			"type": "tag",
+			"key": "c:ingots/gold",
+			"count": 4
+		},
+		{
+			"form": "item",
+			"type": "static",
+			"key": "kenergyengineering:mould_gear"
+		}
+	],
+	"outputs": [
+		{
+			"form": "item",
+			"type": "static",
+			"key": "kenergyengineering:gold_gear"
+		}
+	],
+	"time": 100
 }

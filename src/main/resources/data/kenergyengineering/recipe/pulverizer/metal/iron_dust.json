@@ -1,19 +1,19 @@
 {
-  "type": "kenergyengineering:pulverizer",
-  "inputs": [
-    {
-      "form": "item",
-      "type": "tag",
-      "key": "c:ingots/iron"
-    }
-  ],
-  "outputs": [
-    {
-      "form": "item",
-      "type": "static",
-      "key": "kenergyengineering:iron_dust",
-      "count": 1
-    }
-  ],
-  "time": 100
+	"type": "kenergyengineering:pulverizer",
+	"inputs": [
+		{
+			"form": "item",
+			"type": "tag",
+			"key": "c:ingots/iron"
+		}
+	],
+	"outputs": [
+		{
+			"form": "item",
+			"type": "static",
+			"key": "kenergyengineering:iron_dust",
+			"count": 1
+		}
+	],
+	"time": 100
 }

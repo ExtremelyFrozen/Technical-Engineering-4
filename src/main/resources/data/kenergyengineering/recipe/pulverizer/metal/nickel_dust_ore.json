@@ -1,26 +1,26 @@
 {
-  "type": "kenergyengineering:pulverizer",
-  "inputs": [
-    {
-      "form": "item",
-      "type": "tag",
-      "key": "c:ores/nickel"
-    }
-  ],
-  "outputs": [
-    {
-      "form": "item",
-      "type": "static",
-      "key": "kenergyengineering:nickel_dust",
-      "count": 2
-    },
-    {
-      "form": "item",
-      "type": "static",
-      "key": "minecraft:gravel",
-      "count": 1,
-      "chance": 0.2
-    }
-  ],
-  "time": 180
+	"type": "kenergyengineering:pulverizer",
+	"inputs": [
+		{
+			"form": "item",
+			"type": "tag",
+			"key": "c:ores/nickel"
+		}
+	],
+	"outputs": [
+		{
+			"form": "item",
+			"type": "static",
+			"key": "kenergyengineering:nickel_dust",
+			"count": 2
+		},
+		{
+			"form": "item",
+			"type": "static",
+			"key": "minecraft:gravel",
+			"count": 1,
+			"chance": 0.2
+		}
+	],
+	"time": 180
 }

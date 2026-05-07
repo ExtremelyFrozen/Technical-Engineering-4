@@ -1,19 +1,19 @@
 {
-  "type": "kenergyengineering:pulverizer",
-  "inputs": [
-    {
-      "form": "item",
-      "type": "static",
-      "key": "minecraft:red_sandstone"
-    }
-  ],
-  "outputs": [
-    {
-      "form": "item",
-      "type": "static",
-      "key": "minecraft:red_sand",
-      "count": 1
-    }
-  ],
-  "time": 120
+	"type": "kenergyengineering:pulverizer",
+	"inputs": [
+		{
+			"form": "item",
+			"type": "static",
+			"key": "minecraft:red_sandstone"
+		}
+	],
+	"outputs": [
+		{
+			"form": "item",
+			"type": "static",
+			"key": "minecraft:red_sand",
+			"count": 1
+		}
+	],
+	"time": 120
 }

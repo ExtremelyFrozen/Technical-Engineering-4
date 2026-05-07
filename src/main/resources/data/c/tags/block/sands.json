@@ -1,7 +1,4 @@
 {
 	"replace": false,
-	"values": [
-		"minecraft:sand",
-		"minecraft:red_sand"
-	]
+	"values": ["minecraft:sand", "minecraft:red_sand"]
 }

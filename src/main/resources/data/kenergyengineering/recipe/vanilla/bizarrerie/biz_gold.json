@@ -1,17 +1,13 @@
 {
-  "type": "minecraft:crafting_shaped",
-  "pattern": [
-    "AAA",
-    "   ",
-    "AAA"
-  ],
-  "key": {
-    "A": {
-      "item": "kenergyengineering:bizarrerie"
-    }
-  },
-  "result": {
-    "id": "minecraft:gold_ingot",
-    "count": 4
-  }
+	"type": "minecraft:crafting_shaped",
+	"pattern": ["AAA", "   ", "AAA"],
+	"key": {
+		"A": {
+			"item": "kenergyengineering:bizarrerie"
+		}
+	},
+	"result": {
+		"id": "minecraft:gold_ingot",
+		"count": 4
+	}
 }

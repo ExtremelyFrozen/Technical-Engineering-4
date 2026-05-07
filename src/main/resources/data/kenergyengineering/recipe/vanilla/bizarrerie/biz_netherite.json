@@ -1,16 +1,12 @@
 {
-  "type": "minecraft:crafting_shaped",
-  "pattern": [
-    "AAA",
-    "A A",
-    "AAA"
-  ],
-  "key": {
-    "A": {
-      "item": "kenergyengineering:bizarrerie"
-    }
-  },
-  "result": {
-    "id": "minecraft:netherite_scrap"
-  }
+	"type": "minecraft:crafting_shaped",
+	"pattern": ["AAA", "A A", "AAA"],
+	"key": {
+		"A": {
+			"item": "kenergyengineering:bizarrerie"
+		}
+	},
+	"result": {
+		"id": "minecraft:netherite_scrap"
+	}
 }

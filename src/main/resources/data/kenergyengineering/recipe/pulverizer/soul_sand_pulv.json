@@ -1,19 +1,19 @@
 {
-  "type": "kenergyengineering:pulverizer",
-  "inputs": [
-    {
-      "form": "item",
-      "type": "tag",
-      "key": "c:netherracks"
-    }
-  ],
-  "outputs": [
-    {
-      "form": "item",
-      "type": "static",
-      "key": "minecraft:soul_sand",
-      "count": 1
-    }
-  ],
-  "time": 120
+	"type": "kenergyengineering:pulverizer",
+	"inputs": [
+		{
+			"form": "item",
+			"type": "tag",
+			"key": "c:netherracks"
+		}
+	],
+	"outputs": [
+		{
+			"form": "item",
+			"type": "static",
+			"key": "minecraft:soul_sand",
+			"count": 1
+		}
+	],
+	"time": 120
 }

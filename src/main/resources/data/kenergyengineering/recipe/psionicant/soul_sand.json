@@ -1,26 +1,26 @@
 {
-  "type": "kenergyengineering:psionicant",
-  "inputs": [
-    {
-      "form": "item",
-      "type": "tag",
-      "key": "c:sands",
-      "count": 1
-    },
-    {
-      "form": "item",
-      "type": "static",
-      "key": "minecraft:nether_wart",
-      "count": 1
-    }
-  ],
-  "outputs": [
-    {
-      "form": "item",
-      "type": "static",
-      "key": "minecraft:soul_sand",
-      "count": 1
-    }
-  ],
-  "time": 100
+	"type": "kenergyengineering:psionicant",
+	"inputs": [
+		{
+			"form": "item",
+			"type": "tag",
+			"key": "c:sands",
+			"count": 1
+		},
+		{
+			"form": "item",
+			"type": "static",
+			"key": "minecraft:nether_wart",
+			"count": 1
+		}
+	],
+	"outputs": [
+		{
+			"form": "item",
+			"type": "static",
+			"key": "minecraft:soul_sand",
+			"count": 1
+		}
+	],
+	"time": 100
 }

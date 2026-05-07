@@ -1,6 +1,4 @@
 {
 	"replace": false,
-	"values": [
-		"minecraft:raw_gold"
-	]
+	"values": ["minecraft:raw_gold"]
 }
