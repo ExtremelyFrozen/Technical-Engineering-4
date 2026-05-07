@@ -1,0 +1,12 @@
+{
+	"type": "minecraft:crafting_shaped",
+	"pattern": ["A A", "A A", "A A"],
+	"key": {
+		"A": {
+			"tag": "c:ingots/tin"
+		}
+	},
+	"result": {
+		"id": "kenergyengineering:mould_rod"
+	}
+}

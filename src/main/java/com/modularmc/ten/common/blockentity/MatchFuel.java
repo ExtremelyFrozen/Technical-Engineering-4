@@ -32,9 +32,9 @@ public class MatchFuel {
     public static int matchMetal(ItemStack stack, boolean simulate) {
         if (stack.isEmpty()) return 0;
         int time = 0;
-        boolean cn = TagHelper.containsItem(stack.getItem(), TagHelper.keyItem("technicalengineering:common_ingots"));
-        boolean uc = TagHelper.containsItem(stack.getItem(), TagHelper.keyItem("technicalengineering:uncommon_ingots"));
-        boolean vc = TagHelper.containsItem(stack.getItem(), TagHelper.keyItem("technicalengineering:valuable_ingots"));
+        boolean cn = TagHelper.containsItem(stack.getItem(), TagHelper.keyItem("kenergyengineering:common_ingots"));
+        boolean uc = TagHelper.containsItem(stack.getItem(), TagHelper.keyItem("kenergyengineering:uncommon_ingots"));
+        boolean vc = TagHelper.containsItem(stack.getItem(), TagHelper.keyItem("kenergyengineering:valuable_ingots"));
         if (cn) time = 1000;
         else if (uc) time = 1500;
         else if (vc) time = 6400;

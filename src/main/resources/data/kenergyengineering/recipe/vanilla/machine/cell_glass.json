@@ -1,0 +1,18 @@
+{
+	"type": "minecraft:crafting_shaped",
+	"pattern": ["ABA", "CCC", "ABA"],
+	"key": {
+		"A": {
+			"tag": "c:glass_blocks/colorless"
+		},
+		"B": {
+			"item": "minecraft:redstone"
+		},
+		"C": {
+			"item": "kenergyengineering:redstone_storer"
+		}
+	},
+	"result": {
+		"id": "kenergyengineering:cell"
+	}
+}

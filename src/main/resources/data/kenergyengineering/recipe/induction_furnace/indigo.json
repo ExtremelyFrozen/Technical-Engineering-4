@@ -1,0 +1,24 @@
+{
+  "type": "kenergyengineering:induction_furnace",
+  "inputs": [
+    {
+      "form": "item",
+      "type": "tag",
+      "key": "c:gems/lapis",
+      "count": 2
+    },
+    {
+      "form": "item",
+      "type": "static",
+      "key": "minecraft:amethyst_shard"
+    }
+  ],
+  "outputs": [
+    {
+      "form": "item",
+      "type": "static",
+      "key": "kenergyengineering:indigo"
+    }
+  ],
+  "time": 100
+}

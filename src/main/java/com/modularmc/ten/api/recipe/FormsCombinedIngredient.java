@@ -41,6 +41,18 @@ public class FormsCombinedIngredient {
         return amountOrCount;
     }
 
+    public String type() {
+        return type;
+    }
+
+    public String form() {
+        return form;
+    }
+
+    public ResourceLocation key() {
+        return key;
+    }
+
     public List<ItemStack> itemStacks() {
         if (ALLOW_ALL) return List.of(ItemStack.EMPTY);
         return matchItems.stream().map(i -> new ItemStack(i, amountOrCount)).toList();

@@ -1,0 +1,21 @@
+{
+	"type": "minecraft:crafting_shaped",
+	"pattern": ["EBE", "DAD", "EBE"],
+	"key": {
+		"A": {
+			"item": "minecraft:redstone"
+		},
+		"B": {
+			"tag": "c:gears/copper"
+		},
+		"D": {
+			"tag": "c:glass_blocks/colorless"
+		},
+		"E": {
+			"tag": "c:ingots/iron"
+		}
+	},
+	"result": {
+		"id": "kenergyengineering:augmented_levelup"
+	}
+}

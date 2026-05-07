@@ -31,7 +31,7 @@ public class TENFluids {
         return REGISTRATE
                 .fluid(name, still, flowing)
                 .properties(p -> p
-                        .descriptionId("technicalengineering." + name)
+                        .descriptionId("fluid." + TEN.MOD_ID + "." + name)
                         .density(density)
                         .lightLevel(light)
                         .temperature(temperature)

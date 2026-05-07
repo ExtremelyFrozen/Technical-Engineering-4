@@ -33,22 +33,22 @@ public class ElementBarEnergy extends ElementImage {
 
     @Override
     public void addToolTip(List<Component> tooltips) {
-        tooltipList.add(ComponentHelper.translated(ComponentHelper.GOLD, "technicalengineering.info.bar_energy"));
-        tooltipList.add(ComponentHelper.translated("technicalengineering.info.bar_energy_fact"));
+        tooltipList.add(ComponentHelper.translated(ComponentHelper.GOLD, "kenergyengineering.info.bar_energy"));
+        tooltipList.add(ComponentHelper.translated("kenergyengineering.info.bar_energy_fact"));
         tooltipList.add(ComponentHelper.translated(ComponentHelper.RED, Math.abs(mxe) + " FE/t"));
-        tooltipList.add(ComponentHelper.translated("technicalengineering.info.bar_energy_max"));
+        tooltipList.add(ComponentHelper.translated("kenergyengineering.info.bar_energy_max"));
         tooltipList.add(ComponentHelper.translated(ComponentHelper.RED, auc + " FE/t"));
-        tooltipList.add(ComponentHelper.translated("technicalengineering.info.bar_energy_in_max"));
+        tooltipList.add(ComponentHelper.translated("kenergyengineering.info.bar_energy_in_max"));
         tooltipList.add(ComponentHelper.translated(ComponentHelper.RED, eneI + " FE/t"));
-        tooltipList.add(ComponentHelper.translated("technicalengineering.info.bar_energy_out_max"));
+        tooltipList.add(ComponentHelper.translated("kenergyengineering.info.bar_energy_out_max"));
         tooltipList.add(ComponentHelper.translated(ComponentHelper.RED, eneO + " FE/t"));
-        tooltipList.add(ComponentHelper.translated("technicalengineering.info.bar_item_in_max"));
+        tooltipList.add(ComponentHelper.translated("kenergyengineering.info.bar_item_in_max"));
         tooltipList.add(ComponentHelper.translated(ComponentHelper.RED, itmI + " IS/t"));
-        tooltipList.add(ComponentHelper.translated("technicalengineering.info.bar_item_out_max"));
+        tooltipList.add(ComponentHelper.translated("kenergyengineering.info.bar_item_out_max"));
         tooltipList.add(ComponentHelper.translated(ComponentHelper.RED, itmO + " IS/t"));
-        tooltipList.add(ComponentHelper.translated("technicalengineering.info.bar_fluid_in_max"));
+        tooltipList.add(ComponentHelper.translated("kenergyengineering.info.bar_fluid_in_max"));
         tooltipList.add(ComponentHelper.translated(ComponentHelper.RED, fluI + " mB/t"));
-        tooltipList.add(ComponentHelper.translated("technicalengineering.info.bar_fluid_out_max"));
+        tooltipList.add(ComponentHelper.translated("kenergyengineering.info.bar_fluid_out_max"));
         tooltipList.add(ComponentHelper.translated(ComponentHelper.RED, fluO + " mB/t"));
         tooltips.addAll(tooltipList);
         tooltipList.clear();

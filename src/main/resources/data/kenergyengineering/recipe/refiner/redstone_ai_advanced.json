@@ -1,0 +1,25 @@
+{
+  "type": "kenergyengineering:refiner",
+  "inputs": [
+    {
+      "form": "item",
+      "type": "static",
+      "key": "kenergyengineering:redstone_ai"
+    },
+    {
+      "form": "fluid",
+      "type": "static",
+      "key": "kenergyengineering:liquid_bizarrerie",
+      "amount": 20
+    }
+  ],
+  "outputs": [
+    {
+      "form": "item",
+      "type": "static",
+      "key": "kenergyengineering:redstone_ai_advanced",
+      "count": 1
+    }
+  ],
+  "time": 200
+}

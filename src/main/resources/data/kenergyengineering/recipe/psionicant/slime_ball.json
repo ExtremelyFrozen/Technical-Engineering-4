@@ -1,0 +1,26 @@
+{
+  "type": "kenergyengineering:psionicant",
+  "inputs": [
+    {
+      "form": "item",
+      "type": "static",
+      "key": "minecraft:clay",
+      "count": 1
+    },
+    {
+      "form": "item",
+      "type": "tag",
+      "key": "c:dyes/lime",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "form": "item",
+      "type": "static",
+      "key": "minecraft:slime_ball",
+      "count": 1
+    }
+  ],
+  "time": 200
+}

@@ -1,0 +1,21 @@
+{
+	"type": "minecraft:crafting_shaped",
+	"pattern": ["EBE", "DAD", "EBE"],
+	"key": {
+		"A": {
+			"item": "kenergyengineering:augmented_levelup"
+		},
+		"B": {
+			"tag": "c:gears/tin"
+		},
+		"D": {
+			"tag": "c:glass_blocks/colorless"
+		},
+		"E": {
+			"item": "kenergyengineering:azure_glass"
+		}
+	},
+	"result": {
+		"id": "kenergyengineering:powered_levelup"
+	}
+}

@@ -1,0 +1,19 @@
+{
+  "type": "kenergyengineering:pulverizer",
+  "inputs": [
+    {
+      "form": "item",
+      "type": "static",
+      "key": "minecraft:sandstone"
+    }
+  ],
+  "outputs": [
+    {
+      "form": "item",
+      "type": "static",
+      "key": "minecraft:sand",
+      "count": 1
+    }
+  ],
+  "time": 120
+}

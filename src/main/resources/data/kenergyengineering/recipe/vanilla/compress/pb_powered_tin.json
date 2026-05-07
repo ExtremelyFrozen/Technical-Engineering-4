@@ -1,0 +1,12 @@
+{
+	"type": "minecraft:crafting_shaped",
+	"pattern": ["CCC", "CCC", "CCC"],
+	"key": {
+		"C": {
+			"tag": "c:ingots/powered_tin"
+		}
+	},
+	"result": {
+		"id": "kenergyengineering:powered_tin_block"
+	}
+}

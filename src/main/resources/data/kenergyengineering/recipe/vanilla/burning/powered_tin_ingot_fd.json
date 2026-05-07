@@ -1,0 +1,11 @@
+{
+	"type": "minecraft:smelting",
+	"ingredient": {
+		"item": "kenergyengineering:powered_tin_dust"
+	},
+	"result": {
+		"id": "kenergyengineering:powered_tin_ingot"
+	},
+	"experience": 0,
+	"cookingtime": 200
+}

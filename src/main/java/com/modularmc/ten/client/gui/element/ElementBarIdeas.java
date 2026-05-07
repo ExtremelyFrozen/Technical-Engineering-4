@@ -14,9 +14,9 @@ public class ElementBarIdeas extends ElementImage {
 
     public ElementBarIdeas(int xr, int y, int w, int h, int xOff, int yOff, ResourceLocation rl, String key) {
         super(xr, y, w, h, xOff, yOff, rl);
-        list.add(ComponentHelper.translated(ComponentHelper.GOLD, "technicalengineering.info.bar_ideas"));
+        list.add(ComponentHelper.translated(ComponentHelper.GOLD, "kenergyengineering.info.bar_ideas"));
         for (int i = 0; true; i++) {
-            String k = "technicalengineering.info." + ComponentHelper.exceptMachineOrGiveCell(key) + "." + i;
+            String k = "kenergyengineering.info." + ComponentHelper.exceptMachineOrGiveCell(key) + "." + i;
             Component ttc = ComponentHelper.translated(k);
             if (ttc.getString().equals(k)) break;
             list.add(ttc);

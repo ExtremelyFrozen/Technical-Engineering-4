@@ -1,0 +1,21 @@
+{
+	"type": "minecraft:crafting_shaped",
+	"pattern": [" B ", "DAD", " C "],
+	"key": {
+		"A": {
+			"item": "minecraft:lava_bucket"
+		},
+		"B": {
+			"tag": "c:gears/copper"
+		},
+		"C": {
+			"item": "minecraft:blaze_rod"
+		},
+		"D": {
+			"tag": "c:stones"
+		}
+	},
+	"result": {
+		"id": "kenergyengineering:blast_levelup"
+	}
+}

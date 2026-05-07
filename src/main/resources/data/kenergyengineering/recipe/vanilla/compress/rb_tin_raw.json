@@ -1,0 +1,12 @@
+{
+	"type": "minecraft:crafting_shapeless",
+	"ingredients": [
+		{
+			"item": "kenergyengineering:raw_tin_block"
+		}
+	],
+	"result": {
+		"id": "kenergyengineering:raw_tin",
+		"count": 9
+	}
+}

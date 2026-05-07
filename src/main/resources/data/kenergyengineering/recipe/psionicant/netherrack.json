@@ -1,0 +1,26 @@
+{
+  "type": "kenergyengineering:psionicant",
+  "inputs": [
+    {
+      "form": "item",
+      "type": "tag",
+      "key": "c:stones",
+      "count": 1
+    },
+    {
+      "form": "item",
+      "type": "static",
+      "key": "minecraft:nether_wart",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "form": "item",
+      "type": "static",
+      "key": "minecraft:netherrack",
+      "count": 1
+    }
+  ],
+  "time": 100
+}

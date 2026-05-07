@@ -1,0 +1,24 @@
+{
+	"type": "minecraft:crafting_shaped",
+	"pattern": ["BDB", "ACA", "BVB"],
+	"key": {
+		"A": {
+			"item": "minecraft:bricks"
+		},
+		"B": {
+			"tag": "c:plates/iron"
+		},
+		"C": {
+			"item": "kenergyengineering:redstone_storer"
+		},
+		"V": {
+			"item": "kenergyengineering:redstone_ai"
+		},
+		"D": {
+			"item": "minecraft:bucket"
+		}
+	},
+	"result": {
+		"id": "kenergyengineering:machine_induction_furnace"
+	}
+}

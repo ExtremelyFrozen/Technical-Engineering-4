@@ -1,0 +1,21 @@
+{
+	"type": "minecraft:crafting_shapeless",
+	"ingredients": [
+		{
+			"tag": "c:dusts/tin"
+		},
+		{
+			"tag": "c:dusts/copper"
+		},
+		{
+			"item": "minecraft:redstone"
+		},
+		{
+			"item": "minecraft:redstone"
+		}
+	],
+	"result": {
+		"id": "kenergyengineering:powered_tin_dust",
+		"count": 2
+	}
+}

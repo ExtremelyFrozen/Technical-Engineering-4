@@ -16,7 +16,7 @@ public class ElementButtonSlot extends ElementButton {
     @Override
     public void addToolTip(List<Component> tooltips) {
         if (!state) {
-            tooltips.add(ComponentHelper.translated(ComponentHelper.RED, "technicalengineering.locked_slot"));
+            tooltips.add(ComponentHelper.translated(ComponentHelper.RED, "kenergyengineering.locked_slot"));
         }
     }
 }

@@ -43,7 +43,7 @@ public class TENBaseItem extends Item {
         if (shift()) {
             tooltip.addAll(list);
         } else if (!list.isEmpty()) {
-            tooltip.add(ComponentHelper.translated(ComponentHelper.GOLD, "technicalengineering.shift"));
+            tooltip.add(ComponentHelper.translated(ComponentHelper.GOLD, ComponentHelper.getKey("shift")));
         }
     }
 

@@ -1,0 +1,24 @@
+{
+  "type": "kenergyengineering:refiner",
+  "inputs": [
+    {
+      "form": "fluid",
+      "type": "static",
+      "key": "kenergyengineering:liquid_xp",
+      "amount": 10
+    },
+    {
+      "form": "item",
+      "type": "static",
+      "key": "minecraft:glass_bottle"
+    }
+  ],
+  "outputs": [
+    {
+      "form": "item",
+      "type": "static",
+      "key": "minecraft:experience_bottle"
+    }
+  ],
+  "time": 50
+}

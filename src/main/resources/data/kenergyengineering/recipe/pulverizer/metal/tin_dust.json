@@ -1,0 +1,19 @@
+{
+  "type": "kenergyengineering:pulverizer",
+  "inputs": [
+    {
+      "form": "item",
+      "type": "tag",
+      "key": "c:ingots/tin"
+    }
+  ],
+  "outputs": [
+    {
+      "form": "item",
+      "type": "static",
+      "key": "kenergyengineering:tin_dust",
+      "count": 1
+    }
+  ],
+  "time": 100
+}

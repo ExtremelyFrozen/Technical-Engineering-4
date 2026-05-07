@@ -1,0 +1,26 @@
+{
+  "type": "kenergyengineering:pulverizer",
+  "inputs": [
+    {
+      "form": "item",
+      "type": "tag",
+      "key": "c:raw_materials/copper"
+    }
+  ],
+  "outputs": [
+    {
+      "form": "item",
+      "type": "static",
+      "key": "kenergyengineering:copper_dust",
+      "count": 1
+    },
+    {
+      "form": "item",
+      "type": "static",
+      "key": "kenergyengineering:copper_dust",
+      "count": 1,
+      "chance": 0.4
+    }
+  ],
+  "time": 120
+}

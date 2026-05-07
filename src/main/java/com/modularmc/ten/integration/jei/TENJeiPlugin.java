@@ -2,12 +2,14 @@ package com.modularmc.ten.integration.jei;
 
 import com.modularmc.ten.TEN;
 import com.modularmc.ten.api.recipe.FormsCombinedRecipe;
+import com.modularmc.ten.common.data.TENRecipeTypes;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.neoforged.neoforge.registries.DeferredHolder;
 
 import mezz.jei.api.IModPlugin;
 import mezz.jei.api.JeiPlugin;
@@ -49,6 +51,8 @@ public class TENJeiPlugin implements IModPlugin {
 
     @Override
     public void registerCategories(IRecipeCategoryRegistration registration) {
+        if (!TEN.Mods.isJEILoaded()) return;
+
         IGuiHelper helper = registration.getJeiHelpers().getGuiHelper();
         for (var data : buildCategories()) {
             RecipeType<FormsCombinedRecipe> type = new RecipeType<>(data.id, FormsCombinedRecipe.class);
@@ -59,18 +63,16 @@ public class TENJeiPlugin implements IModPlugin {
 
     @Override
     public void registerRecipes(IRecipeRegistration registration) {
+        if (!TEN.Mods.isJEILoaded()) return;
+
         var level = Minecraft.getInstance().level;
         if (level == null) return;
 
         for (var data : buildCategories()) {
             List<FormsCombinedRecipe> recipes = new ArrayList<>();
-            var type = new RecipeType<FormsCombinedRecipe>(data.id, FormsCombinedRecipe.class);
-            for (var entry : level.getRecipeManager().getRecipes()) {
-                if (entry.value() instanceof FormsCombinedRecipe r) {
-                    if (r.getType() != null && r.getType().toString().equals(data.id.getPath())) {
-                        recipes.add(r);
-                    }
-                }
+            var type = new RecipeType<>(data.id, FormsCombinedRecipe.class);
+            for (var entry : level.getRecipeManager().getAllRecipesFor(recipeType(data.id).get())) {
+                recipes.add(entry.value());
             }
             registration.addRecipes(type, recipes);
         }
@@ -78,9 +80,20 @@ public class TENJeiPlugin implements IModPlugin {
 
     @Override
     public void registerRecipeCatalysts(IRecipeCatalystRegistration registration) {
+        if (!TEN.Mods.isJEILoaded()) return;
+
         for (var data : buildCategories()) {
             var type = new RecipeType<FormsCombinedRecipe>(data.id, FormsCombinedRecipe.class);
             registration.addRecipeCatalyst(data.icon, type);
         }
+    }
+
+    private static DeferredHolder<net.minecraft.world.item.crafting.RecipeType<?>, net.minecraft.world.item.crafting.RecipeType<FormsCombinedRecipe>> recipeType(ResourceLocation id) {
+        if (id.equals(TEN.id("pulverizer"))) return TENRecipeTypes.PULVERIZER_T;
+        if (id.equals(TEN.id("compressor"))) return TENRecipeTypes.COMPRESSOR_T;
+        if (id.equals(TEN.id("refiner"))) return TENRecipeTypes.REFINER_T;
+        if (id.equals(TEN.id("induction_furnace"))) return TENRecipeTypes.INDUCTION_FURNACE_T;
+        if (id.equals(TEN.id("psionicant"))) return TENRecipeTypes.PSIONICANT_T;
+        throw new IllegalArgumentException("Unknown TEN recipe type id: " + id);
     }
 }

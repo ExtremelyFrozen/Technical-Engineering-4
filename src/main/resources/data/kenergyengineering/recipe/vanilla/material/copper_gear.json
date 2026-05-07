@@ -1,0 +1,12 @@
+{
+	"type": "minecraft:crafting_shaped",
+	"pattern": [" C ", "C C", " C "],
+	"key": {
+		"C": {
+			"tag": "c:ingots/copper"
+		}
+	},
+	"result": {
+		"id": "kenergyengineering:copper_gear"
+	}
+}

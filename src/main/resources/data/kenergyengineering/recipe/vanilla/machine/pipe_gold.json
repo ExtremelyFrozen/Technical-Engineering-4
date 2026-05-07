@@ -1,0 +1,16 @@
+{
+	"type": "minecraft:crafting_shaped",
+	"pattern": ["ABA"],
+	"key": {
+		"A": {
+			"tag": "c:glass_blocks/colorless"
+		},
+		"B": {
+			"tag": "c:ingots/gold"
+		}
+	},
+	"result": {
+		"id": "kenergyengineering:pipe",
+		"count": 4
+	}
+}

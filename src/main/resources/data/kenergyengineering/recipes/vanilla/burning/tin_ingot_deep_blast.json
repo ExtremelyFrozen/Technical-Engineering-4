@@ -1,9 +1,0 @@
-{
-	"type": "minecraft:blasting",
-	"ingredient": {
-		"item": "kenergyengineering:deep_tin_ore"
-	},
-	"result": "kenergyengineering:tin_ingot",
-	"experience": 0.35,
-	"cookingtime": 100
-}
