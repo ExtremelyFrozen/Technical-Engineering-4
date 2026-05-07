@@ -1,0 +1,28 @@
+﻿{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "BDB",
+    "ACA",
+    "BVB"
+  ],
+  "key": {
+    "A": {
+      "tag": "forge:stone"
+    },
+    "B": {
+      "tag": "forge:ingots/copper"
+    },
+    "C": {
+      "item": "technicalengineering:redstone_storer"
+    },
+    "V": {
+      "item": "technicalengineering:redstone_ai"
+    },
+    "D": {
+      "tag": "forge:gears/copper"
+    }
+  },
+  "result": {
+    "item": "technicalengineering:machine_compressor"
+  }
+}

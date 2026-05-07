@@ -1,0 +1,19 @@
+﻿{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    " C ",
+    "CAC",
+    " C "
+  ],
+  "key": {
+    "A": {
+      "item": "technicalengineering:azure_glass"
+    },
+    "C": {
+      "tag": "forge:glass"
+    }
+  },
+  "result": {
+    "item": "technicalengineering:detector"
+  }
+}

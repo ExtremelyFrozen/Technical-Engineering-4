@@ -1,0 +1,23 @@
+﻿{
+  "type": "technicalengineering:compressor",
+  "inputs": [
+    {
+      "form": "item",
+      "type": "tag",
+      "key": "forge:ingots/iron",
+      "count": 4
+    },
+    {
+      "form": "item",
+      "type": "static",
+      "key": "technicalengineering:mould_gear"
+    }
+  ],
+  "outputs": [
+    {
+      "form": "item",
+      "key": "technicalengineering:iron_gear"
+    }
+  ],
+  "time": 100
+}

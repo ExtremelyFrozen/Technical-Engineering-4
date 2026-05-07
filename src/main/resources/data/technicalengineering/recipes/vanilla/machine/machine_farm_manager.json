@@ -1,0 +1,28 @@
+﻿{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "BDB",
+    "ACA",
+    "BVB"
+  ],
+  "key": {
+    "A": {
+      "item": "minecraft:iron_hoe"
+    },
+    "B": {
+      "tag": "forge:plates/chlorium"
+    },
+    "C": {
+      "item": "technicalengineering:redstone_storer"
+    },
+    "V": {
+      "item": "technicalengineering:redstone_ai"
+    },
+    "D": {
+      "item": "technicalengineering:hydraulic_widget"
+    }
+  },
+  "result": {
+    "item": "technicalengineering:machine_farm_manager"
+  }
+}

@@ -1,0 +1,19 @@
+﻿{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "C C",
+    "CAC",
+    "C C"
+  ],
+  "key": {
+    "A": {
+      "tag": "forge:ingots/copper"
+    },
+    "C": {
+      "item": "minecraft:redstone"
+    }
+  },
+  "result": {
+    "item": "technicalengineering:redstone_conductor"
+  }
+}

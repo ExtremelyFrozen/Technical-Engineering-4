@@ -1,0 +1,18 @@
+﻿{
+  "type": "technicalengineering:pulverizer",
+  "inputs": [
+    {
+      "form": "item",
+      "type": "tag",
+      "key": "forge:ingots/tin"
+    }
+  ],
+  "outputs": [
+    {
+      "form": "item",
+      "key": "technicalengineering:tin_dust",
+      "count": 1
+    }
+  ],
+  "time": 100
+}

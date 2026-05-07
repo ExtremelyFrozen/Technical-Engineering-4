@@ -1,0 +1,6 @@
+﻿{
+	"parent": "technicalengineering:block/cable/ccna",
+	"textures": {
+		"texture": "technicalengineering:machine/cable"
+	}
+}

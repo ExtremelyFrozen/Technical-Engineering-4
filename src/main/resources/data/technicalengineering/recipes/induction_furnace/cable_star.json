@@ -1,0 +1,22 @@
+﻿{
+  "type": "technicalengineering:induction_furnace",
+  "inputs": [
+    {
+      "form": "item",
+      "type": "static",
+      "key": "technicalengineering:bizarrerie"
+    },
+    {
+      "form": "item",
+      "type": "static",
+      "key": "technicalengineering:cable"
+    }
+  ],
+  "outputs": [
+    {
+      "form": "item",
+      "key": "technicalengineering:cable_star"
+    }
+  ],
+  "time": 50
+}

@@ -1,0 +1,29 @@
+﻿{
+  "type": "technicalengineering:induction_furnace",
+  "inputs": [
+    {
+      "form": "item",
+      "type": "tag",
+      "key": "technicalengineering:mats/tin"
+    },
+    {
+      "form": "item",
+      "type": "tag",
+      "key": "technicalengineering:mats/copper"
+    },
+    {
+      "form": "item",
+      "type": "static",
+      "key": "minecraft:redstone",
+      "count": 2
+    }
+  ],
+  "outputs": [
+    {
+      "form": "item",
+      "key": "technicalengineering:powered_tin_ingot",
+      "count": 3
+    }
+  ],
+  "time": 300
+}

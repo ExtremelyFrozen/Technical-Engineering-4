@@ -1,0 +1,18 @@
+﻿{
+  "type": "technicalengineering:pulverizer",
+  "inputs": [
+    {
+      "form": "item",
+      "type": "tag",
+      "key": "forge:stone"
+    }
+  ],
+  "outputs": [
+    {
+      "form": "item",
+      "key": "minecraft:cobblestone",
+      "count": 1
+    }
+  ],
+  "time": 120
+}

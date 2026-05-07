@@ -1,0 +1,9 @@
+﻿{
+  "replace": false,
+  "values": [
+    "technicalengineering:liquid_xp",
+    "technicalengineering:liquid_xp_flowing",
+    "technicalengineering:liquid_bizarrerie",
+    "technicalengineering:liquid_bizarrerie_flowing"
+  ]
+}

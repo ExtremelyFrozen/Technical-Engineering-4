@@ -1,0 +1,28 @@
+﻿{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "BDB",
+    "ACA",
+    "BVB"
+  ],
+  "key": {
+    "A": {
+      "item": "minecraft:ender_eye"
+    },
+    "B": {
+      "tag": "forge:plates/nickel"
+    },
+    "C": {
+      "item": "technicalengineering:redstone_storer"
+    },
+    "V": {
+      "item": "technicalengineering:redstone_ai"
+    },
+    "D": {
+      "item": "minecraft:slime_block"
+    }
+  },
+  "result": {
+    "item": "technicalengineering:machine_matter_condenser"
+  }
+}

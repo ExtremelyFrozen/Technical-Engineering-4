@@ -1,0 +1,6 @@
+﻿{
+	"parent": "technicalengineering:block/cable/ccn",
+	"textures": {
+		"texture": "technicalengineering:machine/cable_quartz"
+	}
+}

@@ -1,0 +1,6 @@
+﻿{
+	"parent": "technicalengineering:block/cable/ccoa",
+	"textures": {
+		"texture": "technicalengineering:machine/cable_azure"
+	}
+}

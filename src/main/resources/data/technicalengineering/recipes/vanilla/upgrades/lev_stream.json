@@ -1,0 +1,25 @@
+﻿{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    " B ",
+    "DAD",
+    " C "
+  ],
+  "key": {
+    "A": {
+      "item": "technicalengineering:bizarrerie"
+    },
+    "B": {
+      "item": "technicalengineering:cable_star"
+    },
+    "C": {
+      "item": "technicalengineering:redstone_conductor"
+    },
+    "D": {
+      "item": "minecraft:chorus_fruit"
+    }
+  },
+  "result": {
+    "item": "technicalengineering:stream_levelup"
+  }
+}

@@ -1,0 +1,30 @@
+﻿{
+  "type": "technicalengineering:induction_furnace",
+  "inputs": [
+    {
+      "form": "item",
+      "type": "tag",
+      "key": "technicalengineering:mats/powered_tin",
+      "count": 2
+    },
+    {
+      "form": "item",
+      "type": "tag",
+      "key": "technicalengineering:mats/nickel"
+    },
+    {
+      "form": "item",
+      "type": "static",
+      "key": "minecraft:glowstone_dust",
+      "count": 2
+    }
+  ],
+  "outputs": [
+    {
+      "form": "item",
+      "key": "technicalengineering:chlorium_ingot",
+      "count": 3
+    }
+  ],
+  "time": 300
+}

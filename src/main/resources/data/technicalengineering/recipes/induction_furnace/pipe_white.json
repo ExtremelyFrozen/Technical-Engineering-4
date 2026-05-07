@@ -1,0 +1,22 @@
+﻿{
+  "type": "technicalengineering:induction_furnace",
+  "inputs": [
+    {
+      "form": "item",
+      "type": "static",
+      "key": "technicalengineering:pipe"
+    },
+    {
+      "form": "item",
+      "type": "tag",
+      "key": "forge:dusts/powered_tin"
+    }
+  ],
+  "outputs": [
+    {
+      "form": "item",
+      "key": "technicalengineering:pipe_white"
+    }
+  ],
+  "time": 50
+}

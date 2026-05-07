@@ -1,0 +1,6 @@
+﻿{
+  "parent": "item/generated",
+  "textures": {
+    "layer0": "technicalengineering:item/nugget/nickel_nugget"
+  }
+}

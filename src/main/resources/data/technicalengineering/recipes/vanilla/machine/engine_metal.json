@@ -1,0 +1,28 @@
+﻿{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    " D ",
+    "ACA",
+    "BVB"
+  ],
+  "key": {
+    "A": {
+      "item": "minecraft:obsidian"
+    },
+    "B": {
+      "item": "minecraft:gold_ingot"
+    },
+    "C": {
+      "item": "technicalengineering:redstone_storer"
+    },
+    "V": {
+      "item": "minecraft:redstone"
+    },
+    "D": {
+      "item": "technicalengineering:redstone_conductor"
+    }
+  },
+  "result": {
+    "item": "technicalengineering:engine_metal"
+  }
+}

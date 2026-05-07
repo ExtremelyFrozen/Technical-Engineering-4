@@ -1,0 +1,25 @@
+﻿{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    " B ",
+    "DAD",
+    " C "
+  ],
+  "key": {
+    "A": {
+      "tag": "forge:gems/diamond"
+    },
+    "B": {
+      "item": "technicalengineering:indigo"
+    },
+    "C": {
+      "item": "technicalengineering:cell"
+    },
+    "D": {
+      "item": "technicalengineering:azure_glass"
+    }
+  },
+  "result": {
+    "item": "technicalengineering:mineral_levelup"
+  }
+}

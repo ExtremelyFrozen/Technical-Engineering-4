@@ -1,0 +1,22 @@
+﻿{
+  "type": "technicalengineering:compressor",
+  "inputs": [
+    {
+      "form": "item",
+      "type": "tag",
+      "key": "forge:ingots/nickel"
+    },
+    {
+      "form": "item",
+      "type": "static",
+      "key": "technicalengineering:mould_plate"
+    }
+  ],
+  "outputs": [
+    {
+      "form": "item",
+      "key": "technicalengineering:nickel_plate"
+    }
+  ],
+  "time": 100
+}
