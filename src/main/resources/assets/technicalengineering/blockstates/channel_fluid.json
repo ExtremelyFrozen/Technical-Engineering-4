@@ -1,4 +1,4 @@
-﻿{
+{
   "variants": {
     "facing=north,active=false": {
       "model": "technicalengineering:block/channel/channel_fluid"

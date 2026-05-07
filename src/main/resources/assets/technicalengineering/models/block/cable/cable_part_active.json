@@ -1,6 +1,0 @@
-﻿{
-	"parent": "technicalengineering:block/cable/ccpa",
-	"textures": {
-		"texture": "technicalengineering:machine/cable"
-	}
-}

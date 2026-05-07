@@ -1,33 +1,33 @@
-﻿{
+{
   "variants": {
     "facing=east,active=false": {
-      "model": "technicalengineering:block/mac/engine_metal",
+      "model": "technicalengineering:block/engine_metal",
       "y": 90
     },
     "facing=east,active=true": {
-      "model": "technicalengineering:block/mac/engine_metal_active",
+      "model": "technicalengineering:block/engine_metal_active",
       "y": 90
     },
     "facing=north,active=false": {
-      "model": "technicalengineering:block/mac/engine_metal"
+      "model": "technicalengineering:block/engine_metal"
     },
     "facing=north,active=true": {
-      "model": "technicalengineering:block/mac/engine_metal_active"
+      "model": "technicalengineering:block/engine_metal_active"
     },
     "facing=south,active=false": {
-      "model": "technicalengineering:block/mac/engine_metal",
+      "model": "technicalengineering:block/engine_metal",
       "y": 180
     },
     "facing=south,active=true": {
-      "model": "technicalengineering:block/mac/engine_metal_active",
+      "model": "technicalengineering:block/engine_metal_active",
       "y": 180
     },
     "facing=west,active=false": {
-      "model": "technicalengineering:block/mac/engine_metal",
+      "model": "technicalengineering:block/engine_metal",
       "y": 270
     },
     "facing=west,active=true": {
-      "model": "technicalengineering:block/mac/engine_metal_active",
+      "model": "technicalengineering:block/engine_metal_active",
       "y": 270
     }
   }

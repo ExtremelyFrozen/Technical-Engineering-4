@@ -1,0 +1,14 @@
+{
+  "values": [
+    "technicalengineering:tin_ore",
+    "technicalengineering:nickel_ore",
+    "technicalengineering:deep_tin_ore",
+    "technicalengineering:deep_nickel_ore",
+    "technicalengineering:tin_block",
+    "technicalengineering:nickel_block",
+    "technicalengineering:powered_tin_block",
+    "technicalengineering:chlorium_block",
+    "technicalengineering:raw_tin_block",
+    "technicalengineering:raw_nickel_block"
+  ]
+}

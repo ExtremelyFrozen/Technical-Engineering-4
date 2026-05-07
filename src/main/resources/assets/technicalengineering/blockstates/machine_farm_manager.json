@@ -1,33 +1,33 @@
-﻿{
+{
   "variants": {
     "facing=east,active=false": {
-      "model": "technicalengineering:block/mac/farm_manager",
+      "model": "technicalengineering:block/farm_manager",
       "y": 90
     },
     "facing=east,active=true": {
-      "model": "technicalengineering:block/mac/farm_manager_active",
+      "model": "technicalengineering:block/farm_manager_active",
       "y": 90
     },
     "facing=north,active=false": {
-      "model": "technicalengineering:block/mac/farm_manager"
+      "model": "technicalengineering:block/farm_manager"
     },
     "facing=north,active=true": {
-      "model": "technicalengineering:block/mac/farm_manager_active"
+      "model": "technicalengineering:block/farm_manager_active"
     },
     "facing=south,active=false": {
-      "model": "technicalengineering:block/mac/farm_manager",
+      "model": "technicalengineering:block/farm_manager",
       "y": 180
     },
     "facing=south,active=true": {
-      "model": "technicalengineering:block/mac/farm_manager_active",
+      "model": "technicalengineering:block/farm_manager_active",
       "y": 180
     },
     "facing=west,active=false": {
-      "model": "technicalengineering:block/mac/farm_manager",
+      "model": "technicalengineering:block/farm_manager",
       "y": 270
     },
     "facing=west,active=true": {
-      "model": "technicalengineering:block/mac/farm_manager_active",
+      "model": "technicalengineering:block/farm_manager_active",
       "y": 270
     }
   }

@@ -1,6 +1,0 @@
-﻿{
-	"parent": "technicalengineering:block/pipe/pco",
-	"textures": {
-		"texture": "technicalengineering:machine/pipe_black"
-	}
-}

@@ -1,6 +1,0 @@
-﻿{
-	"parent": "technicalengineering:block/pipe/pcn",
-	"textures": {
-		"texture": "technicalengineering:machine/pipe_white"
-	}
-}

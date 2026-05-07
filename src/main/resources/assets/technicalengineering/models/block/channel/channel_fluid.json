@@ -1,6 +1,0 @@
-﻿{
-  "parent": "technicalengineering:block/channel/channel",
-  "textures": {
-    "texture": "technicalengineering:machine/channel/channel_fluid"
-  }
-}

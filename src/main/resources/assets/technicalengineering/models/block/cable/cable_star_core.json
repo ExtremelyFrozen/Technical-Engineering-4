@@ -1,6 +1,0 @@
-﻿{
-	"parent": "technicalengineering:block/cable/cco",
-	"textures": {
-		"texture": "technicalengineering:machine/cable_star"
-	}
-}

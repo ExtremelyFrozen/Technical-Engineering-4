@@ -1,6 +1,8 @@
 package com.modularmc.ten.common;
 
-import com.modularmc.ten.common.registry.*;
+import com.modularmc.ten.TEN;
+import com.modularmc.ten.common.data.*;
+import com.modularmc.ten.common.registry.Registration;
 import com.modularmc.ten.config.ConfigHolder;
 
 import net.neoforged.bus.api.IEventBus;

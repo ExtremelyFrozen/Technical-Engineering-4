@@ -1,33 +1,33 @@
-﻿{
+{
   "variants": {
     "facing=east,active=false": {
-      "model": "technicalengineering:block/mac/quarry",
+      "model": "technicalengineering:block/quarry",
       "y": 90
     },
     "facing=east,active=true": {
-      "model": "technicalengineering:block/mac/quarry_active",
+      "model": "technicalengineering:block/quarry_active",
       "y": 90
     },
     "facing=north,active=false": {
-      "model": "technicalengineering:block/mac/quarry"
+      "model": "technicalengineering:block/quarry"
     },
     "facing=north,active=true": {
-      "model": "technicalengineering:block/mac/quarry_active"
+      "model": "technicalengineering:block/quarry_active"
     },
     "facing=south,active=false": {
-      "model": "technicalengineering:block/mac/quarry",
+      "model": "technicalengineering:block/quarry",
       "y": 180
     },
     "facing=south,active=true": {
-      "model": "technicalengineering:block/mac/quarry_active",
+      "model": "technicalengineering:block/quarry_active",
       "y": 180
     },
     "facing=west,active=false": {
-      "model": "technicalengineering:block/mac/quarry",
+      "model": "technicalengineering:block/quarry",
       "y": 270
     },
     "facing=west,active=true": {
-      "model": "technicalengineering:block/mac/quarry_active",
+      "model": "technicalengineering:block/quarry_active",
       "y": 270
     }
   }

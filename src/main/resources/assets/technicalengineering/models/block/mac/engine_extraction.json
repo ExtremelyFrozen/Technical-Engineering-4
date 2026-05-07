@@ -1,7 +1,0 @@
-﻿{
-	"parent": "technicalengineering:block/mac/engine",
-	"textures": {
-		"side": "technicalengineering:machine/engine/engine_extraction",
-		"bot": "technicalengineering:machine/engine/engine_extraction_bottom"
-	}
-}

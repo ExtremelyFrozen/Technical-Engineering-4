@@ -51,11 +51,15 @@ public class WorkingHelper {
         }
     }
 
-    public static LootParams getLoot(Level world, BlockPos pos, ItemStack tol) {
+    public static LootParams.Builder getLootBuilder(Level world, BlockPos pos, ItemStack tol) {
         return new LootParams.Builder((ServerLevel) world)
                 .withParameter(LootContextParams.ORIGIN, Vec3.atCenterOf(pos))
-                .withParameter(LootContextParams.TOOL, tol)
-                .create(LootContextParamSets.EMPTY);
+                .withParameter(LootContextParams.TOOL, tol);
+    }
+
+    @Deprecated
+    public static LootParams getLoot(Level world, BlockPos pos, ItemStack tol) {
+        return getLootBuilder(world, pos, tol).create(LootContextParamSets.EMPTY);
     }
 
     public interface RunWithPos {

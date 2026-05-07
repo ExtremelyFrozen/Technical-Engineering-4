@@ -1,33 +1,33 @@
-﻿{
+{
   "variants": {
     "facing=east,active=false": {
-      "model": "technicalengineering:block/mac/beacon_simulator",
+      "model": "technicalengineering:block/beacon_simulator",
       "y": 90
     },
     "facing=east,active=true": {
-      "model": "technicalengineering:block/mac/beacon_simulator_active",
+      "model": "technicalengineering:block/beacon_simulator_active",
       "y": 90
     },
     "facing=north,active=false": {
-      "model": "technicalengineering:block/mac/beacon_simulator"
+      "model": "technicalengineering:block/beacon_simulator"
     },
     "facing=north,active=true": {
-      "model": "technicalengineering:block/mac/beacon_simulator_active"
+      "model": "technicalengineering:block/beacon_simulator_active"
     },
     "facing=south,active=false": {
-      "model": "technicalengineering:block/mac/beacon_simulator",
+      "model": "technicalengineering:block/beacon_simulator",
       "y": 180
     },
     "facing=south,active=true": {
-      "model": "technicalengineering:block/mac/beacon_simulator_active",
+      "model": "technicalengineering:block/beacon_simulator_active",
       "y": 180
     },
     "facing=west,active=false": {
-      "model": "technicalengineering:block/mac/beacon_simulator",
+      "model": "technicalengineering:block/beacon_simulator",
       "y": 270
     },
     "facing=west,active=true": {
-      "model": "technicalengineering:block/mac/beacon_simulator_active",
+      "model": "technicalengineering:block/beacon_simulator_active",
       "y": 270
     }
   }
