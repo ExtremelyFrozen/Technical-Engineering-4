@@ -1,25 +1,21 @@
-﻿{
-"type": "minecraft:crafting_shaped",
-"pattern": [
-	"EBE",
-	"DAD",
-	"EBE"
-],
-"key": {
-	"A": {
-	"item": "minecraft:redstone"
+{
+	"type": "minecraft:crafting_shaped",
+	"pattern": ["EBE", "DAD", "EBE"],
+	"key": {
+		"A": {
+			"item": "minecraft:redstone"
+		},
+		"B": {
+			"tag": "forge:gears/copper"
+		},
+		"D": {
+			"tag": "forge:glass"
+		},
+		"E": {
+			"tag": "forge:ingots/iron"
+		}
 	},
-	"B": {
-	"tag": "forge:gears/copper"
-	},
-	"D": {
-	"tag": "forge:glass"
-	},
-	"E": {
-	"tag": "forge:ingots/iron"
+	"result": {
+		"item": "kenergyengineering:augmented_levelup"
 	}
-},
-"result": {
-	"item": "kenergyengineering:augmented_levelup"
-}
 }

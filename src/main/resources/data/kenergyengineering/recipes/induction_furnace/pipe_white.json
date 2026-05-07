@@ -1,22 +1,22 @@
-﻿{
-"type": "kenergyengineering:induction_furnace",
-"inputs": [
-	{
-	"form": "item",
-	"type": "static",
-	"key": "kenergyengineering:pipe"
-	},
-	{
-	"form": "item",
-	"type": "tag",
-	"key": "forge:dusts/powered_tin"
-	}
-],
-"outputs": [
-	{
-	"form": "item",
-	"key": "kenergyengineering:pipe_white"
-	}
-],
-"time": 50
+{
+	"type": "kenergyengineering:induction_furnace",
+	"inputs": [
+		{
+			"form": "item",
+			"type": "static",
+			"key": "kenergyengineering:pipe"
+		},
+		{
+			"form": "item",
+			"type": "tag",
+			"key": "forge:dusts/powered_tin"
+		}
+	],
+	"outputs": [
+		{
+			"form": "item",
+			"key": "kenergyengineering:pipe_white"
+		}
+	],
+	"time": 50
 }

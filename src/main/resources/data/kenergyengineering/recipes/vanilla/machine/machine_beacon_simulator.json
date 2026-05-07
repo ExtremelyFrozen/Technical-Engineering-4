@@ -1,28 +1,24 @@
-﻿{
-"type": "minecraft:crafting_shaped",
-"pattern": [
-	"BDB",
-	"ACA",
-	"BVB"
-],
-"key": {
-	"A": {
-	"item": "kenergyengineering:detector"
+{
+	"type": "minecraft:crafting_shaped",
+	"pattern": ["BDB", "ACA", "BVB"],
+	"key": {
+		"A": {
+			"item": "kenergyengineering:detector"
+		},
+		"B": {
+			"tag": "forge:plates/powered_tin"
+		},
+		"C": {
+			"item": "kenergyengineering:redstone_storer"
+		},
+		"V": {
+			"item": "kenergyengineering:redstone_ai_advanced"
+		},
+		"D": {
+			"item": "minecraft:nether_star"
+		}
 	},
-	"B": {
-	"tag": "forge:plates/powered_tin"
-	},
-	"C": {
-	"item": "kenergyengineering:redstone_storer"
-	},
-	"V": {
-	"item": "kenergyengineering:redstone_ai_advanced"
-	},
-	"D": {
-	"item": "minecraft:nether_star"
+	"result": {
+		"item": "kenergyengineering:machine_beacon_simulator"
 	}
-},
-"result": {
-	"item": "kenergyengineering:machine_beacon_simulator"
-}
 }

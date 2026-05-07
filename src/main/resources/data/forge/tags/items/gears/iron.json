@@ -1,6 +1,4 @@
-﻿{
-"replace": false,
-"values": [
-	"kenergyengineering:iron_gear"
-]
+{
+	"replace": false,
+	"values": ["kenergyengineering:iron_gear"]
 }

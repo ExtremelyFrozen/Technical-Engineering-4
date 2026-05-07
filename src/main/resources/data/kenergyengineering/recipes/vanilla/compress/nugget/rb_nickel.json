@@ -1,12 +1,12 @@
-﻿{
-"type": "minecraft:crafting_shapeless",
-"ingredients": [
-	{
-	"item": "kenergyengineering:nickel_ingot"
+{
+	"type": "minecraft:crafting_shapeless",
+	"ingredients": [
+		{
+			"item": "kenergyengineering:nickel_ingot"
+		}
+	],
+	"result": {
+		"item": "kenergyengineering:nickel_nugget",
+		"count": 9
 	}
-],
-"result": {
-	"item": "kenergyengineering:nickel_nugget",
-	"count": 9
-}
 }

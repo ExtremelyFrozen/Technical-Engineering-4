@@ -1,22 +1,22 @@
-﻿{
-"type": "kenergyengineering:induction_furnace",
-"inputs": [
-	{
-	"form": "item",
-	"type": "static",
-	"key": "kenergyengineering:azure_glass"
-	},
-	{
-	"form": "item",
-	"type": "static",
-	"key": "kenergyengineering:cable"
-	}
-],
-"outputs": [
-	{
-	"form": "item",
-	"key": "kenergyengineering:cable_azure"
-	}
-],
-"time": 50
+{
+	"type": "kenergyengineering:induction_furnace",
+	"inputs": [
+		{
+			"form": "item",
+			"type": "static",
+			"key": "kenergyengineering:azure_glass"
+		},
+		{
+			"form": "item",
+			"type": "static",
+			"key": "kenergyengineering:cable"
+		}
+	],
+	"outputs": [
+		{
+			"form": "item",
+			"key": "kenergyengineering:cable_azure"
+		}
+	],
+	"time": 50
 }

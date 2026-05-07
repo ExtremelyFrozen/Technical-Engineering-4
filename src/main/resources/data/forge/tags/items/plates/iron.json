@@ -1,6 +1,4 @@
-﻿{
-"replace": false,
-"values": [
-	"kenergyengineering:iron_plate"
-]
+{
+	"replace": false,
+	"values": ["kenergyengineering:iron_plate"]
 }

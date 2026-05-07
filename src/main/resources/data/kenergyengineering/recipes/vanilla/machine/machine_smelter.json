@@ -1,28 +1,24 @@
-﻿{
-"type": "minecraft:crafting_shaped",
-"pattern": [
-	"BDB",
-	"ACA",
-	"BVB"
-],
-"key": {
-	"A": {
-	"item": "minecraft:bricks"
+{
+	"type": "minecraft:crafting_shaped",
+	"pattern": ["BDB", "ACA", "BVB"],
+	"key": {
+		"A": {
+			"item": "minecraft:bricks"
+		},
+		"B": {
+			"tag": "forge:plates/copper"
+		},
+		"C": {
+			"item": "kenergyengineering:redstone_storer"
+		},
+		"V": {
+			"item": "kenergyengineering:redstone_ai"
+		},
+		"D": {
+			"item": "kenergyengineering:redstone_converter"
+		}
 	},
-	"B": {
-	"tag": "forge:plates/copper"
-	},
-	"C": {
-	"item": "kenergyengineering:redstone_storer"
-	},
-	"V": {
-	"item": "kenergyengineering:redstone_ai"
-	},
-	"D": {
-	"item": "kenergyengineering:redstone_converter"
+	"result": {
+		"item": "kenergyengineering:machine_smelter"
 	}
-},
-"result": {
-	"item": "kenergyengineering:machine_smelter"
-}
 }

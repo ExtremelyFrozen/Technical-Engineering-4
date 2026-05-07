@@ -1,25 +1,21 @@
-﻿{
-"type": "minecraft:crafting_shaped",
-"pattern": [
-	"EBE",
-	"DAD",
-	"EBE"
-],
-"key": {
-	"A": {
-	"item": "kenergyengineering:powered_levelup"
+{
+	"type": "minecraft:crafting_shaped",
+	"pattern": ["EBE", "DAD", "EBE"],
+	"key": {
+		"A": {
+			"item": "kenergyengineering:powered_levelup"
+		},
+		"B": {
+			"tag": "forge:gears/powered_tin"
+		},
+		"D": {
+			"tag": "forge:glass"
+		},
+		"E": {
+			"item": "minecraft:shulker_shell"
+		}
 	},
-	"B": {
-	"tag": "forge:gears/powered_tin"
-	},
-	"D": {
-	"tag": "forge:glass"
-	},
-	"E": {
-	"item": "minecraft:shulker_shell"
+	"result": {
+		"item": "kenergyengineering:relic_levelup"
 	}
-},
-"result": {
-	"item": "kenergyengineering:relic_levelup"
-}
 }

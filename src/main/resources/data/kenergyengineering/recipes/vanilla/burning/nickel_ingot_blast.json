@@ -1,9 +1,9 @@
-﻿{
-"type": "minecraft:blasting",
-"ingredient": {
-	"item": "kenergyengineering:nickel_ore"
-},
-"result": "kenergyengineering:nickel_ingot",
-"experience": 1,
-"cookingtime": 100
+{
+	"type": "minecraft:blasting",
+	"ingredient": {
+		"item": "kenergyengineering:nickel_ore"
+	},
+	"result": "kenergyengineering:nickel_ingot",
+	"experience": 1,
+	"cookingtime": 100
 }

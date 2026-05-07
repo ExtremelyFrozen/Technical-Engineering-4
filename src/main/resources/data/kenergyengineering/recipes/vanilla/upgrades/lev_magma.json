@@ -1,25 +1,21 @@
-﻿{
-"type": "minecraft:crafting_shaped",
-"pattern": [
-	" B ",
-	"DAD",
-	" C "
-],
-"key": {
-	"A": {
-	"item": "minecraft:magma_block"
+{
+	"type": "minecraft:crafting_shaped",
+	"pattern": [" B ", "DAD", " C "],
+	"key": {
+		"A": {
+			"item": "minecraft:magma_block"
+		},
+		"B": {
+			"item": "minecraft:lava_bucket"
+		},
+		"C": {
+			"item": "minecraft:glass_bottle"
+		},
+		"D": {
+			"item": "minecraft:magma_cream"
+		}
 	},
-	"B": {
-	"item": "minecraft:lava_bucket"
-	},
-	"C": {
-	"item": "minecraft:glass_bottle"
-	},
-	"D": {
-	"item": "minecraft:magma_cream"
+	"result": {
+		"item": "kenergyengineering:magma_levelup"
 	}
-},
-"result": {
-	"item": "kenergyengineering:magma_levelup"
-}
 }

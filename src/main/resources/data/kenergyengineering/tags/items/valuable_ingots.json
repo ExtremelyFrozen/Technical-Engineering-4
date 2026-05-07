@@ -1,6 +1,4 @@
-﻿{
-"replace": false,
-"values": [
-	"minecraft:netherite_ingot"
-]
+{
+	"replace": false,
+	"values": ["minecraft:netherite_ingot"]
 }

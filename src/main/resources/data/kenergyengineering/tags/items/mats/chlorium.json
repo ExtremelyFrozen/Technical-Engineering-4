@@ -1,7 +1,4 @@
-﻿{
-"replace": false,
-"values": [
-	"#forge:ingots/chlorium",
-	"#forge:dusts/chlorium"
-]
+{
+	"replace": false,
+	"values": ["#forge:ingots/chlorium", "#forge:dusts/chlorium"]
 }

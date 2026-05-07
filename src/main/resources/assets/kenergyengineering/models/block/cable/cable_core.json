@@ -1,4 +1,4 @@
-﻿{
+{
 	"parent": "kenergyengineering:block/cable/cco",
 	"textures": {
 		"texture": "kenergyengineering:machine/cable"

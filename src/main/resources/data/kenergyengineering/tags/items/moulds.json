@@ -1,9 +1,9 @@
-﻿{
-"replace": false,
-"values": [
-	"kenergyengineering:mould_gear",
-	"kenergyengineering:mould_plate",
-	"kenergyengineering:mould_rod",
-	"kenergyengineering:mould_string"
-]
+{
+	"replace": false,
+	"values": [
+		"kenergyengineering:mould_gear",
+		"kenergyengineering:mould_plate",
+		"kenergyengineering:mould_rod",
+		"kenergyengineering:mould_string"
+	]
 }

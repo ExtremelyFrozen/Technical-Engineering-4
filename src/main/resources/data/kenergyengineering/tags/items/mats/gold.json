@@ -1,7 +1,4 @@
-﻿{
-"replace": false,
-"values": [
-	"#forge:ingots/gold",
-	"#forge:dusts/gold"
-]
+{
+	"replace": false,
+	"values": ["#forge:ingots/gold", "#forge:dusts/gold"]
 }

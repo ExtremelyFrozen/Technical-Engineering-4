@@ -1,23 +1,23 @@
-﻿{
-"type": "kenergyengineering:compressor",
-"inputs": [
-	{
-	"form": "item",
-	"type": "tag",
-	"key": "forge:ingots/iron",
-	"count": 4
-	},
-	{
-	"form": "item",
-	"type": "static",
-	"key": "kenergyengineering:mould_gear"
-	}
-],
-"outputs": [
-	{
-	"form": "item",
-	"key": "kenergyengineering:iron_gear"
-	}
-],
-"time": 100
+{
+	"type": "kenergyengineering:compressor",
+	"inputs": [
+		{
+			"form": "item",
+			"type": "tag",
+			"key": "forge:ingots/iron",
+			"count": 4
+		},
+		{
+			"form": "item",
+			"type": "static",
+			"key": "kenergyengineering:mould_gear"
+		}
+	],
+	"outputs": [
+		{
+			"form": "item",
+			"key": "kenergyengineering:iron_gear"
+		}
+	],
+	"time": 100
 }

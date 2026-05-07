@@ -1,6 +1,4 @@
-﻿{
-"replace": false,
-"values": [
-	"kenergyengineering:tin_ingot"
-]
+{
+	"replace": false,
+	"values": ["kenergyengineering:tin_ingot"]
 }

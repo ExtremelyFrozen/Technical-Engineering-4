@@ -1,6 +1,4 @@
-﻿{
-"replace": false,
-"values": [
-	"kenergyengineering:chlorium_ingot"
-]
+{
+	"replace": false,
+	"values": ["kenergyengineering:chlorium_ingot"]
 }

@@ -1,19 +1,15 @@
-﻿{
-"type": "minecraft:crafting_shaped",
-"pattern": [
-	"C C",
-	"CAC",
-	"C C"
-],
-"key": {
-	"A": {
-	"tag": "forge:ingots/tin"
+{
+	"type": "minecraft:crafting_shaped",
+	"pattern": ["C C", "CAC", "C C"],
+	"key": {
+		"A": {
+			"tag": "forge:ingots/tin"
+		},
+		"C": {
+			"item": "minecraft:redstone"
+		}
 	},
-	"C": {
-	"item": "minecraft:redstone"
+	"result": {
+		"item": "kenergyengineering:redstone_converter"
 	}
-},
-"result": {
-	"item": "kenergyengineering:redstone_converter"
-}
 }

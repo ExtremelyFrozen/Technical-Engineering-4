@@ -1,28 +1,24 @@
-﻿{
-"type": "minecraft:crafting_shaped",
-"pattern": [
-	" D ",
-	"ACA",
-	"BVB"
-],
-"key": {
-	"A": {
-	"item": "minecraft:daylight_detector"
+{
+	"type": "minecraft:crafting_shaped",
+	"pattern": [" D ", "ACA", "BVB"],
+	"key": {
+		"A": {
+			"item": "minecraft:daylight_detector"
+		},
+		"B": {
+			"tag": "forge:ingots/chlorium"
+		},
+		"C": {
+			"item": "kenergyengineering:redstone_storer"
+		},
+		"V": {
+			"item": "minecraft:redstone"
+		},
+		"D": {
+			"item": "kenergyengineering:redstone_conductor"
+		}
 	},
-	"B": {
-	"tag": "forge:ingots/chlorium"
-	},
-	"C": {
-	"item": "kenergyengineering:redstone_storer"
-	},
-	"V": {
-	"item": "minecraft:redstone"
-	},
-	"D": {
-	"item": "kenergyengineering:redstone_conductor"
+	"result": {
+		"item": "kenergyengineering:engine_solar"
 	}
-},
-"result": {
-	"item": "kenergyengineering:engine_solar"
-}
 }

@@ -1,16 +1,12 @@
-﻿{
-"type": "minecraft:crafting_shaped",
-"pattern": [
-	" C ",
-	"C C",
-	" C "
-],
-"key": {
-	"C": {
-	"item": "minecraft:gold_ingot"
+{
+	"type": "minecraft:crafting_shaped",
+	"pattern": [" C ", "C C", " C "],
+	"key": {
+		"C": {
+			"item": "minecraft:gold_ingot"
+		}
+	},
+	"result": {
+		"item": "kenergyengineering:gold_gear"
 	}
-},
-"result": {
-	"item": "kenergyengineering:gold_gear"
-}
 }

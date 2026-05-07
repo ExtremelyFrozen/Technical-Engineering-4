@@ -1,9 +1,9 @@
-﻿{
-"replace": false,
-"values": [
-	"#forge:ingots/tin",
-	"#forge:ingots/powered_tin",
-	"#forge:ingots/chlorium",
-	"#forge:ingots/nickel"
-]
+{
+	"replace": false,
+	"values": [
+		"#forge:ingots/tin",
+		"#forge:ingots/powered_tin",
+		"#forge:ingots/chlorium",
+		"#forge:ingots/nickel"
+	]
 }

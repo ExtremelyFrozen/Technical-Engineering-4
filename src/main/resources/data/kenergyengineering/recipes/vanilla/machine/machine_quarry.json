@@ -1,28 +1,24 @@
-﻿{
-"type": "minecraft:crafting_shaped",
-"pattern": [
-	"BDB",
-	"ACA",
-	"BVB"
-],
-"key": {
-	"A": {
-	"item": "minecraft:iron_pickaxe"
+{
+	"type": "minecraft:crafting_shaped",
+	"pattern": ["BDB", "ACA", "BVB"],
+	"key": {
+		"A": {
+			"item": "minecraft:iron_pickaxe"
+		},
+		"B": {
+			"tag": "forge:plates/gold"
+		},
+		"C": {
+			"item": "kenergyengineering:redstone_storer"
+		},
+		"V": {
+			"item": "kenergyengineering:redstone_ai"
+		},
+		"D": {
+			"item": "kenergyengineering:hydraulic_widget"
+		}
 	},
-	"B": {
-	"tag": "forge:plates/gold"
-	},
-	"C": {
-	"item": "kenergyengineering:redstone_storer"
-	},
-	"V": {
-	"item": "kenergyengineering:redstone_ai"
-	},
-	"D": {
-	"item": "kenergyengineering:hydraulic_widget"
+	"result": {
+		"item": "kenergyengineering:machine_quarry"
 	}
-},
-"result": {
-	"item": "kenergyengineering:machine_quarry"
-}
 }

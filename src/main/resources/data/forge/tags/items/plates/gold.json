@@ -1,6 +1,4 @@
-﻿{
-"replace": false,
-"values": [
-	"kenergyengineering:gold_plate"
-]
+{
+	"replace": false,
+	"values": ["kenergyengineering:gold_plate"]
 }

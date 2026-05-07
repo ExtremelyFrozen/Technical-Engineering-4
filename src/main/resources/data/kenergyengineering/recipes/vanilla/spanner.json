@@ -1,19 +1,15 @@
-﻿{
-"type": "minecraft:crafting_shaped",
-"pattern": [
-	"A A",
-	" B ",
-	" A "
-],
-"key": {
-	"A": {
-	"tag": "forge:ingots/tin"
+{
+	"type": "minecraft:crafting_shaped",
+	"pattern": ["A A", " B ", " A "],
+	"key": {
+		"A": {
+			"tag": "forge:ingots/tin"
+		},
+		"B": {
+			"item": "kenergyengineering:redstone_storer"
+		}
 	},
-	"B": {
-	"item": "kenergyengineering:redstone_storer"
+	"result": {
+		"item": "kenergyengineering:spanner"
 	}
-},
-"result": {
-	"item": "kenergyengineering:spanner"
-}
 }

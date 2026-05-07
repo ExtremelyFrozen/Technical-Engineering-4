@@ -1,6 +1,4 @@
-﻿{
-"replace": false,
-"values": [
-	"kenergyengineering:chlorium_plate"
-]
+{
+	"replace": false,
+	"values": ["kenergyengineering:chlorium_plate"]
 }

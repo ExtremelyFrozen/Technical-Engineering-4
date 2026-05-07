@@ -1,4 +1,4 @@
-﻿{
+{
 	"parent": "kenergyengineering:block/cable/ccp",
 	"textures": {
 		"texture": "kenergyengineering:machine/cable_azure"

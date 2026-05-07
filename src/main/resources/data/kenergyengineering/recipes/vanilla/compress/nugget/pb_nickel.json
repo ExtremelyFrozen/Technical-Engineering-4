@@ -1,16 +1,12 @@
-﻿{
-"type": "minecraft:crafting_shaped",
-"pattern": [
-	"CCC",
-	"CCC",
-	"CCC"
-],
-"key": {
-	"C": {
-	"tag": "forge:nuggets/nickel"
+{
+	"type": "minecraft:crafting_shaped",
+	"pattern": ["CCC", "CCC", "CCC"],
+	"key": {
+		"C": {
+			"tag": "forge:nuggets/nickel"
+		}
+	},
+	"result": {
+		"item": "kenergyengineering:nickel_ingot"
 	}
-},
-"result": {
-	"item": "kenergyengineering:nickel_ingot"
-}
 }

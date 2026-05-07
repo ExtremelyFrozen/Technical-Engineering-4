@@ -1,16 +1,12 @@
-﻿{
-"type": "minecraft:crafting_shaped",
-"pattern": [
-	"AA ",
-	" AA",
-	"AA "
-],
-"key": {
-	"A": {
-	"tag": "forge:ingots/tin"
+{
+	"type": "minecraft:crafting_shaped",
+	"pattern": ["AA ", " AA", "AA "],
+	"key": {
+		"A": {
+			"tag": "forge:ingots/tin"
+		}
+	},
+	"result": {
+		"item": "kenergyengineering:mould_string"
 	}
-},
-"result": {
-	"item": "kenergyengineering:mould_string"
-}
 }

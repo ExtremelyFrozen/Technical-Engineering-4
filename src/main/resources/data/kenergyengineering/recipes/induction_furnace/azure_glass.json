@@ -1,23 +1,23 @@
-﻿{
-"type": "kenergyengineering:induction_furnace",
-"inputs": [
-	{
-	"form": "item",
-	"type": "static",
-	"key": "minecraft:glowstone_dust",
-	"count": 2
-	},
-	{
-	"form": "item",
-	"type": "static",
-	"key": "minecraft:amethyst_shard"
-	}
-],
-"outputs": [
-	{
-	"form": "item",
-	"key": "kenergyengineering:azure_glass"
-	}
-],
-"time": 100
+{
+	"type": "kenergyengineering:induction_furnace",
+	"inputs": [
+		{
+			"form": "item",
+			"type": "static",
+			"key": "minecraft:glowstone_dust",
+			"count": 2
+		},
+		{
+			"form": "item",
+			"type": "static",
+			"key": "minecraft:amethyst_shard"
+		}
+	],
+	"outputs": [
+		{
+			"form": "item",
+			"key": "kenergyengineering:azure_glass"
+		}
+	],
+	"time": 100
 }

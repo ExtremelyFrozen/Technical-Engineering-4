@@ -1,6 +1,4 @@
-﻿{
-"replace": false,
-"values": [
-	"kenergyengineering:copper_dust"
-]
+{
+	"replace": false,
+	"values": ["kenergyengineering:copper_dust"]
 }

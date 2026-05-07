@@ -1,28 +1,24 @@
-﻿{
-"type": "minecraft:crafting_shaped",
-"pattern": [
-	" D ",
-	"ACA",
-	"BVB"
-],
-"key": {
-	"A": {
-	"item": "minecraft:obsidian"
+{
+	"type": "minecraft:crafting_shaped",
+	"pattern": [" D ", "ACA", "BVB"],
+	"key": {
+		"A": {
+			"item": "minecraft:obsidian"
+		},
+		"B": {
+			"item": "minecraft:gold_ingot"
+		},
+		"C": {
+			"item": "kenergyengineering:redstone_storer"
+		},
+		"V": {
+			"item": "minecraft:redstone"
+		},
+		"D": {
+			"item": "kenergyengineering:redstone_conductor"
+		}
 	},
-	"B": {
-	"item": "minecraft:gold_ingot"
-	},
-	"C": {
-	"item": "kenergyengineering:redstone_storer"
-	},
-	"V": {
-	"item": "minecraft:redstone"
-	},
-	"D": {
-	"item": "kenergyengineering:redstone_conductor"
+	"result": {
+		"item": "kenergyengineering:engine_metal"
 	}
-},
-"result": {
-	"item": "kenergyengineering:engine_metal"
-}
 }

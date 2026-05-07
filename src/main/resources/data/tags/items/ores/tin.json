@@ -1,7 +1,4 @@
-﻿{
-"replace": false,
-"values": [
-	"kenergyengineering:tin_ore",
-	"kenergyengineering:deep_tin_ore"
-]
+{
+	"replace": false,
+	"values": ["kenergyengineering:tin_ore", "kenergyengineering:deep_tin_ore"]
 }

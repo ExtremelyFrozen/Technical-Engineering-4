@@ -1,28 +1,24 @@
-﻿{
-"type": "minecraft:crafting_shaped",
-"pattern": [
-	"BDB",
-	"ACA",
-	"BVB"
-],
-"key": {
-	"A": {
-	"tag": "forge:stone"
+{
+	"type": "minecraft:crafting_shaped",
+	"pattern": ["BDB", "ACA", "BVB"],
+	"key": {
+		"A": {
+			"tag": "forge:stone"
+		},
+		"B": {
+			"tag": "forge:ingots/copper"
+		},
+		"C": {
+			"item": "kenergyengineering:redstone_storer"
+		},
+		"V": {
+			"item": "kenergyengineering:redstone_ai"
+		},
+		"D": {
+			"tag": "forge:gears/copper"
+		}
 	},
-	"B": {
-	"tag": "forge:ingots/copper"
-	},
-	"C": {
-	"item": "kenergyengineering:redstone_storer"
-	},
-	"V": {
-	"item": "kenergyengineering:redstone_ai"
-	},
-	"D": {
-	"tag": "forge:gears/copper"
+	"result": {
+		"item": "kenergyengineering:machine_compressor"
 	}
-},
-"result": {
-	"item": "kenergyengineering:machine_compressor"
-}
 }

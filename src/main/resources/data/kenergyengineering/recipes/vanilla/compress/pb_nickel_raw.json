@@ -1,16 +1,12 @@
-﻿{
-"type": "minecraft:crafting_shaped",
-"pattern": [
-	"CCC",
-	"CCC",
-	"CCC"
-],
-"key": {
-	"C": {
-	"tag": "forge:raw_materials/nickel"
+{
+	"type": "minecraft:crafting_shaped",
+	"pattern": ["CCC", "CCC", "CCC"],
+	"key": {
+		"C": {
+			"tag": "forge:raw_materials/nickel"
+		}
+	},
+	"result": {
+		"item": "kenergyengineering:raw_nickel_block"
 	}
-},
-"result": {
-	"item": "kenergyengineering:raw_nickel_block"
-}
 }

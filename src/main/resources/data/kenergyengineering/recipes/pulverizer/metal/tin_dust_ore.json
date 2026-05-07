@@ -1,24 +1,24 @@
-﻿{
-"type": "kenergyengineering:pulverizer",
-"inputs": [
-	{
-	"form": "item",
-	"type": "tag",
-	"key": "forge:ores/tin"
-	}
-],
-"outputs": [
-	{
-	"form": "item",
-	"key": "kenergyengineering:tin_dust",
-	"count": 2
-	},
-	{
-	"form": "item",
-	"key": "minecraft:gravel",
-	"count": 1,
-	"chance": 0.2
-	}
-],
-"time": 180
+{
+	"type": "kenergyengineering:pulverizer",
+	"inputs": [
+		{
+			"form": "item",
+			"type": "tag",
+			"key": "forge:ores/tin"
+		}
+	],
+	"outputs": [
+		{
+			"form": "item",
+			"key": "kenergyengineering:tin_dust",
+			"count": 2
+		},
+		{
+			"form": "item",
+			"key": "minecraft:gravel",
+			"count": 1,
+			"chance": 0.2
+		}
+	],
+	"time": 180
 }

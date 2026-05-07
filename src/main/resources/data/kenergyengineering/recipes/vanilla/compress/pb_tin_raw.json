@@ -1,16 +1,12 @@
-﻿{
-"type": "minecraft:crafting_shaped",
-"pattern": [
-	"CCC",
-	"CCC",
-	"CCC"
-],
-"key": {
-	"C": {
-	"tag": "forge:raw_materials/tin"
+{
+	"type": "minecraft:crafting_shaped",
+	"pattern": ["CCC", "CCC", "CCC"],
+	"key": {
+		"C": {
+			"tag": "forge:raw_materials/tin"
+		}
+	},
+	"result": {
+		"item": "kenergyengineering:raw_tin_block"
 	}
-},
-"result": {
-	"item": "kenergyengineering:raw_tin_block"
-}
 }

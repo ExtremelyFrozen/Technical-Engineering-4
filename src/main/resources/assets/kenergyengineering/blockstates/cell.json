@@ -1,4 +1,4 @@
-﻿{
+{
 	"variants": {
 		"facing=east,active=false": {
 			"model": "kenergyengineering:block/cell_empty",

@@ -1,30 +1,30 @@
-﻿{
-"type": "kenergyengineering:pulverizer",
-"inputs": [
-	{
-	"form": "item",
-	"type": "static",
-	"key": "minecraft:blaze_rod"
-	}
-],
-"outputs": [
-	{
-	"form": "item",
-	"key": "minecraft:blaze_powder",
-	"count": 3
-	},
-	{
-	"form": "item",
-	"key": "minecraft:blaze_powder",
-	"count": 1,
-	"chance": 0.5
-	},
-	{
-	"form": "item",
-	"key": "minecraft:blaze_powder",
-	"count": 1,
-	"chance": 0.2
-	}
-],
-"time": 100
+{
+	"type": "kenergyengineering:pulverizer",
+	"inputs": [
+		{
+			"form": "item",
+			"type": "static",
+			"key": "minecraft:blaze_rod"
+		}
+	],
+	"outputs": [
+		{
+			"form": "item",
+			"key": "minecraft:blaze_powder",
+			"count": 3
+		},
+		{
+			"form": "item",
+			"key": "minecraft:blaze_powder",
+			"count": 1,
+			"chance": 0.5
+		},
+		{
+			"form": "item",
+			"key": "minecraft:blaze_powder",
+			"count": 1,
+			"chance": 0.2
+		}
+	],
+	"time": 100
 }

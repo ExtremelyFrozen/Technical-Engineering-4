@@ -1,16 +1,12 @@
-﻿{
-"type": "minecraft:crafting_shaped",
-"pattern": [
-	"CCC",
-	"CCC",
-	"CCC"
-],
-"key": {
-	"C": {
-	"tag": "forge:ingots/chlorium"
+{
+	"type": "minecraft:crafting_shaped",
+	"pattern": ["CCC", "CCC", "CCC"],
+	"key": {
+		"C": {
+			"tag": "forge:ingots/chlorium"
+		}
+	},
+	"result": {
+		"item": "kenergyengineering:chlorium_block"
 	}
-},
-"result": {
-	"item": "kenergyengineering:chlorium_block"
-}
 }

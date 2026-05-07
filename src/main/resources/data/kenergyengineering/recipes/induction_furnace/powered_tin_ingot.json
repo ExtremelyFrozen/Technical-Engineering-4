@@ -1,29 +1,29 @@
-﻿{
-"type": "kenergyengineering:induction_furnace",
-"inputs": [
-	{
-	"form": "item",
-	"type": "tag",
-	"key": "kenergyengineering:mats/tin"
-	},
-	{
-	"form": "item",
-	"type": "tag",
-	"key": "kenergyengineering:mats/copper"
-	},
-	{
-	"form": "item",
-	"type": "static",
-	"key": "minecraft:redstone",
-	"count": 2
-	}
-],
-"outputs": [
-	{
-	"form": "item",
-	"key": "kenergyengineering:powered_tin_ingot",
-	"count": 3
-	}
-],
-"time": 300
+{
+	"type": "kenergyengineering:induction_furnace",
+	"inputs": [
+		{
+			"form": "item",
+			"type": "tag",
+			"key": "kenergyengineering:mats/tin"
+		},
+		{
+			"form": "item",
+			"type": "tag",
+			"key": "kenergyengineering:mats/copper"
+		},
+		{
+			"form": "item",
+			"type": "static",
+			"key": "minecraft:redstone",
+			"count": 2
+		}
+	],
+	"outputs": [
+		{
+			"form": "item",
+			"key": "kenergyengineering:powered_tin_ingot",
+			"count": 3
+		}
+	],
+	"time": 300
 }

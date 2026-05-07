@@ -1,18 +1,16 @@
-﻿{
-"type": "minecraft:crafting_shaped",
-"pattern": [
-	"ABA"
-],
-"key": {
-	"A": {
-	"tag": "forge:glass"
+{
+	"type": "minecraft:crafting_shaped",
+	"pattern": ["ABA"],
+	"key": {
+		"A": {
+			"tag": "forge:glass"
+		},
+		"B": {
+			"item": "minecraft:redstone_block"
+		}
 	},
-	"B": {
-	"item": "minecraft:redstone_block"
+	"result": {
+		"item": "kenergyengineering:cable",
+		"count": 4
 	}
-},
-"result": {
-	"item": "kenergyengineering:cable",
-	"count": 4
-}
 }

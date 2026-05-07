@@ -1,12 +1,12 @@
-﻿{
-"type": "minecraft:crafting_shapeless",
-"ingredients": [
-	{
-	"item": "kenergyengineering:raw_tin_block"
+{
+	"type": "minecraft:crafting_shapeless",
+	"ingredients": [
+		{
+			"item": "kenergyengineering:raw_tin_block"
+		}
+	],
+	"result": {
+		"item": "kenergyengineering:raw_tin",
+		"count": 9
 	}
-],
-"result": {
-	"item": "kenergyengineering:raw_tin",
-	"count": 9
-}
 }

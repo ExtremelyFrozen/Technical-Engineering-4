@@ -1,17 +1,13 @@
-﻿{
-"type": "minecraft:crafting_shaped",
-"pattern": [
-	" A ",
-	"A A",
-	"AAA"
-],
-"key": {
-	"A": {
-	"item": "kenergyengineering:bizarrerie"
+{
+	"type": "minecraft:crafting_shaped",
+	"pattern": [" A ", "A A", "AAA"],
+	"key": {
+		"A": {
+			"item": "kenergyengineering:bizarrerie"
+		}
+	},
+	"result": {
+		"item": "minecraft:quartz",
+		"count": 24
 	}
-},
-"result": {
-	"item": "minecraft:quartz",
-	"count": 24
-}
 }

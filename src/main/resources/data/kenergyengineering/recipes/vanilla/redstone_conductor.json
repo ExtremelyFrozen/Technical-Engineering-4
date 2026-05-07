@@ -1,19 +1,15 @@
-﻿{
-"type": "minecraft:crafting_shaped",
-"pattern": [
-	"C C",
-	"CAC",
-	"C C"
-],
-"key": {
-	"A": {
-	"tag": "forge:ingots/copper"
+{
+	"type": "minecraft:crafting_shaped",
+	"pattern": ["C C", "CAC", "C C"],
+	"key": {
+		"A": {
+			"tag": "forge:ingots/copper"
+		},
+		"C": {
+			"item": "minecraft:redstone"
+		}
 	},
-	"C": {
-	"item": "minecraft:redstone"
+	"result": {
+		"item": "kenergyengineering:redstone_conductor"
 	}
-},
-"result": {
-	"item": "kenergyengineering:redstone_conductor"
-}
 }

@@ -1,4 +1,4 @@
-﻿{
+{
 	"parent": "kenergyengineering:block/pipe/pcn",
 	"textures": {
 		"texture": "kenergyengineering:machine/pipe"

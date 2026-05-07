@@ -1,25 +1,21 @@
-﻿{
-"type": "minecraft:crafting_shaped",
-"pattern": [
-	"EBE",
-	"DAD",
-	"EBE"
-],
-"key": {
-	"A": {
-	"item": "kenergyengineering:augmented_levelup"
+{
+	"type": "minecraft:crafting_shaped",
+	"pattern": ["EBE", "DAD", "EBE"],
+	"key": {
+		"A": {
+			"item": "kenergyengineering:augmented_levelup"
+		},
+		"B": {
+			"tag": "forge:gears/tin"
+		},
+		"D": {
+			"tag": "forge:glass"
+		},
+		"E": {
+			"item": "kenergyengineering:azure_glass"
+		}
 	},
-	"B": {
-	"tag": "forge:gears/tin"
-	},
-	"D": {
-	"tag": "forge:glass"
-	},
-	"E": {
-	"item": "kenergyengineering:azure_glass"
+	"result": {
+		"item": "kenergyengineering:powered_levelup"
 	}
-},
-"result": {
-	"item": "kenergyengineering:powered_levelup"
-}
 }

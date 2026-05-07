@@ -1,7 +1,4 @@
-﻿{
-"replace": false,
-"values": [
-	"#forge:ingots/tin",
-	"#forge:dusts/tin"
-]
+{
+	"replace": false,
+	"values": ["#forge:ingots/tin", "#forge:dusts/tin"]
 }

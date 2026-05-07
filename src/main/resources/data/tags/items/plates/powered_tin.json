@@ -1,6 +1,4 @@
-﻿{
-"replace": false,
-"values": [
-	"kenergyengineering:powered_tin_plate"
-]
+{
+	"replace": false,
+	"values": ["kenergyengineering:powered_tin_plate"]
 }

@@ -1,28 +1,24 @@
-﻿{
-"type": "minecraft:crafting_shaped",
-"pattern": [
-	"BDB",
-	"ACA",
-	"BVB"
-],
-"key": {
-	"A": {
-	"item": "minecraft:bricks"
+{
+	"type": "minecraft:crafting_shaped",
+	"pattern": ["BDB", "ACA", "BVB"],
+	"key": {
+		"A": {
+			"item": "minecraft:bricks"
+		},
+		"B": {
+			"tag": "forge:plates/iron"
+		},
+		"C": {
+			"item": "kenergyengineering:redstone_storer"
+		},
+		"V": {
+			"item": "kenergyengineering:redstone_ai"
+		},
+		"D": {
+			"item": "minecraft:bucket"
+		}
 	},
-	"B": {
-	"tag": "forge:plates/iron"
-	},
-	"C": {
-	"item": "kenergyengineering:redstone_storer"
-	},
-	"V": {
-	"item": "kenergyengineering:redstone_ai"
-	},
-	"D": {
-	"item": "minecraft:bucket"
+	"result": {
+		"item": "kenergyengineering:machine_induction_furnace"
 	}
-},
-"result": {
-	"item": "kenergyengineering:machine_induction_furnace"
-}
 }

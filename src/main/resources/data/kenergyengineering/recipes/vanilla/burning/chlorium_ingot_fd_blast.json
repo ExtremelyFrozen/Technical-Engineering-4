@@ -1,9 +1,9 @@
-﻿{
-"type": "minecraft:blasting",
-"ingredient": {
-	"item": "kenergyengineering:chlorium_dust"
-},
-"result": "kenergyengineering:chlorium_ingot",
-"experience": 0,
-"cookingtime": 100
+{
+	"type": "minecraft:blasting",
+	"ingredient": {
+		"item": "kenergyengineering:chlorium_dust"
+	},
+	"result": "kenergyengineering:chlorium_ingot",
+	"experience": 0,
+	"cookingtime": 100
 }

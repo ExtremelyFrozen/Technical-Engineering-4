@@ -1,6 +1,4 @@
-﻿{
-"replace": false,
-"values": [
-	"kenergyengineering:tin_gear"
-]
+{
+	"replace": false,
+	"values": ["kenergyengineering:tin_gear"]
 }

@@ -1,4 +1,4 @@
-﻿{
+{
 	"parent": "kenergyengineering:block/channel/channel",
 	"textures": {
 		"texture": "kenergyengineering:machine/channel/channel_energy"
