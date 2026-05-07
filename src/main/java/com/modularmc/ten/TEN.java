@@ -1,6 +1,8 @@
 package com.modularmc.ten;
 
 import com.modularmc.ten.common.CommonProxy;
+import com.modularmc.ten.config.ConfigHolder;
+import com.modularmc.ten.core.network.TENNetwork;
 
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.bus.api.IEventBus;
@@ -24,7 +26,10 @@ public class TEN {
     public TEN(IEventBus modBus, FMLModContainer container) {
         TEN.tenModBus = modBus;
 
+        ConfigHolder.init();
         CommonProxy.init(modBus);
+
+        modBus.addListener(TENNetwork::registerPayloads);
     }
 
     public static ResourceLocation id(String path) {

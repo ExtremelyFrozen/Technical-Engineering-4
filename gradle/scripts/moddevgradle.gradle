@@ -101,7 +101,7 @@ neoForge {
             // "REGISTRYDUMP": For getting the contents of all registries.
             systemProperty 'forge.logging.markers', 'REGISTRIES'
             // Enable assertions for our classes in dev environment
-            jvmArgument('-ea:com.modularmc.template...')
+            jvmArgument('-ea:com.modularmc.ten...')
 
             // Recommended logging level for the console
             // You can set various levels here.

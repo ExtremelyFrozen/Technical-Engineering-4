@@ -5,6 +5,6 @@ import net.neoforged.bus.api.IEventBus;
 public class ClientProxy {
 
     public static void init(IEventBus modBus) {
-        modBus.register(ClientProxy.class);
+//        modBus.register(ClientProxy.class);
     }
 }
