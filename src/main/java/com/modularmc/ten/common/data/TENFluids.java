@@ -19,17 +19,18 @@ import static com.modularmc.ten.common.registry.Registration.REGISTRATE;
 public class TENFluids {
 
     public static final FluidEntry<BaseFlowingFluid.Flowing> LIQUID_XP = fluid(
-            "liquid_xp", 100, 10, 100, 25000, 1, 1000.0f, 6);
+            "liquid_xp", "Liquid XP", "Liquid XP Bucket", 100, 10, 100, 25000, 1, 1000.0f, 6);
     public static final FluidEntry<BaseFlowingFluid.Flowing> LIQUID_BIZARRERIE = fluid(
-            "liquid_bizarrerie", 100000, 15, -500, 1000, 2, 5000.0f, 4);
+            "liquid_bizarrerie", "Liquid Bizarrerie", "Liquid Bizarrerie Bucket", 100000, 15, -500, 1000, 2, 5000.0f, 4);
 
     private static FluidEntry<BaseFlowingFluid.Flowing> fluid(
-                                                              String name, int density, int light, int temperature, int viscosity,
+                                                              String name, String fluidLang, String bucketLang, int density, int light, int temperature, int viscosity,
                                                               int levelDecrease, float explosionResistance, int slopeFindDistance) {
         ResourceLocation still = TEN.id("block/" + name);
         ResourceLocation flowing = TEN.id("block/" + name + "_flowing");
         return REGISTRATE
                 .fluid(name, still, flowing)
+                .lang(fluidLang)
                 .properties(p -> p
                         .descriptionId("fluid." + TEN.MOD_ID + "." + name)
                         .density(density)
@@ -44,7 +45,11 @@ public class TENFluids {
                         .slopeFindDistance(slopeFindDistance)
                         .tickRate(10))
                 .source(BaseFlowingFluid.Source::new)
+                .block()
+                .lang(fluidLang)
+                .build()
                 .bucket(TENBucketItem::new)
+                .lang(bucketLang)
                 .model((ctx, prov) -> prov.getBuilder(prov.name(ctx::getEntry))
                         .parent(new ModelFile.UncheckedModelFile("neoforge:item/bucket_drip"))
                         .customLoader(DynamicFluidContainerModelBuilder::begin)

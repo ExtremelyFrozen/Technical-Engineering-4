@@ -15,15 +15,15 @@ public class FarmScreen extends CmScreenMachine {
 
     public FarmScreen(CmContainerMachine container, Inventory inv, Component title) {
         super(container, inv, title, "textures/gui/farm_manager.png", 256, 256);
-        xSize = 176 + getExtras();
-        ySize = 222;
+        xSize = 176;
+        ySize = 166;
     }
 
     @Override
     public void addWidgets() {
         super.addWidgets();
         widgets.add(energy = getDefaultEne());
-        widgets.add(progress = new ElementProgress(81, 35, 80, 5, 0, 0, HANDLER));
+        widgets.add(progress = new ElementProgress(48, 73, 80, 5, 97, 0, HANDLER, true));
     }
 
     @Override

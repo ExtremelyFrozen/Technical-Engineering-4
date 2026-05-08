@@ -38,9 +38,8 @@ public class CmScreenMachine extends CmScreen<CmContainerMachine> {
 
     public CmScreenMachine(CmContainerMachine container, Inventory inv, Component title, String path, int texW, int texH) {
         super(container, inv, title, path, texW, texH);
-        xSize = getExtras() + 176;
-        ySize = 222;
-        getExtras(); // prime sidebar space
+        xSize = 176;
+        ySize = 166;
     }
 
     @Override
@@ -132,7 +131,7 @@ public class CmScreenMachine extends CmScreen<CmContainerMachine> {
         widgets.add(down);
     }
 
-    private void setSides() {
+    protected void setSides() {
         if (container.pos == null || container.data == null) {
             return;
         }

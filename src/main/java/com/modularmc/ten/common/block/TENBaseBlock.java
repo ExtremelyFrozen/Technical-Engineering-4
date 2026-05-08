@@ -1,8 +1,5 @@
 package com.modularmc.ten.common.block;
 
-import com.modularmc.ten.utils.ComponentHelper;
-import com.modularmc.ten.utils.SafeOperationHelper;
-
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
@@ -31,6 +28,6 @@ public class TENBaseBlock extends Block {
 
     @Override
     public String getDescriptionId() {
-        return ComponentHelper.getKey(SafeOperationHelper.regNameOf(this));
+        return super.getDescriptionId();
     }
 }

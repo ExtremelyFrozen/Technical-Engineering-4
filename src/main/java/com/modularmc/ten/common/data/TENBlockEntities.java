@@ -49,6 +49,10 @@ public class TENBlockEntities {
             .blockEntity("machine_matter_condenser", CondenserBlockEntity::new)
             .validBlocks(TENBlocks.MACHINE_CONDENSER)
             .register();
+    public static final BlockEntityEntry<EncfluBlockEntity> ENCHFLU = REGISTRATE
+            .blockEntity("machine_enchantment_flusher", EncfluBlockEntity::new)
+            .validBlocks(TENBlocks.MACHINE_ENCHFLU)
+            .register();
 
     // Effect machines
     public static final BlockEntityEntry<BeaconBlockEntity> BEACON = REGISTRATE
@@ -62,6 +66,10 @@ public class TENBlockEntities {
     public static final BlockEntityEntry<FarmBlockEntity> FARM = REGISTRATE
             .blockEntity("machine_farm_manager", FarmBlockEntity::new)
             .validBlocks(TENBlocks.MACHINE_FARM)
+            .register();
+    public static final BlockEntityEntry<QuarryBlockEntity> QUARRY = REGISTRATE
+            .blockEntity("machine_quarry", QuarryBlockEntity::new)
+            .validBlocks(TENBlocks.MACHINE_QUARRY)
             .register();
 
     // Engines

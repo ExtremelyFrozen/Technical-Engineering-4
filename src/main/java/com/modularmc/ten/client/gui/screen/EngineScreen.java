@@ -10,19 +10,19 @@ import net.minecraft.world.entity.player.Inventory;
 public class EngineScreen extends CmScreenMachine {
 
     ElementBurnLeft energy;
-    ElementBurnLeft fuel;
+    ElementBurnLeft left;
 
     public EngineScreen(CmContainerMachine container, Inventory inv, Component title) {
         super(container, inv, title, "textures/gui/engine.png", 256, 256);
-        xSize = 176 + getExtras();
-        ySize = 222;
+        xSize = 176;
+        ySize = 166;
     }
 
     @Override
     public void addWidgets() {
         super.addWidgets();
         widgets.add(energy = new ElementBurnLeft(117, 22, 14, 46, 0, 0, HANDLER, true));
-        widgets.add(fuel = new ElementBurnLeft(78, 26, 14, 14, 0, 0, HANDLER, true));
+        widgets.add(left = new ElementBurnLeft(81, 39, 13, 13, 14, 26, HANDLER));
     }
 
     @Override
@@ -32,8 +32,8 @@ public class EngineScreen extends CmScreenMachine {
             energy.setPer(pEnergy());
             energy.setValue(energy(), maxEnergy());
         }
-        if (fuel != null) {
-            fuel.setPer(pFuel());
+        if (left != null) {
+            left.setPer(pFuel());
         }
     }
 }

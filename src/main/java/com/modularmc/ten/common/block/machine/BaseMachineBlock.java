@@ -109,12 +109,14 @@ public class BaseMachineBlock extends Block implements EntityBlock {
             var menuType = TENMenuTypes.MACHINE.get();
             int mType = machine.machineType();
             int slots = machine.itemHandler != null ? machine.itemHandler.getSlots() : 0;
+            boolean hasUpgrade = machine.hasUpgrade();
             sp.openMenu(new SimpleMenuProvider(
                     (id, inv, p) -> new CmContainerMachine(menuType, id, inv, machine, pos),
                     machine.getDisplayName()),
                     buf -> {
                         buf.writeInt(mType);
                         buf.writeInt(slots);
+                        buf.writeBoolean(hasUpgrade);
                         buf.writeBlockPos(pos);
                     });
             for (Direction direction : Direction.values()) {

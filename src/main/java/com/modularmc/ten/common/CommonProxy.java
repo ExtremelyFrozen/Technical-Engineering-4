@@ -3,6 +3,7 @@ package com.modularmc.ten.common;
 import com.modularmc.ten.common.block.machine.BaseMachineBlock;
 import com.modularmc.ten.common.data.*;
 import com.modularmc.ten.config.ConfigHolder;
+import com.modularmc.ten.data.TENDataGen;
 
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -20,6 +21,7 @@ public class CommonProxy {
         CommonProxy.modBus = modBus;
 
         ConfigHolder.init();
+        TENDataGen.init();
 
         REGISTRATE.registerEventListeners(modBus);
         TENCreativeModeTabs.init();

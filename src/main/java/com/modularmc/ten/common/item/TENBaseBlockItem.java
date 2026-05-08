@@ -39,6 +39,6 @@ public class TENBaseBlockItem extends BlockItem {
 
     @Override
     public String getDescriptionId() {
-        return ComponentHelper.getKey(SafeOperationHelper.regNameOf(this));
+        return super.getDescriptionId();
     }
 }

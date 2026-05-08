@@ -25,7 +25,7 @@ public class TENBaseItem extends Item {
 
     @Override
     public String getDescriptionId() {
-        return ComponentHelper.getKey(SafeOperationHelper.regNameOf(this));
+        return super.getDescriptionId();
     }
 
     @Override

@@ -15,15 +15,16 @@ public class EncfluScreen extends CmScreenMachine {
 
     public EncfluScreen(CmContainerMachine container, Inventory inv, Component title) {
         super(container, inv, title, "textures/gui/enchantment_flusher.png", 256, 256);
-        xSize = 176 + getExtras();
-        ySize = 222;
+        xSize = 176;
+        ySize = 166;
     }
 
     @Override
     public void addWidgets() {
         super.addWidgets();
         widgets.add(energy = getDefaultEne());
-        widgets.add(progress = new ElementProgress(74, 37, 22, 6, 0, 0, HANDLER));
+        widgets.add(new ElementBurnLeft(45, 36, 13, 13, 14, 0, HANDLER));
+        widgets.add(progress = new ElementProgress(76, 35, 22, 16, 27, 127, HANDLER, true));
     }
 
     @Override

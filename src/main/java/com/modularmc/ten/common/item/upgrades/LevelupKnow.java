@@ -8,6 +8,7 @@ public class LevelupKnow extends UpgradeItem {
 
     @Override
     public boolean effect(IUpgradableMachine machine) {
+        machine.onUpgradeApply(0, 5);
         return true;
     }
 }

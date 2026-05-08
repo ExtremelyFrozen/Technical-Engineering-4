@@ -11,6 +11,6 @@ public class PipeScreen extends CmScreen<CmContainerMachine> {
     public PipeScreen(CmContainerMachine container, Inventory inv, Component title) {
         super(container, inv, title, "textures/gui/pipe.png", 256, 256);
         xSize = 176;
-        ySize = 222;
+        ySize = 166;
     }
 }

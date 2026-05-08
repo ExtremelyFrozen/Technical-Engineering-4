@@ -5,8 +5,11 @@ import com.modularmc.ten.api.capability.MachineFluidTank;
 import com.modularmc.ten.api.capability.MachineItemHandler;
 import com.modularmc.ten.api.option.FaceOption;
 import com.modularmc.ten.api.option.IngredientType;
+import com.modularmc.ten.api.option.MachineType;
 import com.modularmc.ten.api.option.RedstoneMode;
 import com.modularmc.ten.api.wrapper.SyncedIntArray;
+import com.modularmc.ten.common.item.upgrades.IUpgradableMachine;
+import com.modularmc.ten.common.item.upgrades.UpgradeItem;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -31,7 +34,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
-public abstract class CmMachineBlockEntity extends CmBlockEntity implements MenuProvider {
+public abstract class CmMachineBlockEntity extends CmBlockEntity implements MenuProvider, IUpgradableMachine {
 
     // Data indices
     public static final int PROGRESS = 0;
@@ -65,10 +68,14 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements Menu
 
     // Items
     public MachineItemHandler itemHandler;
+    public MachineItemHandler upgradeHandler;
     public int maxReceiveItem;
     public int initialItemReceive;
     public int maxExtractItem;
     public int initialItemExtract;
+    public int upgradeSize = 1;
+    public int initialUpgradeSize = 1;
+    public static final int MAX_UPGRADE_SLOTS = 6;
 
     // Fluids
     public List<MachineFluidTank> tanks = new ArrayList<>();
@@ -150,6 +157,12 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements Menu
             itemHandler.setValidator(this::valid);
         }
         itemHandler.setChangeListener(this::markDirty);
+        if (upgradeHandler == null) {
+            upgradeHandler = new MachineItemHandler(MAX_UPGRADE_SLOTS, this::validUpgrade);
+        } else {
+            upgradeHandler.setValidator(this::validUpgrade);
+        }
+        upgradeHandler.setChangeListener(this::markDirty);
 
         if (energyStorage == null) {
             energyStorage = new MachineEnergyStorage(maxStorageEnergy, maxReceiveEnergy, maxExtractEnergy);
@@ -319,6 +332,8 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements Menu
     public void doBaseData() {
         initMachine();
         if (energyStorage == null) return;
+        resetUpgradeEffects();
+        applyUpgradeEffects();
         maxStorageEnergy = initialEnergyStorage;
         maxReceiveEnergy = initialEnergyReceive;
         maxExtractEnergy = initialEnergyExtract;
@@ -326,6 +341,8 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements Menu
         maxExtractItem = initialItemExtract;
         maxReceiveFluid = initialFluidReceive;
         maxExtractFluid = initialFluidExtract;
+
+        applyUpgradeEffects();
 
         energyStorage.setMaxReceive(maxReceiveEnergy);
         energyStorage.setMaxExtract(maxExtractEnergy);
@@ -342,6 +359,7 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements Menu
         data.set(F_EXT, maxExtractFluid);
         data.set(RED_MODE, redstoneMode);
         data.set(FACE, facing);
+        data.set(UPGSIZE, upgradeSize);
 
         if (energyStorage.getEnergyStored() > maxStorageEnergy) {
             energyStorage.setEnergy(maxStorageEnergy);
@@ -362,12 +380,47 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements Menu
         return true;
     }
 
+    public boolean validUpgrade(int slot, ItemStack stack) {
+        return stack.getItem() instanceof UpgradeItem && slot < Math.max(1, Math.min(upgradeSize, MAX_UPGRADE_SLOTS));
+    }
+
     public IngredientType tankType(int tank) {
         return IngredientType.IGNORE;
     }
 
     public boolean valid(int slot, FluidStack stack) {
         return true;
+    }
+
+    protected void resetUpgradeEffects() {
+        efficientIn = initialEfficientIn;
+        maxStorageEnergy = initialEnergyStorage;
+        maxReceiveEnergy = initialEnergyReceive;
+        maxExtractEnergy = initialEnergyExtract;
+        maxReceiveItem = initialItemReceive;
+        maxExtractItem = initialItemExtract;
+        maxReceiveFluid = initialFluidReceive;
+        maxExtractFluid = initialFluidExtract;
+        upgradeSize = Math.max(1, Math.min(initialUpgradeSize, MAX_UPGRADE_SLOTS));
+    }
+
+    protected void applyUpgradeEffects() {
+        if (!hasUpgrade() || upgradeHandler == null) {
+            return;
+        }
+        int index = 0;
+        while (index < upgradeSize && index < upgradeHandler.getSlots()) {
+            ItemStack stack = upgradeHandler.getStackInSlot(index);
+            if (stack.getItem() instanceof UpgradeItem upgradeItem) {
+                upgradeItem.effect(this);
+            }
+            index++;
+        }
+        upgradeSize = Math.max(1, Math.min(upgradeSize, MAX_UPGRADE_SLOTS));
+    }
+
+    public int getUnlockedUpgradeSlots() {
+        return Math.max(1, Math.min(upgradeSize, MAX_UPGRADE_SLOTS));
     }
 
     // Capability access
@@ -503,11 +556,13 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements Menu
         initMachine();
         if (energyStorage != null) energyStorage.setEnergy(tag.getInt("energy"));
         if (itemHandler != null) itemHandler.deserializeNBT(registries, tag.getCompound("inventory"));
+        if (upgradeHandler != null) upgradeHandler.deserializeNBT(registries, tag.getCompound("upgrades"));
         redstoneMode = tag.getInt("redstone");
         data.set(PROGRESS, tag.getInt("progress"));
         data.set(MAX_PROGRESS, tag.getInt("max_progress"));
         data.set(FUEL, tag.getInt("fuel"));
         data.set(MAX_FUEL, tag.getInt("max_fuel"));
+        upgradeSize = tag.contains("upgrade_size") ? tag.getInt("upgrade_size") : initialUpgradeSize;
         facing = tag.contains("face") ? tag.getInt("face") : getFacing().get3DDataValue();
         active = tag.getBoolean("active");
         for (Direction direction : Direction.values()) {
@@ -522,11 +577,13 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements Menu
     protected void writeTileData(CompoundTag tag, HolderLookup.Provider registries) {
         if (energyStorage != null) tag.putInt("energy", energyStorage.getEnergyStored());
         if (itemHandler != null) tag.put("inventory", itemHandler.serializeNBT(registries));
+        if (upgradeHandler != null) tag.put("upgrades", upgradeHandler.serializeNBT(registries));
         tag.putInt("redstone", redstoneMode);
         tag.putInt("progress", data.get(PROGRESS));
         tag.putInt("max_progress", data.get(MAX_PROGRESS));
         tag.putInt("fuel", data.get(FUEL));
         tag.putInt("max_fuel", data.get(MAX_FUEL));
+        tag.putInt("upgrade_size", upgradeSize);
         tag.putInt("face", facing);
         tag.putBoolean("active", active);
         for (Direction direction : Direction.values()) {
@@ -659,5 +716,50 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements Menu
             Containers.dropItemStack(level, worldPosition.getX(), worldPosition.getY(), worldPosition.getZ(),
                     itemHandler.getStackInSlot(i));
         }
+        if (upgradeHandler != null) {
+            for (int i = 0; i < upgradeHandler.getSlots(); i++) {
+                Containers.dropItemStack(level, worldPosition.getX(), worldPosition.getY(), worldPosition.getZ(),
+                        upgradeHandler.getStackInSlot(i));
+            }
+        }
+    }
+
+    @Override
+    public boolean onUpgradeApply(double percent, int slotIncrease) {
+        efficientIn = (int) (efficientIn + initialEfficientIn * percent);
+        maxStorageEnergy = (int) (maxStorageEnergy + initialEnergyStorage * percent);
+        maxReceiveEnergy = (int) (maxReceiveEnergy + initialEnergyReceive * percent);
+        maxExtractEnergy = (int) (maxExtractEnergy + initialEnergyExtract * percent);
+        maxReceiveItem = (int) (maxReceiveItem + initialItemReceive * percent);
+        maxExtractItem = (int) (maxExtractItem + initialItemExtract * percent);
+        maxReceiveFluid = (int) (maxReceiveFluid + initialFluidReceive * percent);
+        maxExtractFluid = (int) (maxExtractFluid + initialFluidExtract * percent);
+        upgradeSize = Math.max(1, Math.min(upgradeSize + slotIncrease, MAX_UPGRADE_SLOTS));
+        return true;
+    }
+
+    @Override
+    public boolean isType(String type) {
+        return switch (type) {
+            case "MACHINE_PROCESS" -> machineType() == MachineType.MACHINE_PROCESS || machineType() == MachineType.FURNACE || machineType() == MachineType.PULVERIZER || machineType() == MachineType.COMPRESSOR || machineType() == MachineType.REFINER || machineType() == MachineType.INDUCTION_FURNACE || machineType() == MachineType.PSIONICANT || machineType() == MachineType.MATTER_CONDENSER || machineType() == MachineType.ENCHANTMENT_FLUSHER;
+            case "MACHINE_EFFECT" -> machineType() == MachineType.MACHINE_EFFECT || machineType() == MachineType.BEACON || machineType() == MachineType.MOB_RIPPER || machineType() == MachineType.FARM;
+            case "FURNACE" -> machineType() == MachineType.FURNACE;
+            case "BEACON" -> machineType() == MachineType.BEACON;
+            case "QUARRY" -> machineType() == MachineType.QUARRY || machineType() == MachineType.FARM;
+            default -> false;
+        };
+    }
+
+    @Override
+    public int getCurrentRadius() {
+        return 0;
+    }
+
+    @Override
+    public void setCurrentRadius(int radius) {}
+
+    @Override
+    public int getInitialRadius() {
+        return 0;
     }
 }

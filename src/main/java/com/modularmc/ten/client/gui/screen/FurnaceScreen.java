@@ -23,6 +23,7 @@ public class FurnaceScreen extends CmScreenMachine {
     public void addWidgets() {
         super.addWidgets();
         widgets.add(energy = getDefaultEne());
+        widgets.add(new ElementBurnLeft(45, 48, 13, 13, 14, 0, HANDLER));
         widgets.add(progress = new ElementProgress(76, 35, 22, 16, 27, 0, HANDLER));
     }
 

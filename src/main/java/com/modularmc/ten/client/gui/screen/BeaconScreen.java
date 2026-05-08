@@ -15,15 +15,15 @@ public class BeaconScreen extends CmScreenMachine {
 
     public BeaconScreen(CmContainerMachine container, Inventory inv, Component title) {
         super(container, inv, title, "textures/gui/beacon_simulator.png", 256, 256);
-        xSize = 176 + getExtras();
-        ySize = 222;
+        xSize = 176;
+        ySize = 166;
     }
 
     @Override
     public void addWidgets() {
         super.addWidgets();
         widgets.add(energy = getDefaultEne());
-        widgets.add(progress = new ElementProgress(81, 30, 80, 5, 0, 0, HANDLER));
+        widgets.add(progress = new ElementProgress(48, 65, 80, 5, 97, 0, HANDLER, true));
     }
 
     @Override

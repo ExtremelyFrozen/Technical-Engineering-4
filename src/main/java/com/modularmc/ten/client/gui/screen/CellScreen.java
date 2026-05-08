@@ -13,8 +13,8 @@ public class CellScreen extends CmScreenMachine {
 
     public CellScreen(CmContainerMachine container, Inventory inv, Component title) {
         super(container, inv, title, "textures/gui/energy_cell.png", 256, 256);
-        xSize = 176 + getExtras();
-        ySize = 222;
+        xSize = 176;
+        ySize = 166;
     }
 
     @Override

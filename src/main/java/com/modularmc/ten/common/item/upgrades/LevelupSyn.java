@@ -9,7 +9,7 @@ public class LevelupSyn extends UpgradeItem {
     @Override
     public boolean effect(IUpgradableMachine machine) {
         if (machine.isType("MACHINE_PROCESS") || machine.isType("MACHINE_EFFECT")) {
-            machine.onUpgradeApply(0, 1);
+            machine.onUpgradeApply(-0.1, 1);
             return true;
         }
         return false;
