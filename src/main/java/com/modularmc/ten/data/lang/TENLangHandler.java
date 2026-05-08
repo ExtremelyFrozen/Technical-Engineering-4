@@ -1,6 +1,7 @@
 package com.modularmc.ten.data.lang;
 
 import com.modularmc.ten.TEN;
+
 import com.tterrag.registrate.providers.RegistrateLangProvider;
 
 public final class TENLangHandler {
