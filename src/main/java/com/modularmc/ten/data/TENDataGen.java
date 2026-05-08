@@ -8,15 +8,7 @@ import static com.modularmc.ten.common.registry.Registration.REGISTRATE;
 
 public final class TENDataGen {
 
-    private static boolean initialized;
-
     public static void init() {
-        if (initialized) {
-            return;
-        }
-        initialized = true;
         REGISTRATE.addDataGenerator(ProviderType.LANG, TENLangHandler::init);
     }
-
-    private TENDataGen() {}
 }
