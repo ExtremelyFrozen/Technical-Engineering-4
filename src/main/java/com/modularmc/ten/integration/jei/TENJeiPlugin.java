@@ -29,7 +29,6 @@ import mezz.jei.api.registration.IRecipeRegistration;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 @JeiPlugin
@@ -107,6 +106,7 @@ public class TENJeiPlugin implements IModPlugin {
         addArea(registration, PsionicantScreen.class, TEN.id("psionicant"), 76, 35, 22, 16);
 
         registration.addGuiContainerHandler(CmScreenMachine.class, new IGuiContainerHandler<>() {
+
             @Override
             public List<Rect2i> getGuiExtraAreas(CmScreenMachine screen) {
                 return List.of(new Rect2i(screen.getGuiLeft() - screen.getExtras(), screen.getGuiTop(), screen.getExtras(), screen.ySize));
@@ -124,13 +124,13 @@ public class TENJeiPlugin implements IModPlugin {
     }
 
     private static <T extends net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?>> void addArea(
-            IGuiHandlerRegistration registration,
-            Class<? extends T> screenClass,
-            ResourceLocation id,
-            int x,
-            int y,
-            int width,
-            int height) {
+                                                                                                                  IGuiHandlerRegistration registration,
+                                                                                                                  Class<? extends T> screenClass,
+                                                                                                                  ResourceLocation id,
+                                                                                                                  int x,
+                                                                                                                  int y,
+                                                                                                                  int width,
+                                                                                                                  int height) {
         registration.addRecipeClickArea(screenClass, x, y, width, height, new RecipeType<>(id, FormsCombinedRecipe.class));
     }
 }

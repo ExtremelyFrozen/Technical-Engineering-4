@@ -7,7 +7,6 @@ import com.modularmc.ten.common.data.TENBlocks;
 import com.modularmc.ten.common.data.TENRecipeTypes;
 import com.modularmc.ten.integration.xei.TENRecipeWidget;
 
-import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
@@ -17,9 +16,9 @@ import net.neoforged.neoforge.registries.DeferredHolder;
 import dev.emi.emi.api.EmiEntrypoint;
 import dev.emi.emi.api.EmiPlugin;
 import dev.emi.emi.api.EmiRegistry;
-import dev.emi.emi.api.widget.Bounds;
 import dev.emi.emi.api.recipe.EmiRecipeCategory;
 import dev.emi.emi.api.stack.EmiStack;
+import dev.emi.emi.api.widget.Bounds;
 
 import java.util.function.Supplier;
 
@@ -60,8 +59,7 @@ public class TENEmiPlugin implements EmiPlugin {
 
     @Override
     public void register(EmiRegistry registry) {
-        registry.addExclusionArea(CmScreenMachine.class, (screen, consumer) ->
-                consumer.accept(new Bounds(screen.getGuiLeft() - screen.getExtras(), screen.getGuiTop(), screen.getExtras(), screen.ySize)));
+        registry.addExclusionArea(CmScreenMachine.class, (screen, consumer) -> consumer.accept(new Bounds(screen.getGuiLeft() - screen.getExtras(), screen.getGuiTop(), screen.getExtras(), screen.ySize)));
 
         var allRecipeEntries = registry.getRecipeManager().getRecipes();
         var tenRecipeEntries = allRecipeEntries.stream()

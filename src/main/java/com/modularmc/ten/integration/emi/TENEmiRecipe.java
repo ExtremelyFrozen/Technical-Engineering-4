@@ -116,8 +116,7 @@ public class TENEmiRecipe implements EmiRecipe {
             }
         }
 
-        widgets.addDrawable(0, 0, layout.width(), layout.height(), (draw, mouseX, mouseY, delta) ->
-                TENRecipeWidget.drawDecorations(draw, layout));
+        widgets.addDrawable(0, 0, layout.width(), layout.height(), (draw, mouseX, mouseY, delta) -> TENRecipeWidget.drawDecorations(draw, layout));
         for (var decoration : layout.decorations()) {
             widgets.addTooltip(
                     (mouseX, mouseY) -> TENRecipeWidget.decorationTooltips(recipe, layout, mouseX, mouseY).stream()
