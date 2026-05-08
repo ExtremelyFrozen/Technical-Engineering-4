@@ -15,12 +15,15 @@ import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.registries.DeferredHolder;
 
 import mezz.jei.api.IModPlugin;
 import mezz.jei.api.JeiPlugin;
+import mezz.jei.api.gui.builder.IClickableIngredientFactory;
 import mezz.jei.api.gui.handlers.IGuiContainerHandler;
 import mezz.jei.api.helpers.IGuiHelper;
+import mezz.jei.api.neoforge.NeoForgeTypes;
 import mezz.jei.api.recipe.RecipeType;
 import mezz.jei.api.registration.IGuiHandlerRegistration;
 import mezz.jei.api.registration.IRecipeCatalystRegistration;
@@ -110,6 +113,43 @@ public class TENJeiPlugin implements IModPlugin {
             @Override
             public List<Rect2i> getGuiExtraAreas(CmScreenMachine screen) {
                 return List.of(new Rect2i(screen.getGuiLeft() - screen.getExtras(), screen.getGuiTop(), screen.getExtras(), screen.ySize));
+            }
+        });
+
+        registration.addGuiContainerHandler(RefinerScreen.class, new IGuiContainerHandler<>() {
+
+            @Override
+            public List<Rect2i> getGuiExtraAreas(RefinerScreen screen) {
+                return List.of(new Rect2i(screen.getGuiLeft() - screen.getExtras(), screen.getGuiTop(), screen.getExtras(), screen.ySize));
+            }
+
+            @Override
+            public java.util.Optional<? extends mezz.jei.api.runtime.IClickableIngredient<?>> getClickableIngredientUnderMouse(
+                                                                                                                               IClickableIngredientFactory builder,
+                                                                                                                               RefinerScreen screen,
+                                                                                                                               double mouseX,
+                                                                                                                               double mouseY) {
+                if (screen.container.machine == null || screen.container.machine.tanks.size() < 2) {
+                    return java.util.Optional.empty();
+                }
+
+                Rect2i leftTank = new Rect2i(screen.getGuiLeft() + 37, screen.getGuiTop() + 17, 18, 50);
+                if (leftTank.contains((int) mouseX, (int) mouseY)) {
+                    FluidStack fluid = screen.container.machine.tanks.get(0).getFluid();
+                    if (!fluid.isEmpty()) {
+                        return builder.createBuilder(NeoForgeTypes.FLUID_STACK, fluid).buildWithArea(leftTank);
+                    }
+                }
+
+                Rect2i rightTank = new Rect2i(screen.getGuiLeft() + 143, screen.getGuiTop() + 17, 18, 50);
+                if (rightTank.contains((int) mouseX, (int) mouseY)) {
+                    FluidStack fluid = screen.container.machine.tanks.get(1).getFluid();
+                    if (!fluid.isEmpty()) {
+                        return builder.createBuilder(NeoForgeTypes.FLUID_STACK, fluid).buildWithArea(rightTank);
+                    }
+                }
+
+                return java.util.Optional.empty();
             }
         });
     }

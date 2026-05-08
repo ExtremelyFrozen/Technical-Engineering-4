@@ -47,17 +47,20 @@ public class CmScreenMachine extends CmScreen<CmContainerMachine> {
     public void addWidgets() {
         super.addWidgets();
         int w = 26;
-        int xStart = -w - 1;
+        int barx = -w - 1;
 
-        widgets.add(barEnergy = new ElementBarEnergy(xStart, 0, w, w, 132, 211, HANDLER));
-        widgets.add(barIdeas = new ElementBarIdeas(xStart, (w + 1) * 3, w, w, 152, 40, HANDLER,
+        if (hasUpgradeSlots()) {
+            widgets.add(new ElementImage(23, -37, 131, 36, 0, 211, HANDLER));
+        }
+
+        widgets.add(barIdeas = new ElementBarIdeas(barx, 0, w, w, 159, 211, HANDLER,
                 machineKey != null ? machineKey : ""));
-        widgets.add(barControl = new ElementBarControl(xStart, (w + 1) * 4, w, w, 152, 40, HANDLER));
+        widgets.add(barEnergy = new ElementBarEnergy(barx, w + 1, w, w, 132, 211, HANDLER));
+        widgets.add(barControl = new ElementBarControl(barx, (w + 1) * 3, w, w, 152, 40, HANDLER));
 
-        // Redstone buttons
-        rsHigh = new ElementButton(xStart, (w + 1) * 2, w, w, 186, 184, HANDLER, this::cycleRedstone).withNoChange();
-        rsLow = new ElementButton(xStart, (w + 1) * 2, w, w, 186, 157, HANDLER, this::cycleRedstone).withNoChange();
-        rsOff = new ElementButton(xStart, (w + 1) * 2, w, w, 186, 211, HANDLER, this::cycleRedstone).withNoChange();
+        rsHigh = new ElementButton(barx, (w + 1) * 2, w, w, 186, 211, HANDLER, this::cycleRedstone).withNoChange();
+        rsLow = new ElementButton(barx, (w + 1) * 2, w, w, 186, 184, HANDLER, this::cycleRedstone).withNoChange();
+        rsOff = new ElementButton(barx, (w + 1) * 2, w, w, 186, 157, HANDLER, this::cycleRedstone).withNoChange();
         rsHigh.setTxt("kenergyengineering.info.bar_redstone", "kenergyengineering.info.high");
         rsLow.setTxt("kenergyengineering.info.bar_redstone", "kenergyengineering.info.low");
         rsOff.setTxt("kenergyengineering.info.bar_redstone", "kenergyengineering.info.off");
@@ -65,26 +68,23 @@ public class CmScreenMachine extends CmScreen<CmContainerMachine> {
         widgets.add(rsLow);
         widgets.add(rsOff);
 
-        setSides();
+        addTransferWidgets();
         addUpgradeSlots();
     }
 
     private void addUpgradeSlots() {
         if (!hasUpgradeSlots()) return;
-        int w = 26;
-        int xStart = -w - 1;
-        int yBase = (w + 1) * 8;
-        u0 = new ElementButtonSlot(xStart, yBase, w, w, 24, 105, HANDLER, this::clickUpgradeSlot);
+        u0 = new ElementButtonSlot(32, -28, 18, 18, 227, 0, HANDLER, this::clickUpgradeSlot);
         u0.withNoChange();
-        u1 = new ElementButtonSlot(xStart, yBase + (w + 1), w, w, 24, 105, HANDLER, this::clickUpgradeSlot);
+        u1 = new ElementButtonSlot(51, -28, 18, 18, 227, 0, HANDLER, this::clickUpgradeSlot);
         u1.withNoChange();
-        u2 = new ElementButtonSlot(xStart, yBase + (w + 1) * 2, w, w, 24, 105, HANDLER, this::clickUpgradeSlot);
+        u2 = new ElementButtonSlot(70, -28, 18, 18, 227, 0, HANDLER, this::clickUpgradeSlot);
         u2.withNoChange();
-        u3 = new ElementButtonSlot(xStart, yBase + (w + 1) * 3, w, w, 24, 105, HANDLER, this::clickUpgradeSlot);
+        u3 = new ElementButtonSlot(89, -28, 18, 18, 227, 0, HANDLER, this::clickUpgradeSlot);
         u3.withNoChange();
-        u4 = new ElementButtonSlot(xStart, yBase + (w + 1) * 4, w, w, 24, 105, HANDLER, this::clickUpgradeSlot);
+        u4 = new ElementButtonSlot(108, -28, 18, 18, 227, 0, HANDLER, this::clickUpgradeSlot);
         u4.withNoChange();
-        u5 = new ElementButtonSlot(xStart, yBase + (w + 1) * 5, w, w, 24, 105, HANDLER, this::clickUpgradeSlot);
+        u5 = new ElementButtonSlot(127, -28, 18, 18, 227, 0, HANDLER, this::clickUpgradeSlot);
         u5.withNoChange();
         widgets.add(u0);
         widgets.add(u1);
@@ -96,16 +96,28 @@ public class CmScreenMachine extends CmScreen<CmContainerMachine> {
 
     private void clickUpgradeSlot() {}
 
-    private void setSides() {
+    private void addTransferWidgets() {
         int w = 26;
-        int xStart = -w - 1;
-        int yBase = (w + 1) * 6;
-        front = makeTransf(xStart, yBase, w, 152, 0, this::cycleEnergy);
-        back = makeTransf(xStart, yBase + (w + 1), w, 152, 0, this::cycleEnergy);
-        left = makeTransf(xStart, yBase + (w + 1) * 2, w, 152, 0, this::cycleEnergy);
-        right = makeTransf(xStart, yBase + (w + 1) * 3, w, 152, 0, this::cycleEnergy);
-        up = makeTransf(xStart, yBase + (w + 1) * 4, w, 152, 0, this::cycleEnergy);
-        down = makeTransf(xStart, yBase + (w + 1) * 5, w, 152, 0, this::cycleEnergy);
+        int panelWidth = 60;
+        int baseX = -panelWidth - 1;
+        int baseY = (w + 1) * 3;
+
+        eSwitch = new ElementButton(baseX + 7, baseY + 64, 14, 14, 91, 126, HANDLER, () -> modeNow = 0);
+        iSwitch = new ElementButton(baseX + 23, baseY + 64, 14, 14, 106, 126, HANDLER, () -> modeNow = 1);
+        fSwitch = new ElementButton(baseX + 39, baseY + 64, 14, 14, 76, 126, HANDLER, () -> modeNow = 2);
+        eSwitch.setTxt("kenergyengineering.info.bar_mode", "kenergyengineering.info.energy");
+        iSwitch.setTxt("kenergyengineering.info.bar_mode", "kenergyengineering.info.item");
+        fSwitch.setTxt("kenergyengineering.info.bar_mode", "kenergyengineering.info.fluid");
+        widgets.add(eSwitch);
+        widgets.add(iSwitch);
+        widgets.add(fSwitch);
+
+        front = makeTransf(baseX + 22, baseY + 22, 12, 121, 126, this::cycleEnergy);
+        back = makeTransf(baseX + 36, baseY + 36, 12, 121, 126, this::cycleEnergy);
+        left = makeTransf(baseX + 8, baseY + 22, 12, 121, 126, this::cycleEnergy);
+        right = makeTransf(baseX + 36, baseY + 22, 12, 121, 126, this::cycleEnergy);
+        up = makeTransf(baseX + 22, baseY + 8, 12, 121, 126, this::cycleEnergy);
+        down = makeTransf(baseX + 22, baseY + 36, 12, 121, 126, this::cycleEnergy);
         front.setTxt("kenergyengineering.info.front");
         back.setTxt("kenergyengineering.info.back");
         left.setTxt("kenergyengineering.info.left");
@@ -118,22 +130,29 @@ public class CmScreenMachine extends CmScreen<CmContainerMachine> {
         widgets.add(right);
         widgets.add(up);
         widgets.add(down);
-
-        // Mode switch buttons
-        int yMode = yBase + (w + 1) * 6;
-        eSwitch = new ElementButton(xStart, yMode, w, w, 24, 79, HANDLER, this::toNextMode).withNoChange();
-        iSwitch = new ElementButton(xStart, yMode, w, w, 24, 53, HANDLER, this::toNextMode).withNoChange();
-        fSwitch = new ElementButton(xStart, yMode, w, w, 24, 105, HANDLER, this::toNextMode).withNoChange();
-        eSwitch.setTxt("kenergyengineering.info.bar_mode", "kenergyengineering.info.energy");
-        iSwitch.setTxt("kenergyengineering.info.bar_mode", "kenergyengineering.info.item");
-        fSwitch.setTxt("kenergyengineering.info.bar_mode", "kenergyengineering.info.fluid");
-        widgets.add(eSwitch);
-        widgets.add(iSwitch);
-        widgets.add(fSwitch);
     }
 
-    private ElementButtonTransf makeTransf(int x, int y, int w, int xOff, int yOff, ClickAction act) {
-        var b = new ElementButtonTransf(x, y, w, w, xOff, yOff, HANDLER, act);
+    private void setSides() {
+        if (container.pos == null || container.data == null) {
+            return;
+        }
+        var em = ClientData.energy.get(container.pos);
+        var im = ClientData.item.get(container.pos);
+        var fm = ClientData.fluid.get(container.pos);
+        var faces = getCurrentFaceModes(modeNow, em, im, fm);
+        if (faces == null) {
+            return;
+        }
+        front.mode = faces[0];
+        back.mode = faces[1];
+        left.mode = faces[2];
+        right.mode = faces[3];
+        up.mode = faces[4];
+        down.mode = faces[5];
+    }
+
+    private ElementButtonTransf makeTransf(int x, int y, int size, int xOff, int yOff, ClickAction act) {
+        var b = new ElementButtonTransf(x, y, size, size, xOff, yOff, HANDLER, act);
         b.withNoChange();
         return b;
     }
@@ -141,11 +160,6 @@ public class CmScreenMachine extends CmScreen<CmContainerMachine> {
     private void cycleEnergy() {
         if (container.pos == null || clickedDirection == null) return;
         PacketDistributor.sendToServer(new TransferModePacket(container.pos, modeNow, clickedDirection));
-    }
-
-    private void toNextMode() {
-        modeNow++;
-        if (modeNow > 2) modeNow = 0;
     }
 
     private void cycleRedstone() {
@@ -185,7 +199,6 @@ public class CmScreenMachine extends CmScreen<CmContainerMachine> {
                 data.get(CmMachineBlockEntity.F_REC),
                 data.get(CmMachineBlockEntity.F_EXT));
 
-        // Direction buttons visibility
         boolean showAll = barControl.show;
         front.setVisible(showAll);
         back.setVisible(showAll);
@@ -197,35 +210,25 @@ public class CmScreenMachine extends CmScreen<CmContainerMachine> {
         iSwitch.setVisible(showAll);
         fSwitch.setVisible(showAll);
 
-        // Upgrade slots
-        boolean hasUp = container.machine != null && container.machine.hasUpgrade();
-        if (u0 != null) u0.setVisible(hasUp && !showAll);
-        if (u1 != null) u1.setVisible(hasUp && !showAll);
-        if (u2 != null) u2.setVisible(hasUp && !showAll);
-        if (u3 != null) u3.setVisible(hasUp && !showAll);
-        if (u4 != null) u4.setVisible(hasUp && !showAll);
-        if (u5 != null) u5.setVisible(hasUp && !showAll);
+        if (u0 != null) u0.setVisible(hasUpgradeSlots());
+        if (u1 != null) u1.setVisible(hasUpgradeSlots());
+        if (u2 != null) u2.setVisible(hasUpgradeSlots());
+        if (u3 != null) u3.setVisible(hasUpgradeSlots());
+        if (u4 != null) u4.setVisible(hasUpgradeSlots());
+        if (u5 != null) u5.setVisible(hasUpgradeSlots());
 
-        // Mode switch
-        eSwitch.setVisible(showAll && modeNow != 0);
-        iSwitch.setVisible(showAll && modeNow != 1);
-        fSwitch.setVisible(showAll && modeNow != 2);
+        if (u0 != null) u0.state = data.get(CmMachineBlockEntity.UPGSIZE) >= 1;
+        if (u1 != null) u1.state = data.get(CmMachineBlockEntity.UPGSIZE) >= 2;
+        if (u2 != null) u2.state = data.get(CmMachineBlockEntity.UPGSIZE) >= 3;
+        if (u3 != null) u3.state = data.get(CmMachineBlockEntity.UPGSIZE) >= 4;
+        if (u4 != null) u4.state = data.get(CmMachineBlockEntity.UPGSIZE) >= 5;
+        if (u5 != null) u5.state = data.get(CmMachineBlockEntity.UPGSIZE) >= 6;
 
-        // Update direction modes from client data
-        if (container.pos != null) {
-            var em = ClientData.energy.get(container.pos);
-            var im = ClientData.item.get(container.pos);
-            var fm = ClientData.fluid.get(container.pos);
-            var faces = getCurrentFaceModes(modeNow, em, im, fm);
-            if (faces != null) {
-                front.mode = faces[0];
-                back.mode = faces[1];
-                left.mode = faces[2];
-                right.mode = faces[3];
-                up.mode = faces[4];
-                down.mode = faces[5];
-            }
-        }
+        eSwitch.state = modeNow == 0;
+        iSwitch.state = modeNow == 1;
+        fSwitch.state = modeNow == 2;
+
+        setSides();
     }
 
     private Direction getDirectionForButton(ElementButtonTransf button) {

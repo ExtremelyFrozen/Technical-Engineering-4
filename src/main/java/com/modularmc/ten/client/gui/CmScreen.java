@@ -74,7 +74,7 @@ public class CmScreen<T extends CmContainerMachine> extends AbstractContainerScr
 
     @Override
     protected void renderBg(GuiGraphics guiGraphics, float partialTicks, int mouseX, int mouseY) {
-        int i = getGuiLeft() + getExtras();
+        int i = getGuiLeft();
         int j = getGuiTop();
         RenderHelper.renderBackGround(guiGraphics, i, j, texW, texH, BG);
     }
