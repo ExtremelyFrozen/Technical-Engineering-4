@@ -1,5 +1,6 @@
 package com.modularmc.ten.client.gui.element;
 
+import com.modularmc.ten.client.gui.CmContainerMachine;
 import com.modularmc.ten.utils.ComponentHelper;
 import com.modularmc.ten.utils.DisplayHelper;
 import com.modularmc.ten.utils.RenderHelper;
@@ -45,6 +46,18 @@ public class ElementFluid extends ElementBase {
         value = s.getAmount();
         maxValue = max;
         percent = max > 0 ? (double) value / max : 0;
+    }
+
+    public void update(CmContainerMachine container) {
+        if (container == null || container.machine == null || tankId < 0 || tankId >= container.machine.tanks.size()) {
+            stack = FluidStack.EMPTY;
+            value = 0;
+            maxValue = 0;
+            percent = 0;
+            return;
+        }
+        var tank = container.machine.tanks.get(tankId);
+        update(tank.getFluid(), tank.getCapacity());
     }
 
     @Override

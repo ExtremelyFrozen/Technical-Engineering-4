@@ -11,6 +11,7 @@ import net.minecraft.world.entity.player.Inventory;
 public class PulverizerScreen extends CmScreenMachine {
 
     ElementBurnLeft energy;
+    ElementBurnLeft left;
     ElementProgress progress;
 
     public PulverizerScreen(CmContainerMachine container, Inventory inv, Component title) {
@@ -23,7 +24,8 @@ public class PulverizerScreen extends CmScreenMachine {
     public void addWidgets() {
         super.addWidgets();
         widgets.add(energy = getDefaultEne());
-        widgets.add(progress = new ElementProgress(80, 35, 22, 16, 27, 0, HANDLER));
+        widgets.add(left = new ElementBurnLeft(45, 48, 13, 13, 14, 0, HANDLER));
+        widgets.add(progress = new ElementProgress(76, 35, 22, 16, 27, 32, HANDLER));
     }
 
     @Override
@@ -33,6 +35,7 @@ public class PulverizerScreen extends CmScreenMachine {
             energy.setPer(pEnergy());
             energy.setValue(energy(), maxEnergy());
         }
+        if (left != null) left.setPer(pEnergy());
         if (progress != null) progress.setPer(pProgress());
     }
 }

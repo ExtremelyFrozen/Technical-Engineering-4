@@ -9,6 +9,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
+import mezz.jei.api.gui.builder.ITooltipBuilder;
 import mezz.jei.api.gui.drawable.IDrawable;
 import mezz.jei.api.gui.ingredient.IRecipeSlotsView;
 import mezz.jei.api.helpers.IGuiHelper;
@@ -24,12 +25,14 @@ public class TENJeiCategory implements IRecipeCategory<FormsCombinedRecipe> {
     private final Component title;
     private final IDrawable background;
     private final IDrawable icon;
+    private final IDrawable inputSlot;
+    private final IDrawable outputSlot;
     private final TENRecipeWidget.Layout layout;
 
     public TENJeiCategory(IGuiHelper helper, ResourceLocation categoryId, RecipeType<FormsCombinedRecipe> type, ItemStack iconStack) {
         this.recipeType = type;
         this.layout = TENRecipeWidget.layout(categoryId);
-        this.title = TENRecipeWidget.title(categoryId);
+        this.title = TENRecipeWidget.titleJei(categoryId);
         this.background = helper.createDrawable(
                 layout.background(),
                 layout.u(),
@@ -37,6 +40,8 @@ public class TENJeiCategory implements IRecipeCategory<FormsCombinedRecipe> {
                 layout.width(),
                 layout.height());
         this.icon = helper.createDrawableItemStack(iconStack);
+        this.inputSlot = helper.getSlotDrawable();
+        this.outputSlot = helper.getOutputSlot();
     }
 
     @Override
@@ -72,9 +77,10 @@ public class TENJeiCategory implements IRecipeCategory<FormsCombinedRecipe> {
                     continue;
                 }
                 var jeiSlot = builder.addSlot(toJeiRole(slot.role()), slot.x() + 1, slot.y() + 1)
-                        .addItemStacks(itemStacks);
+                        .addItemStacks(itemStacks)
+                        .setBackground(slot.role() == TENRecipeWidget.SlotRole.OUTPUT ? outputSlot : inputSlot, 0, 0);
                 if (slot.role() == TENRecipeWidget.SlotRole.OUTPUT && ingredient.chance() < 1.0d) {
-                    jeiSlot.addTooltipCallback((view, tooltip) -> tooltip.add(Component.literal(TENRecipeWidget.formatChance(ingredient.chance()))));
+                    jeiSlot.addRichTooltipCallback((view, tooltip) -> tooltip.add(Component.literal(TENRecipeWidget.formatChance(ingredient.chance()))));
                 }
             } else {
                 var fluidStacks = ingredient.fluidStacks();
@@ -83,9 +89,10 @@ public class TENJeiCategory implements IRecipeCategory<FormsCombinedRecipe> {
                 }
                 var jeiSlot = builder.addSlot(toJeiRole(slot.role()), slot.x() + 1, slot.y() + 1)
                         .addIngredients(NeoForgeTypes.FLUID_STACK, fluidStacks)
-                        .setFluidRenderer(Math.max(1, TENRecipeWidget.fluidCapacity(ingredient)), true, slot.width() - 2, slot.height() - 2);
+                        .setFluidRenderer(Math.max(1, TENRecipeWidget.fluidCapacity(ingredient)), true, slot.width() - 2, slot.height() - 2)
+                        .setBackground(inputSlot, 0, 0);
                 if (slot.role() == TENRecipeWidget.SlotRole.OUTPUT && ingredient.chance() < 1.0d) {
-                    jeiSlot.addTooltipCallback((view, tooltip) -> tooltip.add(Component.literal(TENRecipeWidget.formatChance(ingredient.chance()))));
+                    jeiSlot.addRichTooltipCallback((view, tooltip) -> tooltip.add(Component.literal(TENRecipeWidget.formatChance(ingredient.chance()))));
                 }
             }
         }
@@ -94,6 +101,11 @@ public class TENJeiCategory implements IRecipeCategory<FormsCombinedRecipe> {
     @Override
     public void draw(FormsCombinedRecipe recipe, IRecipeSlotsView slotsView, GuiGraphics graphics, double mouseX, double mouseY) {
         TENRecipeWidget.drawJei(recipe, graphics, layout);
+    }
+
+    @Override
+    public void getTooltip(ITooltipBuilder tooltip, FormsCombinedRecipe recipe, IRecipeSlotsView recipeSlotsView, double mouseX, double mouseY) {
+        tooltip.addAll(TENRecipeWidget.decorationTooltips(recipe, layout, (int) mouseX, (int) mouseY));
     }
 
     private static RecipeIngredientRole toJeiRole(TENRecipeWidget.SlotRole role) {

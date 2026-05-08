@@ -3,6 +3,7 @@ package com.modularmc.ten.integration.emi;
 import com.modularmc.ten.api.recipe.FormsCombinedRecipe;
 import com.modularmc.ten.integration.xei.TENRecipeWidget;
 
+import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.neoforge.fluids.FluidStack;
@@ -89,7 +90,8 @@ public class TENEmiRecipe implements EmiRecipe {
                 continue;
             }
             if (slot.kind() == TENRecipeWidget.SlotKind.ITEM) {
-                var emiSlot = widgets.addSlot(emiIngredient, slot.x() + 1, slot.y() + 1);
+                var emiSlot = widgets.addSlot(emiIngredient, slot.x(), slot.y())
+                        .drawBack(false);
                 if (slot.role() == TENRecipeWidget.SlotRole.OUTPUT) {
                     emiSlot.recipeContext(this);
                 }
@@ -99,11 +101,12 @@ public class TENEmiRecipe implements EmiRecipe {
             } else {
                 var emiTank = widgets.addTank(
                         emiIngredient,
-                        slot.x() + 1,
-                        slot.y() + 1,
-                        slot.width() - 2,
-                        slot.height() - 2,
-                        Math.max(1, TENRecipeWidget.fluidCapacity(ingredient)));
+                        slot.x(),
+                        slot.y(),
+                        slot.width(),
+                        slot.height(),
+                        Math.max(1, TENRecipeWidget.fluidCapacity(ingredient)))
+                        .drawBack(false);
                 if (slot.role() == TENRecipeWidget.SlotRole.OUTPUT) {
                     emiTank.recipeContext(this);
                 }
@@ -113,9 +116,19 @@ public class TENEmiRecipe implements EmiRecipe {
             }
         }
 
-        widgets.addFillingArrow(layout.arrowX(), layout.arrowY(), 2000);
-        widgets.addText(Component.literal("15 FE/t"), layout.energyX(), layout.energyY() + 3, 0xFF5555, false);
-        widgets.addText(Component.literal(String.format("%.1fs", recipe.time() / 20.0d)), layout.timeX(), layout.timeY(), 0x555555, false);
+        widgets.addDrawable(0, 0, layout.width(), layout.height(), (draw, mouseX, mouseY, delta) ->
+                TENRecipeWidget.drawDecorations(draw, layout));
+        for (var decoration : layout.decorations()) {
+            widgets.addTooltip(
+                    (mouseX, mouseY) -> TENRecipeWidget.decorationTooltips(recipe, layout, mouseX, mouseY).stream()
+                            .map(Component::getVisualOrderText)
+                            .map(ClientTooltipComponent::create)
+                            .toList(),
+                    decoration.x(),
+                    decoration.y(),
+                    decoration.width(),
+                    decoration.height());
+        }
     }
 
     private static List<EmiIngredient> emiInputs(FormsCombinedRecipe recipe) {

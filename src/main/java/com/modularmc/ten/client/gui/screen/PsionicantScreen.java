@@ -11,10 +11,11 @@ import net.minecraft.world.entity.player.Inventory;
 public class PsionicantScreen extends CmScreenMachine {
 
     ElementBurnLeft energy;
+    ElementBurnLeft left;
     ElementProgress progress;
 
     public PsionicantScreen(CmContainerMachine container, Inventory inv, Component title) {
-        super(container, inv, title, "textures/gui/two_to_one_fluid.png", 256, 256);
+        super(container, inv, title, "textures/gui/two_to_one.png", 256, 256);
         xSize = 176;
         ySize = 166;
     }
@@ -23,7 +24,8 @@ public class PsionicantScreen extends CmScreenMachine {
     public void addWidgets() {
         super.addWidgets();
         widgets.add(energy = getDefaultEne());
-        widgets.add(progress = new ElementProgress(80, 35, 22, 16, 27, 0, HANDLER));
+        widgets.add(left = new ElementBurnLeft(45, 48, 13, 13, 14, 0, HANDLER));
+        widgets.add(progress = new ElementProgress(76, 35, 22, 16, 27, 95, HANDLER));
     }
 
     @Override
@@ -33,6 +35,7 @@ public class PsionicantScreen extends CmScreenMachine {
             energy.setPer(pEnergy());
             energy.setValue(energy(), maxEnergy());
         }
+        if (left != null) left.setPer(pEnergy());
         if (progress != null) progress.setPer(pProgress());
     }
 }
