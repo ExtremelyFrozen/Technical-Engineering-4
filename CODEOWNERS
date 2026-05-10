@@ -1,7 +1,7 @@
 # All other changes require the primary team
-* @ModularMCLib/admin
+* @ExtremelyFrozen/devs
 
 # Specific files requiring admin approval
-CODEOWNERS @ModularMCLib/admin
-LICENSE @ModularMCLib/admin
-/README.md @ModularMCLib/admin
+CODEOWNERS @ExtremelyFrozen/admin
+LICENSE @ExtremelyFrozen/admin
+/README.md @ExtremelyFrozen/admin

@@ -31,10 +31,10 @@ afterEvaluate {
                 'MixinConfigs': "${mod_id}.mixins.json",
                 'Specification-Title': project.name,
                 'Specification-Version': mod_version,
-                'Specification-Vendor': 'ModularMCLib Team',
+                'Specification-Vendor': 'ExtremelyFrozen Team',
                 'Implementation-Title': base.archivesName,
                 'Implementation-Version': version,
-                'Implementation-Vendor': 'ModularMCLib Team',
+                'Implementation-Vendor': 'ExtremelyFrozen Team',
         ])
     }
 }

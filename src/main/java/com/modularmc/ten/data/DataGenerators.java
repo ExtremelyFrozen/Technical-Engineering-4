@@ -2,11 +2,12 @@ package com.modularmc.ten.data;
 
 import com.modularmc.ten.TEN;
 
+import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.data.event.GatherDataEvent;
 
-@EventBusSubscriber(modid = TEN.MOD_ID, bus = EventBusSubscriber.Bus.MOD)
+@EventBusSubscriber(modid = TEN.MOD_ID, value = Dist.CLIENT)
 public class DataGenerators {
 
     @SubscribeEvent
