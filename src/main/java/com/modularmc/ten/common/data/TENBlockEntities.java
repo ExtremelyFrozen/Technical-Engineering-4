@@ -91,7 +91,7 @@ public class TENBlockEntities {
             .register();
 
     public static final BlockEntityEntry<CellBlockEntity> CELL = REGISTRATE
-            .blockEntity("cell", CellBlockEntity::new)
+            .blockEntity("energy_cell", CellBlockEntity::new)
             .validBlocks(TENBlocks.CELL)
             .register();
 

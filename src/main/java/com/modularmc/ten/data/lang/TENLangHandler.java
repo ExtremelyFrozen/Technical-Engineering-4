@@ -155,8 +155,8 @@ public final class TENLangHandler {
         add(provider, "info.pulverizer.4", "Stone can be pulverized into gravel, then into sand and dirt.");
         add(provider, "info.compressor.0", "Compresses items into necessary materials.");
         add(provider, "info.compressor.1", "Put metal ingots in, then get plates out.");
-        add(provider, "info.cell.0", "Stores plenty of energy.");
-        add(provider, "info.cell.1", "It can also charge items.");
+        add(provider, "info.energy_cell.0", "Stores plenty of energy.");
+        add(provider, "info.energy_cell.1", "It can also charge items.");
         add(provider, "info.mob_ripper.0", "Attacks mobs in a range.");
         add(provider, "info.mob_ripper.1", "Consider offering it a Netherite Sword?");
         add(provider, "info.beacon_simulator.0", "Applies potion effects to players in an area.");
@@ -205,8 +205,8 @@ public final class TENLangHandler {
         add(provider, "adv.crush.0", "Craft a Pulverizer and get doubled ores.");
         add(provider, "adv.cable", "Where will it go?");
         add(provider, "adv.cable.0", "Craft some Glass Energy Cables.");
-        add(provider, "adv.cell", "Where it will go.");
-        add(provider, "adv.cell.0", "Craft an Energy Cell to store energy.");
+        add(provider, "adv.energy_cell", "Where it will go.");
+        add(provider, "adv.energy_cell.0", "Craft an Energy Cell to store energy.");
         add(provider, "adv.span", "Machine Engineer");
         add(provider, "adv.span.0", "Craft a Spanner to configure machines.");
         add(provider, "adv.relic", "Present and Past");

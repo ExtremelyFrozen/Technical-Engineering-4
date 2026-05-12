@@ -44,9 +44,31 @@ public class TENModels {
                 .texture("particle", TEN.id("block/machine_side"));
     }
 
-    public static void cellBlockstate(BlockStateProvider prov, Block block) {
-        var empty = prov.models().getExistingFile(TEN.id("block/cell_empty"));
-        var normal = prov.models().getExistingFile(TEN.id("block/cell"));
+    public static BlockModelBuilder engine(BlockStateProvider prov, String name) {
+        return prov.models().cube(name,
+                TEN.id("machine/engine/" + name + "_bottom"),   // down
+                TEN.id("machine/engine/" + name),                // up
+                TEN.id("machine/engine/" + name),                // north
+                TEN.id("machine/engine/" + name),                // south
+                TEN.id("machine/engine/" + name),                // west
+                TEN.id("machine/engine/" + name))                // east
+                .texture("particle", TEN.id("machine/engine/" + name));
+    }
+
+    public static BlockModelBuilder engineActive(BlockStateProvider prov, String name) {
+        return prov.models().cube(name + "_active",
+                TEN.id("machine/engine/" + name + "_bottom"),        // down
+                TEN.id("machine/engine/" + name + "_active"),         // up
+                TEN.id("machine/engine/" + name + "_active"),         // north
+                TEN.id("machine/engine/" + name + "_active"),         // south
+                TEN.id("machine/engine/" + name + "_active"),         // west
+                TEN.id("machine/engine/" + name + "_active"))         // east
+                .texture("particle", TEN.id("machine/engine/" + name + "_active"));
+    }
+
+    public static void energyCellBlockstate(BlockStateProvider prov, Block block) {
+        var empty = prov.models().getExistingFile(TEN.id("block/energy_cell_empty"));
+        var normal = prov.models().getExistingFile(TEN.id("block/energy_cell"));
         var builder = prov.getVariantBuilder(block);
         for (Direction dir : Direction.Plane.HORIZONTAL) {
             int y = switch (dir) {

@@ -53,10 +53,10 @@ public class TENBlocks {
     public static final BlockEntry<HorizontalMachineBlock> MACHINE_FARM = machine("machine_farm_manager", "Farm Manager");
 
     // === Engines ===
-    public static final BlockEntry<HorizontalMachineBlock> ENGINE_EXTRACTION = machine("engine_extraction", "Extraction Engine");
-    public static final BlockEntry<HorizontalMachineBlock> ENGINE_METAL = machine("engine_metal", "Metal Engine");
-    public static final BlockEntry<HorizontalMachineBlock> ENGINE_BIOMASS = machine("engine_biomass", "Biomass Engine");
-    public static final BlockEntry<HorizontalMachineBlock> ENGINE_SOLAR = machine("engine_solar", "Solar Engine");
+    public static final BlockEntry<HorizontalMachineBlock> ENGINE_EXTRACTION = engine("engine_extraction", "Extraction Engine");
+    public static final BlockEntry<HorizontalMachineBlock> ENGINE_METAL = engine("engine_metal", "Metal Engine");
+    public static final BlockEntry<HorizontalMachineBlock> ENGINE_BIOMASS = engine("engine_biomass", "Biomass Engine");
+    public static final BlockEntry<HorizontalMachineBlock> ENGINE_SOLAR = engine("engine_solar", "Solar Engine");
 
     // === Cables ===
     public static final BlockEntry<CableBased> CABLE = cable("cable", "Glass Energy Cable");
@@ -71,9 +71,9 @@ public class TENBlocks {
 
     // === Cell ===
     public static final BlockEntry<HorizontalMachineBlock> CELL = REGISTRATE
-            .block("cell", HorizontalMachineBlock::new)
+            .block("energy_cell", HorizontalMachineBlock::new)
             .lang("Energy Cell")
-            .blockstate((ctx, prov) -> TENModels.cellBlockstate(prov, ctx.getEntry()))
+            .blockstate((ctx, prov) -> TENModels.energyCellBlockstate(prov, ctx.getEntry()))
             .item().model((ctx, prov) -> prov.blockItem(ctx::getEntry)).build().register();
 
     // === Channels ===
@@ -132,6 +132,34 @@ public class TENBlocks {
                 .blockstate((ctx, prov) -> {
                     var normal = TENModels.machine(prov, n);
                     var active = TENModels.machineActive(prov, n);
+                    var builder = prov.getVariantBuilder(ctx.getEntry());
+                    for (var dir : Direction.Plane.HORIZONTAL) {
+                        int y = switch (dir) {
+                            case NORTH -> 0;
+                            case EAST -> 90;
+                            case SOUTH -> 180;
+                            case WEST -> 270;
+                            default -> 0;
+                        };
+                        builder.partialState()
+                                .with(HorizontalMachineBlock.FACING, dir)
+                                .with(HorizontalMachineBlock.ACTIVE, false)
+                                .modelForState().modelFile(normal).rotationY(y).addModel()
+                                .partialState()
+                                .with(HorizontalMachineBlock.FACING, dir)
+                                .with(HorizontalMachineBlock.ACTIVE, true)
+                                .modelForState().modelFile(active).rotationY(y).addModel();
+                    }
+                })
+                .item().model((ctx, prov) -> prov.blockItem(ctx::getEntry)).build().register();
+    }
+
+    private static BlockEntry<HorizontalMachineBlock> engine(String n, String englishName) {
+        return REGISTRATE.block(n, HorizontalMachineBlock::new)
+                .lang(englishName)
+                .blockstate((ctx, prov) -> {
+                    var normal = TENModels.engine(prov, n);
+                    var active = TENModels.engineActive(prov, n);
                     var builder = prov.getVariantBuilder(ctx.getEntry());
                     for (var dir : Direction.Plane.HORIZONTAL) {
                         int y = switch (dir) {
