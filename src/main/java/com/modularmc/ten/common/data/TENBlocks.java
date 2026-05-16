@@ -17,62 +17,65 @@ import static com.modularmc.ten.common.registry.Registration.REGISTRATE;
 
 public class TENBlocks {
 
+    public static final java.util.LinkedHashMap<String, String> ZH_NAMES = new java.util.LinkedHashMap<>();
+
     static {
         REGISTRATE.creativeModeTab(() -> TENCreativeModeTabs.BLOCK_TAB);
     }
 
     // === Ores ===
-    public static final BlockEntry<Block> TIN_ORE = ore("tin_ore", "Tin Ore", 3, MapColor.STONE);
-    public static final BlockEntry<Block> NICKEL_ORE = ore("nickel_ore", "Nickel Ore", 4, MapColor.STONE);
-    public static final BlockEntry<Block> DEEP_TIN_ORE = ore("deep_tin_ore", "Deep Tin Ore", 4, MapColor.DEEPSLATE);
-    public static final BlockEntry<Block> DEEP_NICKEL_ORE = ore("deep_nickel_ore", "Deep Nickel Ore", 5, MapColor.DEEPSLATE);
+    public static final BlockEntry<Block> TIN_ORE = ore("tin_ore", "Tin Ore", "锡矿石", 3, MapColor.STONE);
+    public static final BlockEntry<Block> NICKEL_ORE = ore("nickel_ore", "Nickel Ore", "镍矿石", 4, MapColor.STONE);
+    public static final BlockEntry<Block> DEEP_TIN_ORE = ore("deep_tin_ore", "Deep Tin Ore", "深层锡矿石", 4, MapColor.DEEPSLATE);
+    public static final BlockEntry<Block> DEEP_NICKEL_ORE = ore("deep_nickel_ore", "Deep Nickel Ore", "深层镍矿石", 5, MapColor.DEEPSLATE);
 
     // === Storage Blocks ===
-    public static final BlockEntry<Block> TIN_BLOCK = storage("tin_block", "Block of Tin", 4);
-    public static final BlockEntry<Block> NICKEL_BLOCK = storage("nickel_block", "Block of Nickel", 5);
-    public static final BlockEntry<Block> POWERED_TIN_BLOCK = storage("powered_tin_block", "Block of Powered Tin", 5.5f);
-    public static final BlockEntry<Block> CHLORIUM_BLOCK = storage("chlorium_block", "Block of Chlorium", 5);
-    public static final BlockEntry<Block> RAW_TIN_BLOCK = rawStorage("raw_tin_block", "Raw Tin Block", 3);
-    public static final BlockEntry<Block> RAW_NICKEL_BLOCK = rawStorage("raw_nickel_block", "Raw Nickel Block", 4);
+    public static final BlockEntry<Block> TIN_BLOCK = storage("tin_block", "Block of Tin", "锡块", 4);
+    public static final BlockEntry<Block> NICKEL_BLOCK = storage("nickel_block", "Block of Nickel", "镍块", 5);
+    public static final BlockEntry<Block> POWERED_TIN_BLOCK = storage("powered_tin_block", "Block of Powered Tin", "充能锡块", 5.5f);
+    public static final BlockEntry<Block> CHLORIUM_BLOCK = storage("chlorium_block", "Block of Chlorium", "叶绿块", 5);
+    public static final BlockEntry<Block> RAW_TIN_BLOCK = rawStorage("raw_tin_block", "Raw Tin Block", "粗锡块", 3);
+    public static final BlockEntry<Block> RAW_NICKEL_BLOCK = rawStorage("raw_nickel_block", "Raw Nickel Block", "粗镍块", 4);
 
     // === Machines ===
     static {
         REGISTRATE.creativeModeTab(() -> TENCreativeModeTabs.MACHINE_TAB);
     }
-    public static final BlockEntry<HorizontalMachineBlock> MACHINE_SMELTER = machine("machine_smelter", "Smelter");
-    public static final BlockEntry<HorizontalMachineBlock> MACHINE_PULVERIZER = machine("machine_pulverizer", "Pulverizer");
-    public static final BlockEntry<HorizontalMachineBlock> MACHINE_COMPRESSOR = machine("machine_compressor", "Compressor");
-    public static final BlockEntry<HorizontalMachineBlock> MACHINE_REFINER = machine("machine_refiner", "Refiner");
-    public static final BlockEntry<HorizontalMachineBlock> MACHINE_INDUCTION_FURNACE = machine("machine_induction_furnace", "Induction Furnace");
-    public static final BlockEntry<HorizontalMachineBlock> MACHINE_PSIONICANT = machine("machine_psionicant", "Psionicant");
-    public static final BlockEntry<HorizontalMachineBlock> MACHINE_BEACON = machine("machine_beacon_simulator", "Beacon Simulator");
-    public static final BlockEntry<HorizontalMachineBlock> MACHINE_MOB_RIPPER = machine("machine_mob_ripper", "Mob Ripper");
-    public static final BlockEntry<HorizontalMachineBlock> MACHINE_QUARRY = machine("machine_quarry", "Quarry");
-    public static final BlockEntry<HorizontalMachineBlock> MACHINE_ENCHFLU = machine("machine_enchantment_flusher", "Enchantment Flusher");
-    public static final BlockEntry<HorizontalMachineBlock> MACHINE_CONDENSER = machine("machine_matter_condenser", "Matter Condenser");
-    public static final BlockEntry<HorizontalMachineBlock> MACHINE_FARM = machine("machine_farm_manager", "Farm Manager");
+    public static final BlockEntry<HorizontalMachineBlock> MACHINE_SMELTER = machine("machine_smelter", "Smelter", "熔炼机");
+    public static final BlockEntry<HorizontalMachineBlock> MACHINE_PULVERIZER = machine("machine_pulverizer", "Pulverizer", "粉碎机");
+    public static final BlockEntry<HorizontalMachineBlock> MACHINE_COMPRESSOR = machine("machine_compressor", "Compressor", "压缩机");
+    public static final BlockEntry<HorizontalMachineBlock> MACHINE_REFINER = machine("machine_refiner", "Refiner", "精炼机");
+    public static final BlockEntry<HorizontalMachineBlock> MACHINE_INDUCTION_FURNACE = machine("machine_induction_furnace", "Induction Furnace", "感应炉");
+    public static final BlockEntry<HorizontalMachineBlock> MACHINE_PSIONICANT = machine("machine_psionicant", "Psionicant", "灵能处理器");
+    public static final BlockEntry<HorizontalMachineBlock> MACHINE_BEACON = machine("machine_beacon_simulator", "Beacon Simulator", "信标模拟机");
+    public static final BlockEntry<HorizontalMachineBlock> MACHINE_MOB_RIPPER = machine("machine_mob_ripper", "Mob Ripper", "生物啃噬者");
+    public static final BlockEntry<HorizontalMachineBlock> MACHINE_QUARRY = machine("machine_quarry", "Quarry", "采矿场");
+    public static final BlockEntry<HorizontalMachineBlock> MACHINE_ENCHFLU = machine("machine_enchantment_flusher", "Enchantment Flusher", "祛魔机");
+    public static final BlockEntry<HorizontalMachineBlock> MACHINE_CONDENSER = machine("machine_matter_condenser", "Matter Condenser", "物质结晶器");
+    public static final BlockEntry<HorizontalMachineBlock> MACHINE_FARM = machine("machine_farm_manager", "Farm Manager", "农场管理机");
 
     // === Engines ===
-    public static final BlockEntry<HorizontalMachineBlock> ENGINE_EXTRACTION = engine("engine_extraction", "Extraction Engine");
-    public static final BlockEntry<HorizontalMachineBlock> ENGINE_METAL = engine("engine_metal", "Metal Engine");
-    public static final BlockEntry<HorizontalMachineBlock> ENGINE_BIOMASS = engine("engine_biomass", "Biomass Engine");
-    public static final BlockEntry<HorizontalMachineBlock> ENGINE_SOLAR = engine("engine_solar", "Solar Engine");
+    public static final BlockEntry<HorizontalMachineBlock> ENGINE_EXTRACTION = engine("engine_extraction", "Extraction Engine", "萃取引擎");
+    public static final BlockEntry<HorizontalMachineBlock> ENGINE_METAL = engine("engine_metal", "Metal Engine", "金属引擎");
+    public static final BlockEntry<HorizontalMachineBlock> ENGINE_BIOMASS = engine("engine_biomass", "Biomass Engine", "生物质引擎");
+    public static final BlockEntry<HorizontalMachineBlock> ENGINE_SOLAR = engine("engine_solar", "Solar Engine", "光合引擎");
 
     // === Cables ===
-    public static final BlockEntry<CableBased> CABLE = cable("cable", "Glass Energy Cable");
-    public static final BlockEntry<CableBased> CABLE_QUARTZ = cable("cable_quartz", "Quartz Energy Cable");
-    public static final BlockEntry<CableBased> CABLE_AZURE = cable("cable_azure", "Azure Energy Cable");
-    public static final BlockEntry<CableBased> CABLE_STAR = cable("cable_star", "Starlight Cable");
+    public static final BlockEntry<CableBased> CABLE = cable("cable", "Glass Energy Cable", "玻璃能量线缆");
+    public static final BlockEntry<CableBased> CABLE_QUARTZ = cable("cable_quartz", "Quartz Energy Cable", "石英能量线缆");
+    public static final BlockEntry<CableBased> CABLE_AZURE = cable("cable_azure", "Azure Energy Cable", "蔚蓝能量线缆");
+    public static final BlockEntry<CableBased> CABLE_STAR = cable("cable_star", "Starlight Cable", "星辉能量线缆");
 
     // === Pipes ===
-    public static final BlockEntry<CableBased> PIPE = cable("pipe", "Item Pipe");
-    public static final BlockEntry<CableBased> PIPE_WHITE = cable("pipe_white", "Conditional Item Pipe");
-    public static final BlockEntry<CableBased> PIPE_BLACK = cable("pipe_black", "Exceptional Item Pipe");
+    public static final BlockEntry<CableBased> PIPE = cable("pipe", "Item Pipe", "物品管道");
+    public static final BlockEntry<CableBased> PIPE_WHITE = cable("pipe_white", "Conditional Item Pipe", "限定物品管道");
+    public static final BlockEntry<CableBased> PIPE_BLACK = cable("pipe_black", "Exceptional Item Pipe", "排除物品管道");
 
     // === Cell ===
     public static final BlockEntry<HorizontalMachineBlock> CELL = REGISTRATE
             .block("energy_cell", HorizontalMachineBlock::new)
             .lang("Energy Cell")
+            .properties(p -> p.noOcclusion())
             .blockstate((ctx, prov) -> TENModels.energyCellBlockstate(prov, ctx.getEntry()))
             .item().model((ctx, prov) -> prov.blockItem(ctx::getEntry)).build().register();
 
@@ -93,9 +96,17 @@ public class TENBlocks {
             .blockstate((ctx, prov) -> TENModels.channelBlockstate(prov, ctx.getEntry(), "channel_fluid"))
             .item().model((ctx, prov) -> prov.blockItem(ctx::getEntry)).build().register();
 
+    static {
+        ZH_NAMES.put("energy_cell", "能量单元");
+        ZH_NAMES.put("channel_energy", "能量频道");
+        ZH_NAMES.put("channel_item", "物品频道");
+        ZH_NAMES.put("channel_fluid", "流体频道");
+    }
+
     // === Helpers ===
 
-    private static BlockEntry<Block> ore(String n, String englishName, double h, MapColor c) {
+    private static BlockEntry<Block> ore(String n, String englishName, String cn, double h, MapColor c) {
+        ZH_NAMES.put(n, cn);
         return REGISTRATE.block(n, Block::new)
                 .lang(englishName)
                 .initialProperties(() -> c == MapColor.DEEPSLATE ? Blocks.DEEPSLATE : Blocks.STONE)
@@ -106,7 +117,8 @@ public class TENBlocks {
                 .simpleItem().register();
     }
 
-    private static BlockEntry<Block> storage(String n, String englishName, float h) {
+    private static BlockEntry<Block> storage(String n, String englishName, String cn, float h) {
+        ZH_NAMES.put(n, cn);
         return REGISTRATE.block(n, Block::new)
                 .lang(englishName)
                 .initialProperties(() -> Blocks.IRON_BLOCK)
@@ -116,7 +128,8 @@ public class TENBlocks {
                 .simpleItem().register();
     }
 
-    private static BlockEntry<Block> rawStorage(String n, String englishName, float h) {
+    private static BlockEntry<Block> rawStorage(String n, String englishName, String cn, float h) {
+        ZH_NAMES.put(n, cn);
         return REGISTRATE.block(n, Block::new)
                 .lang(englishName)
                 .initialProperties(() -> Blocks.IRON_BLOCK)
@@ -126,7 +139,8 @@ public class TENBlocks {
                 .simpleItem().register();
     }
 
-    private static BlockEntry<HorizontalMachineBlock> machine(String n, String englishName) {
+    private static BlockEntry<HorizontalMachineBlock> machine(String n, String englishName, String cn) {
+        ZH_NAMES.put(n, cn);
         return REGISTRATE.block(n, HorizontalMachineBlock::new)
                 .lang(englishName)
                 .blockstate((ctx, prov) -> {
@@ -154,7 +168,8 @@ public class TENBlocks {
                 .item().model((ctx, prov) -> prov.blockItem(ctx::getEntry)).build().register();
     }
 
-    private static BlockEntry<HorizontalMachineBlock> engine(String n, String englishName) {
+    private static BlockEntry<HorizontalMachineBlock> engine(String n, String englishName, String cn) {
+        ZH_NAMES.put(n, cn);
         return REGISTRATE.block(n, HorizontalMachineBlock::new)
                 .lang(englishName)
                 .blockstate((ctx, prov) -> {
@@ -182,7 +197,8 @@ public class TENBlocks {
                 .item().model((ctx, prov) -> prov.blockItem(ctx::getEntry)).build().register();
     }
 
-    private static BlockEntry<CableBased> cable(String n, String englishName) {
+    private static BlockEntry<CableBased> cable(String n, String englishName, String cn) {
+        ZH_NAMES.put(n, cn);
         return REGISTRATE.block(n, CableBased::new)
                 .lang(englishName)
                 .blockstate((ctx, prov) -> TENModels.cableMultipart(prov, ctx.getEntry(), n))

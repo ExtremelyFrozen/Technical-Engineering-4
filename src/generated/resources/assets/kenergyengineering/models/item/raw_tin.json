@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:item/generated",
   "textures": {
-    "layer0": "kenergyengineering:item/raw_tin"
+    "layer0": "kenergyengineering:item/material/raw/raw_tin"
   }
 }

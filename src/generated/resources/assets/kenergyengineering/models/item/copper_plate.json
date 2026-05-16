@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:item/generated",
   "textures": {
-    "layer0": "kenergyengineering:item/copper_plate"
+    "layer0": "kenergyengineering:item/material/plate/copper_plate"
   }
 }

@@ -44,26 +44,24 @@ public class TENModels {
                 .texture("particle", TEN.id("block/machine_side"));
     }
 
+    // 引擎方块 —— 顶/侧面同纹，底面单独
     public static BlockModelBuilder engine(BlockStateProvider prov, String name) {
-        return prov.models().cube(name,
-                TEN.id("machine/engine/" + name + "_bottom"),   // down
-                TEN.id("machine/engine/" + name),                // up
-                TEN.id("machine/engine/" + name),                // north
-                TEN.id("machine/engine/" + name),                // south
-                TEN.id("machine/engine/" + name),                // west
-                TEN.id("machine/engine/" + name))                // east
-                .texture("particle", TEN.id("machine/engine/" + name));
+        return prov.models()
+                .cubeBottomTop(name,
+                        TEN.id("block/" + name),
+                        TEN.id("block/" + name),
+                        TEN.id("block/" + name + "_bottom"))
+                .texture("particle", TEN.id("block/" + name));
     }
 
     public static BlockModelBuilder engineActive(BlockStateProvider prov, String name) {
-        return prov.models().cube(name + "_active",
-                TEN.id("machine/engine/" + name + "_bottom"),        // down
-                TEN.id("machine/engine/" + name + "_active"),         // up
-                TEN.id("machine/engine/" + name + "_active"),         // north
-                TEN.id("machine/engine/" + name + "_active"),         // south
-                TEN.id("machine/engine/" + name + "_active"),         // west
-                TEN.id("machine/engine/" + name + "_active"))         // east
-                .texture("particle", TEN.id("machine/engine/" + name + "_active"));
+        String activeName = name + "_active";
+        return prov.models()
+                .cubeBottomTop(activeName,
+                        TEN.id("block/" + activeName),
+                        TEN.id("block/" + activeName),
+                        TEN.id("block/" + name + "_bottom"))
+                .texture("particle", TEN.id("block/" + activeName));
     }
 
     public static void energyCellBlockstate(BlockStateProvider prov, Block block) {

@@ -11,10 +11,12 @@ import com.tterrag.registrate.util.entry.RegistryEntry;
 import static com.modularmc.ten.common.data.TENBlocks.MACHINE_SMELTER;
 import static com.modularmc.ten.common.data.TENBlocks.TIN_BLOCK;
 import static com.modularmc.ten.common.data.TENItems.MOULD_GEAR;
-import static com.modularmc.ten.common.data.TENItems.TIN_INGOT;
+import static com.modularmc.ten.common.data.TENItems.REDSTONE_AI_ADVANCED;
 import static com.modularmc.ten.common.registry.Registration.REGISTRATE;
 
 public class TENCreativeModeTabs {
+
+    public static final java.util.LinkedHashMap<String, String> ZH_NAMES = new java.util.LinkedHashMap<>();
 
     public static RegistryEntry<CreativeModeTab, CreativeModeTab> BLOCK_TAB;
     public static RegistryEntry<CreativeModeTab, CreativeModeTab> MACHINE_TAB;
@@ -58,7 +60,7 @@ public class TENCreativeModeTabs {
 
         ITEM_TAB = REGISTRATE
                 .defaultCreativeTab("item",
-                        builder -> builder.icon(TIN_INGOT::asStack)
+                        builder -> builder.icon(REDSTONE_AI_ADVANCED::asStack)
                                 .title(REGISTRATE.addLang("itemGroup", TEN.id("item"), "Technical Engineering - Items"))
                                 .displayItems((params, output) -> {
                                     var tab = ITEM_TAB;
@@ -89,6 +91,13 @@ public class TENCreativeModeTabs {
                                 })
                                 .build())
                 .register();
+    }
+
+    static {
+        ZH_NAMES.put("itemGroup.kenergyengineering.block", "科能工程3 | 方块");
+        ZH_NAMES.put("itemGroup.kenergyengineering.machine", "科能工程3 | 机器");
+        ZH_NAMES.put("itemGroup.kenergyengineering.item", "科能工程3 | 物品");
+        ZH_NAMES.put("itemGroup.kenergyengineering.tool", "科能工程3 | 工具");
     }
 
     public static void init() {}

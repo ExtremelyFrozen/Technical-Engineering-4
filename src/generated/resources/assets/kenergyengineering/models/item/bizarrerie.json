@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:item/generated",
   "textures": {
-    "layer0": "kenergyengineering:item/bizarrerie"
+    "layer0": "kenergyengineering:item/crafting/bizarrerie"
   }
 }

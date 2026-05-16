@@ -1,12 +1,9 @@
 {
-  "parent": "minecraft:block/cube",
+  "parent": "minecraft:block/cube_bottom_top",
   "textures": {
-    "down": "kenergyengineering:block/machine_bottom",
-    "east": "kenergyengineering:block/machine_side",
-    "north": "kenergyengineering:block/engine_solar",
-    "particle": "kenergyengineering:block/machine_side",
-    "south": "kenergyengineering:block/machine_side",
-    "up": "kenergyengineering:block/machine_top",
-    "west": "kenergyengineering:block/machine_side"
+    "bottom": "kenergyengineering:block/engine_solar",
+    "particle": "kenergyengineering:block/engine_solar",
+    "side": "kenergyengineering:block/engine_solar",
+    "top": "kenergyengineering:block/engine_solar_bottom"
   }
 }

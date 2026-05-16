@@ -17,6 +17,31 @@
 @rem
 
 @if "%DEBUG%"=="" @echo off
+cd /d "%~dp0"
+
+:: Prevent recursion: if already in a pre-flight call, skip ahead to original logic
+if defined GRADLEW_PREFLIGHT_DONE goto :run_gradle
+
+:: Skip pre-flight for game/tool commands
+set SKIP_CMD=0
+for %%c in (runClient runServer gameTestServer gameTestClient --version help tasks) do (
+    if /i "%1"=="%%c" set SKIP_CMD=1
+)
+if "%SKIP_CMD%"=="1" goto :run_gradle
+
+set GRADLEW_PREFLIGHT_DONE=1
+
+echo [pre-flight] Running data generation...
+call "%~dp0gradlew.bat" runData --no-daemon
+if %ERRORLEVEL% neq 0 exit /b %ERRORLEVEL%
+
+echo [pre-flight] Running build...
+call "%~dp0gradlew.bat" build --no-daemon
+if %ERRORLEVEL% neq 0 exit /b %ERRORLEVEL%
+
+echo [pre-flight] Checks passed, executing requested task...
+
+:run_gradle
 @rem ##########################################################################
 @rem
 @rem  Gradle startup script for Windows

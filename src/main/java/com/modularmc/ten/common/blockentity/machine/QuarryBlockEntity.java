@@ -94,20 +94,6 @@ public class QuarryBlockEntity extends RadiusMachineBlockEntity {
         mode = 0;
     }
 
-    private boolean hasUpgrade(Class<?> upgradeClass) {
-        if (upgradeHandler == null) {
-            return false;
-        }
-        int limit = Math.min(getUnlockedUpgradeSlots(), upgradeHandler.getSlots());
-        for (int i = 0; i < limit; i++) {
-            ItemStack stack = upgradeHandler.getStackInSlot(i);
-            if (upgradeClass.isInstance(stack.getItem())) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     @Override
     public void applyEffect() {
         if (level == null || itemHandler == null) {

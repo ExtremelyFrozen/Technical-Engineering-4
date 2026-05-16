@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:item/generated",
   "textures": {
-    "layer0": "kenergyengineering:item/chlorium_nugget"
+    "layer0": "kenergyengineering:item/material/nugget/chlorium_nugget"
   }
 }

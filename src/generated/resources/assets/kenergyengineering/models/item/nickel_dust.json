@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:item/generated",
   "textures": {
-    "layer0": "kenergyengineering:item/nickel_dust"
+    "layer0": "kenergyengineering:item/material/dust/nickel_dust"
   }
 }

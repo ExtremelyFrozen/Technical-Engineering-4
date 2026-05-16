@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:item/generated",
   "textures": {
-    "layer0": "kenergyengineering:item/azure_glass"
+    "layer0": "kenergyengineering:item/crafting/azure_glass"
   }
 }

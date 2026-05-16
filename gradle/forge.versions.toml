@@ -1,5 +1,6 @@
 [versions]
 registrate = "MC1.21-1.3.0+67"
+modernui = "1.21.1-3.12.0.+"
 configuration = "3.1.1-neoforge"
 
 jei = "19.25.1.328"
@@ -19,6 +20,7 @@ spark = "6225208"
 
 
 [libraries]
+modernui            = { module = "icyllis.modernui:ModernUI-NeoForge", version.ref = "modernui" }
 registrate          = { module = "com.tterrag.registrate:Registrate", version.ref = "registrate" }
 configuration       = { module = "dev.toma.configuration:configuration-1.21.1", version.ref = "configuration" }
 

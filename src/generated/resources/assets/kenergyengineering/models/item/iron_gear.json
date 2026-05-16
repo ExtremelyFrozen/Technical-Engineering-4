@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:item/generated",
   "textures": {
-    "layer0": "kenergyengineering:item/iron_gear"
+    "layer0": "kenergyengineering:item/material/gear/iron_gear"
   }
 }

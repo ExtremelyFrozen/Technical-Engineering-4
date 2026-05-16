@@ -197,6 +197,15 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements Menu
         return true;
     }
 
+    public boolean hasUpgrade(Class<? extends UpgradeItem> upgradeClass) {
+        if (upgradeHandler == null) return false;
+        for (int i = 0; i < upgradeHandler.getSlots(); i++) {
+            ItemStack stack = upgradeHandler.getStackInSlot(i);
+            if (!stack.isEmpty() && upgradeClass.isInstance(stack.getItem())) return true;
+        }
+        return false;
+    }
+
     public boolean hasSideBar() {
         return true;
     }

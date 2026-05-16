@@ -30,11 +30,8 @@ public class TENBaseBlockItem extends BlockItem {
             list.add(ttc);
         }
 
-        if (TENBaseItem.shift()) {
-            tooltip.addAll(list);
-        } else if (!list.isEmpty()) {
-            tooltip.add(ComponentHelper.translated(ComponentHelper.GOLD, ComponentHelper.getKey("shift")));
-        }
+        // 直接显示所有提示，不再需要 Shift
+        tooltip.addAll(list);
     }
 
     @Override

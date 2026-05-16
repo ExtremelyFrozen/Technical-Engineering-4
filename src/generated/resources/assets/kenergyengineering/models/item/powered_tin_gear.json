@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:item/generated",
   "textures": {
-    "layer0": "kenergyengineering:item/powered_tin_gear"
+    "layer0": "kenergyengineering:item/material/gear/powered_tin_gear"
   }
 }
