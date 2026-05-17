@@ -37,7 +37,7 @@ jobs:
     secrets: inherit
     uses: ./.github/workflows/publish.yml
     with:
-      simulate: ${{ startsWith(github.event.release.name, 'simulate') || github.repository_owner != 'ExtremelyFrozen' }}
+      simulate: ${{ startsWith(github.event.release.name, 'simulate') || github.repository_owner != 'Extremely Frozen' }}
       tag-name: ${{ github.ref_name }}
       version: '1.21'
       release-body: ${{ github.event.release.body }}
