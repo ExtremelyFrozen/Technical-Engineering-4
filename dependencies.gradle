@@ -37,6 +37,7 @@ dependencies {
     // Client-only runtime mods //
     clientLocalRuntime(forge.sodium)
     clientLocalRuntime(forge.iris)
+    clientLocalRuntime(forge.modernui)
     renderNurseCfg(libs.renderNurse)
 
     renderNurseCfg(libs.renderNurse)
@@ -47,17 +48,7 @@ dependencies {
 
     //////////////////////////
 
-    // Item Zoomer - 物品放大预览（使用 localRuntime 而非 clientLocalRuntime 以确保模块层加载）
-    // ItemZoomer 2.x 需要 Architectury API >= 13.0.8，但其 POM 未声明传递依赖，需显式添加
     localRuntime("maven.modrinth:itemzoomer:2.0.1-1.21.1")
     localRuntime("dev.architectury:architectury-neoforge:13.0.8")
-    // ItemZoomer 同时需要 Cloth Config API 用于配置界面
     localRuntime("me.shedaniel.cloth:cloth-config-neoforge:15.0.140")
-
-    // === Modern UI（仅客户端开发环境，使用 modClientLocalRuntime 确保模块层加载） ===
-    modClientLocalRuntime(forge.modernui)
-    // ModernUI-NeoForge POM 未声明对 ModernUI-Core 的传递依赖，需显式添加
-    // Core 是非 mod 库，必须与 NeoForge mod 在同一 MDG 管理的配置中
-    modClientLocalRuntime("icyllis.modernui:ModernUI-Core:3.12.0") { transitive = false }
-
 }

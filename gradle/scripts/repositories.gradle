@@ -42,10 +42,6 @@ repositories {
         forRepository { maven { url = "https://cursemaven.com" } }
         filter { includeGroup("curse.maven") }
     }
-    exclusiveContent { // Modern UI
-        forRepository { maven { url = "https://maven.izzel.io/releases/" } }
-        filter { includeGroup("icyllis.modernui") }
-    }
     exclusiveContent { // Architectury
         forRepository { maven { url = "https://maven.architectury.dev/" } }
         filter { includeGroup("dev.architectury") }

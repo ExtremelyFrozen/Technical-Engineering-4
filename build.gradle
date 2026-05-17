@@ -59,7 +59,6 @@ configurations {
     runtimeClasspath.extendsFrom localRuntime
     extraRuntimeClasspath.extendsFrom extraLocalRuntime
     clientRuntimeClasspath.extendsFrom clientLocalRuntime
-    clientRuntimeClasspath.extendsFrom modClientLocalRuntime
     extraClientRuntimeClasspath.extendsFrom clientExtraLocalRuntime
 
     renderNurseCfg {
@@ -75,29 +74,6 @@ apply from: "$rootDir/gradle/scripts/resources.gradle"
 apply from: "$rootDir/gradle/scripts/publishing.gradle"
 apply from: "$rootDir/gradle/scripts/spotless.gradle"
 
-processResources {
-    // DataGen output and hand-written runtime resources must never share the same path.
-    duplicatesStrategy = DuplicatesStrategy.FAIL
-
-    // The generated zh_cn.json from DataGenerators contains all entries (maps + hand-written file).
-    // Allow it to overwrite the hand-written copy at build time.
-    filesMatching("**/lang/zh_cn.json") {
-        duplicatesStrategy = DuplicatesStrategy.INCLUDE
-    }
-
-    // Static model files override DataGen-generated simple cube models at runtime.
-    filesMatching("**/models/block/engine_*.json") {
-        duplicatesStrategy = DuplicatesStrategy.INCLUDE
-    }
-
-    filesMatching("**/models/block/mac/engine.json") {
-        duplicatesStrategy = DuplicatesStrategy.INCLUDE
-    }
-
-    filesMatching("**/models/block/energy_cell*.json") {
-        duplicatesStrategy = DuplicatesStrategy.INCLUDE
-    }
-}
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = "UTF-8"
@@ -123,6 +99,11 @@ jacocoTestReport {
             runGameTestServer.exec()
         } catch (RuntimeException ignored) {}
     }
+    doLast {
+        println "Coverage report location:"
+        println " - file://${layout.buildDirectory.dir('coverage').map(a -> a.file('index.html')).get()}"
+        println " - file://${layout.buildDirectory.dir('coverage').map(a -> a.file('coverage.xml')).get()}"
+    }
     executionData runGameTestServer
     sourceSets sourceSets.test
     reports {
@@ -138,35 +119,3 @@ jacocoTestReport {
         }))
     }
 }
-
-// === ModernUI-Core path injection: MDG 的 write*LegacyClasspath 不自动包含用户非模块依赖 ===
-// 需手动将 ModernUI-Core JAR 路径追加到 legacy classpath 文件
-// ModernUI 使用 modClientLocalRuntime（仅客户端），对 client 任务从 clientRuntimeClasspath 搜索
-tasks.matching { it.name ==~ /write(Data|Client)LegacyClasspath/ }.configureEach {
-    doLast {
-        // 根据运行类型选择正确的 classpath 配置
-        def isClient = name.contains("Client")
-        def classpathConfig = isClient ? configurations.clientRuntimeClasspath : configurations.runtimeClasspath
-
-        // 从对应 classpath 找到 ModernUI-Core JAR
-        def modernuiCoreJar = classpathConfig.findResult { dep ->
-            dep.name.contains("ModernUI-Core") ? dep : null
-        }
-        if (modernuiCoreJar == null) {
-            logger.warn("[ModernUI] ModernUI-Core JAR not found in ${classpathConfig.name} - skipping injection")
-            return
-        }
-        // 追加到 legacy classpath 文件（如果尚未包含）
-        def runType = name.replace("write", "").replace("LegacyClasspath", "")
-        def classpathFile = file("${layout.buildDirectory.get().asFile}/moddev/${runType}LegacyClasspath.txt")
-        if (classpathFile.exists()) {
-            def content = classpathFile.readLines()
-            def jarPath = modernuiCoreJar.absolutePath.replace('\\', '\\\\')
-            if (!content.any { it.contains("ModernUI-Core") }) {
-                classpathFile.append("\n${jarPath}")
-                logger.lifecycle("[ModernUI] Injected ModernUI-Core into ${classpathFile.name}: ${jarPath}")
-            }
-        }
-    }
-}
-

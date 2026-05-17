@@ -17,39 +17,14 @@
 @rem
 
 @if "%DEBUG%"=="" @echo off
-cd /d "%~dp0"
-
-:: Prevent recursion: if already in a pre-flight call, skip ahead to original logic
-if defined GRADLEW_PREFLIGHT_DONE goto :run_gradle
-
-:: Skip pre-flight for game/tool commands
-set SKIP_CMD=0
-for %%c in (runClient runServer gameTestServer gameTestClient --version help tasks) do (
-    if /i "%1"=="%%c" set SKIP_CMD=1
-)
-if "%SKIP_CMD%"=="1" goto :run_gradle
-
-set GRADLEW_PREFLIGHT_DONE=1
-
-echo [pre-flight] Running data generation...
-call "%~dp0gradlew.bat" runData --no-daemon
-if %ERRORLEVEL% neq 0 exit /b %ERRORLEVEL%
-
-echo [pre-flight] Running build...
-call "%~dp0gradlew.bat" build --no-daemon
-if %ERRORLEVEL% neq 0 exit /b %ERRORLEVEL%
-
-echo [pre-flight] Checks passed, executing requested task...
-
-:run_gradle
 @rem ##########################################################################
 @rem
 @rem  Gradle startup script for Windows
 @rem
 @rem ##########################################################################
 
-@rem Set local scope for the variables with windows NT shell
-if "%OS%"=="Windows_NT" setlocal
+@rem Set local scope for the variables, and ensure extensions are enabled
+setlocal EnableExtensions
 
 set DIRNAME=%~dp0
 if "%DIRNAME%"=="" set DIRNAME=.
@@ -76,7 +51,7 @@ echo. 1>&2
 echo Please set the JAVA_HOME variable in your environment to match the 1>&2
 echo location of your Java installation. 1>&2
 
-goto fail
+"%COMSPEC%" /c exit 1
 
 :findJavaFromJavaHome
 set JAVA_HOME=%JAVA_HOME:"=%
@@ -90,7 +65,7 @@ echo. 1>&2
 echo Please set the JAVA_HOME variable in your environment to match the 1>&2
 echo location of your Java installation. 1>&2
 
-goto fail
+"%COMSPEC%" /c exit 1
 
 :execute
 @rem Setup the command line
@@ -98,21 +73,10 @@ goto fail
 
 
 @rem Execute Gradle
-"%JAVA_EXE%" %DEFAULT_JVM_OPTS% %JAVA_OPTS% %GRADLE_OPTS% "-Dorg.gradle.appname=%APP_BASE_NAME%" -jar "%APP_HOME%\gradle\wrapper\gradle-wrapper.jar" %*
+@rem endlocal doesn't take effect until after the line is parsed and variables are expanded
+@rem which allows us to clear the local environment before executing the java command
+endlocal & "%JAVA_EXE%" %DEFAULT_JVM_OPTS% %JAVA_OPTS% %GRADLE_OPTS% "-Dorg.gradle.appname=%APP_BASE_NAME%" -jar "%APP_HOME%\gradle\wrapper\gradle-wrapper.jar" %* & call :exitWithErrorLevel
 
-:end
-@rem End local scope for the variables with windows NT shell
-if %ERRORLEVEL% equ 0 goto mainEnd
-
-:fail
-rem Set variable GRADLE_EXIT_CONSOLE if you need the _script_ return code instead of
-rem the _cmd.exe /c_ return code!
-set EXIT_CODE=%ERRORLEVEL%
-if %EXIT_CODE% equ 0 set EXIT_CODE=1
-if not ""=="%GRADLE_EXIT_CONSOLE%" exit %EXIT_CODE%
-exit /b %EXIT_CODE%
-
-:mainEnd
-if "%OS%"=="Windows_NT" endlocal
-
-:omega
+:exitWithErrorLevel
+@rem Use "%COMSPEC%" /c exit to allow operators to work properly in scripts
+"%COMSPEC%" /c exit %ERRORLEVEL%
