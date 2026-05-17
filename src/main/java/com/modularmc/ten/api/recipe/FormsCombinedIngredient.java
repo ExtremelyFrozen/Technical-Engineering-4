@@ -165,7 +165,7 @@ public class FormsCombinedIngredient {
         ResourceLocation rl = buf.readResourceLocation();
         int limit = buf.readInt();
         double chance = buf.readDouble();
-        return create(limit, form, type, rl.getPath(), chance);
+        return create(limit, form, type, rl.toString(), chance);
     }
 
     // Output helpers

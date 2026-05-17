@@ -126,69 +126,26 @@ public class TENItems {
     public static final ItemEntry<Item> HYDRAULIC_WIDGET = texturedItem("hydraulic_widget", "Hydraulic Widget", "液压组件", "item/crafting/hydraulic_widget");
     public static final ItemEntry<Item> DETECTOR = texturedItem("detector", "Detector", "反射探测仪", "item/crafting/detector");
 
-    // Moulds (use manual models - texture names differ from item names)
+    // === Moulds ===
     static {
         REGISTRATE.creativeModeTab(() -> TENCreativeModeTabs.TOOL_TAB);
     }
-    public static final ItemEntry<Item> MOULD_GEAR = REGISTRATE
-            .item("mould_gear", Item::new)
-            .lang("Gear Mould")
-            .model((ctx, prov) -> prov.generated(ctx::getEntry, prov.modLoc("item/mold/model_gear")))
-            .register();
-    public static final ItemEntry<Item> MOULD_PLATE = REGISTRATE
-            .item("mould_plate", Item::new)
-            .lang("Plate Mould")
-            .model((ctx, prov) -> prov.generated(ctx::getEntry, prov.modLoc("item/mold/model_plate")))
-            .register();
-    public static final ItemEntry<Item> MOULD_ROD = REGISTRATE
-            .item("mould_rod", Item::new)
-            .lang("Rod Mould")
-            .model((ctx, prov) -> prov.generated(ctx::getEntry, prov.modLoc("item/mold/model_rod")))
-            .register();
-    public static final ItemEntry<Item> MOULD_STRING = REGISTRATE
-            .item("mould_string", Item::new)
-            .lang("String Mould")
-            .model((ctx, prov) -> prov.generated(ctx::getEntry, prov.modLoc("item/mold/model_string")))
-            .register();
-
-    // === New Moulds ===
-    public static final ItemEntry<Item> MOULD_COMPRESSED_SMALL = REGISTRATE
-            .item("mould_compressed_small", Item::new)
-            .lang("Compressed-small Mould")
-            .model((ctx, prov) -> prov.generated(ctx::getEntry, prov.modLoc("item/mold/compressed_small")))
-            .register();
-    public static final ItemEntry<Item> MOULD_COMPRESSED_LARGE = REGISTRATE
-            .item("mould_compressed_large", Item::new)
-            .lang("Compressed-large Mould")
-            .model((ctx, prov) -> prov.generated(ctx::getEntry, prov.modLoc("item/mold/compressed_large")))
-            .register();
-    public static final ItemEntry<Item> MOULD_SPLIT = REGISTRATE
-            .item("mould_split", Item::new)
-            .lang("Split Mould")
-            .model((ctx, prov) -> prov.generated(ctx::getEntry, prov.modLoc("item/mold/split")))
-            .register();
-    public static final ItemEntry<Item> MOULD_COIN = REGISTRATE
-            .item("mould_coin", Item::new)
-            .lang("Coin Mould")
-            .model((ctx, prov) -> prov.generated(ctx::getEntry, prov.modLoc("item/mold/coin")))
-            .register();
-    public static final ItemEntry<Item> MOULD_DENSE_PLATE = REGISTRATE
-            .item("mould_dense_plate", Item::new)
-            .lang("Dense Plate Mould")
-            .model((ctx, prov) -> prov.generated(ctx::getEntry, prov.modLoc("item/mold/dense_plate")))
-            .register();
-
-    static {
-        ZH_NAMES.put("mould_gear", "齿轮模具");
-        ZH_NAMES.put("mould_plate", "板模具");
-        ZH_NAMES.put("mould_rod", "杆模具");
-        ZH_NAMES.put("mould_string", "线模具");
-        ZH_NAMES.put("mould_compressed_small", "压缩-小型模具");
-        ZH_NAMES.put("mould_compressed_large", "压缩-大型模具");
-        ZH_NAMES.put("mould_split", "拆分模具");
-        ZH_NAMES.put("mould_coin", "币模具");
-        ZH_NAMES.put("mould_dense_plate", "致密板模具");
+    private static ItemEntry<Item> mould(String name, String englishName, String cn, String texturePath) {
+        ZH_NAMES.put(name, cn);
+        return REGISTRATE.item(name, Item::new)
+                .lang(englishName)
+                .model((ctx, prov) -> prov.generated(ctx::getEntry, prov.modLoc(texturePath)))
+                .register();
     }
+    public static final ItemEntry<Item> MOULD_GEAR = mould("mould_gear", "Gear Mould", "齿轮模具", "item/mold/model_gear");
+    public static final ItemEntry<Item> MOULD_PLATE = mould("mould_plate", "Plate Mould", "板模具", "item/mold/model_plate");
+    public static final ItemEntry<Item> MOULD_ROD = mould("mould_rod", "Rod Mould", "杆模具", "item/mold/model_rod");
+    public static final ItemEntry<Item> MOULD_STRING = mould("mould_string", "String Mould", "线模具", "item/mold/model_string");
+    public static final ItemEntry<Item> MOULD_COMPRESSED_SMALL = mould("mould_compressed_small", "Compressed-small Mould", "压缩-小型模具", "item/mold/compressed_small");
+    public static final ItemEntry<Item> MOULD_COMPRESSED_LARGE = mould("mould_compressed_large", "Compressed-large Mould", "压缩-大型模具", "item/mold/compressed_large");
+    public static final ItemEntry<Item> MOULD_SPLIT = mould("mould_split", "Split Mould", "拆分模具", "item/mold/split");
+    public static final ItemEntry<Item> MOULD_COIN = mould("mould_coin", "Coin Mould", "币模具", "item/mold/coin");
+    public static final ItemEntry<Item> MOULD_DENSE_PLATE = mould("mould_dense_plate", "Dense Plate Mould", "致密板模具", "item/mold/dense_plate");
 
     // Upgrades
     public static final ItemEntry<? extends UpgradeItem> AUGMENTED_LEVELUP = upgrade("augmented_levelup", "Upgrade: Augmented Kit", "升级：增强组件", p -> new LevelupAug());
