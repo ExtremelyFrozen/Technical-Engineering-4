@@ -130,6 +130,7 @@ public class TENItems {
     static {
         REGISTRATE.creativeModeTab(() -> TENCreativeModeTabs.TOOL_TAB);
     }
+
     private static ItemEntry<Item> mould(String name, String englishName, String cn, String texturePath) {
         ZH_NAMES.put(name, cn);
         return REGISTRATE.item(name, Item::new)
@@ -137,6 +138,7 @@ public class TENItems {
                 .model((ctx, prov) -> prov.generated(ctx::getEntry, prov.modLoc(texturePath)))
                 .register();
     }
+
     public static final ItemEntry<Item> MOULD_GEAR = mould("mould_gear", "Gear Mould", "齿轮模具", "item/mold/model_gear");
     public static final ItemEntry<Item> MOULD_PLATE = mould("mould_plate", "Plate Mould", "板模具", "item/mold/model_plate");
     public static final ItemEntry<Item> MOULD_ROD = mould("mould_rod", "Rod Mould", "杆模具", "item/mold/model_rod");
