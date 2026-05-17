@@ -36,11 +36,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.branch }}
+          ref: ${{ inputs.tag-name }}
       - name: Setup Build
         uses: ./.github/actions/build_setup
         with:
-          ref: ${{ inputs.branch }}
+          ref: ${{ inputs.tag-name }}
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
       - name: Get Version
@@ -91,7 +91,7 @@ jobs:
       - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
-          name: build-artifacts-${{ inputs.branch }}
+          name: build-artifacts-${{ inputs.tag-name }}
       - name: Publish Mod
         env:
           MC_VERSION: '1.21.1'
@@ -124,7 +124,7 @@ jobs:
       - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
-          name: build-artifacts-${{ inputs.branch }}
+          name: build-artifacts-${{ inputs.tag-name }}
       - name: Publish Mod
         env:
           MC_VERSION: '1.21.1'
@@ -158,7 +158,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.branch }}
+          ref: ${{ inputs.tag-name }}
       - name: Bump Version
         run: |
           git config user.name 'github-actions[bot]'
