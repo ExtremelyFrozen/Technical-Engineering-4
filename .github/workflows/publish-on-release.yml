@@ -14,6 +14,9 @@ jobs:
       contents: write
       pull-requests: read
     steps:
+      - name: Debug repository owner
+        run: |
+          echo "Repository owner: ${{ github.repository_owner }}"
       - name: Get Config
         uses: actions/checkout@v4
         with:
