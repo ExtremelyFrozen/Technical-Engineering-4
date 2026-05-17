@@ -95,5 +95,10 @@ public class TENBlockEntities {
             .validBlocks(TENBlocks.CELL)
             .register();
 
+    public static final BlockEntityEntry<CreativeCellBlockEntity> CREATIVE_CELL = REGISTRATE
+            .blockEntity("creative_energy_cell", CreativeCellBlockEntity::new)
+            .validBlocks(TENBlocks.CREATIVE_CELL)
+            .register();
+
     public static void init() {}
 }

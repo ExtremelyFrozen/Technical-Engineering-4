@@ -40,6 +40,7 @@ public class ClientProxy {
             case MachineType.QUARRY -> new QuarryScreen(container, inv, title);
             case MachineType.FARM -> new FarmScreen(container, inv, title);
             case MachineType.CELL -> new CellScreen(container, inv, title);
+            case MachineType.CREATIVE_CELL -> new CellScreen(container, inv, title);
             case MachineType.ENGINE_SOLAR -> new SolarScreen(container, inv, title);
             case MachineType.ENGINE_EXTRACTION, MachineType.ENGINE_METAL, MachineType.ENGINE_BIOMASS -> new EngineScreen(container, inv, title);
             default -> {
