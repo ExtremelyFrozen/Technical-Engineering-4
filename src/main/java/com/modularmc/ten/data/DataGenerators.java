@@ -32,10 +32,10 @@ public class DataGenerators {
                 TENBlocks.ZH_NAMES.forEach((id, cn) -> add("block." + TEN.MOD_ID + "." + id, cn));
                 TENItems.ZH_NAMES.forEach((id, cn) -> add("item." + TEN.MOD_ID + "." + id, cn));
                 TENFluids.ZH_NAMES.forEach((id, cn) -> add("block." + TEN.MOD_ID + "." + id, cn));
-                TENLangHandler.ZH_ENTRIES.forEach((key, cn) -> add(key, cn));
+                TENLangHandler.ZH_ENTRIES.forEach(this::add);
 
                 // Creative tabs
-                TENCreativeModeTabs.ZH_NAMES.forEach((key, cn) -> add(key, cn));
+                TENCreativeModeTabs.ZH_NAMES.forEach(this::add);
 
                 // 2a. Auto-generate standalone keys from item and block registrations
                 // (kenergyengineering.xxx = same value as item.kenergyengineering.xxx / block.kenergyengineering.xxx)

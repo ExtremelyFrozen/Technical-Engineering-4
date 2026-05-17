@@ -56,8 +56,8 @@ public class FormsCombinedRecipeSerializer<T extends FormsCombinedRecipe> implem
         this.sizeIn = si;
         this.sizeOut = so;
         this.codec = RecordCodecBuilder.mapCodec(instance -> instance.group(
-                INGREDIENT_CODEC.listOf().fieldOf("inputs").forGetter(recipe -> recipe.input()),
-                INGREDIENT_CODEC.listOf().fieldOf("outputs").forGetter(recipe -> recipe.output()),
+                INGREDIENT_CODEC.listOf().fieldOf("inputs").forGetter(FormsCombinedRecipe::input),
+                INGREDIENT_CODEC.listOf().fieldOf("outputs").forGetter(FormsCombinedRecipe::output),
                 Codec.INT.optionalFieldOf("time", 150).forGetter(FormsCombinedRecipe::time))
                 .apply(instance, (inputs, outputs, time) -> createRecipe(null, null, padIngredients(inputs, sizeIn), padIngredients(outputs, sizeOut), time)));
     }

@@ -66,7 +66,7 @@ public class TENEmiPlugin implements EmiPlugin {
                 .filter(entry -> TEN.MOD_ID.equals(entry.id().getNamespace()))
                 .toList();
 
-        TEN.LOGGER.info(
+        TEN.LOGGER.debug(
                 "[EMI] RecipeManager currently has {} total recipes, {} from {}",
                 allRecipeEntries.size(),
                 tenRecipeEntries.size(),
@@ -75,14 +75,14 @@ public class TENEmiPlugin implements EmiPlugin {
             int pathMatches = (int) tenRecipeEntries.stream()
                     .filter(entry -> entry.id().getPath().contains("/" + def.id().getPath() + "/"))
                     .count();
-            TEN.LOGGER.info(
+            TEN.LOGGER.debug(
                     "[EMI] Recipe path scan for {} matched {} entries under namespace {}",
                     def.id(),
                     pathMatches,
                     TEN.MOD_ID);
         }
 
-        TEN.LOGGER.info("[EMI] Registering TEN EMI plugin with {} categories", CATEGORIES.size());
+        TEN.LOGGER.debug("[EMI] Registering TEN EMI plugin with {} categories", CATEGORIES.size());
         for (var def : CATEGORIES) {
             var iconStack = def.iconStack().get();
             var icon = icon(iconStack);
@@ -90,7 +90,7 @@ public class TENEmiPlugin implements EmiPlugin {
             var recipeType = def.recipeType().get();
             var recipes = registry.getRecipeManager().getAllRecipesFor(recipeType);
 
-            TEN.LOGGER.info(
+            TEN.LOGGER.debug(
                     "[EMI] Category {} -> recipeType={}, iconEmpty={}, iconItem={}, recipeCount={}",
                     def.id(),
                     recipeType,
@@ -100,13 +100,13 @@ public class TENEmiPlugin implements EmiPlugin {
 
             registry.addCategory(category);
             registry.addWorkstation(category, icon);
-            TEN.LOGGER.info("[EMI] Category {} registered with workstation {}", def.id(), iconStack);
+            TEN.LOGGER.debug("[EMI] Category {} registered with workstation {}", def.id(), iconStack);
 
             int index = 0;
             for (var entry : recipes) {
                 var recipe = entry.value();
                 if (index < RECIPE_LOG_SAMPLE_LIMIT) {
-                    TEN.LOGGER.info(
+                    TEN.LOGGER.debug(
                             "[EMI]   Recipe {} -> id={}, inputs(items={}, fluids={}), outputs(items={}, fluids={}), time={}",
                             def.id(),
                             entry.id(),
@@ -119,7 +119,7 @@ public class TENEmiPlugin implements EmiPlugin {
                 registry.addRecipe(new TENEmiRecipe(def.id(), category, recipe));
                 index++;
             }
-            TEN.LOGGER.info("[EMI] Category {} finished registering {} recipes", def.id(), index);
+            TEN.LOGGER.debug("[EMI] Category {} finished registering {} recipes", def.id(), index);
         }
     }
 }
