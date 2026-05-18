@@ -3,6 +3,9 @@ dependencies {
 
     testImplementation(libs.testframework.get())
 
+    // LDLIB 2
+    jarJar(api(forge.ldlib2.get()))
+
     // Registrate
     jarJar(api(forge.registrate.get()))
 

@@ -1,4 +1,5 @@
 [versions]
+ldlib2 = "2.2.8"
 registrate = "MC1.21-1.3.0+67"
 configuration = "3.1.1-neoforge"
 
@@ -20,6 +21,7 @@ spark = "6225208"
 
 
 [libraries]
+ldlib2              = { module = "com.lowdragmc.ldlib2:ldlib2-neoforge-1.21.1", version.ref = "ldlib2" }
 registrate          = { module = "com.tterrag.registrate:Registrate", version.ref = "registrate" }
 configuration       = { module = "dev.toma.configuration:configuration-1.21.1", version.ref = "configuration" }
 
