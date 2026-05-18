@@ -1,10 +1,5 @@
 package com.modularmc.ten.data;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
 import com.modularmc.ten.TEN;
 import com.modularmc.ten.common.data.Mat;
 
@@ -12,6 +7,12 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.data.CachedOutput;
 import net.minecraft.data.DataProvider;
 import net.minecraft.data.PackOutput;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -92,51 +93,55 @@ public class TENRecipeGen implements DataProvider {
     }
 
     // ══════════════════════════════════════════════════════════════════
-    //  Recipe format templates
+    // Recipe format templates
     // ══════════════════════════════════════════════════════════════════
 
     private record CompressFmt(String form, int ingots, String mould, int outputCount) {}
+
     private static final List<CompressFmt> COMPRESS = List.of(
             new CompressFmt("plate", 1, "mould_plate", 1),
-            new CompressFmt("gear",  4, "mould_gear",  1),
-            new CompressFmt("rod",   1, "mould_rod",   1),
-            new CompressFmt("wire",  1, "mould_string", 2));
+            new CompressFmt("gear", 4, "mould_gear", 1),
+            new CompressFmt("rod", 1, "mould_rod", 1),
+            new CompressFmt("wire", 1, "mould_string", 2));
 
     private record PulvFmt(String tagCat, int dustCount, int time, String suffix) {}
+
     private static final List<PulvFmt> PULV = List.of(
-            new PulvFmt("ingots",        1, 100, "_dust"),
-            new PulvFmt("ores",          2, 180, "_dust_ore"),
+            new PulvFmt("ingots", 1, 100, "_dust"),
+            new PulvFmt("ores", 2, 180, "_dust_ore"),
             new PulvFmt("raw_materials", 1, 120, "_dust_raw"));
 
     private record SmeltFmt(String input, String output, float xp, String suffix) {}
+
     private static final List<SmeltFmt> SMELT = List.of(
-            new SmeltFmt("ore",      "ingot", 0.35f, "ingot"),
+            new SmeltFmt("ore", "ingot", 0.35f, "ingot"),
             new SmeltFmt("deep_ore", "ingot", 0.35f, "ingot_deep"),
-            new SmeltFmt("raw",      "ingot", 0.35f, "ingot_raw"),
-            new SmeltFmt("dust",     "ingot", 0f,    "ingot_fd"));
+            new SmeltFmt("raw", "ingot", 0.35f, "ingot_raw"),
+            new SmeltFmt("dust", "ingot", 0f, "ingot_fd"));
 
     private record PackFmt(String unit, String block) {}
+
     private static final List<PackFmt> PACK = List.of(
-            new PackFmt("ingot",  "block"),
+            new PackFmt("ingot", "block"),
             new PackFmt("nugget", "ingot"),
-            new PackFmt("raw",    "raw_block"));
+            new PackFmt("raw", "raw_block"));
 
     private record MouldFmt(String id, String[] pattern) {}
-    private static final List<MouldFmt> MOULDS = List.of(
-            new MouldFmt("mould_gear",   new String[]{"A A", " A ", "A A"}),
-            new MouldFmt("mould_plate",  new String[]{"A A", "   ", "A A"}),
-            new MouldFmt("mould_rod",    new String[]{"A A", "A A", "A A"}),
-            new MouldFmt("mould_string", new String[]{"AA ", " AA", "AA "}));
 
+    private static final List<MouldFmt> MOULDS = List.of(
+            new MouldFmt("mould_gear", new String[] { "A A", " A ", "A A" }),
+            new MouldFmt("mould_plate", new String[] { "A A", "   ", "A A" }),
+            new MouldFmt("mould_rod", new String[] { "A A", "A A", "A A" }),
+            new MouldFmt("mould_string", new String[] { "AA ", " AA", "AA " }));
 
     // ══════════════════════════════════════════════════════════════════
-    //  Conditions
+    // Conditions
     // ══════════════════════════════════════════════════════════════════
 
     private static boolean canPulv(Mat mat, PulvFmt r) {
         return switch (r.tagCat) {
-            case "ingots"        -> mat.hasIngot;
-            case "ores"          -> mat.hasOre;
+            case "ingots" -> mat.hasIngot;
+            case "ores" -> mat.hasOre;
             case "raw_materials" -> mat.hasRaw;
             default -> false;
         };
@@ -144,10 +149,10 @@ public class TENRecipeGen implements DataProvider {
 
     private static boolean canSmelt(Mat mat, SmeltFmt r) {
         return switch (r.input) {
-            case "ore"      -> mat.hasOre;
+            case "ore" -> mat.hasOre;
             case "deep_ore" -> mat.hasDeepOre;
-            case "raw"      -> mat.hasRaw;
-            case "dust"     -> mat.hasForm("dust") && mat.hasIngot;
+            case "raw" -> mat.hasRaw;
+            case "dust" -> mat.hasForm("dust") && mat.hasIngot;
             default -> false;
         };
     }
@@ -170,16 +175,16 @@ public class TENRecipeGen implements DataProvider {
 
     private static String smeltInput(Mat mat, SmeltFmt r) {
         return switch (r.input) {
-            case "ore"      -> mat.itemId("ore");
+            case "ore" -> mat.itemId("ore");
             case "deep_ore" -> mat.itemId("deep_ore");
-            case "raw"      -> "kenergyengineering:raw_" + mat.id;
-            case "dust"     -> mat.itemId("dust");
+            case "raw" -> "kenergyengineering:raw_" + mat.id;
+            case "dust" -> mat.itemId("dust");
             default -> mat.itemId(r.input);
         };
     }
 
     // ══════════════════════════════════════════════════════════════════
-    //  JSON builders
+    // JSON builders
     // ══════════════════════════════════════════════════════════════════
 
     private JsonObject buildCompress(Mat mat, CompressFmt r) {
@@ -271,9 +276,10 @@ public class TENRecipeGen implements DataProvider {
         j.add("result", obj("id", TEN.MOD_ID + ":" + m.id));
         return j;
     }
+
     /** Compressor pack/split recipe: inputForm + mould → outputForm (inputCount → outputCount). */
     private JsonObject buildMouldPack(Mat mat, String inputForm, String outputForm,
-                                       int inputCount, int outputCount, String mould) {
+                                      int inputCount, int outputCount, String mould) {
         var j = new JsonObject();
         j.addProperty("type", TEN.MOD_ID + ":compressor");
         j.add("inputs", arr(
@@ -286,7 +292,7 @@ public class TENRecipeGen implements DataProvider {
     }
 
     // ══════════════════════════════════════════════════════════════════
-    //  JSON helpers
+    // JSON helpers
     // ══════════════════════════════════════════════════════════════════
 
     private static JsonObject ref(String id) {
@@ -321,9 +327,9 @@ public class TENRecipeGen implements DataProvider {
     }
 
     private static void put(JsonObject o, String key, Object value) {
-        if (value instanceof String s)         o.addProperty(key, s);
-        else if (value instanceof Number n)    o.addProperty(key, n);
-        else if (value instanceof Boolean b)   o.addProperty(key, b);
+        if (value instanceof String s) o.addProperty(key, s);
+        else if (value instanceof Number n) o.addProperty(key, n);
+        else if (value instanceof Boolean b) o.addProperty(key, b);
         else if (value instanceof JsonElement e) o.add(key, e);
     }
 }

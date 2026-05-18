@@ -1,14 +1,11 @@
 package com.modularmc.ten.client.gui;
 
-import com.modularmc.ten.api.blockentity.CmMachineBlockEntity;
 import com.modularmc.ten.api.option.RedstoneMode;
 import com.modularmc.ten.client.gui.element.*;
 
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
-
-import java.util.List;
 
 import static com.modularmc.ten.client.gui.element.ElementButton.ClickAction;
 

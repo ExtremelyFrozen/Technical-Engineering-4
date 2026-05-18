@@ -1,9 +1,5 @@
 package com.modularmc.ten.api.blockentity;
 
-import com.lowdragmc.lowdraglib2.syncdata.annotation.DescSynced;
-import com.lowdragmc.lowdraglib2.syncdata.annotation.Persisted;
-import com.lowdragmc.lowdraglib2.syncdata.annotation.RPCMethod;
-import com.lowdragmc.lowdraglib2.syncdata.rpc.RPCSender;
 import com.modularmc.ten.api.capability.MachineEnergyStorage;
 import com.modularmc.ten.api.capability.MachineFluidTank;
 import com.modularmc.ten.api.capability.MachineItemHandler;
@@ -33,6 +29,10 @@ import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import net.neoforged.neoforge.items.IItemHandler;
 
+import com.lowdragmc.lowdraglib2.syncdata.annotation.DescSynced;
+import com.lowdragmc.lowdraglib2.syncdata.annotation.Persisted;
+import com.lowdragmc.lowdraglib2.syncdata.annotation.RPCMethod;
+import com.lowdragmc.lowdraglib2.syncdata.rpc.RPCSender;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -40,29 +40,71 @@ import java.util.*;
 public abstract class CmMachineBlockEntity extends CmBlockEntity implements MenuProvider, IUpgradableMachine {
 
     // ───── ldlib2 自动同步/持久化字段（由 FieldManagedStorage 管理）─────
-    @Persisted @DescSynced public int progress = 0;
-    @Persisted @DescSynced public int maxProgress = 0;
-    @Persisted @DescSynced public int energyStored = 0;    // mirror of energyStorage.getEnergyStored()
-    @Persisted @DescSynced public int maxEnergyStored = 0; // mirror of maxStorageEnergy
-    @Persisted @DescSynced public int fuel = 0;
-    @Persisted @DescSynced public int maxFuel = 0;
-    @Persisted @DescSynced public int energyRec = 0;       // E_REC
-    @Persisted @DescSynced public int energyExt = 0;       // E_EXT
-    @Persisted @DescSynced public int itemRec = 0;         // I_REC
-    @Persisted @DescSynced public int itemExt = 0;         // I_EXT
-    @Persisted @DescSynced public int fluidRec = 0;        // F_REC
-    @Persisted @DescSynced public int fluidExt = 0;        // F_EXT
-    @Persisted @DescSynced public int effAuc = 0;          // EFF_AUC
-    @Persisted @DescSynced public int eff = 0;             // EFF
-    @Persisted @DescSynced public int upgSize = 1;         // UPGSIZE
-    @Persisted @DescSynced public int facingVal = 2;       // FACE (Direction.NORTH)
-    @Persisted @DescSynced public int redstoneMode = RedstoneMode.OFF;
-    @Persisted @DescSynced public boolean active = false;
+    @Persisted
+    @DescSynced
+    public int progress = 0;
+    @Persisted
+    @DescSynced
+    public int maxProgress = 0;
+    @Persisted
+    @DescSynced
+    public int energyStored = 0;    // mirror of energyStorage.getEnergyStored()
+    @Persisted
+    @DescSynced
+    public int maxEnergyStored = 0; // mirror of maxStorageEnergy
+    @Persisted
+    @DescSynced
+    public int fuel = 0;
+    @Persisted
+    @DescSynced
+    public int maxFuel = 0;
+    @Persisted
+    @DescSynced
+    public int energyRec = 0;       // E_REC
+    @Persisted
+    @DescSynced
+    public int energyExt = 0;       // E_EXT
+    @Persisted
+    @DescSynced
+    public int itemRec = 0;         // I_REC
+    @Persisted
+    @DescSynced
+    public int itemExt = 0;         // I_EXT
+    @Persisted
+    @DescSynced
+    public int fluidRec = 0;        // F_REC
+    @Persisted
+    @DescSynced
+    public int fluidExt = 0;        // F_EXT
+    @Persisted
+    @DescSynced
+    public int effAuc = 0;          // EFF_AUC
+    @Persisted
+    @DescSynced
+    public int eff = 0;             // EFF
+    @Persisted
+    @DescSynced
+    public int upgSize = 1;         // UPGSIZE
+    @Persisted
+    @DescSynced
+    public int facingVal = 2;       // FACE (Direction.NORTH)
+    @Persisted
+    @DescSynced
+    public int redstoneMode = RedstoneMode.OFF;
+    @Persisted
+    @DescSynced
+    public boolean active = false;
 
     // Face config for client display (synced via @DescSynced)
-    @Persisted @DescSynced public int[] energyFaceData = new int[6];
-    @Persisted @DescSynced public int[] itemFaceData = new int[6];
-    @Persisted @DescSynced public int[] fluidFaceData = new int[6];
+    @Persisted
+    @DescSynced
+    public int[] energyFaceData = new int[6];
+    @Persisted
+    @DescSynced
+    public int[] itemFaceData = new int[6];
+    @Persisted
+    @DescSynced
+    public int[] fluidFaceData = new int[6];
 
     // ───── Machine fields ─────
     public MachineEnergyStorage energyStorage;
@@ -184,7 +226,9 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements Menu
         super.loadAdditional(tag, registries);
     }
 
-    public boolean hasUpgrade() { return true; }
+    public boolean hasUpgrade() {
+        return true;
+    }
 
     public boolean hasUpgrade(Class<? extends UpgradeItem> upgradeClass) {
         if (upgradeHandler == null) return false;
@@ -195,21 +239,28 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements Menu
         return false;
     }
 
-    public boolean hasSideBar() { return true; }
+    public boolean hasSideBar() {
+        return true;
+    }
 
-    public int getActualEfficiency() { return effAuc; }
+    public int getActualEfficiency() {
+        return effAuc;
+    }
 
-    public double getActualEfficiencyPercent() { return 1.0; }
+    public double getActualEfficiencyPercent() {
+        return 1.0;
+    }
 
-    public boolean isActive() { return active; }
+    public boolean isActive() {
+        return active;
+    }
 
     public void setActive(boolean a) {
         if (active == a) return;
         active = a;
         if (level != null) {
             BlockState state = getBlockState();
-            if (state.hasProperty(com.modularmc.ten.common.block.machine.BaseMachineBlock.ACTIVE)
-                    && state.getValue(com.modularmc.ten.common.block.machine.BaseMachineBlock.ACTIVE) != a) {
+            if (state.hasProperty(com.modularmc.ten.common.block.machine.BaseMachineBlock.ACTIVE) && state.getValue(com.modularmc.ten.common.block.machine.BaseMachineBlock.ACTIVE) != a) {
                 level.setBlock(worldPosition,
                         state.setValue(com.modularmc.ten.common.block.machine.BaseMachineBlock.ACTIVE, a), Block.UPDATE_ALL);
             }
@@ -235,56 +286,68 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements Menu
         markDirty();
     }
 
-    public Direction getFacing() { return Direction.from3DDataValue(facingVal); }
+    public Direction getFacing() {
+        return Direction.from3DDataValue(facingVal);
+    }
 
-    public int initialFaceModeEnergy() { return FaceOption.BOTH; }
-    public int initialFaceModeItem() { return FaceOption.BOTH; }
-    public int initialFaceModeFluid() { return FaceOption.BOTH; }
+    public int initialFaceModeEnergy() {
+        return FaceOption.BOTH;
+    }
 
-    public boolean hasFaceCapabilityEnergy(@Nullable Direction side) { return true; }
-    public boolean hasFaceCapabilityItem(@Nullable Direction side) { return true; }
-    public boolean hasFaceCapabilityFluid(@Nullable Direction side) { return !tanks.isEmpty(); }
+    public int initialFaceModeItem() {
+        return FaceOption.BOTH;
+    }
+
+    public int initialFaceModeFluid() {
+        return FaceOption.BOTH;
+    }
+
+    public boolean hasFaceCapabilityEnergy(@Nullable Direction side) {
+        return true;
+    }
+
+    public boolean hasFaceCapabilityItem(@Nullable Direction side) {
+        return true;
+    }
+
+    public boolean hasFaceCapabilityFluid(@Nullable Direction side) {
+        return !tanks.isEmpty();
+    }
 
     protected boolean canReceiveEnergy(@Nullable Direction side) {
         if (!hasFaceCapabilityEnergy(side)) return false;
         if (side == null) return true;
-        return FaceOption.isIn(energyFaceMode.getOrDefault(side, FaceOption.OFF))
-                || energyFaceMode.getOrDefault(side, FaceOption.OFF) == FaceOption.BOTH;
+        return FaceOption.isIn(energyFaceMode.getOrDefault(side, FaceOption.OFF)) || energyFaceMode.getOrDefault(side, FaceOption.OFF) == FaceOption.BOTH;
     }
 
     protected boolean canExtractEnergy(@Nullable Direction side) {
         if (!hasFaceCapabilityEnergy(side)) return false;
         if (side == null) return true;
-        return FaceOption.isOut(energyFaceMode.getOrDefault(side, FaceOption.OFF))
-                || energyFaceMode.getOrDefault(side, FaceOption.OFF) == FaceOption.BOTH;
+        return FaceOption.isOut(energyFaceMode.getOrDefault(side, FaceOption.OFF)) || energyFaceMode.getOrDefault(side, FaceOption.OFF) == FaceOption.BOTH;
     }
 
     protected boolean canReceiveItem(@Nullable Direction side) {
         if (!hasFaceCapabilityItem(side)) return false;
         if (side == null) return true;
-        return FaceOption.isIn(itemFaceMode.getOrDefault(side, FaceOption.OFF))
-                || itemFaceMode.getOrDefault(side, FaceOption.OFF) == FaceOption.BOTH;
+        return FaceOption.isIn(itemFaceMode.getOrDefault(side, FaceOption.OFF)) || itemFaceMode.getOrDefault(side, FaceOption.OFF) == FaceOption.BOTH;
     }
 
     protected boolean canExtractItem(@Nullable Direction side) {
         if (!hasFaceCapabilityItem(side)) return false;
         if (side == null) return true;
-        return FaceOption.isOut(itemFaceMode.getOrDefault(side, FaceOption.OFF))
-                || itemFaceMode.getOrDefault(side, FaceOption.OFF) == FaceOption.BOTH;
+        return FaceOption.isOut(itemFaceMode.getOrDefault(side, FaceOption.OFF)) || itemFaceMode.getOrDefault(side, FaceOption.OFF) == FaceOption.BOTH;
     }
 
     protected boolean canReceiveFluid(@Nullable Direction side) {
         if (!hasFaceCapabilityFluid(side)) return false;
         if (side == null) return true;
-        return FaceOption.isIn(fluidFaceMode.getOrDefault(side, FaceOption.OFF))
-                || fluidFaceMode.getOrDefault(side, FaceOption.OFF) == FaceOption.BOTH;
+        return FaceOption.isIn(fluidFaceMode.getOrDefault(side, FaceOption.OFF)) || fluidFaceMode.getOrDefault(side, FaceOption.OFF) == FaceOption.BOTH;
     }
 
     protected boolean canExtractFluid(@Nullable Direction side) {
         if (!hasFaceCapabilityFluid(side)) return false;
         if (side == null) return true;
-        return FaceOption.isOut(fluidFaceMode.getOrDefault(side, FaceOption.OFF))
-                || fluidFaceMode.getOrDefault(side, FaceOption.OFF) == FaceOption.BOTH;
+        return FaceOption.isOut(fluidFaceMode.getOrDefault(side, FaceOption.OFF)) || fluidFaceMode.getOrDefault(side, FaceOption.OFF) == FaceOption.BOTH;
     }
 
     public boolean signalAllowRun() {
@@ -300,12 +363,7 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements Menu
     public boolean energyAllowRun() {
         if (energyStorage == null) return false;
         return switch (machineType()) {
-            case com.modularmc.ten.api.option.MachineType.GENERATOR,
-                 com.modularmc.ten.api.option.MachineType.ENGINE_SOLAR,
-                 com.modularmc.ten.api.option.MachineType.ENGINE_EXTRACTION,
-                 com.modularmc.ten.api.option.MachineType.ENGINE_METAL,
-                 com.modularmc.ten.api.option.MachineType.ENGINE_BIOMASS ->
-                    energyStorage.getEnergyStored() + getActualEfficiency() <= maxStorageEnergy;
+            case com.modularmc.ten.api.option.MachineType.GENERATOR, com.modularmc.ten.api.option.MachineType.ENGINE_SOLAR, com.modularmc.ten.api.option.MachineType.ENGINE_EXTRACTION, com.modularmc.ten.api.option.MachineType.ENGINE_METAL, com.modularmc.ten.api.option.MachineType.ENGINE_BIOMASS -> energyStorage.getEnergyStored() + getActualEfficiency() <= maxStorageEnergy;
             default -> energyStorage.getEnergyStored() >= efficientIn;
         };
     }
@@ -359,13 +417,25 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements Menu
     }
 
     // Slots
-    public IngredientType slotType(int slot) { return IngredientType.IGNORE; }
-    public boolean valid(int slot, ItemStack stack) { return true; }
+    public IngredientType slotType(int slot) {
+        return IngredientType.IGNORE;
+    }
+
+    public boolean valid(int slot, ItemStack stack) {
+        return true;
+    }
+
     public boolean validUpgrade(int slot, ItemStack stack) {
         return stack.getItem() instanceof UpgradeItem && slot < Math.max(1, Math.min(upgradeSize, MAX_UPGRADE_SLOTS));
     }
-    public IngredientType tankType(int tank) { return IngredientType.IGNORE; }
-    public boolean valid(int slot, FluidStack stack) { return true; }
+
+    public IngredientType tankType(int tank) {
+        return IngredientType.IGNORE;
+    }
+
+    public boolean valid(int slot, FluidStack stack) {
+        return true;
+    }
 
     protected void resetUpgradeEffects() {
         efficientIn = initialEfficientIn;
@@ -400,26 +470,38 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements Menu
     public IEnergyStorage getEnergyStorage(@Nullable Direction side) {
         if (energyStorage == null) return null;
         return new IEnergyStorage() {
+
             @Override
             public int receiveEnergy(int maxReceive, boolean simulate) {
                 if (!signalAllowRun() || !canReceiveEnergy(side)) return 0;
                 return energyStorage.receiveEnergy(Math.min(maxReceive, maxReceiveEnergy), simulate);
             }
+
             @Override
             public int extractEnergy(int maxExtract, boolean simulate) {
                 if (!signalAllowRun() || !canExtractEnergy(side)) return 0;
                 return energyStorage.extractEnergy(Math.min(maxExtract, maxExtractEnergy), simulate);
             }
+
             @Override
             public int getEnergyStored() {
                 return signalAllowRun() || side == null ? energyStorage.getEnergyStored() : 0;
             }
+
             @Override
-            public int getMaxEnergyStored() { return maxStorageEnergy; }
+            public int getMaxEnergyStored() {
+                return maxStorageEnergy;
+            }
+
             @Override
-            public boolean canExtract() { return canExtractEnergy(side); }
+            public boolean canExtract() {
+                return canExtractEnergy(side);
+            }
+
             @Override
-            public boolean canReceive() { return canReceiveEnergy(side); }
+            public boolean canReceive() {
+                return canReceiveEnergy(side);
+            }
         };
     }
 
@@ -427,25 +509,35 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements Menu
         if (itemHandler == null) return null;
         if (side == null) return itemHandler;
         return new IItemHandler() {
+
             @Override
-            public int getSlots() { return itemHandler.getSlots(); }
+            public int getSlots() {
+                return itemHandler.getSlots();
+            }
+
             @Override
             public ItemStack getStackInSlot(int slot) {
                 return canExtractItem(side) ? itemHandler.getStackInSlot(slot) : ItemStack.EMPTY;
             }
+
             @Override
             public ItemStack insertItem(int slot, ItemStack stack, boolean simulate) {
                 if (!signalAllowRun() || !canReceiveItem(side)) return stack;
                 if (!slotType(slot).canIn() || !valid(slot, stack)) return stack;
                 return itemHandler.insertItem(slot, stack, simulate);
             }
+
             @Override
             public ItemStack extractItem(int slot, int amount, boolean simulate) {
                 if (!signalAllowRun() || !canExtractItem(side) || !slotType(slot).canOut()) return ItemStack.EMPTY;
                 return itemHandler.extractItem(slot, Math.min(amount, maxExtractItem), simulate);
             }
+
             @Override
-            public int getSlotLimit(int slot) { return itemHandler.getSlotLimit(slot); }
+            public int getSlotLimit(int slot) {
+                return itemHandler.getSlotLimit(slot);
+            }
+
             @Override
             public boolean isItemValid(int slot, ItemStack stack) {
                 return slotType(slot).canIn() && valid(slot, stack) && itemHandler.isItemValid(slot, stack);
@@ -460,28 +552,39 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements Menu
         if (combinedFluidHandler == null) return null;
         if (side == null) return combinedFluidHandler;
         return new IFluidHandler() {
+
             @Override
-            public int getTanks() { return combinedFluidHandler.getTanks(); }
+            public int getTanks() {
+                return combinedFluidHandler.getTanks();
+            }
+
             @Override
             public FluidStack getFluidInTank(int tank) {
                 return canExtractFluid(side) ? combinedFluidHandler.getFluidInTank(tank) : FluidStack.EMPTY;
             }
+
             @Override
-            public int getTankCapacity(int tank) { return combinedFluidHandler.getTankCapacity(tank); }
+            public int getTankCapacity(int tank) {
+                return combinedFluidHandler.getTankCapacity(tank);
+            }
+
             @Override
             public boolean isFluidValid(int tank, FluidStack stack) {
                 return tankType(tank).canIn() && valid(tank, stack) && combinedFluidHandler.isFluidValid(tank, stack);
             }
+
             @Override
             public int fill(FluidStack resource, FluidAction action) {
                 if (!signalAllowRun() || !canReceiveFluid(side)) return 0;
                 return fillFluidRange(resource, action, true);
             }
+
             @Override
             public FluidStack drain(FluidStack resource, FluidAction action) {
                 if (!signalAllowRun() || !canExtractFluid(side)) return FluidStack.EMPTY;
                 return drainFluid(resource, action);
             }
+
             @Override
             public FluidStack drain(int maxDrain, FluidAction action) {
                 if (!signalAllowRun() || !canExtractFluid(side)) return FluidStack.EMPTY;
@@ -530,9 +633,9 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements Menu
             for (Direction direction : Direction.values()) {
                 int idx = direction.get3DDataValue();
                 rpcToTracking("rpcSyncFaceInfo", idx,
-                    energyFaceMode.getOrDefault(direction, 0),
-                    itemFaceMode.getOrDefault(direction, 0),
-                    fluidFaceMode.getOrDefault(direction, 0));
+                        energyFaceMode.getOrDefault(direction, 0),
+                        itemFaceMode.getOrDefault(direction, 0),
+                        fluidFaceMode.getOrDefault(direction, 0));
             }
         }
     }
@@ -547,16 +650,18 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements Menu
                 case 0 -> map = energyFaceMode;
                 case 1 -> map = itemFaceMode;
                 case 2 -> map = fluidFaceMode;
-                default -> { return; }
+                default -> {
+                    return;
+                }
             }
             int mode = map.getOrDefault(direction, FaceOption.OFF) + 1;
             if (mode >= FaceOption.size()) mode = 0;
             map.put(direction, mode);
             setChanged();
             rpcToTracking("rpcSyncFaceInfo", dirIndex,
-                energyFaceMode.getOrDefault(direction, 0),
-                itemFaceMode.getOrDefault(direction, 0),
-                fluidFaceMode.getOrDefault(direction, 0));
+                    energyFaceMode.getOrDefault(direction, 0),
+                    itemFaceMode.getOrDefault(direction, 0),
+                    fluidFaceMode.getOrDefault(direction, 0));
         }
     }
 
@@ -601,24 +706,41 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements Menu
     // ───── Fluid helpers ─────
     protected IFluidHandler createCombinedFluidHandler() {
         return new IFluidHandler() {
+
             @Override
-            public int getTanks() { return tanks.size(); }
+            public int getTanks() {
+                return tanks.size();
+            }
+
             @Override
             public FluidStack getFluidInTank(int tank) {
                 return tank >= 0 && tank < tanks.size() ? tanks.get(tank).getFluid() : FluidStack.EMPTY;
             }
+
             @Override
-            public int getTankCapacity(int tank) { return tank >= 0 && tank < tanks.size() ? tanks.get(tank).getCapacity() : 0; }
+            public int getTankCapacity(int tank) {
+                return tank >= 0 && tank < tanks.size() ? tanks.get(tank).getCapacity() : 0;
+            }
+
             @Override
             public boolean isFluidValid(int tank, FluidStack stack) {
                 return tank >= 0 && tank < tanks.size() && tankType(tank).canIn() && valid(tank, stack) && tanks.get(tank).isFluidValid(stack);
             }
+
             @Override
-            public int fill(FluidStack resource, FluidAction action) { return fillFluidRange(resource, action, true); }
+            public int fill(FluidStack resource, FluidAction action) {
+                return fillFluidRange(resource, action, true);
+            }
+
             @Override
-            public FluidStack drain(FluidStack resource, FluidAction action) { return drainFluid(resource, action); }
+            public FluidStack drain(FluidStack resource, FluidAction action) {
+                return drainFluid(resource, action);
+            }
+
             @Override
-            public FluidStack drain(int maxDrain, FluidAction action) { return drainFluid(maxDrain, action); }
+            public FluidStack drain(int maxDrain, FluidAction action) {
+                return drainFluid(maxDrain, action);
+            }
         };
     }
 
@@ -702,11 +824,15 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements Menu
     }
 
     @Override
-    public int getCurrentRadius() { return 0; }
+    public int getCurrentRadius() {
+        return 0;
+    }
 
     @Override
     public void setCurrentRadius(int radius) {}
 
     @Override
-    public int getInitialRadius() { return 0; }
+    public int getInitialRadius() {
+        return 0;
+    }
 }

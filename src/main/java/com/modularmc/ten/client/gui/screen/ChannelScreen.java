@@ -3,21 +3,11 @@ package com.modularmc.ten.client.gui.screen;
 import com.modularmc.ten.api.option.FaceOption;
 import com.modularmc.ten.client.gui.CmContainerMachine;
 import com.modularmc.ten.client.gui.CmScreenMachine;
-import com.modularmc.ten.client.gui.element.ElementBase;
 import com.modularmc.ten.client.gui.element.ElementButton;
-import com.modularmc.ten.utils.ComponentHelper;
-import com.modularmc.ten.utils.DisplayHelper;
-import com.modularmc.ten.utils.RenderHelper;
 
-import net.minecraft.ChatFormatting;
-import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public class ChannelScreen extends CmScreenMachine {
 
@@ -45,9 +35,7 @@ public class ChannelScreen extends CmScreenMachine {
 
     private int getChannelMode() {
         if (container.machine == null) return FaceOption.OFF;
-        return modeNow == 0
-                ? container.machine.energyFaceData[0]
-                : container.machine.itemFaceData[0];
+        return modeNow == 0 ? container.machine.energyFaceData[0] : container.machine.itemFaceData[0];
     }
 
     @Override

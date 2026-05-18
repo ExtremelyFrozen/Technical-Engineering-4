@@ -6,7 +6,6 @@ import com.modularmc.ten.common.data.TENCreativeModeTabs;
 import com.modularmc.ten.common.data.TENFluids;
 import com.modularmc.ten.common.data.TENItems;
 import com.modularmc.ten.data.lang.TENLangHandler;
-import net.minecraft.data.recipes.RecipeProvider;
 
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;

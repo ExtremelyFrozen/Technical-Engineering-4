@@ -1,15 +1,16 @@
 package com.modularmc.ten.data;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
 import com.modularmc.ten.TEN;
 
 import net.minecraft.data.CachedOutput;
 import net.minecraft.data.DataProvider;
 import net.minecraft.data.PackOutput;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -94,27 +95,27 @@ public class TENVanillaPackGen implements DataProvider {
             // Nugget → Ingot (9:1): mod hasNugget=true, hasIngot=false → no mod recipe
             new PackFmt("kenergyengineering:diamond_nugget", "minecraft:diamond"),
             new PackFmt("kenergyengineering:emerald_nugget", "minecraft:emerald"),
-            new PackFmt("kenergyengineering:lapis_nugget",   "minecraft:lapis_lazuli"),
-            new PackFmt("kenergyengineering:quartz_nugget",  "minecraft:quartz"),
+            new PackFmt("kenergyengineering:lapis_nugget", "minecraft:lapis_lazuli"),
+            new PackFmt("kenergyengineering:quartz_nugget", "minecraft:quartz"),
             // Ingot → Block (9:1): mod hasBlock=false → no mod recipe
-            new PackFmt("minecraft:iron_ingot",        "minecraft:iron_block"),
-            new PackFmt("minecraft:gold_ingot",        "minecraft:gold_block"),
-            new PackFmt("minecraft:copper_ingot",      "minecraft:copper_block"),
-            new PackFmt("minecraft:diamond",           "minecraft:diamond_block"),
-            new PackFmt("minecraft:emerald",           "minecraft:emerald_block"),
-            new PackFmt("minecraft:lapis_lazuli",      "minecraft:lapis_block"),
-            new PackFmt("minecraft:quartz",            "minecraft:quartz_block"),
-            new PackFmt("minecraft:netherite_ingot",   "minecraft:netherite_block"),
-            new PackFmt("minecraft:redstone",          "minecraft:redstone_block"),
+            new PackFmt("minecraft:iron_ingot", "minecraft:iron_block"),
+            new PackFmt("minecraft:gold_ingot", "minecraft:gold_block"),
+            new PackFmt("minecraft:copper_ingot", "minecraft:copper_block"),
+            new PackFmt("minecraft:diamond", "minecraft:diamond_block"),
+            new PackFmt("minecraft:emerald", "minecraft:emerald_block"),
+            new PackFmt("minecraft:lapis_lazuli", "minecraft:lapis_block"),
+            new PackFmt("minecraft:quartz", "minecraft:quartz_block"),
+            new PackFmt("minecraft:netherite_ingot", "minecraft:netherite_block"),
+            new PackFmt("minecraft:redstone", "minecraft:redstone_block"),
             // Raw ore → Block (9:1): vanilla raw ores not covered by mod material system
-            new PackFmt("minecraft:raw_iron",   "minecraft:raw_iron_block"),
-            new PackFmt("minecraft:raw_gold",   "minecraft:raw_gold_block"),
+            new PackFmt("minecraft:raw_iron", "minecraft:raw_iron_block"),
+            new PackFmt("minecraft:raw_gold", "minecraft:raw_gold_block"),
             new PackFmt("minecraft:raw_copper", "minecraft:raw_copper_block"));
 
     /** 4:1 pairs: unit → block. */
     private static final List<PackFmt> PACK_4TO1 = List.of(
-            new PackFmt("minecraft:snowball",         "minecraft:snow_block"),
-            new PackFmt("minecraft:amethyst_shard",   "minecraft:amethyst_block"));
+            new PackFmt("minecraft:snowball", "minecraft:snow_block"),
+            new PackFmt("minecraft:amethyst_shard", "minecraft:amethyst_block"));
 
     private static String key(String id) {
         return id.replace(':', '_');

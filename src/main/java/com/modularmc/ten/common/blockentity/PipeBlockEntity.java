@@ -1,6 +1,5 @@
 package com.modularmc.ten.common.blockentity;
 
-import com.lowdragmc.lowdraglib2.syncdata.annotation.Persisted;
 import com.modularmc.ten.api.blockentity.CmBlockEntity;
 import com.modularmc.ten.api.capability.MachineItemHandler;
 
@@ -8,6 +7,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.items.IItemHandler;
+
+import com.lowdragmc.lowdraglib2.syncdata.annotation.Persisted;
 
 public class PipeBlockEntity extends CmBlockEntity {
 

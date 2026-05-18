@@ -1,7 +1,7 @@
 package com.modularmc.ten.integration.emi;
 
-import com.modularmc.ten.api.recipe.FormsCombinedRecipe;
 import com.modularmc.ten.TEN;
+import com.modularmc.ten.api.recipe.FormsCombinedRecipe;
 import com.modularmc.ten.integration.xei.TENRecipeWidget;
 
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent;

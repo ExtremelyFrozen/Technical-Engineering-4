@@ -71,7 +71,7 @@ public class FormsCombinedIngredient {
         return switch (type) {
             case "tag" -> TagHelper.containsItem(i, ifTagItem);
             case "static" -> matchItems.contains(i);
-            case "item"  -> matchItems.contains(i);
+            case "item" -> matchItems.contains(i);
             default -> false;
         };
     }
@@ -80,7 +80,7 @@ public class FormsCombinedIngredient {
         return switch (type) {
             case "tag" -> TagHelper.containsFluid(f, ifTagFluid);
             case "static" -> matchFluids.contains(f);
-            case "item"  -> matchFluids.contains(f);
+            case "item" -> matchFluids.contains(f);
             default -> false;
         };
     }
@@ -142,7 +142,7 @@ public class FormsCombinedIngredient {
                         ing.matchItems = TagHelper.getItems(ing.ifTagItem);
                     }
                     case "static" -> ing.matchItems = List.of(parseItem(key));
-                    case "item"  -> ing.matchItems = List.of(parseItem(key));
+                    case "item" -> ing.matchItems = List.of(parseItem(key));
                 }
             }
             case "fluid" -> {
@@ -152,7 +152,7 @@ public class FormsCombinedIngredient {
                         ing.matchFluids = TagHelper.getFluids(ing.ifTagFluid);
                     }
                     case "static" -> ing.matchFluids = List.of(parseFluid(key));
-                    case "item"  -> ing.matchFluids = List.of(parseFluid(key));
+                    case "item" -> ing.matchFluids = List.of(parseFluid(key));
                 }
             }
         }

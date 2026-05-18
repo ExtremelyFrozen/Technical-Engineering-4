@@ -1,41 +1,42 @@
 package com.modularmc.ten.common.data;
 
 import com.modularmc.ten.TEN;
+
 import net.minecraft.resources.ResourceLocation;
 
 /**
  * Material variant definition shared by:
  * <ul>
- *   <li>{@link TENItems#registerVariants(String, String, String, Mat...)} — item registration</li>
- *   <li>TENRecipeGen — recipe auto-generation</li>
+ * <li>{@link TENItems#registerVariants(String, String, String, Mat...)} — item registration</li>
+ * <li>TENRecipeGen — recipe auto-generation</li>
  * </ul>
  */
 public enum Mat {
 
-    //                  id             cn     ore  deep raw  ingot nugget block?
-    IRON("iron",                 "铁",     false,false,false,true, true, false),
-    GOLD("gold",                 "金",     false,false,false,true, true, false),
-    COPPER("copper",             "铜",     false,false,false,true, true, false),
-    TIN("tin",                   "锡",     true, true, true, true, true, true),
-    NICKEL("nickel",             "镍",     true, true, true, true, true, true),
-    POWERED_TIN("powered_tin",   "充能锡", false,false,false,true, true, true),
-    CHLORIUM("chlorium",         "叶绿",   false,false,false,true, true, true),
-    MUSHRIUM("mushrium",         "蘑菇",   false,false,false,true, true, false),
-    STARLIGHT("starlight",       "星辉",   false,false,false,false,false,false),
-    NETHERITE("netherite",       "下界合金",false,false,false,true, true, false),
-    DIAMOND("diamond",           "钻石",   false,false,false,false,true, false),
-    EMERALD("emerald",           "绿宝石", false,false,false,false,true, false),
-    LAPIS("lapis",               "青金石", false,false,false,false,true, false),
-    QUARTZ("quartz",             "石英",   false,false,false,false,true, false),
-    AMETHYST("amethyst",         "紫水晶", false,false,false,false,false,false),
-    REDSTONE("redstone",         "红石",   false,false,false,false,false,false);
+    // id cn ore deep raw ingot nugget block?
+    IRON("iron", "铁", false, false, false, true, true, false),
+    GOLD("gold", "金", false, false, false, true, true, false),
+    COPPER("copper", "铜", false, false, false, true, true, false),
+    TIN("tin", "锡", true, true, true, true, true, true),
+    NICKEL("nickel", "镍", true, true, true, true, true, true),
+    POWERED_TIN("powered_tin", "充能锡", false, false, false, true, true, true),
+    CHLORIUM("chlorium", "叶绿", false, false, false, true, true, true),
+    MUSHRIUM("mushrium", "蘑菇", false, false, false, true, true, false),
+    STARLIGHT("starlight", "星辉", false, false, false, false, false, false),
+    NETHERITE("netherite", "下界合金", false, false, false, true, true, false),
+    DIAMOND("diamond", "钻石", false, false, false, false, true, false),
+    EMERALD("emerald", "绿宝石", false, false, false, false, true, false),
+    LAPIS("lapis", "青金石", false, false, false, false, true, false),
+    QUARTZ("quartz", "石英", false, false, false, false, true, false),
+    AMETHYST("amethyst", "紫水晶", false, false, false, false, false, false),
+    REDSTONE("redstone", "红石", false, false, false, false, false, false);
 
     /** Registry suffix: "tin" → {@code kenergyengineering:tin_ingot}. */
     public final String id;
     /** Chinese name for translation entries. */
     /** Which variant forms are actually registered for this material. */
     private final java.util.BitSet registeredForms = new java.util.BitSet();
-    private static final String[] FORM_NAMES = {"dust", "ingot", "nugget", "plate", "gear", "rod", "wire"};
+    private static final String[] FORM_NAMES = { "dust", "ingot", "nugget", "plate", "gear", "rod", "wire" };
 
     /** Mark a form category as registered (called from {@code registerVariants}). */
     public void markRegistered(String category) {
@@ -54,6 +55,7 @@ public enum Mat {
         }
         return false;
     }
+
     public final String cn;
 
     // ── Recipe metadata ──────────────────────────────────────────────
@@ -120,8 +122,7 @@ public enum Mat {
     public String itemId(String suffix) {
         if ((this == IRON || this == GOLD || this == COPPER) && suffix.equals("ingot"))
             return "minecraft:" + id + "_" + suffix;
-        if ((this == IRON || this == GOLD)
-                && (suffix.equals("nugget") || suffix.equals("raw_nugget")))
+        if ((this == IRON || this == GOLD) && (suffix.equals("nugget") || suffix.equals("raw_nugget")))
             return "minecraft:" + id + "_" + suffix;
         if (this == NETHERITE && suffix.equals("ingot"))
             return "minecraft:netherite_ingot";
@@ -171,12 +172,13 @@ public enum Mat {
             case "ingot" -> hasIngot;
             case "nugget" -> hasNugget;
             case "plate" -> this != STARLIGHT;
-            case "gear"  -> this != STARLIGHT;
-            case "rod"   -> this != STARLIGHT;
-            case "wire"  -> this != STARLIGHT;
+            case "gear" -> this != STARLIGHT;
+            case "rod" -> this != STARLIGHT;
+            case "wire" -> this != STARLIGHT;
             default -> false;
         };
     }
+
     /**
      * Tag category for compressor source.
      * {@code "ingots"} for ingot-based, {@code "gems"} for gem-based,

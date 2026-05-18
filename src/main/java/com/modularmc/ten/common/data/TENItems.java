@@ -1,7 +1,6 @@
 package com.modularmc.ten.common.data;
 
 import com.modularmc.ten.common.item.upgrades.*;
-import com.modularmc.ten.common.data.Mat;
 
 import net.minecraft.world.item.Item;
 
@@ -17,7 +16,6 @@ public class TENItems {
     static {
         REGISTRATE.creativeModeTab(() -> TENCreativeModeTabs.ITEM_TAB);
     }
-
 
     // === Bulk material variant registration ===
     static {
@@ -90,6 +88,7 @@ public class TENItems {
                 .model((ctx, prov) -> prov.generated(ctx::getEntry, prov.modLoc(texturePath)))
                 .register();
     }
+
     public static final ItemEntry<Item> MOULD_GEAR = mould("mould_gear", "Gear Mould", "模具-齿轮", "item/mold/model_gear");
     public static final ItemEntry<Item> MOULD_PLATE = mould("mould_plate", "Plate Mould", "模具-板", "item/mold/model_plate");
     public static final ItemEntry<Item> MOULD_ROD = mould("mould_rod", "Rod Mould", "模具-杆", "item/mold/model_rod");
