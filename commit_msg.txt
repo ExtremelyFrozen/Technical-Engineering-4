@@ -1,0 +1,9 @@
+feat(recipe): use chance:0 for non-consumed mould inputs
+
+- FormsCombinedIngredient: chance() <= 0 means not consumed (moulds)
+- RecipeMachineBlockEntity.shrinkInputs(): skip items with chance <= 0
+- TENRecipeGen: mould entries get chance:0.0 in generated JSON
+- TENEmiRecipe / TENJeiCategory: show not_consumed tooltip when chance <= 0
+- Manual JSON recipes: mould entries add "chance": 0
+- Lang: kenergyengineering.not_consumed = Not consumed / 不消耗
+- Run data generator to regenerate all recipe JSONs

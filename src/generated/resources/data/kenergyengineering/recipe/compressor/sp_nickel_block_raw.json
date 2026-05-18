@@ -9,6 +9,7 @@
     },
     {
       "type": "static",
+      "chance": 0.0,
       "form": "item",
       "key": "kenergyengineering:mould_split"
     }
@@ -18,7 +19,7 @@
       "type": "static",
       "count": 9,
       "form": "item",
-      "key": "kenergyengineering:nickel_raw"
+      "key": "kenergyengineering:raw_nickel"
     }
   ],
   "time": 100

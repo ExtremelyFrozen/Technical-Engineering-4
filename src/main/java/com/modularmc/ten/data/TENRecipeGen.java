@@ -188,7 +188,7 @@ public class TENRecipeGen implements DataProvider {
         String srcType = mat.compressUsesTag() ? "tag" : "item";
         j.add("inputs", arr(
                 ingr("item", srcType, mat.compressSource(), r.ingots > 1 ? r.ingots : null, null),
-                ingr("item", "static", TEN.MOD_ID + ":" + r.mould, null, null)));
+                ingr("item", "static", TEN.MOD_ID + ":" + r.mould, null, 0.0)));
         j.add("outputs", arr(
                 ingr("item", "static", mat.itemId(r.form), r.outputCount > 1 ? r.outputCount : null, null)));
         j.addProperty("time", 100);
@@ -278,7 +278,7 @@ public class TENRecipeGen implements DataProvider {
         j.addProperty("type", TEN.MOD_ID + ":compressor");
         j.add("inputs", arr(
                 ingr("item", "static", mat.itemId(inputForm), inputCount, null),
-                ingr("item", "static", TEN.MOD_ID + ":" + mould, null, null)));
+                ingr("item", "static", TEN.MOD_ID + ":" + mould, null, 0.0)));
         j.add("outputs", arr(
                 ingr("item", "static", mat.itemId(outputForm), outputCount, null)));
         j.addProperty("time", 100);

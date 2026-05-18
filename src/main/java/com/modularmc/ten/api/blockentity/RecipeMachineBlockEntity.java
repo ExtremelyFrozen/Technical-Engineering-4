@@ -115,6 +115,7 @@ public abstract class RecipeMachineBlockEntity extends ProcessingMachineBlockEnt
     protected void shrinkInputs() {
         if (currentRecipe == null) return;
         for (var ing : currentRecipe.allInputItems()) {
+			if (ing.chance() <= 0) continue;
             int needed = ing.amountOrCount();
             for (int i = slotInfo.i1(); i <= slotInfo.i2() && needed > 0; i++) {
                 ItemStack slot = itemHandler.getStackInSlot(i);

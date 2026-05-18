@@ -99,7 +99,7 @@ public class TENEmiRecipe implements EmiRecipe {
                 if (slot.role() == TENRecipeWidget.SlotRole.OUTPUT && ingredient.chance() < 1.0d) {
                     emiSlot.appendTooltip(Component.literal(TENRecipeWidget.formatChance(ingredient.chance())));
                 }
-                if (slot.role() == TENRecipeWidget.SlotRole.INPUT && "static".equals(ingredient.type())) {
+                if (slot.role() == TENRecipeWidget.SlotRole.INPUT && ingredient.chance() <= 0) {
                     emiSlot.appendTooltip(Component.translatable(TEN.MOD_ID + ".not_consumed"));
                 }
             } else {
@@ -117,7 +117,7 @@ public class TENEmiRecipe implements EmiRecipe {
                 if (slot.role() == TENRecipeWidget.SlotRole.OUTPUT && ingredient.chance() < 1.0d) {
                     emiTank.appendTooltip(Component.literal(TENRecipeWidget.formatChance(ingredient.chance())));
                 }
-                if (slot.role() == TENRecipeWidget.SlotRole.INPUT && "static".equals(ingredient.type())) {
+                if (slot.role() == TENRecipeWidget.SlotRole.INPUT && ingredient.chance() <= 0) {
                     emiTank.appendTooltip(Component.translatable(TEN.MOD_ID + ".not_consumed"));
                 }
             }

@@ -53,6 +53,10 @@ public class FormsCombinedIngredient {
         return key;
     }
 
+    public double chance() {
+        return chance;
+    }
+
     public List<ItemStack> itemStacks() {
         if (ALLOW_ALL) return List.of(ItemStack.EMPTY);
         return matchItems.stream().map(i -> new ItemStack(i, amountOrCount)).toList();
@@ -173,10 +177,6 @@ public class FormsCombinedIngredient {
     }
 
     // Output helpers
-    public double chance() {
-        return chance;
-    }
-
     public ItemStack genItem() {
         return Math.random() < chance ? symbolItem() : ItemStack.EMPTY;
     }

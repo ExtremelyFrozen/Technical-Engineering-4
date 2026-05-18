@@ -5,10 +5,11 @@
       "type": "static",
       "count": 9,
       "form": "item",
-      "key": "minecraft:copper_nugget"
+      "key": "kenergyengineering:copper_nugget"
     },
     {
       "type": "static",
+      "chance": 0.0,
       "form": "item",
       "key": "kenergyengineering:mould_compressed_large"
     }

@@ -2,22 +2,23 @@
   "type": "kenergyengineering:compressor",
   "inputs": [
     {
-      "type": "tag",
+      "type": "static",
+      "count": 1,
       "form": "item",
-      "key": "c:ingots/iron"
+      "key": "minecraft:raw_iron_block"
     },
     {
       "type": "static",
-      "chance": 0.0,
       "form": "item",
-      "key": "kenergyengineering:mould_rod"
+      "key": "kenergyengineering:mould_split"
     }
   ],
   "outputs": [
     {
       "type": "static",
+      "count": 9,
       "form": "item",
-      "key": "kenergyengineering:iron_rod"
+      "key": "minecraft:raw_iron"
     }
   ],
   "time": 100

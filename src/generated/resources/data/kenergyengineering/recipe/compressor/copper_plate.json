@@ -8,6 +8,7 @@
     },
     {
       "type": "static",
+      "chance": 0.0,
       "form": "item",
       "key": "kenergyengineering:mould_plate"
     }

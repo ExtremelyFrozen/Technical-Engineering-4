@@ -10,7 +10,8 @@
 		{
 			"form": "item",
 			"type": "static",
-			"key": "kenergyengineering:mould_gear"
+			"key": "kenergyengineering:mould_gear",
+			"chance": 0
 		}
 	],
 	"outputs": [
