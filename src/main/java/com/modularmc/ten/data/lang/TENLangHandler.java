@@ -39,6 +39,7 @@ public final class TENLangHandler {
         add(provider, "cable_azure.0", "Transfer: 100 kFE", "传输能量: 100 kFE");
         add(provider, "cable_star.0", "Transfer: Infinite FE", "传输能量: 无限 FE");
         // Removed: spanner — now auto-derived from item registration
+        add(provider, "not_consumed", "Not consumed", "不消耗");
         add(provider, "energy_capacity", "FE Capacity", "FE电容");
         add(provider, "shift", "Press [SHIFT] to see more", "按住 [SHIFT] 查看更多信息");
         add(provider, "info.too_much_upgrades", "This machine has too many upgrades!", "这台机器的升级组件太多了！");

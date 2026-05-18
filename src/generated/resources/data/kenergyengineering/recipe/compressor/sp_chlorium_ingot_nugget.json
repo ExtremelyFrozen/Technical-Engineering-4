@@ -1,0 +1,25 @@
+{
+  "type": "kenergyengineering:compressor",
+  "inputs": [
+    {
+      "type": "static",
+      "count": 1,
+      "form": "item",
+      "key": "kenergyengineering:chlorium_ingot"
+    },
+    {
+      "type": "static",
+      "form": "item",
+      "key": "kenergyengineering:mould_split"
+    }
+  ],
+  "outputs": [
+    {
+      "type": "static",
+      "count": 9,
+      "form": "item",
+      "key": "kenergyengineering:chlorium_nugget"
+    }
+  ],
+  "time": 100
+}

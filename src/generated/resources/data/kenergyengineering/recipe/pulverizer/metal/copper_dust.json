@@ -1,0 +1,19 @@
+{
+  "type": "kenergyengineering:pulverizer",
+  "inputs": [
+    {
+      "type": "tag",
+      "form": "item",
+      "key": "c:ingots/copper"
+    }
+  ],
+  "outputs": [
+    {
+      "type": "static",
+      "count": 1,
+      "form": "item",
+      "key": "kenergyengineering:copper_dust"
+    }
+  ],
+  "time": 100
+}

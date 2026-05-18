@@ -1,0 +1,23 @@
+{
+  "type": "kenergyengineering:compressor",
+  "inputs": [
+    {
+      "type": "tag",
+      "form": "item",
+      "key": "c:ingots/gold"
+    },
+    {
+      "type": "static",
+      "form": "item",
+      "key": "kenergyengineering:mould_rod"
+    }
+  ],
+  "outputs": [
+    {
+      "type": "static",
+      "form": "item",
+      "key": "kenergyengineering:gold_rod"
+    }
+  ],
+  "time": 100
+}

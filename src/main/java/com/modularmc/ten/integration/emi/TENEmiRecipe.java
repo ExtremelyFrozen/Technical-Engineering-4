@@ -1,6 +1,7 @@
 package com.modularmc.ten.integration.emi;
 
 import com.modularmc.ten.api.recipe.FormsCombinedRecipe;
+import com.modularmc.ten.TEN;
 import com.modularmc.ten.integration.xei.TENRecipeWidget;
 
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent;
@@ -98,6 +99,9 @@ public class TENEmiRecipe implements EmiRecipe {
                 if (slot.role() == TENRecipeWidget.SlotRole.OUTPUT && ingredient.chance() < 1.0d) {
                     emiSlot.appendTooltip(Component.literal(TENRecipeWidget.formatChance(ingredient.chance())));
                 }
+                if (slot.role() == TENRecipeWidget.SlotRole.INPUT && "static".equals(ingredient.type())) {
+                    emiSlot.appendTooltip(Component.translatable(TEN.MOD_ID + ".not_consumed"));
+                }
             } else {
                 var emiTank = widgets.addTank(
                         emiIngredient,
@@ -112,6 +116,9 @@ public class TENEmiRecipe implements EmiRecipe {
                 }
                 if (slot.role() == TENRecipeWidget.SlotRole.OUTPUT && ingredient.chance() < 1.0d) {
                     emiTank.appendTooltip(Component.literal(TENRecipeWidget.formatChance(ingredient.chance())));
+                }
+                if (slot.role() == TENRecipeWidget.SlotRole.INPUT && "static".equals(ingredient.type())) {
+                    emiTank.appendTooltip(Component.translatable(TEN.MOD_ID + ".not_consumed"));
                 }
             }
         }

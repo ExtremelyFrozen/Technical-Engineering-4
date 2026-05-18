@@ -1,0 +1,23 @@
+{
+  "type": "kenergyengineering:compressor",
+  "inputs": [
+    {
+      "type": "tag",
+      "form": "item",
+      "key": "c:ingots/tin"
+    },
+    {
+      "type": "static",
+      "form": "item",
+      "key": "kenergyengineering:mould_rod"
+    }
+  ],
+  "outputs": [
+    {
+      "type": "static",
+      "form": "item",
+      "key": "kenergyengineering:tin_rod"
+    }
+  ],
+  "time": 100
+}

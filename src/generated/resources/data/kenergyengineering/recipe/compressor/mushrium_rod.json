@@ -1,0 +1,23 @@
+{
+  "type": "kenergyengineering:compressor",
+  "inputs": [
+    {
+      "type": "tag",
+      "form": "item",
+      "key": "c:ingots/mushrium"
+    },
+    {
+      "type": "static",
+      "form": "item",
+      "key": "kenergyengineering:mould_rod"
+    }
+  ],
+  "outputs": [
+    {
+      "type": "static",
+      "form": "item",
+      "key": "kenergyengineering:mushrium_rod"
+    }
+  ],
+  "time": 100
+}

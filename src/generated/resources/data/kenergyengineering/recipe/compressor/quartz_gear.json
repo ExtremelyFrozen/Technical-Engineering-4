@@ -1,0 +1,24 @@
+{
+  "type": "kenergyengineering:compressor",
+  "inputs": [
+    {
+      "type": "tag",
+      "count": 4,
+      "form": "item",
+      "key": "c:gems/quartz"
+    },
+    {
+      "type": "static",
+      "form": "item",
+      "key": "kenergyengineering:mould_gear"
+    }
+  ],
+  "outputs": [
+    {
+      "type": "static",
+      "form": "item",
+      "key": "kenergyengineering:quartz_gear"
+    }
+  ],
+  "time": 100
+}

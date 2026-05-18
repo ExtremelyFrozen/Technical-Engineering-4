@@ -1,0 +1,25 @@
+{
+  "type": "kenergyengineering:compressor",
+  "inputs": [
+    {
+      "type": "static",
+      "count": 9,
+      "form": "item",
+      "key": "minecraft:emerald"
+    },
+    {
+      "type": "static",
+      "form": "item",
+      "key": "kenergyengineering:mould_compressed_large"
+    }
+  ],
+  "outputs": [
+    {
+      "type": "static",
+      "count": 1,
+      "form": "item",
+      "key": "minecraft:emerald_block"
+    }
+  ],
+  "time": 100
+}

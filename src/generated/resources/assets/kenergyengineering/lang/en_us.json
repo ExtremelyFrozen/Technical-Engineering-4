@@ -330,6 +330,7 @@
   "kenergyengineering.locked_slot": "This slot has not been unlocked yet.",
   "kenergyengineering.magma_levelup.0": "Quarry: Magma production mode\n      Produces magma blocks & cream",
   "kenergyengineering.mineral_levelup.0": "Quarry: Ore-only mining mode\n      Only mines c:ores blocks",
+  "kenergyengineering.not_consumed": "Not consumed",
   "kenergyengineering.photosyn_levelup.0": "Machine: +1 upgrade slot\n      -10% throughput",
   "kenergyengineering.potion_levelup.0": "Beacon Simulator: Buff level +1",
   "kenergyengineering.powered_levelup.0": "Machine: +2 upgrade slots\n      +35% throughput",

@@ -7,6 +7,8 @@
 		"#c:plates/gold",
 		"#c:plates/iron",
 		"#c:plates/copper",
-		"#c:plates/nickel"
+		"#c:plates/mushrium",
+		"#c:plates/nickel",
+		"#c:plates/netherite"
 	]
 }

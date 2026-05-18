@@ -1,6 +1,7 @@
 package com.modularmc.ten.common.data;
 
 import com.modularmc.ten.common.item.upgrades.*;
+import com.modularmc.ten.common.data.Mat;
 
 import net.minecraft.world.item.Item;
 
@@ -17,55 +18,6 @@ public class TENItems {
         REGISTRATE.creativeModeTab(() -> TENCreativeModeTabs.ITEM_TAB);
     }
 
-    private enum Mat {
-
-        IRON("iron", "铁"),
-        GOLD("gold", "金"),
-        COPPER("copper", "铜"),
-        TIN("tin", "锡"),
-        NICKEL("nickel", "镍"),
-        POWERED_TIN("powered_tin", "充能锡"),
-        CHLORIUM("chlorium", "叶绿"),
-        MUSHRIUM("mushrium", "蘑菇"),
-        STARLIGHT("starlight", "星辉"),
-        NETHERITE("netherite", "下界合金"),
-        DIAMOND("diamond", "钻石"),
-        EMERALD("emerald", "绿宝石"),
-        LAPIS("lapis", "青金石"),
-        QUARTZ("quartz", "石英"),
-        AMETHYST("amethyst", "紫水晶"),
-        REDSTONE("redstone", "红石");
-
-        final String id;
-        final String cn;
-
-        Mat(String id, String cn) {
-            this.id = id;
-            this.cn = cn;
-        }
-
-        String englishName(String categoryEn) {
-            String matEn = switch (this) {
-                case IRON -> "Iron";
-                case GOLD -> "Gold";
-                case COPPER -> "Copper";
-                case TIN -> "Tin";
-                case NICKEL -> "Nickel";
-                case POWERED_TIN -> "Powered Tin";
-                case CHLORIUM -> "Chlorium";
-                case MUSHRIUM -> "Mushrium";
-                case STARLIGHT -> "Starlight";
-                case NETHERITE -> "Netherite";
-                case DIAMOND -> "Diamond";
-                case EMERALD -> "Emerald";
-                case LAPIS -> "Lapis Lazuli";
-                case QUARTZ -> "Nether Quartz";
-                case AMETHYST -> "Amethyst";
-                case REDSTONE -> "Redstone";
-            };
-            return matEn + " " + categoryEn;
-        }
-    }
 
     // === Bulk material variant registration ===
     static {
@@ -138,16 +90,15 @@ public class TENItems {
                 .model((ctx, prov) -> prov.generated(ctx::getEntry, prov.modLoc(texturePath)))
                 .register();
     }
-
-    public static final ItemEntry<Item> MOULD_GEAR = mould("mould_gear", "Gear Mould", "齿轮模具", "item/mold/model_gear");
-    public static final ItemEntry<Item> MOULD_PLATE = mould("mould_plate", "Plate Mould", "板模具", "item/mold/model_plate");
-    public static final ItemEntry<Item> MOULD_ROD = mould("mould_rod", "Rod Mould", "杆模具", "item/mold/model_rod");
-    public static final ItemEntry<Item> MOULD_STRING = mould("mould_string", "String Mould", "线模具", "item/mold/model_string");
-    public static final ItemEntry<Item> MOULD_COMPRESSED_SMALL = mould("mould_compressed_small", "Compressed-small Mould", "压缩-小型模具", "item/mold/compressed_small");
-    public static final ItemEntry<Item> MOULD_COMPRESSED_LARGE = mould("mould_compressed_large", "Compressed-large Mould", "压缩-大型模具", "item/mold/compressed_large");
-    public static final ItemEntry<Item> MOULD_SPLIT = mould("mould_split", "Split Mould", "拆分模具", "item/mold/split");
-    public static final ItemEntry<Item> MOULD_COIN = mould("mould_coin", "Coin Mould", "币模具", "item/mold/coin");
-    public static final ItemEntry<Item> MOULD_DENSE_PLATE = mould("mould_dense_plate", "Dense Plate Mould", "致密板模具", "item/mold/dense_plate");
+    public static final ItemEntry<Item> MOULD_GEAR = mould("mould_gear", "Gear Mould", "模具-齿轮", "item/mold/model_gear");
+    public static final ItemEntry<Item> MOULD_PLATE = mould("mould_plate", "Plate Mould", "模具-板", "item/mold/model_plate");
+    public static final ItemEntry<Item> MOULD_ROD = mould("mould_rod", "Rod Mould", "模具-杆", "item/mold/model_rod");
+    public static final ItemEntry<Item> MOULD_STRING = mould("mould_string", "String Mould", "模具-线", "item/mold/model_string");
+    public static final ItemEntry<Item> MOULD_COMPRESSED_SMALL = mould("mould_compressed_small", "Compressed-small Mould", "模具-2x2压缩", "item/mold/compressed_small");
+    public static final ItemEntry<Item> MOULD_COMPRESSED_LARGE = mould("mould_compressed_large", "Compressed-large Mould", "模具-3x3压缩", "item/mold/compressed_large");
+    public static final ItemEntry<Item> MOULD_SPLIT = mould("mould_split", "Split Mould", "模具-解压缩", "item/mold/split");
+    public static final ItemEntry<Item> MOULD_COIN = mould("mould_coin", "Coin Mould", "模具-币", "item/mold/coin");
+    public static final ItemEntry<Item> MOULD_DENSE_PLATE = mould("mould_dense_plate", "Dense Plate Mould", "模具-致密板", "item/mold/dense_plate");
 
     // Upgrades
     public static final ItemEntry<? extends UpgradeItem> AUGMENTED_LEVELUP = upgrade("augmented_levelup", "Upgrade: Augmented Kit", "升级：增强组件", p -> new LevelupAug());
@@ -193,6 +144,7 @@ public class TENItems {
                                          Mat... materials) {
         for (Mat mat : materials) {
             String name = mat.id + "_" + category;
+            mat.markRegistered(category);
             String englishName = mat.englishName(categoryEn);
             String chineseName = mat.cn + categoryCn;
             String texturePath = "item/material/" + category + "/" + name;

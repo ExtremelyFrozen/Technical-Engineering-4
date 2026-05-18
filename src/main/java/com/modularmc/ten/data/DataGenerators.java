@@ -6,6 +6,7 @@ import com.modularmc.ten.common.data.TENCreativeModeTabs;
 import com.modularmc.ten.common.data.TENFluids;
 import com.modularmc.ten.common.data.TENItems;
 import com.modularmc.ten.data.lang.TENLangHandler;
+import net.minecraft.data.recipes.RecipeProvider;
 
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -57,19 +58,35 @@ public class DataGenerators {
                 add("tag.c.gears.nickel", "镍齿轮");
                 add("tag.c.gears.powered_tin", "充能锡齿轮");
                 add("tag.c.gears.tin", "锡齿轮");
+                add("tag.c.gears.netherite", "下界合金齿轮");
                 add("tag.c.ingots.chlorium", "叶绿锭");
                 add("tag.c.ingots.nickel", "镍锭");
                 add("tag.c.ingots.powered_tin", "充能锡锭");
+                add("tag.c.ingots.iron", "铁锭");
+                add("tag.c.ingots.gold", "金锭");
+                add("tag.c.ingots.copper", "铜锭");
+                add("tag.c.ingots.netherite", "下界合金锭");
                 add("tag.c.ingots.tin", "锡锭");
+                add("tag.c.ingots.mushrium", "蘑菇锭");
+                add("tag.c.plates.mushrium", "蘑菇板");
+                add("tag.c.gears.mushrium", "蘑菇齿轮");
+                add("tag.c.nuggets.mushrium", "蘑菇粒");
+                add("tag.c.dusts.mushrium", "蘑菇粉");
+                add("tag.c.dusts.netherite", "下界合金粉");
                 add("tag.c.nuggets.chlorium", "叶绿粒");
                 add("tag.c.nuggets.nickel", "镍粒");
                 add("tag.c.nuggets.powered_tin", "充能锡粒");
+                add("tag.c.nuggets.copper", "铜粒");
+                add("tag.c.nuggets.iron", "铁粒");
+                add("tag.c.nuggets.gold", "金粒");
+                add("tag.c.nuggets.netherite", "下界合金粒");
                 add("tag.c.nuggets.tin", "锡粒");
                 add("tag.c.ores.nickel", "镍矿石");
                 add("tag.c.ores.tin", "锡矿石");
                 add("tag.c.plates.chlorium", "叶绿板");
                 add("tag.c.plates.nickel", "镍板");
                 add("tag.c.plates.powered_tin", "充能锡板");
+                add("tag.c.plates.netherite", "下界合金板");
                 add("tag.c.plates.tin", "锡板");
                 add("tag.c.raw_materials.nickel", "粗镍");
                 add("tag.c.raw_materials.tin", "粗锡");
@@ -126,5 +143,10 @@ public class DataGenerators {
                 }
             }
         });
+
+        // Material variant recipes — auto-generated from Mat enum
+        generator.addProvider(event.includeServer(), new TENRecipeGen(output, event.getLookupProvider()));
+        // Vanilla pack/split recipes — separate from mod materials
+        generator.addProvider(event.includeServer(), new TENVanillaPackGen(output));
     }
 }

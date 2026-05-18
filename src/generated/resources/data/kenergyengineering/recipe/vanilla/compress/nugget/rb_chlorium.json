@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "kenergyengineering:chlorium_ingot"
+    }
+  ],
+  "result": {
+    "count": 9,
+    "id": "kenergyengineering:chlorium_nugget"
+  }
+}

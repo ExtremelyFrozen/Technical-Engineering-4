@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "key": {
+    "C": {
+      "item": "kenergyengineering:nickel_nugget"
+    }
+  },
+  "pattern": [
+    "CCC",
+    "CCC",
+    "CCC"
+  ],
+  "result": {
+    "id": "kenergyengineering:nickel_ingot"
+  }
+}
