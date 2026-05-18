@@ -120,7 +120,7 @@ public enum Mat {
     public String itemId(String suffix) {
         if ((this == IRON || this == GOLD || this == COPPER) && suffix.equals("ingot"))
             return "minecraft:" + id + "_" + suffix;
-        if ((this == IRON || this == GOLD || this == COPPER)
+        if ((this == IRON || this == GOLD)
                 && (suffix.equals("nugget") || suffix.equals("raw_nugget")))
             return "minecraft:" + id + "_" + suffix;
         if (this == NETHERITE && suffix.equals("ingot"))

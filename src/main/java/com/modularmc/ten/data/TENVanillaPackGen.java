@@ -105,7 +105,11 @@ public class TENVanillaPackGen implements DataProvider {
             new PackFmt("minecraft:lapis_lazuli",      "minecraft:lapis_block"),
             new PackFmt("minecraft:quartz",            "minecraft:quartz_block"),
             new PackFmt("minecraft:netherite_ingot",   "minecraft:netherite_block"),
-            new PackFmt("minecraft:redstone",          "minecraft:redstone_block"));
+            new PackFmt("minecraft:redstone",          "minecraft:redstone_block"),
+            // Raw ore → Block (9:1): vanilla raw ores not covered by mod material system
+            new PackFmt("minecraft:raw_iron",   "minecraft:raw_iron_block"),
+            new PackFmt("minecraft:raw_gold",   "minecraft:raw_gold_block"),
+            new PackFmt("minecraft:raw_copper", "minecraft:raw_copper_block"));
 
     /** 4:1 pairs: unit → block. */
     private static final List<PackFmt> PACK_4TO1 = List.of(
