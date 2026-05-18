@@ -137,6 +137,8 @@ public enum Mat {
             return "minecraft:redstone";
         if (this == AMETHYST && suffix.equals("ingot"))
             return "minecraft:amethyst_shard";
+        if (suffix.equals("raw") && hasRaw)
+            return TEN.MOD_ID + ":raw_" + id;
         if (suffix.equals("raw_block") && hasRaw)
             return TEN.MOD_ID + ":raw_" + id + "_block";
         if (suffix.startsWith("raw_") && hasRaw)
