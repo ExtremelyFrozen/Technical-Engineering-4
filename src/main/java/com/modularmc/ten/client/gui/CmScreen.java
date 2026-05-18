@@ -1,7 +1,6 @@
 package com.modularmc.ten.client.gui;
 
 import com.modularmc.ten.TEN;
-import com.modularmc.ten.api.blockentity.CmMachineBlockEntity;
 import com.modularmc.ten.client.gui.element.ElementBase;
 import com.modularmc.ten.utils.RenderHelper;
 
@@ -102,31 +101,38 @@ public class CmScreen<T extends CmContainerMachine> extends AbstractContainerScr
         return super.mouseClicked(mouseX, mouseY, button);
     }
 
+    /** 燃料进度：基于 @DescSynced 的 machine 字段 */
     public double pFuel() {
-        if (container.data == null) return 0;
-        var d = container.data;
-        return d.get(CmMachineBlockEntity.MAX_FUEL) != 0 ? (double) d.get(CmMachineBlockEntity.FUEL) / d.get(CmMachineBlockEntity.MAX_FUEL) : 0;
+        var m = container.machine;
+        if (m == null) return 0;
+        return m.maxFuel != 0 ? (double) m.fuel / m.maxFuel : 0;
     }
 
+    /** 加工进度：基于 @DescSynced 的 machine 字段 */
     public double pProgress() {
-        if (container.data == null) return 0;
-        var d = container.data;
-        return d.get(CmMachineBlockEntity.MAX_PROGRESS) != 0 ? (double) d.get(CmMachineBlockEntity.PROGRESS) / d.get(CmMachineBlockEntity.MAX_PROGRESS) : 0;
+        var m = container.machine;
+        if (m == null) return 0;
+        return m.maxProgress != 0 ? (double) m.progress / m.maxProgress : 0;
     }
 
+    /** 能量比例：基于 @DescSynced 的 machine 字段 */
     public double pEnergy() {
-        if (container.data == null) return 0;
-        var d = container.data;
-        return d.get(CmMachineBlockEntity.MAX_ENERGY) != 0 ? (double) d.get(CmMachineBlockEntity.ENERGY) / d.get(CmMachineBlockEntity.MAX_ENERGY) : 0;
+        var m = container.machine;
+        if (m == null) return 0;
+        return m.maxEnergyStored != 0 ? (double) m.energyStored / m.maxEnergyStored : 0;
     }
 
+    /** 当前能量 */
     public int energy() {
-        if (container.data == null) return 0;
-        return container.data.get(CmMachineBlockEntity.ENERGY);
+        var m = container.machine;
+        if (m == null) return 0;
+        return m.energyStored;
     }
 
+    /** 最大能量 */
     public int maxEnergy() {
-        if (container.data == null) return 0;
-        return container.data.get(CmMachineBlockEntity.MAX_ENERGY);
+        var m = container.machine;
+        if (m == null) return 0;
+        return m.maxEnergyStored;
     }
 }

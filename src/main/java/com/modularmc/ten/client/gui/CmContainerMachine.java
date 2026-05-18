@@ -3,7 +3,6 @@ package com.modularmc.ten.client.gui;
 import com.modularmc.ten.api.blockentity.CmMachineBlockEntity;
 import com.modularmc.ten.api.option.IngredientType;
 import com.modularmc.ten.api.option.MachineType;
-import com.modularmc.ten.api.wrapper.SyncedIntArray;
 import com.modularmc.ten.common.item.upgrades.UpgradeItem;
 
 import net.minecraft.core.BlockPos;
@@ -11,7 +10,6 @@ import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.minecraft.world.inventory.DataSlot;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
@@ -26,7 +24,6 @@ public class CmContainerMachine extends AbstractContainerMenu {
     private static final int HOTBAR_START = 0;
     private static final int HOTBAR_END = 9;
 
-    public final SyncedIntArray data;
     public final BlockPos pos;
     @Nullable
     public final CmMachineBlockEntity machine;
@@ -52,29 +49,9 @@ public class CmContainerMachine extends AbstractContainerMenu {
         this.machineType = machineType;
         this.slotCount = slotCount;
         this.hasUpgradeSlots = hasUpgradeSlots;
-        this.data = machine != null ? machine.data : new SyncedIntArray(40);
 
         addPlayerInventory(playerInv);
         addMachineSlots(machineType, slotCount);
-
-        // Data sync
-        if (data != null) {
-            for (int i = 0; i < data.size(); i++) {
-                final int idx = i;
-                addDataSlot(new DataSlot() {
-
-                    @Override
-                    public int get() {
-                        return data.get(idx);
-                    }
-
-                    @Override
-                    public void set(int value) {
-                        data.set(idx, value);
-                    }
-                });
-            }
-        }
     }
 
     private void addPlayerInventory(Inventory playerInv) {
@@ -190,9 +167,7 @@ public class CmContainerMachine extends AbstractContainerMenu {
     }
 
     private void addUpgradeSlots() {
-        if (!hasUpgradeSlots) {
-            return;
-        }
+        if (!hasUpgradeSlots) return;
         addUpgradeSlot(0, 32, -28);
         addUpgradeSlot(1, 51, -28);
         addUpgradeSlot(2, 70, -28);
@@ -220,9 +195,7 @@ public class CmContainerMachine extends AbstractContainerMenu {
 
         @Override
         public boolean mayPlace(ItemStack stack) {
-            if (machine == null) {
-                return super.mayPlace(stack);
-            }
+            if (machine == null) return super.mayPlace(stack);
             IngredientType type = machine.slotType(getSlotIndex());
             return type.canIn() && machine.valid(getSlotIndex(), stack) && super.mayPlace(stack);
         }
@@ -298,8 +271,7 @@ public class CmContainerMachine extends AbstractContainerMenu {
     @Override
     public boolean stillValid(Player player) {
         if (player.level().isClientSide()) return true;
-        if (pos == null) return false;
-        return player.level().getBlockEntity(pos) == machine && player.distanceToSqr(
-                pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D) <= 64.0D;
+        if (machine == null || machine.isRemoved()) return false;
+        return !(player.distanceToSqr(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D) > 64.0D);
     }
 }

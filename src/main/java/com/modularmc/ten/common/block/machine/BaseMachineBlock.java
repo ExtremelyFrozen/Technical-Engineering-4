@@ -4,7 +4,6 @@ import com.modularmc.ten.api.blockentity.CmBlockEntity;
 import com.modularmc.ten.api.blockentity.CmMachineBlockEntity;
 import com.modularmc.ten.client.gui.CmContainerMachine;
 import com.modularmc.ten.common.data.TENMenuTypes;
-import com.modularmc.ten.common.network.packet.FaceInfoPacket;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -30,7 +29,6 @@ import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.material.MapColor;
 import net.minecraft.world.phys.BlockHitResult;
 import net.neoforged.neoforge.fluids.FluidUtil;
-import net.neoforged.neoforge.network.PacketDistributor;
 
 import org.jetbrains.annotations.Nullable;
 
@@ -119,8 +117,13 @@ public class BaseMachineBlock extends Block implements EntityBlock {
                         buf.writeBoolean(hasUpgrade);
                         buf.writeBlockPos(pos);
                     });
+            // Sync face config via ldlib2 RPC
             for (Direction direction : Direction.values()) {
-                PacketDistributor.sendToPlayer(sp, new FaceInfoPacket(machine, direction));
+                int idx = direction.get3DDataValue();
+                machine.rpcToPlayer(sp, "rpcSyncFaceInfo", idx,
+                        machine.energyFaceMode.getOrDefault(direction, 0),
+                        machine.itemFaceMode.getOrDefault(direction, 0),
+                        machine.fluidFaceMode.getOrDefault(direction, 0));
             }
         }
     }

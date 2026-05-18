@@ -2,15 +2,11 @@ package com.modularmc.ten.client.gui;
 
 import com.modularmc.ten.api.blockentity.CmMachineBlockEntity;
 import com.modularmc.ten.api.option.RedstoneMode;
-import com.modularmc.ten.client.ClientData;
 import com.modularmc.ten.client.gui.element.*;
-import com.modularmc.ten.common.network.packet.RedstoneModePacket;
-import com.modularmc.ten.common.network.packet.TransferModePacket;
 
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
-import net.neoforged.neoforge.network.PacketDistributor;
 
 import java.util.List;
 
@@ -132,16 +128,10 @@ public class CmScreenMachine extends CmScreen<CmContainerMachine> {
     }
 
     protected void setSides() {
-        if (container.pos == null || container.data == null) {
-            return;
-        }
-        var em = ClientData.energy.get(container.pos);
-        var im = ClientData.item.get(container.pos);
-        var fm = ClientData.fluid.get(container.pos);
-        var faces = getCurrentFaceModes(modeNow, em, im, fm);
-        if (faces == null) {
-            return;
-        }
+        if (container.pos == null || container.machine == null) return;
+        var machine = container.machine;
+        var faces = getCurrentFaceModes(modeNow);
+        if (faces == null) return;
         front.mode = faces[0];
         back.mode = faces[1];
         left.mode = faces[2];
@@ -157,31 +147,29 @@ public class CmScreenMachine extends CmScreen<CmContainerMachine> {
     }
 
     private void cycleEnergy() {
-        if (container.pos == null || clickedDirection == null) return;
-        PacketDistributor.sendToServer(new TransferModePacket(container.pos, modeNow, clickedDirection));
+        if (container.pos == null || clickedDirection == null || container.machine == null) return;
+        container.machine.rpcToServer("rpcCycleFaceMode", modeNow, clickedDirection.get3DDataValue());
     }
 
     private void cycleRedstone() {
-        if (container.pos == null) return;
-        int m = container.data.get(CmMachineBlockEntity.RED_MODE);
+        if (container.pos == null || container.machine == null) return;
+        int m = container.machine.redstoneMode;
         m++;
         if (m >= RedstoneMode.size()) m = RedstoneMode.OFF;
-        ClientData.redstone.put(container.pos, m);
-        PacketDistributor.sendToServer(new RedstoneModePacket(m, container.pos));
+        container.machine.rpcToServer("rpcSetRedstoneMode", m);
     }
 
     @Override
     public void containerTick() {
         super.containerTick();
-        if (container.data == null) return;
-        var data = container.data;
+        var m = container.machine;
+        if (m == null) return;
 
         // Redstone
         rsHigh.setVisible(false);
         rsLow.setVisible(false);
         rsOff.setVisible(false);
-        int redstoneMode = container.pos != null ? ClientData.redstone.getOrDefault(container.pos, data.get(CmMachineBlockEntity.RED_MODE)) : data.get(CmMachineBlockEntity.RED_MODE);
-        switch (redstoneMode) {
+        switch (m.redstoneMode) {
             case RedstoneMode.HIGH -> rsHigh.setVisible(true);
             case RedstoneMode.LOW -> rsLow.setVisible(true);
             default -> rsOff.setVisible(true);
@@ -189,14 +177,14 @@ public class CmScreenMachine extends CmScreen<CmContainerMachine> {
 
         // Energy bar
         barEnergy.update(
-                data.get(CmMachineBlockEntity.EFF_AUC),
-                data.get(CmMachineBlockEntity.EFF),
-                data.get(CmMachineBlockEntity.E_REC),
-                data.get(CmMachineBlockEntity.E_EXT),
-                data.get(CmMachineBlockEntity.I_REC),
-                data.get(CmMachineBlockEntity.I_EXT),
-                data.get(CmMachineBlockEntity.F_REC),
-                data.get(CmMachineBlockEntity.F_EXT));
+                m.effAuc,
+                m.eff,
+                m.energyRec,
+                m.energyExt,
+                m.itemRec,
+                m.itemExt,
+                m.fluidRec,
+                m.fluidExt);
 
         boolean showAll = barControl.show;
         front.setVisible(showAll);
@@ -216,12 +204,12 @@ public class CmScreenMachine extends CmScreen<CmContainerMachine> {
         if (u4 != null) u4.setVisible(hasUpgradeSlots());
         if (u5 != null) u5.setVisible(hasUpgradeSlots());
 
-        if (u0 != null) u0.state = data.get(CmMachineBlockEntity.UPGSIZE) >= 1;
-        if (u1 != null) u1.state = data.get(CmMachineBlockEntity.UPGSIZE) >= 2;
-        if (u2 != null) u2.state = data.get(CmMachineBlockEntity.UPGSIZE) >= 3;
-        if (u3 != null) u3.state = data.get(CmMachineBlockEntity.UPGSIZE) >= 4;
-        if (u4 != null) u4.state = data.get(CmMachineBlockEntity.UPGSIZE) >= 5;
-        if (u5 != null) u5.state = data.get(CmMachineBlockEntity.UPGSIZE) >= 6;
+        if (u0 != null) u0.state = m.upgSize >= 1;
+        if (u1 != null) u1.state = m.upgSize >= 2;
+        if (u2 != null) u2.state = m.upgSize >= 3;
+        if (u3 != null) u3.state = m.upgSize >= 4;
+        if (u4 != null) u4.state = m.upgSize >= 5;
+        if (u5 != null) u5.state = m.upgSize >= 6;
 
         eSwitch.state = modeNow == 0;
         iSwitch.state = modeNow == 1;
@@ -231,7 +219,9 @@ public class CmScreenMachine extends CmScreen<CmContainerMachine> {
     }
 
     private Direction getDirectionForButton(ElementButtonTransf button) {
-        Direction facing = Direction.from3DDataValue(container.data.get(CmMachineBlockEntity.FACE));
+        var m = container.machine;
+        if (m == null) return null;
+        Direction facing = Direction.from3DDataValue(m.facingVal);
         if (button == front) return facing;
         if (button == back) return facing.getOpposite();
         if (button == left) return facing.getClockWise();
@@ -241,20 +231,23 @@ public class CmScreenMachine extends CmScreen<CmContainerMachine> {
         return null;
     }
 
-    private int[] getCurrentFaceModes(int mode, List<Integer> em, List<Integer> im, List<Integer> fm) {
-        List<Integer> list = null;
-        if (mode == 0 && em != null) list = em;
-        if (mode == 1 && im != null) list = im;
-        if (mode == 2 && fm != null) list = fm;
-        if (list == null || list.size() < 6) return null;
-        Direction facing = Direction.from3DDataValue(container.data.get(CmMachineBlockEntity.FACE));
+    private int[] getCurrentFaceModes(int mode) {
+        var machine = container.machine;
+        if (machine == null) return null;
+        int[] list;
+        if (mode == 0) list = machine.energyFaceData;
+        else if (mode == 1) list = machine.itemFaceData;
+        else if (mode == 2) list = machine.fluidFaceData;
+        else return null;
+        if (list.length < 6) return null;
+        Direction facing = Direction.from3DDataValue(machine.facingVal);
         return new int[] {
-                list.get(facing.get3DDataValue()),
-                list.get(facing.getOpposite().get3DDataValue()),
-                list.get(facing.getClockWise().get3DDataValue()),
-                list.get(facing.getCounterClockWise().get3DDataValue()),
-                list.get(Direction.UP.get3DDataValue()),
-                list.get(Direction.DOWN.get3DDataValue())
+                list[facing.get3DDataValue()],
+                list[facing.getOpposite().get3DDataValue()],
+                list[facing.getClockWise().get3DDataValue()],
+                list[facing.getCounterClockWise().get3DDataValue()],
+                list[Direction.UP.get3DDataValue()],
+                list[Direction.DOWN.get3DDataValue()]
         };
     }
 

@@ -46,21 +46,21 @@ public abstract class EngineBlockEntity extends CmMachineBlockEntity {
 
         if (!signalAllowRun() || !energyAllowRun()) return;
 
-        ItemStack fuel = ItemStack.EMPTY;
+        ItemStack fuelStack = ItemStack.EMPTY;
         if (itemHandler != null && itemHandler.getSlots() > 0) {
-            fuel = itemHandler.getStackInSlot(0);
+            fuelStack = itemHandler.getStackInSlot(0);
         }
 
-        if (data.get(FUEL) > 0) {
+        if (fuel > 0) {
             energyStorage.receiveEnergy(getActualEfficiency(), false);
-            data.translate(FUEL, -efficientIn, 0);
+            fuel = Math.max(fuel - efficientIn, 0);
             setActive(true);
         } else {
-            int fuelVal = matchFuel(fuel, true);
+            int fuelVal = matchFuel(fuelStack, true);
             if (fuelVal > 0) {
-                matchFuel(fuel, false);
-                data.set(FUEL, fuelVal);
-                data.set(MAX_FUEL, fuelVal);
+                matchFuel(fuelStack, false);
+                fuel = fuelVal;
+                maxFuel = fuelVal;
                 setActive(true);
             } else {
                 setActive(false);

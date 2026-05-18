@@ -66,14 +66,14 @@ public class CondenserBlockEntity extends ProcessingMachineBlockEntity {
     public boolean cooking() {
         FluidStack produced = new FluidStack((net.minecraft.world.level.material.Fluid) TENFluids.LIQUID_BIZARRERIE.getSource(), 5);
         if (tanks.isEmpty() || tanks.get(0).fill(produced, IFluidHandler.FluidAction.SIMULATE) < produced.getAmount()) {
-            data.set(PROGRESS, 0);
+            progress = 0;
             return true;
         }
 
         ItemStack catalyst = itemHandler.getStackInSlot(0);
         if (valid(0, catalyst) && getAliveTime() % 20 == 0) {
             catalyst.shrink(1);
-            data.translate(PROGRESS, 200 * getActualEfficiency());
+            progress += 200 * getActualEfficiency();
         }
         return false;
     }

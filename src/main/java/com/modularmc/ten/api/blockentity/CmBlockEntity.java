@@ -1,7 +1,8 @@
 package com.modularmc.ten.api.blockentity;
 
-import com.modularmc.ten.api.wrapper.SyncedIntArray;
-
+import com.lowdragmc.lowdraglib2.syncdata.holder.blockentity.ISyncPersistRPCBlockEntity;
+import com.lowdragmc.lowdraglib2.syncdata.storage.FieldManagedStorage;
+import lombok.Getter;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
@@ -10,9 +11,11 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 
-public abstract class CmBlockEntity extends BlockEntity {
+public abstract class CmBlockEntity extends BlockEntity implements ISyncPersistRPCBlockEntity {
 
-    public SyncedIntArray data = new SyncedIntArray(40);
+    @Getter
+    private final FieldManagedStorage syncStorage = new FieldManagedStorage(this);
+
     public Component component;
     public String id;
 
@@ -62,7 +65,6 @@ public abstract class CmBlockEntity extends BlockEntity {
         return component;
     }
 
-    // NBT: use HolderLookup.Provider in 1.21.1
     @Override
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
