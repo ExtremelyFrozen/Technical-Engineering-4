@@ -83,6 +83,9 @@ public class TENEmiPlugin implements EmiPlugin {
                     pathMatches,
                     TEN.MOD_ID);
         }
+        // Smelter — uses vanilla RecipeType.SMELTING
+        registry.addWorkstation(dev.emi.emi.api.recipe.VanillaEmiRecipeCategories.SMELTING,
+                dev.emi.emi.api.stack.EmiStack.of(com.modularmc.ten.common.data.TENBlocks.MACHINE_SMELTER));
 
         TEN.LOGGER.debug("[EMI] Registering TEN EMI plugin with {} categories", CATEGORIES.size());
         for (var def : CATEGORIES) {
