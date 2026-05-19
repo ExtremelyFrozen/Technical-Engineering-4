@@ -1,0 +1,26 @@
+{
+  "type": "kenergyengineering:compressor",
+  "inputs": [
+    {
+      "type": "static",
+      "count": 9,
+      "form": "item",
+      "key": "kenergyengineering:nickel_ingot"
+    },
+    {
+      "type": "static",
+      "chance": 0.0,
+      "form": "item",
+      "key": "kenergyengineering:mould_compressed_large"
+    }
+  ],
+  "outputs": [
+    {
+      "type": "static",
+      "count": 1,
+      "form": "item",
+      "key": "kenergyengineering:nickel_block"
+    }
+  ],
+  "time": 100
+}

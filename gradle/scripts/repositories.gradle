@@ -22,6 +22,10 @@ repositories {
         name = "ModMaven"
         url = "https://modmaven.dev"
     }
+    maven { // LDLib, Shimmer
+        name = "FirstDarkDev Maven"
+        url = "https://maven.firstdark.dev/snapshots"
+    }
     exclusiveContent { // Configuration
         forRepository { maven { url = "https://repo.repsy.io/mvn/toma/public" } }
         filter { includeGroup("dev.toma.configuration")}
@@ -41,5 +45,13 @@ repositories {
     exclusiveContent { // Curseforge Maven
         forRepository { maven { url = "https://cursemaven.com" } }
         filter { includeGroup("curse.maven") }
+    }
+    exclusiveContent { // Architectury
+        forRepository { maven { url = "https://maven.architectury.dev/" } }
+        filter { includeGroup("dev.architectury") }
+    }
+    exclusiveContent { // Cloth Config (shedaniel)
+        forRepository { maven { url = "https://maven.shedaniel.me/" } }
+        filter { includeGroup("me.shedaniel.cloth") }
     }
 }

@@ -1,4 +1,5 @@
 [versions]
+ldlib2 = "2.2.8"
 registrate = "MC1.21-1.3.0+67"
 configuration = "3.1.1-neoforge"
 
@@ -11,6 +12,7 @@ jade = "15.10.0+neoforge"
 sodium = "mc1.21.1-0.6.13-neoforge"
 iris = "1.8.8+1.21.1-neoforge"
 modernfix = "4SPHwiDB" # 5.24.3+mc1.21.1
+modernui = "3.12.0.2"
 
 ## curseforge maven ##
 spark = "6225208"
@@ -19,6 +21,7 @@ spark = "6225208"
 
 
 [libraries]
+ldlib2              = { module = "com.lowdragmc.ldlib2:ldlib2-neoforge-1.21.1", version.ref = "ldlib2" }
 registrate          = { module = "com.tterrag.registrate:Registrate", version.ref = "registrate" }
 configuration       = { module = "dev.toma.configuration:configuration-1.21.1", version.ref = "configuration" }
 
@@ -30,6 +33,7 @@ emi                 = { module = "dev.emi:emi-neoforge", version.ref = "emi" }
 jade                = { module = "maven.modrinth:jade", version.ref = "jade" }
 sodium              = { module = "maven.modrinth:sodium", version.ref = "sodium" }
 iris                = { module = "maven.modrinth:iris", version.ref = "iris" }
+modernui            = { module = "maven.modrinth:modern-ui", version.ref = "modernui" }
 modernfix           = { module = "maven.modrinth:modernfix", version.ref = "modernfix" }
 
 spark               = { module = "curse.maven:spark-361579", version.ref = "spark" }

@@ -6,12 +6,16 @@ import com.modularmc.ten.api.option.IngredientType;
 import com.modularmc.ten.api.option.MachineType;
 import com.modularmc.ten.api.recipe.FormsCombinedRecipe;
 import com.modularmc.ten.common.data.TENRecipeTypes;
+import com.modularmc.ten.common.gui.TENMachineBlockUIFactory;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.fluids.FluidStack;
+
+import com.lowdragmc.lowdraglib2.gui.factory.BlockUIMenuType;
+import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
 
 public class RefinerBlockEntity extends RecipeMachineBlockEntity {
 
@@ -55,6 +59,20 @@ public class RefinerBlockEntity extends RecipeMachineBlockEntity {
     @Override
     public boolean valid(int slot, FluidStack stack) {
         return true;
+    }
+
+    @Override
+    public ModularUI createUI(BlockUIMenuType.BlockUIHolder holder) {
+        return buildMachineUI(holder, TENMachineBlockUIFactory.backgroundFor(machineType()), root -> {
+            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 0, 58, 34));
+            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 1, 117, 34));
+        }, root -> {
+            root.addChild(TENMachineBlockUIFactory.energyGauge(this, 9, 18, 14, 46, 0, 0, true));
+            root.addChild(TENMachineBlockUIFactory.energyGauge(this, 60, 56, 13, 13, 14, 0, false));
+            root.addChild(TENMachineBlockUIFactory.progressGauge(this, 84, 35, 22, 16, 27, 159, false));
+            root.addChild(TENMachineBlockUIFactory.fluidGauge(this, 37, 17, 18, 50, 0, true));
+            root.addChild(TENMachineBlockUIFactory.fluidGauge(this, 143, 17, 18, 50, 1, true));
+        });
     }
 
     @Override

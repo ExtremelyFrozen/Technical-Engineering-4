@@ -4,9 +4,17 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 
+import com.lowdragmc.lowdraglib2.syncdata.annotation.DescSynced;
+import com.lowdragmc.lowdraglib2.syncdata.annotation.Persisted;
+
 public abstract class RadiusMachineBlockEntity extends EffectMachineBlockEntity {
 
+    @Persisted
+    @DescSynced
     public int radius;
+
+    @Persisted
+    @DescSynced
     public int initialRadius;
 
     public RadiusMachineBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {

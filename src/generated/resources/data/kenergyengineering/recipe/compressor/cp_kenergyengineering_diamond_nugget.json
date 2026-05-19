@@ -1,0 +1,25 @@
+{
+  "type": "kenergyengineering:compressor",
+  "inputs": [
+    {
+      "type": "static",
+      "count": 9,
+      "form": "item",
+      "key": "kenergyengineering:diamond_nugget"
+    },
+    {
+      "type": "static",
+      "form": "item",
+      "key": "kenergyengineering:mould_compressed_large"
+    }
+  ],
+  "outputs": [
+    {
+      "type": "static",
+      "count": 1,
+      "form": "item",
+      "key": "minecraft:diamond"
+    }
+  ],
+  "time": 100
+}

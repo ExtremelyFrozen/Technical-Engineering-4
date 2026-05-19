@@ -1,7 +1,6 @@
 package com.modularmc.ten;
 
 import com.modularmc.ten.common.CommonProxy;
-import com.modularmc.ten.common.network.TENNetwork;
 import com.modularmc.ten.config.ConfigHolder;
 
 import net.minecraft.resources.ResourceLocation;
@@ -29,8 +28,6 @@ public class TEN {
 
         ConfigHolder.init();
         CommonProxy.init(modBus);
-
-        modBus.addListener(TENNetwork::register);
     }
 
     public static ResourceLocation id(String path) {

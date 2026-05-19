@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:item/generated",
   "textures": {
-    "layer0": "kenergyengineering:item/knowledge_levelup"
+    "layer0": "kenergyengineering:item/upgrade/knowledge_levelup"
   }
 }

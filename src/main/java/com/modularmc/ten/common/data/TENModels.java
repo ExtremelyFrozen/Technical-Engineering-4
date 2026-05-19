@@ -44,9 +44,29 @@ public class TENModels {
                 .texture("particle", TEN.id("block/machine_side"));
     }
 
-    public static void cellBlockstate(BlockStateProvider prov, Block block) {
-        var empty = prov.models().getExistingFile(TEN.id("block/cell_empty"));
-        var normal = prov.models().getExistingFile(TEN.id("block/cell"));
+    // 引擎方块 —— 顶/侧面同纹，底面单独
+    public static BlockModelBuilder engine(BlockStateProvider prov, String name) {
+        return prov.models()
+                .cubeBottomTop(name,
+                        TEN.id("block/" + name),
+                        TEN.id("block/" + name),
+                        TEN.id("block/" + name + "_bottom"))
+                .texture("particle", TEN.id("block/" + name));
+    }
+
+    public static BlockModelBuilder engineActive(BlockStateProvider prov, String name) {
+        String activeName = name + "_active";
+        return prov.models()
+                .cubeBottomTop(activeName,
+                        TEN.id("block/" + activeName),
+                        TEN.id("block/" + activeName),
+                        TEN.id("block/" + name + "_bottom"))
+                .texture("particle", TEN.id("block/" + activeName));
+    }
+
+    public static void energyCellBlockstate(BlockStateProvider prov, Block block) {
+        var empty = prov.models().getExistingFile(TEN.id("block/energy_cell_empty"));
+        var normal = prov.models().getExistingFile(TEN.id("block/energy_cell"));
         var builder = prov.getVariantBuilder(block);
         for (Direction dir : Direction.Plane.HORIZONTAL) {
             int y = switch (dir) {

@@ -82,6 +82,9 @@ public class TENJeiCategory implements IRecipeCategory<FormsCombinedRecipe> {
                 if (slot.role() == TENRecipeWidget.SlotRole.OUTPUT && ingredient.chance() < 1.0d) {
                     jeiSlot.addRichTooltipCallback((view, tooltip) -> tooltip.add(Component.literal(TENRecipeWidget.formatChance(ingredient.chance()))));
                 }
+                if (slot.role() == TENRecipeWidget.SlotRole.INPUT && ingredient.chance() <= 0) {
+                    jeiSlot.addRichTooltipCallback((view, tooltip) -> tooltip.add(Component.translatable("kenergyengineering.not_consumed")));
+                }
             } else {
                 var fluidStacks = ingredient.fluidStacks();
                 if (fluidStacks.isEmpty() || fluidStacks.getFirst().isEmpty()) {
@@ -93,6 +96,9 @@ public class TENJeiCategory implements IRecipeCategory<FormsCombinedRecipe> {
                         .setBackground(inputSlot, 0, 0);
                 if (slot.role() == TENRecipeWidget.SlotRole.OUTPUT && ingredient.chance() < 1.0d) {
                     jeiSlot.addRichTooltipCallback((view, tooltip) -> tooltip.add(Component.literal(TENRecipeWidget.formatChance(ingredient.chance()))));
+                }
+                if (slot.role() == TENRecipeWidget.SlotRole.INPUT && ingredient.chance() <= 0) {
+                    jeiSlot.addRichTooltipCallback((view, tooltip) -> tooltip.add(Component.translatable("kenergyengineering.not_consumed")));
                 }
             }
         }

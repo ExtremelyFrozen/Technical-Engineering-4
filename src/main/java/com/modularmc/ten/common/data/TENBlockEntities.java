@@ -2,6 +2,9 @@ package com.modularmc.ten.common.data;
 
 import com.modularmc.ten.common.blockentity.CableBlockEntity;
 import com.modularmc.ten.common.blockentity.PipeBlockEntity;
+import com.modularmc.ten.common.blockentity.channel.ChannelEnergyBlockEntity;
+import com.modularmc.ten.common.blockentity.channel.ChannelFluidBlockEntity;
+import com.modularmc.ten.common.blockentity.channel.ChannelItemBlockEntity;
 import com.modularmc.ten.common.blockentity.machine.*;
 
 import com.tterrag.registrate.util.entry.BlockEntityEntry;
@@ -18,6 +21,21 @@ public class TENBlockEntities {
     public static final BlockEntityEntry<PipeBlockEntity> PIPE = REGISTRATE
             .blockEntity("pipe", PipeBlockEntity::new)
             .validBlocks(TENBlocks.PIPE, TENBlocks.PIPE_WHITE, TENBlocks.PIPE_BLACK)
+            .register();
+
+    public static final BlockEntityEntry<ChannelEnergyBlockEntity> CHANNEL_ENERGY = REGISTRATE
+            .blockEntity("channel_energy", ChannelEnergyBlockEntity::new)
+            .validBlocks(TENBlocks.CHANNEL_ENERGY)
+            .register();
+
+    public static final BlockEntityEntry<ChannelItemBlockEntity> CHANNEL_ITEM = REGISTRATE
+            .blockEntity("channel_item", ChannelItemBlockEntity::new)
+            .validBlocks(TENBlocks.CHANNEL_ITEM)
+            .register();
+
+    public static final BlockEntityEntry<ChannelFluidBlockEntity> CHANNEL_FLUID = REGISTRATE
+            .blockEntity("channel_fluid", ChannelFluidBlockEntity::new)
+            .validBlocks(TENBlocks.CHANNEL_FLUID)
             .register();
 
     // Processing machines
@@ -91,8 +109,13 @@ public class TENBlockEntities {
             .register();
 
     public static final BlockEntityEntry<CellBlockEntity> CELL = REGISTRATE
-            .blockEntity("cell", CellBlockEntity::new)
+            .blockEntity("energy_cell", CellBlockEntity::new)
             .validBlocks(TENBlocks.CELL)
+            .register();
+
+    public static final BlockEntityEntry<CreativeCellBlockEntity> CREATIVE_CELL = REGISTRATE
+            .blockEntity("creative_energy_cell", CreativeCellBlockEntity::new)
+            .validBlocks(TENBlocks.CREATIVE_CELL)
             .register();
 
     public static void init() {}

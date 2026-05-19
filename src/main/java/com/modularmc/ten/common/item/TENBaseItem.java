@@ -8,9 +8,6 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 
-import org.lwjgl.glfw.GLFW;
-
-import java.util.ArrayList;
 import java.util.List;
 
 public class TENBaseItem extends Item {
@@ -30,26 +27,24 @@ public class TENBaseItem extends Item {
 
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
-        List<Component> list = new ArrayList<>();
         String path = SafeOperationHelper.regNameOf(this);
 
         for (int i = 0; true; i++) {
             String k = ComponentHelper.getKey(path + "." + i);
             Component ttc = ComponentHelper.translated(ComponentHelper.GOLD, k);
             if (ttc.getString().equals(k)) break;
-            list.add(ttc);
-        }
 
-        if (shift()) {
-            tooltip.addAll(list);
-        } else if (!list.isEmpty()) {
-            tooltip.add(ComponentHelper.translated(ComponentHelper.GOLD, ComponentHelper.getKey("shift")));
+            // 支持 \n 换行
+            String text = ttc.getString();
+            int nl = text.indexOf('\n');
+            if (nl >= 0) {
+                String[] lines = text.split("\n", -1);
+                for (String line : lines) {
+                    tooltip.add(Component.literal(line).withStyle(ttc.getStyle()));
+                }
+            } else {
+                tooltip.add(ttc);
+            }
         }
-    }
-
-    public static boolean shift() {
-        long window = org.lwjgl.glfw.GLFW.glfwGetCurrentContext();
-        if (window == 0) return false;
-        return GLFW.glfwGetKey(window, GLFW.GLFW_KEY_LEFT_SHIFT) == GLFW.GLFW_PRESS;
     }
 }

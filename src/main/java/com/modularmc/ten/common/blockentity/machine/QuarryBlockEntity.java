@@ -3,6 +3,7 @@ package com.modularmc.ten.common.blockentity.machine;
 import com.modularmc.ten.api.blockentity.RadiusMachineBlockEntity;
 import com.modularmc.ten.api.option.IngredientType;
 import com.modularmc.ten.api.option.MachineType;
+import com.modularmc.ten.common.gui.TENMachineBlockUIFactory;
 import com.modularmc.ten.common.item.upgrades.LevelupIce;
 import com.modularmc.ten.common.item.upgrades.LevelupMagma;
 import com.modularmc.ten.common.item.upgrades.LevelupMineral;
@@ -18,6 +19,9 @@ import net.minecraft.world.item.TieredItem;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.fluids.FluidStack;
+
+import com.lowdragmc.lowdraglib2.gui.factory.BlockUIMenuType;
+import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
 
 import java.util.List;
 
@@ -67,6 +71,28 @@ public class QuarryBlockEntity extends RadiusMachineBlockEntity {
     }
 
     @Override
+    public ModularUI createUI(BlockUIMenuType.BlockUIHolder holder) {
+        return buildMachineUI(holder, TENMachineBlockUIFactory.backgroundFor(machineType()), root -> {
+            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 0, 43, 34));
+            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 1, 79, 16));
+            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 2, 97, 16));
+            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 3, 115, 16));
+            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 4, 133, 16));
+            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 5, 79, 34));
+            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 6, 97, 34));
+            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 7, 115, 34));
+            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 8, 133, 34));
+            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 9, 79, 52));
+            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 10, 97, 52));
+            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 11, 115, 52));
+            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 12, 133, 52));
+        }, root -> {
+            root.addChild(TENMachineBlockUIFactory.energyGauge(this, 9, 18, 14, 46, 0, 0, true));
+            root.addChild(TENMachineBlockUIFactory.progressGauge(this, 48, 73, 80, 5, 97, 0, true));
+        });
+    }
+
+    @Override
     public void tick() {
         super.tick();
         if (getAliveTime() % 10 == 0) {
@@ -92,20 +118,6 @@ public class QuarryBlockEntity extends RadiusMachineBlockEntity {
             return;
         }
         mode = 0;
-    }
-
-    private boolean hasUpgrade(Class<?> upgradeClass) {
-        if (upgradeHandler == null) {
-            return false;
-        }
-        int limit = Math.min(getUnlockedUpgradeSlots(), upgradeHandler.getSlots());
-        for (int i = 0; i < limit; i++) {
-            ItemStack stack = upgradeHandler.getStackInSlot(i);
-            if (upgradeClass.isInstance(stack.getItem())) {
-                return true;
-            }
-        }
-        return false;
     }
 
     @Override

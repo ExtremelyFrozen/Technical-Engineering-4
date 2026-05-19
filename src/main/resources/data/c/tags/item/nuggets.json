@@ -4,6 +4,11 @@
 		"#c:nuggets/tin",
 		"#c:nuggets/powered_tin",
 		"#c:nuggets/chlorium",
-		"#c:nuggets/nickel"
+		"#c:nuggets/mushrium",
+		"#c:nuggets/nickel",
+		"#c:nuggets/copper",
+		"#c:nuggets/iron",
+		"#c:nuggets/gold",
+		"#c:nuggets/netherite"
 	]
 }

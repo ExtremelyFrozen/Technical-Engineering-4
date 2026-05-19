@@ -4,6 +4,11 @@
 		"#c:ingots/tin",
 		"#c:ingots/powered_tin",
 		"#c:ingots/chlorium",
-		"#c:ingots/nickel"
+		"#c:ingots/mushrium",
+		"#c:ingots/nickel",
+		"#c:ingots/iron",
+		"#c:ingots/gold",
+		"#c:ingots/copper",
+		"#c:ingots/netherite"
 	]
 }

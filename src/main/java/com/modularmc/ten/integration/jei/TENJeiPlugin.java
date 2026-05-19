@@ -2,28 +2,19 @@ package com.modularmc.ten.integration.jei;
 
 import com.modularmc.ten.TEN;
 import com.modularmc.ten.api.recipe.FormsCombinedRecipe;
-import com.modularmc.ten.client.gui.CmScreenMachine;
-import com.modularmc.ten.client.gui.screen.CompressorScreen;
-import com.modularmc.ten.client.gui.screen.IndfurScreen;
-import com.modularmc.ten.client.gui.screen.PsionicantScreen;
-import com.modularmc.ten.client.gui.screen.PulverizerScreen;
-import com.modularmc.ten.client.gui.screen.RefinerScreen;
 import com.modularmc.ten.common.data.TENRecipeTypes;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.registries.DeferredHolder;
 
+import com.lowdragmc.lowdraglib2.gui.holder.ModularUIContainerScreen;
+import com.lowdragmc.lowdraglib2.integration.xei.jei.ModularUIJEIHandlers;
 import mezz.jei.api.IModPlugin;
 import mezz.jei.api.JeiPlugin;
-import mezz.jei.api.gui.builder.IClickableIngredientFactory;
-import mezz.jei.api.gui.handlers.IGuiContainerHandler;
 import mezz.jei.api.helpers.IGuiHelper;
-import mezz.jei.api.neoforge.NeoForgeTypes;
 import mezz.jei.api.recipe.RecipeType;
 import mezz.jei.api.registration.IGuiHandlerRegistration;
 import mezz.jei.api.registration.IRecipeCatalystRegistration;
@@ -102,56 +93,7 @@ public class TENJeiPlugin implements IModPlugin {
     public void registerGuiHandlers(IGuiHandlerRegistration registration) {
         if (!TEN.Mods.isJEILoaded()) return;
 
-        addArea(registration, PulverizerScreen.class, TEN.id("pulverizer"), 76, 35, 22, 16);
-        addArea(registration, CompressorScreen.class, TEN.id("compressor"), 76, 35, 22, 16);
-        addArea(registration, RefinerScreen.class, TEN.id("refiner"), 81, 35, 22, 16);
-        addArea(registration, IndfurScreen.class, TEN.id("induction_furnace"), 92, 35, 22, 16);
-        addArea(registration, PsionicantScreen.class, TEN.id("psionicant"), 76, 35, 22, 16);
-
-        registration.addGuiContainerHandler(CmScreenMachine.class, new IGuiContainerHandler<>() {
-
-            @Override
-            public List<Rect2i> getGuiExtraAreas(CmScreenMachine screen) {
-                return List.of(new Rect2i(screen.getGuiLeft() - screen.getExtras(), screen.getGuiTop(), screen.getExtras(), screen.ySize));
-            }
-        });
-
-        registration.addGuiContainerHandler(RefinerScreen.class, new IGuiContainerHandler<>() {
-
-            @Override
-            public List<Rect2i> getGuiExtraAreas(RefinerScreen screen) {
-                return List.of(new Rect2i(screen.getGuiLeft() - screen.getExtras(), screen.getGuiTop(), screen.getExtras(), screen.ySize));
-            }
-
-            @Override
-            public java.util.Optional<? extends mezz.jei.api.runtime.IClickableIngredient<?>> getClickableIngredientUnderMouse(
-                                                                                                                               IClickableIngredientFactory builder,
-                                                                                                                               RefinerScreen screen,
-                                                                                                                               double mouseX,
-                                                                                                                               double mouseY) {
-                if (screen.container.machine == null || screen.container.machine.tanks.size() < 2) {
-                    return java.util.Optional.empty();
-                }
-
-                Rect2i leftTank = new Rect2i(screen.getGuiLeft() + 37, screen.getGuiTop() + 17, 18, 50);
-                if (leftTank.contains((int) mouseX, (int) mouseY)) {
-                    FluidStack fluid = screen.container.machine.tanks.get(0).getFluid();
-                    if (!fluid.isEmpty()) {
-                        return builder.createBuilder(NeoForgeTypes.FLUID_STACK, fluid).buildWithArea(leftTank);
-                    }
-                }
-
-                Rect2i rightTank = new Rect2i(screen.getGuiLeft() + 143, screen.getGuiTop() + 17, 18, 50);
-                if (rightTank.contains((int) mouseX, (int) mouseY)) {
-                    FluidStack fluid = screen.container.machine.tanks.get(1).getFluid();
-                    if (!fluid.isEmpty()) {
-                        return builder.createBuilder(NeoForgeTypes.FLUID_STACK, fluid).buildWithArea(rightTank);
-                    }
-                }
-
-                return java.util.Optional.empty();
-            }
-        });
+        registration.addGuiContainerHandler(ModularUIContainerScreen.class, ModularUIJEIHandlers.GUI_CONTAINER_HANDLER);
     }
 
     private static DeferredHolder<net.minecraft.world.item.crafting.RecipeType<?>, net.minecraft.world.item.crafting.RecipeType<FormsCombinedRecipe>> recipeType(ResourceLocation id) {
@@ -161,16 +103,5 @@ public class TENJeiPlugin implements IModPlugin {
         if (id.equals(TEN.id("induction_furnace"))) return TENRecipeTypes.INDUCTION_FURNACE_T;
         if (id.equals(TEN.id("psionicant"))) return TENRecipeTypes.PSIONICANT_T;
         throw new IllegalArgumentException("Unknown TEN recipe type id: " + id);
-    }
-
-    private static <T extends net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?>> void addArea(
-                                                                                                                  IGuiHandlerRegistration registration,
-                                                                                                                  Class<? extends T> screenClass,
-                                                                                                                  ResourceLocation id,
-                                                                                                                  int x,
-                                                                                                                  int y,
-                                                                                                                  int width,
-                                                                                                                  int height) {
-        registration.addRecipeClickArea(screenClass, x, y, width, height, new RecipeType<>(id, FormsCombinedRecipe.class));
     }
 }

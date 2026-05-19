@@ -1,5 +1,6 @@
 package com.modularmc.ten.common.data;
 
+import com.modularmc.ten.common.item.ChannelConnectorItem;
 import com.modularmc.ten.common.item.upgrades.*;
 
 import net.minecraft.world.item.Item;
@@ -11,115 +12,158 @@ import static com.modularmc.ten.common.registry.Registration.REGISTRATE;
 
 public class TENItems {
 
+    public static final java.util.LinkedHashMap<String, String> ZH_NAMES = new java.util.LinkedHashMap<>();
+
     static {
         REGISTRATE.creativeModeTab(() -> TENCreativeModeTabs.ITEM_TAB);
     }
 
-    // Materials - Dusts
-    public static final ItemEntry<Item> IRON_DUST = item("iron_dust", "Iron Dust");
-    public static final ItemEntry<Item> GOLD_DUST = item("gold_dust", "Gold Dust");
-    public static final ItemEntry<Item> COPPER_DUST = item("copper_dust", "Copper Dust");
-    public static final ItemEntry<Item> TIN_DUST = item("tin_dust", "Tin Dust");
-    public static final ItemEntry<Item> NICKEL_DUST = item("nickel_dust", "Nickel Dust");
-    public static final ItemEntry<Item> POWERED_TIN_DUST = item("powered_tin_dust", "Powered Tin Dust");
-    public static final ItemEntry<Item> CHLORIUM_DUST = item("chlorium_dust", "Chlorium Dust");
+    // === Bulk material variant registration ===
+    static {
+        // --- Dusts ---
+        registerVariants("dust", "Dust", "粉",
+                Mat.IRON, Mat.GOLD, Mat.COPPER, Mat.TIN, Mat.NICKEL, Mat.POWERED_TIN, Mat.CHLORIUM,
+                Mat.NETHERITE, Mat.DIAMOND, Mat.EMERALD, Mat.LAPIS, Mat.QUARTZ, Mat.AMETHYST,
+                Mat.MUSHRIUM, Mat.STARLIGHT);
 
-    // Materials - Ingots
-    public static final ItemEntry<Item> TIN_INGOT = item("tin_ingot", "Tin Ingot");
-    public static final ItemEntry<Item> NICKEL_INGOT = item("nickel_ingot", "Nickel Ingot");
-    public static final ItemEntry<Item> POWERED_TIN_INGOT = item("powered_tin_ingot", "Powered Tin Ingot");
-    public static final ItemEntry<Item> CHLORIUM_INGOT = item("chlorium_ingot", "Chlorium Ingot");
+        // --- Ingots ---
+        registerVariants("ingot", "Ingot", "锭",
+                Mat.TIN, Mat.NICKEL, Mat.POWERED_TIN, Mat.CHLORIUM,
+                Mat.MUSHRIUM);
 
-    // Materials - Nuggets
-    public static final ItemEntry<Item> TIN_NUGGET = item("tin_nugget", "Tin Nugget");
-    public static final ItemEntry<Item> NICKEL_NUGGET = item("nickel_nugget", "Nickel Nugget");
-    public static final ItemEntry<Item> POWERED_TIN_NUGGET = item("powered_tin_nugget", "Powered Tin Nugget");
-    public static final ItemEntry<Item> CHLORIUM_NUGGET = item("chlorium_nugget", "Chlorium Nugget");
+        // --- Nuggets ---
+        registerVariants("nugget", "Nugget", "粒",
+                Mat.TIN, Mat.NICKEL, Mat.POWERED_TIN, Mat.CHLORIUM,
+                Mat.COPPER,
+                Mat.NETHERITE, Mat.DIAMOND, Mat.EMERALD, Mat.LAPIS, Mat.QUARTZ,
+                Mat.MUSHRIUM);
 
-    // Materials - Plates
-    public static final ItemEntry<Item> IRON_PLATE = item("iron_plate", "Iron Plate");
-    public static final ItemEntry<Item> GOLD_PLATE = item("gold_plate", "Gold Plate");
-    public static final ItemEntry<Item> COPPER_PLATE = item("copper_plate", "Copper Plate");
-    public static final ItemEntry<Item> TIN_PLATE = item("tin_plate", "Tin Plate");
-    public static final ItemEntry<Item> NICKEL_PLATE = item("nickel_plate", "Nickel Plate");
-    public static final ItemEntry<Item> POWERED_TIN_PLATE = item("powered_tin_plate", "Powered Tin Plate");
-    public static final ItemEntry<Item> CHLORIUM_PLATE = item("chlorium_plate", "Chlorium Plate");
+        // --- Plates ---
+        registerVariants("plate", "Plate", "板",
+                Mat.IRON, Mat.GOLD, Mat.COPPER, Mat.TIN, Mat.NICKEL, Mat.POWERED_TIN, Mat.CHLORIUM,
+                Mat.NETHERITE, Mat.DIAMOND, Mat.EMERALD, Mat.LAPIS, Mat.QUARTZ, Mat.AMETHYST, Mat.REDSTONE,
+                Mat.MUSHRIUM);
 
-    // Materials - Gears
-    public static final ItemEntry<Item> IRON_GEAR = item("iron_gear", "Iron Gear");
-    public static final ItemEntry<Item> GOLD_GEAR = item("gold_gear", "Gold Gear");
-    public static final ItemEntry<Item> COPPER_GEAR = item("copper_gear", "Copper Gear");
-    public static final ItemEntry<Item> TIN_GEAR = item("tin_gear", "Tin Gear");
-    public static final ItemEntry<Item> NICKEL_GEAR = item("nickel_gear", "Nickel Gear");
-    public static final ItemEntry<Item> POWERED_TIN_GEAR = item("powered_tin_gear", "Powered Tin Gear");
-    public static final ItemEntry<Item> CHLORIUM_GEAR = item("chlorium_gear", "Chlorium Gear");
+        // --- Gears ---
+        registerVariants("gear", "Gear", "齿轮",
+                Mat.IRON, Mat.GOLD, Mat.COPPER, Mat.TIN, Mat.NICKEL, Mat.POWERED_TIN, Mat.CHLORIUM,
+                Mat.NETHERITE, Mat.DIAMOND, Mat.EMERALD, Mat.LAPIS, Mat.QUARTZ, Mat.AMETHYST, Mat.REDSTONE,
+                Mat.MUSHRIUM);
+
+        // --- Rods ---
+        registerVariants("rod", "Rod", "杆",
+                Mat.IRON, Mat.GOLD, Mat.COPPER, Mat.TIN, Mat.NICKEL, Mat.POWERED_TIN, Mat.CHLORIUM,
+                Mat.NETHERITE, Mat.MUSHRIUM);
+
+        // --- Wires ---
+        registerVariants("wire", "Wire", "线",
+                Mat.IRON, Mat.GOLD, Mat.COPPER, Mat.TIN, Mat.NICKEL, Mat.POWERED_TIN, Mat.CHLORIUM,
+                Mat.NETHERITE, Mat.MUSHRIUM);
+    }
 
     // Raw Materials
-    public static final ItemEntry<Item> RAW_TIN = item("raw_tin", "Raw Tin");
-    public static final ItemEntry<Item> RAW_NICKEL = item("raw_nickel", "Raw Nickel");
+    public static final ItemEntry<Item> RAW_TIN = texturedItem("raw_tin", "Raw Tin", "粗锡", "item/material/raw/raw_tin");
+    public static final ItemEntry<Item> RAW_NICKEL = texturedItem("raw_nickel", "Raw Nickel", "粗镍", "item/material/raw/raw_nickel");
 
     // Crafting Components
-    public static final ItemEntry<Item> REDSTONE_CONDUCTOR = item("redstone_conductor", "Redstone Conductor");
-    public static final ItemEntry<Item> REDSTONE_CONVERTER = item("redstone_converter", "Redstone Converter");
-    public static final ItemEntry<Item> REDSTONE_STORER = item("redstone_storer", "Redstone Storer");
-    public static final ItemEntry<Item> INDIGO = item("indigo", "Indigo");
-    public static final ItemEntry<Item> AZURE_GLASS = item("azure_glass", "Azure Glass");
-    public static final ItemEntry<Item> BIZARRERIE = item("bizarrerie", "Bizarrerie");
-    public static final ItemEntry<Item> REDSTONE_AI = item("redstone_ai", "Redstone AI");
-    public static final ItemEntry<Item> REDSTONE_AI_ADVANCED = item("redstone_ai_advanced", "Advanced Redstone AI");
-    public static final ItemEntry<Item> HYDRAULIC_WIDGET = item("hydraulic_widget", "Hydraulic Widget");
-    public static final ItemEntry<Item> DETECTOR = item("detector", "Detector");
+    public static final ItemEntry<Item> REDSTONE_CONDUCTOR = texturedItem("redstone_conductor", "Redstone Conductor", "红石传导元件", "item/crafting/redstone_conductor");
+    public static final ItemEntry<Item> REDSTONE_CONVERTER = texturedItem("redstone_converter", "Redstone Converter", "红石转化元件", "item/crafting/redstone_converter");
+    public static final ItemEntry<Item> REDSTONE_STORER = texturedItem("redstone_storer", "Redstone Storer", "红石转存元件", "item/crafting/redstone_storer");
+    public static final ItemEntry<Item> INDIGO = texturedItem("indigo", "Indigo", "靛青", "item/crafting/indigo");
+    public static final ItemEntry<Item> AZURE_GLASS = texturedItem("azure_glass", "Azure Glass", "琉璃", "item/crafting/azure_glass");
+    public static final ItemEntry<Item> BIZARRERIE = texturedItem("bizarrerie", "Bizarrerie", "奇异物质", "item/crafting/bizarrerie");
+    public static final ItemEntry<Item> REDSTONE_AI = texturedItem("redstone_ai", "Redstone AI", "红石智能芯片", "item/crafting/redstone_ai");
+    public static final ItemEntry<Item> REDSTONE_AI_ADVANCED = texturedItem("redstone_ai_advanced", "Advanced Redstone AI", "自律红石智能芯片", "item/crafting/redstone_ai_advanced");
+    public static final ItemEntry<Item> HYDRAULIC_WIDGET = texturedItem("hydraulic_widget", "Hydraulic Widget", "液压组件", "item/crafting/hydraulic_widget");
+    public static final ItemEntry<Item> DETECTOR = texturedItem("detector", "Detector", "反射探测仪", "item/crafting/detector");
+    public static final ItemEntry<ChannelConnectorItem> CHANNEL_CONNECTOR = REGISTRATE.item("channel_connector", ChannelConnectorItem::new)
+            .lang("Channel Connector")
+            .model((ctx, prov) -> prov.generated(ctx::getEntry, prov.modLoc("item/channel_connector")))
+            .register();
 
-    // Moulds (use manual models - texture names differ from item names)
+    // === Moulds ===
     static {
         REGISTRATE.creativeModeTab(() -> TENCreativeModeTabs.TOOL_TAB);
     }
-    public static final ItemEntry<Item> MOULD_GEAR = REGISTRATE
-            .item("mould_gear", Item::new)
-            .lang("Gear Mould")
-            .model((ctx, prov) -> prov.generated(ctx::getEntry, prov.modLoc("item/model_gear")))
-            .register();
-    public static final ItemEntry<Item> MOULD_PLATE = REGISTRATE
-            .item("mould_plate", Item::new)
-            .lang("Plate Mould")
-            .model((ctx, prov) -> prov.generated(ctx::getEntry, prov.modLoc("item/model_plate")))
-            .register();
-    public static final ItemEntry<Item> MOULD_ROD = REGISTRATE
-            .item("mould_rod", Item::new)
-            .lang("Rod Mould")
-            .model((ctx, prov) -> prov.generated(ctx::getEntry, prov.modLoc("item/model_rod")))
-            .register();
-    public static final ItemEntry<Item> MOULD_STRING = REGISTRATE
-            .item("mould_string", Item::new)
-            .lang("String Mould")
-            .model((ctx, prov) -> prov.generated(ctx::getEntry, prov.modLoc("item/model_string")))
-            .register();
+
+    private static ItemEntry<Item> mould(String name, String englishName, String cn, String texturePath) {
+        ZH_NAMES.put(name, cn);
+        return REGISTRATE.item(name, Item::new)
+                .lang(englishName)
+                .model((ctx, prov) -> prov.generated(ctx::getEntry, prov.modLoc(texturePath)))
+                .register();
+    }
+
+    public static final ItemEntry<Item> MOULD_GEAR = mould("mould_gear", "Gear Mould", "模具-齿轮", "item/mold/model_gear");
+    public static final ItemEntry<Item> MOULD_PLATE = mould("mould_plate", "Plate Mould", "模具-板", "item/mold/model_plate");
+    public static final ItemEntry<Item> MOULD_ROD = mould("mould_rod", "Rod Mould", "模具-杆", "item/mold/model_rod");
+    public static final ItemEntry<Item> MOULD_STRING = mould("mould_string", "String Mould", "模具-线", "item/mold/model_string");
+    public static final ItemEntry<Item> MOULD_COMPRESSED_SMALL = mould("mould_compressed_small", "Compressed-small Mould", "模具-2x2压缩", "item/mold/compressed_small");
+    public static final ItemEntry<Item> MOULD_COMPRESSED_LARGE = mould("mould_compressed_large", "Compressed-large Mould", "模具-3x3压缩", "item/mold/compressed_large");
+    public static final ItemEntry<Item> MOULD_SPLIT = mould("mould_split", "Split Mould", "模具-解压缩", "item/mold/split");
+    public static final ItemEntry<Item> MOULD_COIN = mould("mould_coin", "Coin Mould", "模具-币", "item/mold/coin");
+    public static final ItemEntry<Item> MOULD_DENSE_PLATE = mould("mould_dense_plate", "Dense Plate Mould", "模具-致密板", "item/mold/dense_plate");
 
     // Upgrades
-    public static final ItemEntry<? extends UpgradeItem> AUGMENTED_LEVELUP = upgrade("augmented_levelup", "Upgrade: Augmented Kit", p -> new LevelupAug());
-    public static final ItemEntry<? extends UpgradeItem> POWERED_LEVELUP = upgrade("powered_levelup", "Upgrade: Powered Kit", p -> new LevelupPower());
-    public static final ItemEntry<? extends UpgradeItem> RELIC_LEVELUP = upgrade("relic_levelup", "Upgrade: Shulker Kit", p -> new LevelupShulker());
-    public static final ItemEntry<? extends UpgradeItem> PHOTOSYN_LEVELUP = upgrade("photosyn_levelup", "Upgrade: Photosynthetic Power", p -> new LevelupSyn());
-    public static final ItemEntry<? extends UpgradeItem> RANGE_LEVELUP = upgrade("range_levelup", "Upgrade: Range Expansion", p -> new LevelupRg());
-    public static final ItemEntry<? extends UpgradeItem> SMOKE_LEVELUP = upgrade("smoke_levelup", "Upgrade: Smoking Professor", p -> new LevelupSmoke());
-    public static final ItemEntry<? extends UpgradeItem> BLAST_LEVELUP = upgrade("blast_levelup", "Upgrade: Blasting Professor", p -> new LevelupBlast());
-    public static final ItemEntry<? extends UpgradeItem> POTION_LEVELUP = upgrade("potion_levelup", "Upgrade: Potion Effect Extraction", p -> new LevelupPotion());
-    public static final ItemEntry<? extends UpgradeItem> STREAM_LEVELUP = upgrade("stream_levelup", "Upgrade: Starlight Energy Deliverance", p -> new LevelupStream());
-    public static final ItemEntry<? extends UpgradeItem> KNOWLEDGE_LEVELUP = upgrade("knowledge_levelup", "Upgrade: Knowledge Expansion", p -> new LevelupKnow());
-    public static final ItemEntry<? extends UpgradeItem> ICE_LEVELUP = upgrade("ice_levelup", "Upgrade: Frozen Soil Drilling", p -> new LevelupIce());
-    public static final ItemEntry<? extends UpgradeItem> MAGMA_LEVELUP = upgrade("magma_levelup", "Upgrade: Mantle Drilling", p -> new LevelupMagma());
-    public static final ItemEntry<? extends UpgradeItem> MINERAL_LEVELUP = upgrade("mineral_levelup", "Upgrade: Mineral Detection", p -> new LevelupMineral());
+    public static final ItemEntry<? extends UpgradeItem> AUGMENTED_LEVELUP = upgrade("augmented_levelup", "Upgrade: Augmented Kit", "升级：增强组件", p -> new LevelupAug());
+    public static final ItemEntry<? extends UpgradeItem> POWERED_LEVELUP = upgrade("powered_levelup", "Upgrade: Powered Kit", "升级：充能组件", p -> new LevelupPower());
+    public static final ItemEntry<? extends UpgradeItem> RELIC_LEVELUP = upgrade("relic_levelup", "Upgrade: Shulker Kit", "升级：潜影组件", p -> new LevelupShulker());
+    public static final ItemEntry<? extends UpgradeItem> PHOTOSYN_LEVELUP = upgrade("photosyn_levelup", "Upgrade: Photosynthetic Power", "升级：光合供能抑制", p -> new LevelupSyn());
+    public static final ItemEntry<? extends UpgradeItem> RANGE_LEVELUP = upgrade("range_levelup", "Upgrade: Range Expansion", "升级：作用范围扩展", p -> new LevelupRg());
+    public static final ItemEntry<? extends UpgradeItem> SMOKE_LEVELUP = upgrade("smoke_levelup", "Upgrade: Smoking Professor", "升级：食物专业烟熏", p -> new LevelupSmoke());
+    public static final ItemEntry<? extends UpgradeItem> BLAST_LEVELUP = upgrade("blast_levelup", "Upgrade: Blasting Professor", "升级：矿物专业冶炼", p -> new LevelupBlast());
+    public static final ItemEntry<? extends UpgradeItem> POTION_LEVELUP = upgrade("potion_levelup", "Upgrade: Potion Effect Extraction", "升级：药水效能榨取", p -> new LevelupPotion());
+    public static final ItemEntry<? extends UpgradeItem> STREAM_LEVELUP = upgrade("stream_levelup", "Upgrade: Starlight Energy Deliverance", "升级：星辉能量传输", p -> new LevelupStream());
+    public static final ItemEntry<? extends UpgradeItem> KNOWLEDGE_LEVELUP = upgrade("knowledge_levelup", "Upgrade: Knowledge Expansion", "升级：知识储备扩充", p -> new LevelupKnow());
+    public static final ItemEntry<? extends UpgradeItem> ICE_LEVELUP = upgrade("ice_levelup", "Upgrade: Frozen Soil Drilling", "升级：地下冻土开采", p -> new LevelupIce());
+    public static final ItemEntry<? extends UpgradeItem> MAGMA_LEVELUP = upgrade("magma_levelup", "Upgrade: Mantle Drilling", "升级：地幔深层钻井", p -> new LevelupMagma());
+    public static final ItemEntry<? extends UpgradeItem> MINERAL_LEVELUP = upgrade("mineral_levelup", "Upgrade: Mineral Detection", "升级：矿物探测仪器", p -> new LevelupMineral());
 
-    private static ItemEntry<Item> item(String name, String englishName) {
+    private static ItemEntry<Item> item(String name, String englishName, String cn) {
+        ZH_NAMES.put(name, cn);
         return REGISTRATE.item(name, Item::new)
                 .lang(englishName)
                 .register();
     }
 
-    private static <T extends UpgradeItem> ItemEntry<T> upgrade(String name, String englishName, NonNullFunction<Item.Properties, T> factory) {
+    private static ItemEntry<Item> texturedItem(String name, String englishName, String cn, String texturePath) {
+        ZH_NAMES.put(name, cn);
+        return REGISTRATE.item(name, Item::new)
+                .lang(englishName)
+                .model((ctx, prov) -> prov.generated(ctx::getEntry, prov.modLoc(texturePath)))
+                .register();
+    }
+
+    private static <T extends UpgradeItem> ItemEntry<T> upgrade(String name, String englishName, String cn, NonNullFunction<Item.Properties, T> factory) {
+        ZH_NAMES.put(name, cn);
         return REGISTRATE.item(name, factory)
                 .lang(englishName)
+                .model((ctx, prov) -> prov.generated(ctx::getEntry, prov.modLoc("item/upgrade/" + name)))
                 .register();
+    }
+
+    @SafeVarargs
+    private static void registerVariants(String category, String categoryEn, String categoryCn,
+                                         NonNullFunction<Item.Properties, ? extends Item> factory,
+                                         Mat... materials) {
+        for (Mat mat : materials) {
+            String name = mat.id + "_" + category;
+            mat.markRegistered(category);
+            String englishName = mat.englishName(categoryEn);
+            String chineseName = mat.cn + categoryCn;
+            String texturePath = "item/material/" + category + "/" + name;
+
+            ZH_NAMES.put(name, chineseName);
+            REGISTRATE.item(name, factory)
+                    .lang(englishName)
+                    .model((ctx, prov) -> prov.generated(ctx::getEntry, prov.modLoc(texturePath)))
+                    .register();
+        }
+    }
+
+    private static void registerVariants(String category, String categoryEn, String categoryCn,
+                                         Mat... materials) {
+        registerVariants(category, categoryEn, categoryCn, Item::new, materials);
     }
 
     public static void init() {}

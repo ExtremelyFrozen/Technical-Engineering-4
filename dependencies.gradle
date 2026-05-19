@@ -3,6 +3,10 @@ dependencies {
 
     testImplementation(libs.testframework.get())
 
+    // LDLIB 2
+    implementation(forge.ldlib2.get())
+    jarJar(api(forge.ldlib2.get()))
+
     // Registrate
     jarJar(api(forge.registrate.get()))
 
@@ -37,6 +41,8 @@ dependencies {
     // Client-only runtime mods //
     clientLocalRuntime(forge.sodium)
     clientLocalRuntime(forge.iris)
+    clientLocalRuntime(forge.modernui)
+    clientLocalRuntime("maven.modrinth:itemzoomer:2.0.1-1.21.1")
     renderNurseCfg(libs.renderNurse)
 
     renderNurseCfg(libs.renderNurse)
@@ -46,5 +52,6 @@ dependencies {
     //////////////////////////////////////////////////////
 
     //////////////////////////
-
+    localRuntime("dev.architectury:architectury-neoforge:13.0.8")
+    localRuntime("me.shedaniel.cloth:cloth-config-neoforge:15.0.140")
 }

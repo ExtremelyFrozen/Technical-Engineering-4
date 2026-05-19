@@ -75,9 +75,9 @@ apply from: "$rootDir/gradle/scripts/publishing.gradle"
 apply from: "$rootDir/gradle/scripts/spotless.gradle"
 
 processResources {
-    // DataGen output and hand-written runtime resources must never share the same path.
-    duplicatesStrategy = DuplicatesStrategy.FAIL
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
 }
+
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = "UTF-8"

@@ -9,7 +9,8 @@
 		{
 			"form": "item",
 			"type": "static",
-			"key": "kenergyengineering:mould_plate"
+			"key": "kenergyengineering:mould_plate",
+			"chance": 0
 		}
 	],
 	"outputs": [

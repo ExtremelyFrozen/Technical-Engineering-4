@@ -2,7 +2,6 @@ package com.modularmc.ten.integration.emi;
 
 import com.modularmc.ten.TEN;
 import com.modularmc.ten.api.recipe.FormsCombinedRecipe;
-import com.modularmc.ten.client.gui.CmScreenMachine;
 import com.modularmc.ten.common.data.TENBlocks;
 import com.modularmc.ten.common.data.TENRecipeTypes;
 import com.modularmc.ten.integration.xei.TENRecipeWidget;
@@ -13,6 +12,8 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.neoforged.neoforge.registries.DeferredHolder;
 
+import com.lowdragmc.lowdraglib2.gui.holder.ModularUIContainerScreen;
+import com.lowdragmc.lowdraglib2.integration.xei.emi.ModularUIEMIHandlers;
 import dev.emi.emi.api.EmiEntrypoint;
 import dev.emi.emi.api.EmiPlugin;
 import dev.emi.emi.api.EmiRegistry;
@@ -20,6 +21,7 @@ import dev.emi.emi.api.recipe.EmiRecipeCategory;
 import dev.emi.emi.api.stack.EmiStack;
 import dev.emi.emi.api.widget.Bounds;
 
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 @EmiEntrypoint
@@ -59,14 +61,14 @@ public class TENEmiPlugin implements EmiPlugin {
 
     @Override
     public void register(EmiRegistry registry) {
-        registry.addExclusionArea(CmScreenMachine.class, (screen, consumer) -> consumer.accept(new Bounds(screen.getGuiLeft() - screen.getExtras(), screen.getGuiTop(), screen.getExtras(), screen.ySize)));
+        registry.addExclusionArea(ModularUIContainerScreen.class, TENEmiPlugin::addModularExclusionArea);
 
         var allRecipeEntries = registry.getRecipeManager().getRecipes();
         var tenRecipeEntries = allRecipeEntries.stream()
                 .filter(entry -> TEN.MOD_ID.equals(entry.id().getNamespace()))
                 .toList();
 
-        TEN.LOGGER.info(
+        TEN.LOGGER.debug(
                 "[EMI] RecipeManager currently has {} total recipes, {} from {}",
                 allRecipeEntries.size(),
                 tenRecipeEntries.size(),
@@ -75,14 +77,14 @@ public class TENEmiPlugin implements EmiPlugin {
             int pathMatches = (int) tenRecipeEntries.stream()
                     .filter(entry -> entry.id().getPath().contains("/" + def.id().getPath() + "/"))
                     .count();
-            TEN.LOGGER.info(
+            TEN.LOGGER.debug(
                     "[EMI] Recipe path scan for {} matched {} entries under namespace {}",
                     def.id(),
                     pathMatches,
                     TEN.MOD_ID);
         }
 
-        TEN.LOGGER.info("[EMI] Registering TEN EMI plugin with {} categories", CATEGORIES.size());
+        TEN.LOGGER.debug("[EMI] Registering TEN EMI plugin with {} categories", CATEGORIES.size());
         for (var def : CATEGORIES) {
             var iconStack = def.iconStack().get();
             var icon = icon(iconStack);
@@ -90,7 +92,7 @@ public class TENEmiPlugin implements EmiPlugin {
             var recipeType = def.recipeType().get();
             var recipes = registry.getRecipeManager().getAllRecipesFor(recipeType);
 
-            TEN.LOGGER.info(
+            TEN.LOGGER.debug(
                     "[EMI] Category {} -> recipeType={}, iconEmpty={}, iconItem={}, recipeCount={}",
                     def.id(),
                     recipeType,
@@ -100,13 +102,13 @@ public class TENEmiPlugin implements EmiPlugin {
 
             registry.addCategory(category);
             registry.addWorkstation(category, icon);
-            TEN.LOGGER.info("[EMI] Category {} registered with workstation {}", def.id(), iconStack);
+            TEN.LOGGER.debug("[EMI] Category {} registered with workstation {}", def.id(), iconStack);
 
             int index = 0;
             for (var entry : recipes) {
                 var recipe = entry.value();
                 if (index < RECIPE_LOG_SAMPLE_LIMIT) {
-                    TEN.LOGGER.info(
+                    TEN.LOGGER.debug(
                             "[EMI]   Recipe {} -> id={}, inputs(items={}, fluids={}), outputs(items={}, fluids={}), time={}",
                             def.id(),
                             entry.id(),
@@ -119,7 +121,11 @@ public class TENEmiPlugin implements EmiPlugin {
                 registry.addRecipe(new TENEmiRecipe(def.id(), category, recipe));
                 index++;
             }
-            TEN.LOGGER.info("[EMI] Category {} finished registering {} recipes", def.id(), index);
+            TEN.LOGGER.debug("[EMI] Category {} finished registering {} recipes", def.id(), index);
         }
+    }
+
+    private static void addModularExclusionArea(ModularUIContainerScreen screen, Consumer<Bounds> consumer) {
+        ModularUIEMIHandlers.EXCLUSION_AREA.addExclusionArea(screen, consumer);
     }
 }

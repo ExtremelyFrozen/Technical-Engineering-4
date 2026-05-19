@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:smelting",
+  "cookingtime": 200,
+  "experience": 0.0,
+  "ingredient": {
+    "item": "kenergyengineering:iron_dust"
+  },
+  "result": {
+    "id": "minecraft:iron_ingot"
+  }
+}

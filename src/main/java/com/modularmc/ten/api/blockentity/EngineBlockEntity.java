@@ -2,12 +2,16 @@ package com.modularmc.ten.api.blockentity;
 
 import com.modularmc.ten.api.option.FaceOption;
 import com.modularmc.ten.api.option.MachineType;
+import com.modularmc.ten.common.gui.TENMachineBlockUIFactory;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+
+import com.lowdragmc.lowdraglib2.gui.factory.BlockUIMenuType;
+import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
 
 public abstract class EngineBlockEntity extends CmMachineBlockEntity {
 
@@ -41,26 +45,36 @@ public abstract class EngineBlockEntity extends CmMachineBlockEntity {
     }
 
     @Override
+    public ModularUI createUI(BlockUIMenuType.BlockUIHolder holder) {
+        return buildMachineUI(holder, TENMachineBlockUIFactory.backgroundFor(machineType()), root -> {
+            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 0, 43, 36));
+        }, root -> {
+            root.addChild(TENMachineBlockUIFactory.energyGauge(this, 117, 22, 14, 46, 0, 0, true));
+            root.addChild(TENMachineBlockUIFactory.fuelGauge(this, 81, 39, 13, 13, 14, 26, false));
+        });
+    }
+
+    @Override
     public void tick() {
         doBaseData();
 
         if (!signalAllowRun() || !energyAllowRun()) return;
 
-        ItemStack fuel = ItemStack.EMPTY;
+        ItemStack fuelStack = ItemStack.EMPTY;
         if (itemHandler != null && itemHandler.getSlots() > 0) {
-            fuel = itemHandler.getStackInSlot(0);
+            fuelStack = itemHandler.getStackInSlot(0);
         }
 
-        if (data.get(FUEL) > 0) {
+        if (fuel > 0) {
             energyStorage.receiveEnergy(getActualEfficiency(), false);
-            data.translate(FUEL, -efficientIn, 0);
+            fuel = Math.max(fuel - efficientIn, 0);
             setActive(true);
         } else {
-            int fuelVal = matchFuel(fuel, true);
+            int fuelVal = matchFuel(fuelStack, true);
             if (fuelVal > 0) {
-                matchFuel(fuel, false);
-                data.set(FUEL, fuelVal);
-                data.set(MAX_FUEL, fuelVal);
+                matchFuel(fuelStack, false);
+                fuel = fuelVal;
+                maxFuel = fuelVal;
                 setActive(true);
             } else {
                 setActive(false);

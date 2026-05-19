@@ -1,6 +1,8 @@
 package com.modularmc.ten.common.block.machine;
 
 import com.modularmc.ten.api.blockentity.CmMachineBlockEntity;
+import com.modularmc.ten.common.blockentity.CableBlockEntity;
+import com.modularmc.ten.common.blockentity.PipeBlockEntity;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -21,6 +23,7 @@ import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.level.material.MapColor;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import net.neoforged.neoforge.capabilities.Capabilities;
 
 import java.util.Map;
 
@@ -83,8 +86,22 @@ public class CableBased extends HorizontalMachineBlock implements SimpleWaterlog
 
         if (be == null || neighborBe == null) return 0;
 
+        boolean isPipe = be instanceof PipeBlockEntity;
+        boolean isCable = be instanceof CableBlockEntity;
+        if (isPipe && neighborBe instanceof PipeBlockEntity) {
+            return 1;
+        }
+        if (isCable && neighborBe instanceof CableBlockEntity) {
+            return 1;
+        }
+        if (isPipe && level.getCapability(Capabilities.ItemHandler.BLOCK, neighbor, dir.getOpposite()) != null) {
+            return 2;
+        }
+        if (isCable && level.getCapability(Capabilities.EnergyStorage.BLOCK, neighbor, dir.getOpposite()) != null) {
+            return 2;
+        }
         if (neighborBe instanceof CmMachineBlockEntity) {
-            return level.getBlockState(neighbor).is(this) ? 1 : 2;
+            return 2;
         }
         return 0;
     }

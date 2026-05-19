@@ -31,17 +31,17 @@ public abstract class EffectMachineBlockEntity extends CmMachineBlockEntity {
                 setActive(false);
                 return;
             }
-            data.translate(PROGRESS, energyConsumed);
+            progress += energyConsumed;
             energyStorage.extractEnergy(energyConsumed, false);
-            data.set(MAX_PROGRESS, (int) (effectInterval() * 20 * Math.max(initialEfficientIn, 1)));
+            maxProgress = (int) (effectInterval() * 20 * Math.max(initialEfficientIn, 1));
 
-            if (data.get(PROGRESS) > data.get(MAX_PROGRESS)) {
-                data.set(PROGRESS, 0);
+            if (progress > maxProgress) {
+                progress = 0;
                 applyEffect();
             }
         } else {
             setActive(false);
-            data.set(PROGRESS, 0);
+            progress = 0;
         }
     }
 

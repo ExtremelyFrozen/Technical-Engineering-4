@@ -35,7 +35,7 @@ public abstract class ProcessingMachineBlockEntity extends CmMachineBlockEntity 
 
             // Max progress = time needed * base energy rate
             // This represents the total "energy units" needed to complete
-            data.set(MAX_PROGRESS, baseTickTime() * Math.max(initialEfficientIn, 1));
+            maxProgress = baseTickTime() * Math.max(initialEfficientIn, 1);
 
             // Progress increases by actual efficiency (energy consumed this tick)
             int energyConsumed = Math.min(getActualEfficiency(), energyStorage.getEnergyStored());
@@ -43,7 +43,7 @@ public abstract class ProcessingMachineBlockEntity extends CmMachineBlockEntity 
                 setActive(false);
                 return;
             }
-            data.translate(PROGRESS, energyConsumed);
+            progress += energyConsumed;
 
             if (cooking()) {
                 setActive(false);
@@ -53,13 +53,13 @@ public abstract class ProcessingMachineBlockEntity extends CmMachineBlockEntity 
             // Consume energy
             energyStorage.extractEnergy(energyConsumed, false);
 
-            if (data.get(PROGRESS) > data.get(MAX_PROGRESS)) {
+            if (progress > maxProgress) {
                 onCookFinish();
-                data.set(PROGRESS, 0);
+                progress = 0;
             }
         } else {
             setActive(false);
-            data.set(PROGRESS, 0);
+            progress = 0;
         }
     }
 

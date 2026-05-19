@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:item/generated",
   "textures": {
-    "layer0": "kenergyengineering:item/hydraulic_widget"
+    "layer0": "kenergyengineering:item/crafting/hydraulic_widget"
   }
 }
