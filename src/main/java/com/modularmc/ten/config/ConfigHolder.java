@@ -28,6 +28,10 @@ public class ConfigHolder {
     public MachineConfigs machine = new MachineConfigs();
 
     @Configurable
+    @Configurable.Comment("Energy Unit configuration options")
+    public EnergyUnitConfigs energyUnit = new EnergyUnitConfigs();
+
+    @Configurable
     @Configurable.Comment("Client-side configuration options")
     public ClientConfigs client = new ClientConfigs();
 
@@ -79,6 +83,33 @@ public class ConfigHolder {
 
         @Configurable
         public boolean enableFarmManager = true;
+    }
+
+    public static class EnergyUnitConfigs {
+
+        @Configurable
+        @Configurable.Comment("Maximum FE storage capacity of the Energy Unit")
+        @Configurable.Range(min = 1000, max = 100000000)
+        public int maxEnergy = 400_000;
+
+        @Configurable
+        @Configurable.Comment("FE per tick distributed to charged items when charging mode is on")
+        @Configurable.Range(min = 1, max = 100000)
+        public int chargeRate = 2_000;
+
+        @Configurable
+        @Configurable.Comment("FE per tick the Energy Unit can receive from external sources")
+        @Configurable.Range(min = 1, max = 100000)
+        public int inputRate = 2_000;
+
+        @Configurable
+        @Configurable.Comment("FE per tick the Energy Unit can output to external sources")
+        @Configurable.Range(min = 1, max = 100000)
+        public int outputRate = 2_000;
+
+        @Configurable
+        @Configurable.Comment("Whether charging mode is enabled by default when a new Energy Unit is crafted")
+        public boolean chargingDefault = false;
     }
 
     public static class ClientConfigs {

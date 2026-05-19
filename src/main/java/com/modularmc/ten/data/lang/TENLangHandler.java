@@ -40,7 +40,7 @@ public final class TENLangHandler {
         add(provider, "cable_star.0", "Transfer: Infinite FE", "传输能量: 无限 FE");
         // Removed: spanner — now auto-derived from item registration
         add(provider, "not_consumed", "Not consumed", "不消耗");
-        add(provider, "energy_capacity", "FE Capacity", "FE电容");
+        // Removed: energy_capacity — now auto-derived from item registration
         add(provider, "shift", "Press [SHIFT] to see more", "按住 [SHIFT] 查看更多信息");
         add(provider, "info.too_much_upgrades", "This machine has too many upgrades!", "这台机器的升级组件太多了！");
         add(provider, "info.not_support_upgrade", "This machine does not support this upgrade!", "这台机器不支持这个升级！");
@@ -48,6 +48,10 @@ public final class TENLangHandler {
         add(provider, "key.c", "Change Holding Item Mode", "Change Holding Item Mode");
         add(provider, "locked_slot", "This slot has not been unlocked yet.", "未解锁槽位");
         add(provider, "jei_addition_chance", "Additional Chance: ", "副产概率: ");
+        add(provider, "energy_capacity.charging_on", "Charging enabled", "全身充能已开启");
+        add(provider, "energy_capacity.charging_off", "Charging disabled", "全身充能已关闭");
+        add(provider, "key.categories." + TEN.MOD_ID, "Kenergy Engineering", "Kenergy Engineering");
+        add(provider, "key." + TEN.MOD_ID + ".toggle_charge", "Toggle Energy Unit Charging", "切换能量单元充能");
     }
 
     private static void addChannel(RegistrateLangProvider provider) {

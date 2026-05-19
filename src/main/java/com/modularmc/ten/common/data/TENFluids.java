@@ -21,6 +21,12 @@ public class TENFluids {
     public static final java.util.LinkedHashMap<String, String> ZH_NAMES = new java.util.LinkedHashMap<>();
     public static final java.util.LinkedHashMap<String, String> ZH_FLUID_KEYS = new java.util.LinkedHashMap<>();
 
+    public static final FluidEntry<BaseFlowingFluid.Flowing> LIQUID_ROYAL_JELLY = fluid(
+            "liquid_royal_jelly", "Liquid Royal Jelly", "Liquid Royal Jelly Bucket", "蜂王浆", "蜂王浆桶", 1200, 4, 300, 2000, 2, 100.0f, 4);
+    public static final FluidEntry<BaseFlowingFluid.Flowing> LIQUID_SPICY_JELLY = fluid(
+            "liquid_spicy_jelly", "Liquid Spicy Jelly", "Liquid Spicy Jelly Bucket", "香辣蜂王浆", "香辣蜂王浆桶", 1200, 4, 300, 2000, 2, 100.0f, 4);
+    public static final FluidEntry<BaseFlowingFluid.Flowing> LIQUID_HONEY = fluid(
+            "liquid_honey", "Liquid Honey", "Liquid Honey Bucket", "蜂蜜", "蜂蜜桶", 1400, 2, 350, 6000, 1, 100.0f, 2);
     public static final FluidEntry<BaseFlowingFluid.Flowing> LIQUID_XP = fluid(
             "liquid_xp", "Liquid XP", "Liquid XP Bucket", "液态经验", "液态经验桶", 100, 10, 100, 25000, 1, 1000.0f, 6);
     public static final FluidEntry<BaseFlowingFluid.Flowing> LIQUID_BIZARRERIE = fluid(

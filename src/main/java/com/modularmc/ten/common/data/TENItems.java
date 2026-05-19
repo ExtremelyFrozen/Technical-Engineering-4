@@ -80,6 +80,8 @@ public class TENItems {
             .lang("Channel Connector")
             .model((ctx, prov) -> prov.generated(ctx::getEntry, prov.modLoc("item/channel_connector")))
             .register();
+    public static final ItemEntry<Item> ROYAL_JELLY = texturedItem("royal_jelly", "Royal Jelly", "蜂王浆", "item/royal_jelly");
+    public static final ItemEntry<Item> SPICY_JELLY = texturedItem("spicy_jelly", "Spicy Jelly", "香辣蜂王浆", "item/spicy_jelly");
 
     // === Moulds ===
     static {
@@ -104,6 +106,16 @@ public class TENItems {
     public static final ItemEntry<Item> MOULD_COIN = mould("mould_coin", "Coin Mould", "模具-币", "item/mold/coin");
     public static final ItemEntry<Item> MOULD_DENSE_PLATE = mould("mould_dense_plate", "Dense Plate Mould", "模具-致密板", "item/mold/dense_plate");
 
+    // === Tools ===
+        ZH_NAMES.put("spanner", "扳手");
+    public static final ItemEntry<SpannerItem> SPANNER = REGISTRATE.item("spanner", SpannerItem::new)
+            .lang("Spanner")
+            .model((ctx, prov) -> prov.generated(ctx::getEntry, prov.modLoc("item/spanner")))
+            .register();
+    public static final ItemEntry<EnergyUnitItem> ENERGY_CAPACITY = REGISTRATE.item("energy_capacity", EnergyUnitItem::new)
+            .lang("Energy Unit")
+            .model((ctx, prov) -> prov.generated(ctx::getEntry, prov.modLoc("item/energy_capacity")))
+            .register();
     // Upgrades
     public static final ItemEntry<? extends UpgradeItem> AUGMENTED_LEVELUP = upgrade("augmented_levelup", "Upgrade: Augmented Kit", "升级：增强组件", p -> new LevelupAug());
     public static final ItemEntry<? extends UpgradeItem> POWERED_LEVELUP = upgrade("powered_levelup", "Upgrade: Powered Kit", "升级：充能组件", p -> new LevelupPower());

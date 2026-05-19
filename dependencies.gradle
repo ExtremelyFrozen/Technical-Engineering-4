@@ -25,6 +25,9 @@ dependencies {
     compileOnly(forge.iris)
     compileOnly(forge.modernfix)
 
+    // Curios API (optional - for curio slot support)
+    compileOnly("maven.modrinth:curios:9.5.0+1.21.1")
+
     // Standard runtime mods //
     localRuntime(libs.testframework)
 

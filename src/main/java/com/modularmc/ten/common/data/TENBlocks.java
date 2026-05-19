@@ -76,6 +76,7 @@ public class TENBlocks {
     public static final BlockEntry<HorizontalMachineBlock> CELL = REGISTRATE
             .block("energy_cell", HorizontalMachineBlock::new)
             .lang("Energy Cell")
+                .tag(TENTags.MACHINES)
             .properties(p -> p.noOcclusion())
             .blockstate((ctx, prov) -> TENModels.energyCellBlockstate(prov, ctx.getEntry()))
             .item().model((ctx, prov) -> prov.blockItem(ctx::getEntry)).build().register();
@@ -83,6 +84,7 @@ public class TENBlocks {
     public static final BlockEntry<HorizontalMachineBlock> CREATIVE_CELL = REGISTRATE
             .block("creative_energy_cell", HorizontalMachineBlock::new)
             .lang("Creative Energy Cell")
+                .tag(TENTags.MACHINES)
             .properties(p -> p.noOcclusion())
             .blockstate((ctx, prov) -> {
                 var empty = prov.models().getExistingFile(TEN.id("block/creative_energy_cell_empty"));
@@ -111,16 +113,19 @@ public class TENBlocks {
     public static final BlockEntry<DirectionalMachineBlock> CHANNEL_ENERGY = REGISTRATE
             .block("channel_energy", DirectionalMachineBlock::new)
             .lang("Energy Channel")
+                .tag(TENTags.MACHINES)
             .blockstate((ctx, prov) -> TENModels.channelBlockstate(prov, ctx.getEntry(), "channel_energy"))
             .item().model((ctx, prov) -> prov.blockItem(ctx::getEntry)).build().register();
     public static final BlockEntry<DirectionalMachineBlock> CHANNEL_ITEM = REGISTRATE
             .block("channel_item", DirectionalMachineBlock::new)
             .lang("Item Channel")
+                .tag(TENTags.MACHINES)
             .blockstate((ctx, prov) -> TENModels.channelBlockstate(prov, ctx.getEntry(), "channel_item"))
             .item().model((ctx, prov) -> prov.blockItem(ctx::getEntry)).build().register();
     public static final BlockEntry<DirectionalMachineBlock> CHANNEL_FLUID = REGISTRATE
             .block("channel_fluid", DirectionalMachineBlock::new)
             .lang("Fluid Channel")
+                .tag(TENTags.MACHINES)
             .blockstate((ctx, prov) -> TENModels.channelBlockstate(prov, ctx.getEntry(), "channel_fluid"))
             .item().model((ctx, prov) -> prov.blockItem(ctx::getEntry)).build().register();
 
@@ -172,6 +177,7 @@ public class TENBlocks {
         ZH_NAMES.put(n, cn);
         return REGISTRATE.block(n, HorizontalMachineBlock::new)
                 .lang(englishName)
+                .tag(TENTags.MACHINES)
                 .blockstate((ctx, prov) -> {
                     var normal = TENModels.machine(prov, n);
                     var active = TENModels.machineActive(prov, n);
@@ -201,6 +207,7 @@ public class TENBlocks {
         ZH_NAMES.put(n, cn);
         return REGISTRATE.block(n, HorizontalMachineBlock::new)
                 .lang(englishName)
+                .tag(TENTags.MACHINES)
                 .blockstate((ctx, prov) -> {
                     var normal = TENModels.engine(prov, n);
                     var active = TENModels.engineActive(prov, n);
@@ -231,6 +238,7 @@ public class TENBlocks {
         return REGISTRATE.block(n, CableBased::new)
                 .lang(englishName)
                 .blockstate((ctx, prov) -> TENModels.cableMultipart(prov, ctx.getEntry(), n))
+                .tag(TENTags.MACHINES)
                 .item().model((ctx, prov) -> prov.blockItem(ctx::getEntry)).build().register();
     }
 

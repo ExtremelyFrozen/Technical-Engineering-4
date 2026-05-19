@@ -2,12 +2,15 @@ package com.modularmc.ten;
 
 import com.modularmc.ten.common.CommonProxy;
 import com.modularmc.ten.config.ConfigHolder;
+import com.modularmc.ten.network.ToggleEnergyUnitPayload;
 
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModList;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.javafmlmod.FMLModContainer;
+import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
+import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -28,6 +31,13 @@ public class TEN {
 
         ConfigHolder.init();
         CommonProxy.init(modBus);
+
+        modBus.addListener(TEN::registerPayloads);
+    }
+
+    private static void registerPayloads(RegisterPayloadHandlersEvent event) {
+        PayloadRegistrar registrar = event.registrar(TEN.MOD_ID);
+        ToggleEnergyUnitPayload.register(registrar);
     }
 
     public static ResourceLocation id(String path) {
