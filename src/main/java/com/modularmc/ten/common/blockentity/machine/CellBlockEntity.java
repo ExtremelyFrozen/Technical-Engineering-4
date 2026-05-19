@@ -59,6 +59,11 @@ public class CellBlockEntity extends CmMachineBlockEntity {
     @Override
     public void tick() {
         doBaseData();
+
+        // Sync active state based on energy level for block model texture switching
+        // Always runs, even when io is disabled, so the block model shows correct texture
+        setActive(energyStorage != null && energyStorage.getEnergyStored() > 0);
+
         if (!signalAllowRun() || energyStorage == null || itemHandler == null) {
             return;
         }
@@ -85,9 +90,6 @@ public class CellBlockEntity extends CmMachineBlockEntity {
                 }
             }
         }
-
-        // Sync active state based on energy level for block model texture switching
-        setActive(energyStorage != null && energyStorage.getEnergyStored() > 0);
     }
 
     @Override
