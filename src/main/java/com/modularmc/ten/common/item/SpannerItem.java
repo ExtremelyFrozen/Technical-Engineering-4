@@ -2,6 +2,7 @@ package com.modularmc.ten.common.item;
 
 import com.modularmc.ten.common.data.TENTags;
 
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.item.ItemEntity;
@@ -53,8 +54,7 @@ public class SpannerItem extends TENBaseItem {
         if (prop == null) return;
 
         Direction current = state.getValue(prop);
-        boolean isAllDir = prop.getPossibleValues().contains(Direction.UP)
-                && prop.getPossibleValues().contains(Direction.DOWN);
+        boolean isAllDir = prop.getPossibleValues().contains(Direction.UP) && prop.getPossibleValues().contains(Direction.DOWN);
         Direction next = isAllDir ? rotate6(current) : current.getClockWise();
 
         level.setBlock(pos, state.setValue(prop, next), 3);

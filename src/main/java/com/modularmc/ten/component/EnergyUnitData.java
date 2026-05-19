@@ -20,10 +20,21 @@ public class EnergyUnitData {
         this.charging = charging;
     }
 
-    public int getEnergy() { return energy; }
-    public void setEnergy(int energy) { this.energy = Math.max(0, Math.min(energy, EnergyUnitItem.maxEnergy())); }
-    public boolean isCharging() { return charging; }
-    public void setCharging(boolean charging) { this.charging = charging; }
+    public int getEnergy() {
+        return energy;
+    }
+
+    public void setEnergy(int energy) {
+        this.energy = Math.max(0, Math.min(energy, EnergyUnitItem.maxEnergy()));
+    }
+
+    public boolean isCharging() {
+        return charging;
+    }
+
+    public void setCharging(boolean charging) {
+        this.charging = charging;
+    }
 
     public void save(ItemStack stack) {
         CompoundTag tag = new CompoundTag();
@@ -40,7 +51,6 @@ public class EnergyUnitData {
         CompoundTag tag = custom.copyTag();
         return new EnergyUnitData(
                 tag.getInt(TAG_ENERGY),
-                tag.getBoolean(TAG_CHARGING)
-        );
+                tag.getBoolean(TAG_CHARGING));
     }
 }

@@ -1,6 +1,5 @@
 package com.modularmc.ten.common.item;
 
-import com.modularmc.ten.TEN;
 import com.modularmc.ten.component.EnergyUnitData;
 import com.modularmc.ten.config.ConfigHolder;
 import com.modularmc.ten.utils.ComponentHelper;
@@ -51,9 +50,7 @@ public class EnergyUnitItem extends TENBaseItem {
             EnergyUnitData data = EnergyUnitData.of(stack);
             data.setCharging(!data.isCharging());
             data.save(stack);
-            String status = data.isCharging()
-                    ? ComponentHelper.getKey("energy_capacity.charging_on")
-                    : ComponentHelper.getKey("energy_capacity.charging_off");
+            String status = data.isCharging() ? ComponentHelper.getKey("energy_capacity.charging_on") : ComponentHelper.getKey("energy_capacity.charging_off");
             player.sendSystemMessage(ComponentHelper.translated(ChatFormatting.GREEN, status));
         }
         return InteractionResultHolder.sidedSuccess(stack, level.isClientSide());

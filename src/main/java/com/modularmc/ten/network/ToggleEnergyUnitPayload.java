@@ -1,8 +1,8 @@
 package com.modularmc.ten.network;
 
 import com.modularmc.ten.TEN;
-import com.modularmc.ten.component.EnergyUnitData;
 import com.modularmc.ten.common.item.EnergyUnitItem;
+import com.modularmc.ten.component.EnergyUnitData;
 
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
@@ -15,11 +15,9 @@ import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 
 public record ToggleEnergyUnitPayload() implements CustomPacketPayload {
 
-    public static final CustomPacketPayload.Type<ToggleEnergyUnitPayload> TYPE =
-            new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath(TEN.MOD_ID, "toggle_energy_unit"));
+    public static final CustomPacketPayload.Type<ToggleEnergyUnitPayload> TYPE = new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath(TEN.MOD_ID, "toggle_energy_unit"));
 
-    public static final StreamCodec<RegistryFriendlyByteBuf, ToggleEnergyUnitPayload> CODEC =
-            StreamCodec.unit(new ToggleEnergyUnitPayload());
+    public static final StreamCodec<RegistryFriendlyByteBuf, ToggleEnergyUnitPayload> CODEC = StreamCodec.unit(new ToggleEnergyUnitPayload());
 
     @Override
     public Type<ToggleEnergyUnitPayload> type() {

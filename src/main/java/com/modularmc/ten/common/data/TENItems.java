@@ -1,6 +1,8 @@
 package com.modularmc.ten.common.data;
 
 import com.modularmc.ten.common.item.ChannelConnectorItem;
+import com.modularmc.ten.common.item.EnergyUnitItem;
+import com.modularmc.ten.common.item.SpannerItem;
 import com.modularmc.ten.common.item.upgrades.*;
 
 import net.minecraft.world.item.Item;
@@ -107,15 +109,17 @@ public class TENItems {
     public static final ItemEntry<Item> MOULD_DENSE_PLATE = mould("mould_dense_plate", "Dense Plate Mould", "模具-致密板", "item/mold/dense_plate");
 
     // === Tools ===
-        ZH_NAMES.put("spanner", "扳手");
-    public static final ItemEntry<SpannerItem> SPANNER = REGISTRATE.item("spanner", SpannerItem::new)
-            .lang("Spanner")
-            .model((ctx, prov) -> prov.generated(ctx::getEntry, prov.modLoc("item/spanner")))
-            .register();
-    public static final ItemEntry<EnergyUnitItem> ENERGY_CAPACITY = REGISTRATE.item("energy_capacity", EnergyUnitItem::new)
-            .lang("Energy Unit")
-            .model((ctx, prov) -> prov.generated(ctx::getEntry, prov.modLoc("item/energy_capacity")))
-            .register();
+    private static <T extends Item> ItemEntry<T> tool(String name, String englishName, String cn,
+                                                      NonNullFunction<Item.Properties, T> factory, String texturePath) {
+        ZH_NAMES.put(name, cn);
+        return REGISTRATE.item(name, factory)
+                .lang(englishName)
+                .model((ctx, prov) -> prov.generated(ctx::getEntry, prov.modLoc(texturePath)))
+                .register();
+    }
+
+    public static final ItemEntry<SpannerItem> SPANNER = tool("spanner", "Spanner", "扳手", SpannerItem::new, "item/spanner");
+    public static final ItemEntry<EnergyUnitItem> ENERGY_CAPACITY = tool("energy_capacity", "Energy Unit", "能量单元", EnergyUnitItem::new, "item/energy_capacity");
     // Upgrades
     public static final ItemEntry<? extends UpgradeItem> AUGMENTED_LEVELUP = upgrade("augmented_levelup", "Upgrade: Augmented Kit", "升级：增强组件", p -> new LevelupAug());
     public static final ItemEntry<? extends UpgradeItem> POWERED_LEVELUP = upgrade("powered_levelup", "Upgrade: Powered Kit", "升级：充能组件", p -> new LevelupPower());

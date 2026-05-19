@@ -80,22 +80,37 @@ public class CommonProxy {
                     com.modularmc.ten.common.item.EnergyUnitItem.maxEnergy(),
                     com.modularmc.ten.common.item.EnergyUnitItem.inputRate(),
                     com.modularmc.ten.common.item.EnergyUnitItem.outputRate()) {
+
                 @Override
-                public int getEnergyStored() { return data.getEnergy(); }
+                public int getEnergyStored() {
+                    return data.getEnergy();
+                }
+
                 @Override
-                public int getMaxEnergyStored() { return com.modularmc.ten.common.item.EnergyUnitItem.maxEnergy(); }
+                public int getMaxEnergyStored() {
+                    return com.modularmc.ten.common.item.EnergyUnitItem.maxEnergy();
+                }
+
                 @Override
                 public int receiveEnergy(int maxReceive, boolean simulate) {
                     int received = super.receiveEnergy(maxReceive, simulate);
-                    if (!simulate && received > 0) { data.setEnergy(getEnergyStored()); data.save(stack); }
+                    if (!simulate && received > 0) {
+                        data.setEnergy(getEnergyStored());
+                        data.save(stack);
+                    }
                     return received;
                 }
+
                 @Override
                 public int extractEnergy(int maxExtract, boolean simulate) {
                     int extracted = super.extractEnergy(maxExtract, simulate);
-                    if (!simulate && extracted > 0) { data.setEnergy(getEnergyStored()); data.save(stack); }
+                    if (!simulate && extracted > 0) {
+                        data.setEnergy(getEnergyStored());
+                        data.save(stack);
+                    }
                     return extracted;
                 }
             };
         }, com.modularmc.ten.common.data.TENItems.ENERGY_CAPACITY.get());
     }
+}

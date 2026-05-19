@@ -2,7 +2,6 @@ package com.modularmc.ten.common.item;
 
 import com.modularmc.ten.TEN;
 import com.modularmc.ten.component.EnergyUnitData;
-import com.modularmc.ten.config.ConfigHolder;
 
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
@@ -101,15 +100,6 @@ public class EnergyUnitHandler {
 
     private static void collectCurios(Player player, List<ItemStack> targets) {
         if (!net.neoforged.fml.ModList.get().isLoaded("curios")) return;
-        top.theillusivec4.curios.api.CuriosApi.getCuriosInventory(player).ifPresent(handler -> {
-            handler.getCurios().values().forEach(slotHandler -> {
-                for (int i = 0; i < slotHandler.getSlots(); i++) {
-                    ItemStack curioStack = slotHandler.getStacks().getStackInSlot(i);
-                    if (!curioStack.isEmpty() && canCharge(curioStack)) {
-                        targets.add(curioStack);
-                    }
-                }
-            });
-        });
+        com.modularmc.ten.common.item.CuriosIntegration.collectCurios(player, targets);
     }
 }

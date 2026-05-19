@@ -110,7 +110,7 @@ public class DataGenerators {
                 add("tag.kenergyengineering.valuable_ingots", "贵重金属锭");
 
                 // 2b5. Miscellaneous items not covered by standard registration paths
-                add("item.kenergyengineering.spanner", "扳手");
+
                 add("kenergyengineering.energy_core", "能量核心");
                 add("item.kenergyengineering.liquid_bizarrerie_bucket", "奇异物质桶");
                 add("kenergyengineering.liquid_honey", "蜂蜜");
@@ -121,8 +121,7 @@ public class DataGenerators {
                 add("kenergyengineering.liquid_spicy_jelly_bucket", "香辣蜂王浆桶");
                 add("item.kenergyengineering.liquid_xp_bucket", "液态经验桶");
                 add("kenergyengineering.machine_frame", "机械框架");
-                add("kenergyengineering.royal_jelly", "蜂王浆");
-                add("kenergyengineering.spicy_jelly", "香辣蜂王浆");
+
                 add("kenergyengineering.world_bag", "世界袋");
                 add("kenergyengineering.liquid_bizarrerie", "奇异物质");
                 add("kenergyengineering.liquid_xp", "液态经验");
