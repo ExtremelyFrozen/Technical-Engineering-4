@@ -49,11 +49,11 @@ public class ChannelItemBlockEntity extends AbstractChannelBlockEntity {
     @Override
     public ModularUI createUI(BlockUIMenuType.BlockUIHolder holder) {
         return buildChannelUI(holder, TEN.id("textures/gui/channel_item.png"), root -> {
-            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 0, 61, 28));
-            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 1, 79, 28));
-            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 2, 61, 46));
-            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 3, 79, 46));
-            root.addChild(label(44, 82, "Wireless item relay"));
+            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 0, 7, 26));
+            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 1, 25, 26));
+            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 2, 7, 44));
+            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 3, 25, 44));
+        }, root -> {
         });
     }
 

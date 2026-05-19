@@ -183,6 +183,10 @@ public class PipeBlockEntity extends CmBlockEntity {
         return filterInventory;
     }
 
+    public boolean hasUi() {
+        return isFiltered();
+    }
+
     @Override
     protected void tick() {
         if (level == null || level.isClientSide() || getAliveTime() % 5 != 0) {
@@ -232,8 +236,6 @@ public class PipeBlockEntity extends CmBlockEntity {
 
     public ModularUI createUI(BlockUIMenuType.BlockUIHolder holder) {
         UIElement root = TENMachineBlockUIFactory.createRoot(TEN.id("textures/gui/pipe.png"));
-        root.addChild(label(8, 8, isWhitelist() ? "Whitelist Pipe" : isBlacklist() ? "Blacklist Pipe" : "Item Pipe"));
-        root.addChild(label(8, 20, isWhitelist() ? "Allowed items" : isBlacklist() ? "Blocked items" : "No filter"));
         if (isFiltered()) {
             for (int i = 0; i < filterInventory.getSlots(); i++) {
                 int x = 7 + (i % 9) * 18;
@@ -241,6 +243,7 @@ public class PipeBlockEntity extends CmBlockEntity {
                 root.addChild(filterSlot(i, x, y));
             }
         }
+        TENMachineBlockUIFactory.addPlayerInventory(root);
         return TENMachineBlockUIFactory.buildModularUI(root, holder.player);
     }
 
@@ -272,17 +275,6 @@ public class PipeBlockEntity extends CmBlockEntity {
         slot.style(style -> style.backgroundTexture(IGuiTexture.EMPTY));
         slot.slotStyle(style -> style.slotOverlay(IGuiTexture.EMPTY).showSlotOverlayOnlyEmpty(false));
         return slot;
-    }
-
-    private Label label(int x, int y, String text) {
-        Label label = new Label();
-        label.setText(Component.literal(text));
-        label.layout(layout -> {
-            layout.positionType(TaffyPosition.ABSOLUTE);
-            layout.left(x);
-            layout.top(y);
-        });
-        return label;
     }
 
     private boolean isFiltered() {

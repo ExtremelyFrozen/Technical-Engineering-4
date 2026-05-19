@@ -38,8 +38,8 @@ public class ChannelEnergyBlockEntity extends AbstractChannelBlockEntity {
     @Override
     public ModularUI createUI(BlockUIMenuType.BlockUIHolder holder) {
         return buildChannelUI(holder, TEN.id("textures/gui/channel.png"), root -> {
-            root.addChild(TENMachineBlockUIFactory.energyGauge(this, 79, 17, 18, 60, 0, 0, true));
-            root.addChild(label(58, 82, "Wireless energy relay"));
+        }, root -> {
+            root.addChild(TENMachineBlockUIFactory.energyGauge(this, 9, 18, 14, 46, 0, 0, true));
         });
     }
 

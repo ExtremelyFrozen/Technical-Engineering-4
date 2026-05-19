@@ -83,6 +83,13 @@ public class BaseMachineBlock extends Block implements EntityBlock, BlockUIMenuT
 
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        BlockEntity be = level.getBlockEntity(pos);
+        if (be instanceof PipeBlockEntity pipe && !pipe.hasUi()) {
+            return InteractionResult.PASS;
+        }
+        if (be instanceof CableBlockEntity cable && !cable.hasUi()) {
+            return InteractionResult.PASS;
+        }
         if (level.isClientSide()) {
             return InteractionResult.SUCCESS;
         } else if (player instanceof ServerPlayer serverPlayer) {
@@ -100,6 +107,12 @@ public class BaseMachineBlock extends Block implements EntityBlock, BlockUIMenuT
                 return ItemInteractionResult.sidedSuccess(level.isClientSide());
             }
         }
+        if (be instanceof PipeBlockEntity pipe && !pipe.hasUi()) {
+            return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+        }
+        if (be instanceof CableBlockEntity cable && !cable.hasUi()) {
+            return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+        }
         if (level.isClientSide()) {
             return ItemInteractionResult.sidedSuccess(true);
         } else if (player instanceof ServerPlayer serverPlayer) {
@@ -114,10 +127,10 @@ public class BaseMachineBlock extends Block implements EntityBlock, BlockUIMenuT
         if (holder.player.level().getBlockEntity(holder.pos) instanceof CmMachineBlockEntity machine) {
             return machine.createUI(holder);
         }
-        if (holder.player.level().getBlockEntity(holder.pos) instanceof PipeBlockEntity pipe) {
+        if (holder.player.level().getBlockEntity(holder.pos) instanceof PipeBlockEntity pipe && pipe.hasUi()) {
             return pipe.createUI(holder);
         }
-        if (holder.player.level().getBlockEntity(holder.pos) instanceof CableBlockEntity cable) {
+        if (holder.player.level().getBlockEntity(holder.pos) instanceof CableBlockEntity cable && cable.hasUi()) {
             return cable.createUI(holder);
         }
         return TENMachineBlockUIFactory.createFallback(holder);

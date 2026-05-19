@@ -1,9 +1,17 @@
 package com.modularmc.ten.common.blockentity.channel;
 
+import com.modularmc.ten.TEN;
 import com.modularmc.ten.api.blockentity.CmMachineBlockEntity;
+import com.modularmc.ten.api.option.FaceOption;
 import com.modularmc.ten.common.gui.TENMachineBlockUIFactory;
 import com.modularmc.ten.utils.ComponentHelper;
-
+import com.lowdragmc.lowdraglib2.gui.factory.BlockUIMenuType;
+import com.lowdragmc.lowdraglib2.gui.texture.SpriteTexture;
+import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
+import com.lowdragmc.lowdraglib2.gui.ui.UIElement;
+import com.lowdragmc.lowdraglib2.gui.ui.elements.Label;
+import dev.vfyjxf.taffy.style.TaffyPosition;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
@@ -13,18 +21,14 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 
-import com.lowdragmc.lowdraglib2.gui.factory.BlockUIMenuType;
-import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
-import com.lowdragmc.lowdraglib2.gui.ui.UIElement;
-import com.lowdragmc.lowdraglib2.gui.ui.elements.Label;
-import com.lowdragmc.lowdraglib2.gui.ui.elements.TextElement;
-import dev.vfyjxf.taffy.style.TaffyPosition;
-
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
 public abstract class AbstractChannelBlockEntity extends CmMachineBlockEntity {
+    private static final ResourceLocation CHANNEL_HANDLER = TEN.id("textures/gui/channel.png");
 
     protected final List<BlockPos> outputs = new ArrayList<>();
     protected final List<BlockPos> inputs = new ArrayList<>();
@@ -38,27 +42,27 @@ public abstract class AbstractChannelBlockEntity extends CmMachineBlockEntity {
 
     @Override
     public boolean hasUpgrade() {
-        return false;
+        return true;
     }
 
     @Override
     public boolean hasSideBar() {
-        return false;
+        return true;
     }
 
     @Override
     public int initialFaceModeEnergy() {
-        return 3;
+        return FaceOption.OFF;
     }
 
     @Override
     public int initialFaceModeItem() {
-        return 3;
+        return FaceOption.OFF;
     }
 
     @Override
     public int initialFaceModeFluid() {
-        return 3;
+        return FaceOption.OFF;
     }
 
     public boolean sameChannelType(AbstractChannelBlockEntity other) {
@@ -185,17 +189,21 @@ public abstract class AbstractChannelBlockEntity extends CmMachineBlockEntity {
         tag.putInt("currentOutputIndex", currentOutputIndex);
     }
 
-    protected ModularUI buildChannelUI(BlockUIMenuType.BlockUIHolder holder, ResourceLocation background, Consumer<UIElement> body) {
-        var root = TENMachineBlockUIFactory.createRoot(background);
-        root.addChild(label(8, 8, "IN: " + inputs.size()));
-        root.addChild(label(8, 20, "OUT: " + outputs.size()));
-        root.addChild(label(8, 32, holder.blockState.getBlock().getName().getString()));
-        body.accept(root);
-        return TENMachineBlockUIFactory.buildModularUI(root, holder.player);
+    protected ModularUI buildChannelUI(BlockUIMenuType.BlockUIHolder holder,
+                                       ResourceLocation background,
+                                       Consumer<UIElement> inventoryBuilder,
+                                       Consumer<UIElement> contentBuilder) {
+        return buildMachineUI(holder, background, root -> {
+            inventoryBuilder.accept(root);
+        }, root -> {
+            addChannelEntryWidgets(root, holder);
+            contentBuilder.accept(root);
+        });
     }
 
     protected UIElement label(int x, int y, String text) {
-        TextElement label = new Label().setText(Component.literal(text));
+        Label label = new Label();
+        label.setText(Component.literal(text));
         label.layout(layout -> {
             layout.positionType(TaffyPosition.ABSOLUTE);
             layout.left(x);
@@ -205,13 +213,129 @@ public abstract class AbstractChannelBlockEntity extends CmMachineBlockEntity {
     }
 
     protected UIElement translatedLabel(int x, int y, String key, String suffix) {
-        TextElement label = new Label().setText(ComponentHelper.translated(ComponentHelper.getKey(key)).append(Component.literal(suffix)));
+        Label label = new Label();
+        label.setText(ComponentHelper.translated(ComponentHelper.getKey(key)).append(Component.literal(suffix)));
         label.layout(layout -> {
             layout.positionType(TaffyPosition.ABSOLUTE);
             layout.left(x);
             layout.top(y);
         });
         return label;
+    }
+
+    private void addChannelEntryWidgets(UIElement root, BlockUIMenuType.BlockUIHolder holder) {
+        var state = ChannelUIState.of(holder);
+        var entryBackgrounds = new UIElement[5];
+        var entryLabels = new Label[5];
+
+        for (int i = 0; i < 5; i++) {
+            int y = 7 + i * 14;
+            var background = absolute(new UIElement(), 53, y, 48, 13)
+                    .style(style -> style.backgroundTexture(SpriteTexture.of(CHANNEL_HANDLER).setSprite(0, 166, 48, 13)));
+            var label = new Label();
+            label.layout(layout -> {
+                layout.positionType(TaffyPosition.ABSOLUTE);
+                layout.left(59);
+                layout.top(y + 2);
+            });
+            label.textStyle(style -> style.textShadow(false).fontSize(8));
+            entryBackgrounds[i] = background;
+            entryLabels[i] = label;
+            root.addChild(background);
+            root.addChild(label);
+        }
+
+        root.addChild(absolute(new UIElement(), 107, 5, 12, 12)
+                .style(style -> style.backgroundTexture(SpriteTexture.of(CHANNEL_HANDLER).setSprite(84, 166, 12, 12)))
+                .addEventListener(com.lowdragmc.lowdraglib2.gui.ui.event.UIEvents.MOUSE_DOWN, event -> {
+                    if (event.button == 0) {
+                        state.scrollUp();
+                    }
+                }));
+        root.addChild(absolute(new UIElement(), 107, 64, 12, 12)
+                .style(style -> style.backgroundTexture(SpriteTexture.of(CHANNEL_HANDLER).setSprite(96, 166, 12, 12)))
+                .addEventListener(com.lowdragmc.lowdraglib2.gui.ui.event.UIEvents.MOUSE_DOWN, event -> {
+                    if (event.button == 0) {
+                        state.scrollDown(combinedEntryCount());
+                    }
+                }));
+
+        Runnable update = () -> {
+            var entries = buildEntries();
+            for (int i = 0; i < 5; i++) {
+                int entryIndex = state.cursorFrom + i;
+                boolean visible = entryIndex < entries.size();
+                entryBackgrounds[i].setDisplay(visible);
+                entryLabels[i].setDisplay(visible);
+                if (!visible) {
+                    continue;
+                }
+                var entry = entries.get(entryIndex);
+                entryBackgrounds[i].style(style -> style.backgroundTexture(
+                        SpriteTexture.of(CHANNEL_HANDLER).setSprite(0, entry.isInput ? 166 : 179, 48, 13)));
+                entryLabels[i].setText(ComponentHelper.translated(ComponentHelper.getKey("channel"))
+                        .append(ComponentHelper.make("#", String.valueOf(entry.index)))
+                        .withStyle(entry.isInput ? ChatFormatting.RED : ChatFormatting.GREEN));
+            }
+        };
+        update.run();
+        root.addEventListener(com.lowdragmc.lowdraglib2.gui.ui.event.UIEvents.TICK, event -> update.run());
+    }
+
+    private int combinedEntryCount() {
+        return inputs.size() + outputs.size();
+    }
+
+    private List<ChannelEntryData> buildEntries() {
+        List<ChannelEntryData> entries = new ArrayList<>();
+        int index = 0;
+        for (BlockPos input : inputs) {
+            entries.add(new ChannelEntryData(index++, input, true));
+        }
+        for (BlockPos output : outputs) {
+            entries.add(new ChannelEntryData(index++, output, false));
+        }
+        return entries;
+    }
+
+    private static <T extends UIElement> T absolute(T element, int x, int y, int width, int height) {
+        element.layout(layout -> {
+            layout.positionType(TaffyPosition.ABSOLUTE);
+            layout.left(x);
+            layout.top(y);
+            layout.width(width);
+            layout.height(height);
+        });
+        return element;
+    }
+
+    private record ChannelEntryData(int index, BlockPos pos, boolean isInput) {}
+
+    private static final class ChannelUIState {
+        private static final Map<String, ChannelUIState> CACHE = new ConcurrentHashMap<>();
+        private final String key;
+        private int cursorFrom;
+
+        private ChannelUIState(String key) {
+            this.key = key;
+        }
+
+        static ChannelUIState of(BlockUIMenuType.BlockUIHolder holder) {
+            String key = holder.player.getUUID() + "@channel@" + holder.pos.asLong();
+            return CACHE.computeIfAbsent(key, ChannelUIState::new);
+        }
+
+        void scrollUp() {
+            cursorFrom = Math.max(0, cursorFrom - 1);
+        }
+
+        void scrollDown(int size) {
+            if (size <= 5) {
+                cursorFrom = 0;
+            } else {
+                cursorFrom = Math.min(size - 5, cursorFrom + 1);
+            }
+        }
     }
 
     @Override

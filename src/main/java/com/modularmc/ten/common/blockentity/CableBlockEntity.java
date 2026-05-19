@@ -38,6 +38,10 @@ public class CableBlockEntity extends CmBlockEntity {
         return storage;
     }
 
+    public boolean hasUi() {
+        return false;
+    }
+
     @Override
     protected void tick() {
         if (level == null || level.isClientSide() || getAliveTime() % 5 != 0) {
