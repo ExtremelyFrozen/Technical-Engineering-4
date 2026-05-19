@@ -5,10 +5,7 @@ import com.modularmc.ten.common.item.TENBucketItem;
 
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
-import net.minecraft.world.item.BucketItem;
 import net.minecraft.world.level.material.Fluid;
-import net.neoforged.neoforge.client.model.generators.ModelFile;
-import net.neoforged.neoforge.client.model.generators.loaders.DynamicFluidContainerModelBuilder;
 import net.neoforged.neoforge.common.SoundActions;
 import net.neoforged.neoforge.fluids.BaseFlowingFluid;
 
@@ -61,11 +58,7 @@ public class TENFluids {
                 .build()
                 .bucket(TENBucketItem::new)
                 .lang(bucketLang)
-                .model((ctx, prov) -> prov.getBuilder(prov.name(ctx::getEntry))
-                        .parent(new ModelFile.UncheckedModelFile("neoforge:item/bucket_drip"))
-                        .customLoader(DynamicFluidContainerModelBuilder::begin)
-                        .fluid(((BucketItem) ctx.getEntry()).content)
-                        .applyFluidLuminosity(light > 0))
+                .model((ctx, prov) -> prov.generated(ctx::getEntry, prov.modLoc("block/" + name + "_bucket")))
                 .build()
                 .register();
     }
