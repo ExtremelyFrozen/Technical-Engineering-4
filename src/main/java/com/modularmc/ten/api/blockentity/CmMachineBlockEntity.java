@@ -370,6 +370,17 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         };
     }
 
+    public final boolean isGeneratorType() {
+        return switch (machineType()) {
+            case com.modularmc.ten.api.option.MachineType.GENERATOR,
+                 com.modularmc.ten.api.option.MachineType.ENGINE_SOLAR,
+                 com.modularmc.ten.api.option.MachineType.ENGINE_EXTRACTION,
+                 com.modularmc.ten.api.option.MachineType.ENGINE_METAL,
+                 com.modularmc.ten.api.option.MachineType.ENGINE_BIOMASS -> true;
+            default -> false;
+        };
+    }
+
     public void doBaseData() {
         initMachine();
         if (energyStorage == null) return;
@@ -481,6 +492,7 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
 
             @Override
             public int extractEnergy(int maxExtract, boolean simulate) {
+                if (!isGeneratorType()) return 0;
                 if (!signalAllowRun() || !canExtractEnergy(side)) return 0;
                 return energyStorage.extractEnergy(Math.min(maxExtract, maxExtractEnergy), simulate);
             }
@@ -497,7 +509,7 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
 
             @Override
             public boolean canExtract() {
-                return canExtractEnergy(side);
+                return isGeneratorType() && canExtractEnergy(side);
             }
 
             @Override

@@ -40,7 +40,7 @@ public class CellBlockEntity extends CmMachineBlockEntity {
         var energy = stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM);
         if (energy == null) return false;
         if (slot == 0) {
-            return energy.canExtract() && energy.getEnergyStored() >= energy.getMaxEnergyStored();
+            return energy.canExtract();
         }
         if (slot == 1) {
             return energy.canReceive() && energy.getEnergyStored() < energy.getMaxEnergyStored();

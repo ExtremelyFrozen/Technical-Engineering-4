@@ -64,9 +64,9 @@ public class TENModels {
                 .texture("particle", TEN.id("block/" + activeName));
     }
 
-    public static void energyCellBlockstate(BlockStateProvider prov, Block block) {
-        var empty = prov.models().getExistingFile(TEN.id("block/energy_cell_empty"));
-        var normal = prov.models().getExistingFile(TEN.id("block/energy_cell"));
+    public static void cellBlockstate(BlockStateProvider prov, Block block, String baseName) {
+        var empty = prov.models().getExistingFile(TEN.id("block/" + baseName + "_empty"));
+        var normal = prov.models().getExistingFile(TEN.id("block/" + baseName));
         var builder = prov.getVariantBuilder(block);
         for (Direction dir : Direction.Plane.HORIZONTAL) {
             int y = switch (dir) {

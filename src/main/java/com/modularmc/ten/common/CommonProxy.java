@@ -2,6 +2,7 @@ package com.modularmc.ten.common;
 
 import com.modularmc.ten.common.block.machine.BaseMachineBlock;
 import com.modularmc.ten.common.data.*;
+import com.modularmc.ten.common.item.EnergyUnitItem;
 import com.modularmc.ten.config.ConfigHolder;
 import com.modularmc.ten.data.TENDataGen;
 
@@ -9,6 +10,7 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
+import net.neoforged.neoforge.energy.IEnergyStorage;
 import net.neoforged.neoforge.registries.RegisterEvent;
 
 import static com.modularmc.ten.common.registry.Registration.REGISTRATE;
@@ -76,10 +78,40 @@ public class CommonProxy {
         // Energy Unit item capability
         event.registerItem(Capabilities.EnergyStorage.ITEM, (stack, ctx) -> {
             var data = com.modularmc.ten.component.EnergyUnitData.of(stack);
-            return new net.neoforged.neoforge.energy.EnergyStorage(
-                    com.modularmc.ten.common.item.EnergyUnitItem.maxEnergy(),
-                    com.modularmc.ten.common.item.EnergyUnitItem.inputRate(),
-                    com.modularmc.ten.common.item.EnergyUnitItem.outputRate()) {
+            return new IEnergyStorage() {
+                private int doReceive(int maxReceive) {
+                    int capacity = EnergyUnitItem.maxEnergy();
+                    int stored = data.getEnergy();
+                    int canAccept = Math.min(capacity - stored, Math.min(maxReceive, EnergyUnitItem.inputRate()));
+                    if (canAccept <= 0) return 0;
+                    data.setEnergy(stored + canAccept);
+                    data.save(stack);
+                    return canAccept;
+                }
+
+                @Override
+                public int receiveEnergy(int maxReceive, boolean simulate) {
+                    if (!canReceive() || maxReceive <= 0) return 0;
+                    if (simulate) {
+                        int capacity = EnergyUnitItem.maxEnergy();
+                        int stored = data.getEnergy();
+                        return Math.min(capacity - stored, Math.min(maxReceive, EnergyUnitItem.inputRate()));
+                    }
+                    return doReceive(maxReceive);
+                }
+
+                @Override
+                public int extractEnergy(int maxExtract, boolean simulate) {
+                    if (!canExtract() || maxExtract <= 0) return 0;
+                    int stored = data.getEnergy();
+                    int canGive = Math.min(stored, Math.min(maxExtract, EnergyUnitItem.outputRate()));
+                    if (canGive <= 0) return 0;
+                    if (!simulate) {
+                        data.setEnergy(stored - canGive);
+                        data.save(stack);
+                    }
+                    return canGive;
+                }
 
                 @Override
                 public int getEnergyStored() {
@@ -88,27 +120,17 @@ public class CommonProxy {
 
                 @Override
                 public int getMaxEnergyStored() {
-                    return com.modularmc.ten.common.item.EnergyUnitItem.maxEnergy();
+                    return EnergyUnitItem.maxEnergy();
                 }
 
                 @Override
-                public int receiveEnergy(int maxReceive, boolean simulate) {
-                    int received = super.receiveEnergy(maxReceive, simulate);
-                    if (!simulate && received > 0) {
-                        data.setEnergy(getEnergyStored());
-                        data.save(stack);
-                    }
-                    return received;
+                public boolean canExtract() {
+                    return EnergyUnitItem.outputRate() > 0 && data.getEnergy() > 0;
                 }
 
                 @Override
-                public int extractEnergy(int maxExtract, boolean simulate) {
-                    int extracted = super.extractEnergy(maxExtract, simulate);
-                    if (!simulate && extracted > 0) {
-                        data.setEnergy(getEnergyStored());
-                        data.save(stack);
-                    }
-                    return extracted;
+                public boolean canReceive() {
+                    return EnergyUnitItem.inputRate() > 0 && data.getEnergy() < EnergyUnitItem.maxEnergy();
                 }
             };
         }, com.modularmc.ten.common.data.TENItems.ENERGY_CAPACITY.get());

@@ -28,7 +28,7 @@ public class CreativeCellBlockEntity extends CmMachineBlockEntity {
 
     @Override
     public int inventorySize() {
-        return 0;
+        return 2;
     }
 
     @Override
@@ -38,7 +38,9 @@ public class CreativeCellBlockEntity extends CmMachineBlockEntity {
 
     @Override
     public boolean valid(int slot, ItemStack stack) {
-        return false;
+        var energy = stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM);
+        if (energy == null) return false;
+        return energy.canReceive() && energy.getEnergyStored() < energy.getMaxEnergyStored();
     }
 
     @Override
@@ -58,7 +60,10 @@ public class CreativeCellBlockEntity extends CmMachineBlockEntity {
 
     @Override
     public ModularUI createUI(BlockUIMenuType.BlockUIHolder holder) {
-        return buildMachineUI(holder, TENMachineBlockUIFactory.backgroundFor(machineType()), root -> {}, root -> {
+        return buildMachineUI(holder, TENMachineBlockUIFactory.backgroundFor(machineType()), root -> {
+            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 0, 42, 32));
+            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 1, 115, 32));
+        }, root -> {
             root.addChild(TENMachineBlockUIFactory.energyGauge(this, 81, 18, 14, 46, 0, 0, true));
         });
     }
@@ -70,5 +75,18 @@ public class CreativeCellBlockEntity extends CmMachineBlockEntity {
         // Always full — extractEnergy can drain but this refills every tick
         energyStorage.setEnergy(maxStorageEnergy);
         setActive(true);
+
+        if (!signalAllowRun() || itemHandler == null) return;
+
+        for (int slot = 0; slot < 2; slot++) {
+            ItemStack stack = itemHandler.getStackInSlot(slot);
+            if (stack.getCount() != 1) continue;
+            var energy = stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM);
+            if (energy == null || !energy.canReceive()) continue;
+            int accepted = energy.receiveEnergy(Integer.MAX_VALUE, false);
+            if (accepted > 0) {
+                energyStorage.extractEnergy(accepted, false);
+            }
+        }
     }
 }
