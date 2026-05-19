@@ -119,9 +119,15 @@ public final class TENMachineBlockUIFactory {
         var controlPanel = textureElement(-61, 81, 60, 85, sprite(HANDLER, 91, 40, 60, 85), null, null, null, null);
         var closeButton = textureElement(-11, 81, 10, 10, IGuiTexture.EMPTY, () -> controlTooltip(), () -> uiState.setControlOpen(false), null, null);
 
-        var energyModeButton = textureElement(-54, 145, 14, 14, sprite(HANDLER, 91, 126, 14, 14), () -> energyModeTooltip(), () -> uiState.setSelectedTransferMode(0), null, null);
-        var itemModeButton = textureElement(-38, 145, 14, 14, sprite(HANDLER, 106, 126, 14, 14), () -> itemModeTooltip(), () -> uiState.setSelectedTransferMode(1), null, null);
-        var fluidModeButton = textureElement(-22, 145, 14, 14, sprite(HANDLER, 76, 126, 14, 14), () -> fluidModeTooltip(), () -> uiState.setSelectedTransferMode(2), null, null);
+        var energyModeButton = dynamicTextureElement(-54, 145, 14, 14,
+                () -> sprite(HANDLER, 91, 126 + (uiState.getSelectedTransferMode() == 0 ? 14 : 0), 14, 14),
+                () -> energyModeTooltip(), () -> uiState.setSelectedTransferMode(0), null, null);
+        var itemModeButton = dynamicTextureElement(-38, 145, 14, 14,
+                () -> sprite(HANDLER, 106, 126 + (uiState.getSelectedTransferMode() == 1 ? 14 : 0), 14, 14),
+                () -> itemModeTooltip(), () -> uiState.setSelectedTransferMode(1), null, null);
+        var fluidModeButton = dynamicTextureElement(-22, 145, 14, 14,
+                () -> sprite(HANDLER, 76, 126 + (uiState.getSelectedTransferMode() == 2 ? 14 : 0), 14, 14),
+                () -> fluidModeTooltip(), () -> uiState.setSelectedTransferMode(2), null, null);
 
         var frontButton = faceModeElement(machine, uiState, -39, 103, 0, "kenergyengineering.info.front");
         var backButton = faceModeElement(machine, uiState, -25, 117, 1, "kenergyengineering.info.back");
