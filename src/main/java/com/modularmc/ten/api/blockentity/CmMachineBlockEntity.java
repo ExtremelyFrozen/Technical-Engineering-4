@@ -7,6 +7,7 @@ import com.modularmc.ten.api.option.FaceOption;
 import com.modularmc.ten.api.option.IngredientType;
 import com.modularmc.ten.api.option.MachineType;
 import com.modularmc.ten.api.option.RedstoneMode;
+import com.modularmc.ten.common.gui.TENMachineBlockUIFactory;
 import com.modularmc.ten.common.item.upgrades.IUpgradableMachine;
 import com.modularmc.ten.common.item.upgrades.UpgradeItem;
 
@@ -15,11 +16,8 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.Containers;
-import net.minecraft.world.MenuProvider;
-import net.minecraft.world.entity.player.Inventory;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -29,6 +27,9 @@ import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import net.neoforged.neoforge.items.IItemHandler;
 
+import com.lowdragmc.lowdraglib2.gui.factory.BlockUIMenuType;
+import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
+import com.lowdragmc.lowdraglib2.gui.ui.UIElement;
 import com.lowdragmc.lowdraglib2.syncdata.annotation.DescSynced;
 import com.lowdragmc.lowdraglib2.syncdata.annotation.Persisted;
 import com.lowdragmc.lowdraglib2.syncdata.annotation.RPCMethod;
@@ -36,8 +37,9 @@ import com.lowdragmc.lowdraglib2.syncdata.rpc.RPCSender;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
+import java.util.function.Consumer;
 
-public abstract class CmMachineBlockEntity extends CmBlockEntity implements MenuProvider, IUpgradableMachine {
+public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpgradableMachine {
 
     // ───── ldlib2 自动同步/持久化字段（由 FieldManagedStorage 管理）─────
     @Persisted
@@ -675,16 +677,29 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements Menu
         }
     }
 
-    // ───── MenuProvider ─────
-    @Override
+    // ───── UI helpers ─────
     public Component getDisplayName() {
         return component != null ? component : getBlockState().getBlock().getName();
     }
 
-    @Override
-    public AbstractContainerMenu createMenu(int id, Inventory inv, Player player) {
-        return new com.modularmc.ten.client.gui.CmContainerMachine(
-                com.modularmc.ten.common.data.TENMenuTypes.MACHINE.get(), id, inv, this, worldPosition);
+    public ModularUI createUI(BlockUIMenuType.BlockUIHolder holder) {
+        return TENMachineBlockUIFactory.createFallback(holder);
+    }
+
+    protected final ModularUI buildMachineUI(BlockUIMenuType.BlockUIHolder holder,
+                                             ResourceLocation background,
+                                             Consumer<UIElement> inventoryBuilder,
+                                             Consumer<UIElement> contentBuilder) {
+        initMachine();
+        var root = TENMachineBlockUIFactory.createRoot(background);
+        inventoryBuilder.accept(root);
+        if (hasUpgrade()) {
+            TENMachineBlockUIFactory.addUpgradeSlots(root, this);
+        }
+        TENMachineBlockUIFactory.addPlayerInventory(root);
+        TENMachineBlockUIFactory.addCommonSidebar(root, holder, this, new TENMachineBlockUIFactory.UIState());
+        contentBuilder.accept(root);
+        return TENMachineBlockUIFactory.buildModularUI(root, holder.player);
     }
 
     // ───── Serialized handlers (tanks) ─────

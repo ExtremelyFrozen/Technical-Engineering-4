@@ -2,8 +2,7 @@ package com.modularmc.ten.common.block.machine;
 
 import com.modularmc.ten.api.blockentity.CmBlockEntity;
 import com.modularmc.ten.api.blockentity.CmMachineBlockEntity;
-import com.modularmc.ten.client.gui.CmContainerMachine;
-import com.modularmc.ten.common.data.TENMenuTypes;
+import com.modularmc.ten.common.gui.TENMachineBlockUIFactory;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -12,7 +11,6 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.ItemInteractionResult;
-import net.minecraft.world.SimpleMenuProvider;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.BlockGetter;
@@ -30,9 +28,11 @@ import net.minecraft.world.level.material.MapColor;
 import net.minecraft.world.phys.BlockHitResult;
 import net.neoforged.neoforge.fluids.FluidUtil;
 
+import com.lowdragmc.lowdraglib2.gui.factory.BlockUIMenuType;
+import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
 import org.jetbrains.annotations.Nullable;
 
-public class BaseMachineBlock extends Block implements EntityBlock {
+public class BaseMachineBlock extends Block implements EntityBlock, BlockUIMenuType.BlockUI {
 
     public static final BooleanProperty ACTIVE = BooleanProperty.create("active");
 
@@ -81,10 +81,13 @@ public class BaseMachineBlock extends Block implements EntityBlock {
 
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
-        if (!level.isClientSide()) {
-            openGui(level, pos, player);
+        if (level.isClientSide()) {
+            return InteractionResult.SUCCESS;
+        } else if (player instanceof ServerPlayer serverPlayer) {
+            BlockUIMenuType.openUI(serverPlayer, pos);
+            return InteractionResult.CONSUME;
         }
-        return InteractionResult.SUCCESS;
+        return InteractionResult.PASS;
     }
 
     @Override
@@ -95,37 +98,21 @@ public class BaseMachineBlock extends Block implements EntityBlock {
                 return ItemInteractionResult.sidedSuccess(level.isClientSide());
             }
         }
-        if (!level.isClientSide()) {
-            openGui(level, pos, player);
+        if (level.isClientSide()) {
+            return ItemInteractionResult.sidedSuccess(true);
+        } else if (player instanceof ServerPlayer serverPlayer) {
+            BlockUIMenuType.openUI(serverPlayer, pos);
+            return ItemInteractionResult.CONSUME;
         }
-        return ItemInteractionResult.sidedSuccess(level.isClientSide());
+        return ItemInteractionResult.sidedSuccess(false);
     }
 
-    private void openGui(Level level, BlockPos pos, Player player) {
-        BlockEntity be = level.getBlockEntity(pos);
-        if (be instanceof CmMachineBlockEntity machine && player instanceof ServerPlayer sp) {
-            var menuType = TENMenuTypes.MACHINE.get();
-            int mType = machine.machineType();
-            int slots = machine.itemHandler != null ? machine.itemHandler.getSlots() : 0;
-            boolean hasUpgrade = machine.hasUpgrade();
-            sp.openMenu(new SimpleMenuProvider(
-                    (id, inv, p) -> new CmContainerMachine(menuType, id, inv, machine, pos),
-                    machine.getDisplayName()),
-                    buf -> {
-                        buf.writeInt(mType);
-                        buf.writeInt(slots);
-                        buf.writeBoolean(hasUpgrade);
-                        buf.writeBlockPos(pos);
-                    });
-            // Sync face config via ldlib2 RPC
-            for (Direction direction : Direction.values()) {
-                int idx = direction.get3DDataValue();
-                machine.rpcToPlayer(sp, "rpcSyncFaceInfo", idx,
-                        machine.energyFaceMode.getOrDefault(direction, 0),
-                        machine.itemFaceMode.getOrDefault(direction, 0),
-                        machine.fluidFaceMode.getOrDefault(direction, 0));
-            }
+    @Override
+    public ModularUI createUI(BlockUIMenuType.BlockUIHolder holder) {
+        if (holder.player.level().getBlockEntity(holder.pos) instanceof CmMachineBlockEntity machine) {
+            return machine.createUI(holder);
         }
+        return TENMachineBlockUIFactory.createFallback(holder);
     }
 
     @Override

@@ -28,8 +28,6 @@ public class CommonProxy {
 
         TENRecipeTypes.SERIALIZERS.register(modBus);
         TENRecipeTypes.TYPES.register(modBus);
-        TENMenuTypes.MENUS.register(modBus);
-
         modBus.register(CommonProxy.class);
     }
 
@@ -38,7 +36,6 @@ public class CommonProxy {
         TENBlocks.init();
         TENFluids.init();
         TENBlockEntities.init();
-        TENMenuTypes.init();
         TENRecipeTypes.init();
         TENItems.init();
     }

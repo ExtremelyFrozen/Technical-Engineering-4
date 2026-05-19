@@ -2,11 +2,15 @@ package com.modularmc.ten.common.blockentity.machine;
 
 import com.modularmc.ten.api.blockentity.CmMachineBlockEntity;
 import com.modularmc.ten.api.option.IngredientType;
+import com.modularmc.ten.common.gui.TENMachineBlockUIFactory;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+
+import com.lowdragmc.lowdraglib2.gui.factory.BlockUIMenuType;
+import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
 
 public class CellBlockEntity extends CmMachineBlockEntity {
 
@@ -42,6 +46,14 @@ public class CellBlockEntity extends CmMachineBlockEntity {
             return energy.canReceive() && energy.getEnergyStored() < energy.getMaxEnergyStored();
         }
         return false;
+    }
+
+    @Override
+    public ModularUI createUI(BlockUIMenuType.BlockUIHolder holder) {
+        return buildMachineUI(holder, TENMachineBlockUIFactory.backgroundFor(machineType()), root -> {
+            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 0, 42, 32));
+            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 1, 115, 32));
+        }, root -> root.addChild(TENMachineBlockUIFactory.energyGauge(this, 81, 18, 14, 46, 0, 0, true)));
     }
 
     @Override

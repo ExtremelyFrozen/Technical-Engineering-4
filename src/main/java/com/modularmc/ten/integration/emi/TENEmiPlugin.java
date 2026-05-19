@@ -2,7 +2,6 @@ package com.modularmc.ten.integration.emi;
 
 import com.modularmc.ten.TEN;
 import com.modularmc.ten.api.recipe.FormsCombinedRecipe;
-import com.modularmc.ten.client.gui.CmScreenMachine;
 import com.modularmc.ten.common.data.TENBlocks;
 import com.modularmc.ten.common.data.TENRecipeTypes;
 import com.modularmc.ten.integration.xei.TENRecipeWidget;
@@ -13,6 +12,8 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.neoforged.neoforge.registries.DeferredHolder;
 
+import com.lowdragmc.lowdraglib2.gui.holder.ModularUIContainerScreen;
+import com.lowdragmc.lowdraglib2.integration.xei.emi.ModularUIEMIHandlers;
 import dev.emi.emi.api.EmiEntrypoint;
 import dev.emi.emi.api.EmiPlugin;
 import dev.emi.emi.api.EmiRegistry;
@@ -20,6 +21,7 @@ import dev.emi.emi.api.recipe.EmiRecipeCategory;
 import dev.emi.emi.api.stack.EmiStack;
 import dev.emi.emi.api.widget.Bounds;
 
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 @EmiEntrypoint
@@ -59,7 +61,7 @@ public class TENEmiPlugin implements EmiPlugin {
 
     @Override
     public void register(EmiRegistry registry) {
-        registry.addExclusionArea(CmScreenMachine.class, (screen, consumer) -> consumer.accept(new Bounds(screen.getGuiLeft() - screen.getExtras(), screen.getGuiTop(), screen.getExtras(), screen.ySize)));
+        registry.addExclusionArea(ModularUIContainerScreen.class, TENEmiPlugin::addModularExclusionArea);
 
         var allRecipeEntries = registry.getRecipeManager().getRecipes();
         var tenRecipeEntries = allRecipeEntries.stream()
@@ -121,5 +123,9 @@ public class TENEmiPlugin implements EmiPlugin {
             }
             TEN.LOGGER.debug("[EMI] Category {} finished registering {} recipes", def.id(), index);
         }
+    }
+
+    private static void addModularExclusionArea(ModularUIContainerScreen screen, Consumer<Bounds> consumer) {
+        ModularUIEMIHandlers.EXCLUSION_AREA.addExclusionArea(screen, consumer);
     }
 }
