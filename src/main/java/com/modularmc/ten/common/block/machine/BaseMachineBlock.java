@@ -2,6 +2,8 @@ package com.modularmc.ten.common.block.machine;
 
 import com.modularmc.ten.api.blockentity.CmBlockEntity;
 import com.modularmc.ten.api.blockentity.CmMachineBlockEntity;
+import com.modularmc.ten.common.blockentity.CableBlockEntity;
+import com.modularmc.ten.common.blockentity.PipeBlockEntity;
 import com.modularmc.ten.common.gui.TENMachineBlockUIFactory;
 
 import net.minecraft.core.BlockPos;
@@ -111,6 +113,12 @@ public class BaseMachineBlock extends Block implements EntityBlock, BlockUIMenuT
     public ModularUI createUI(BlockUIMenuType.BlockUIHolder holder) {
         if (holder.player.level().getBlockEntity(holder.pos) instanceof CmMachineBlockEntity machine) {
             return machine.createUI(holder);
+        }
+        if (holder.player.level().getBlockEntity(holder.pos) instanceof PipeBlockEntity pipe) {
+            return pipe.createUI(holder);
+        }
+        if (holder.player.level().getBlockEntity(holder.pos) instanceof CableBlockEntity cable) {
+            return cable.createUI(holder);
         }
         return TENMachineBlockUIFactory.createFallback(holder);
     }

@@ -1,5 +1,6 @@
 package com.modularmc.ten.common.data;
 
+import com.modularmc.ten.common.item.ChannelConnectorItem;
 import com.modularmc.ten.common.item.upgrades.*;
 
 import net.minecraft.world.item.Item;
@@ -75,6 +76,10 @@ public class TENItems {
     public static final ItemEntry<Item> REDSTONE_AI_ADVANCED = texturedItem("redstone_ai_advanced", "Advanced Redstone AI", "自律红石智能芯片", "item/crafting/redstone_ai_advanced");
     public static final ItemEntry<Item> HYDRAULIC_WIDGET = texturedItem("hydraulic_widget", "Hydraulic Widget", "液压组件", "item/crafting/hydraulic_widget");
     public static final ItemEntry<Item> DETECTOR = texturedItem("detector", "Detector", "反射探测仪", "item/crafting/detector");
+    public static final ItemEntry<ChannelConnectorItem> CHANNEL_CONNECTOR = REGISTRATE.item("channel_connector", ChannelConnectorItem::new)
+            .lang("Channel Connector")
+            .model((ctx, prov) -> prov.generated(ctx::getEntry, prov.modLoc("item/channel_connector")))
+            .register();
 
     // === Moulds ===
     static {

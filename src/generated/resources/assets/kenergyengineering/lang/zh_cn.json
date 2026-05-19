@@ -231,7 +231,7 @@
   "kenergyengineering.channel_connector.1": "在第一次选取的频道中添加第二次选取的频道作为输入",
   "kenergyengineering.channel_connector.2": "处于[添加推送频道]模式时: ",
   "kenergyengineering.channel_connector.3": "在第一次选取的频道中添加第二次选取的频道作为输出",
-  "kenergyengineering.channel_connector.4": "潜行时按切换模式键来清空已选取的坐标。",
+  "kenergyengineering.channel_connector.4": "潜行并在空中右键来清空已选取的坐标。",
   "kenergyengineering.channel_connector.mode.in": "模式: 添加抽取频道",
   "kenergyengineering.channel_connector.mode.out": "模式: 添加推送频道",
   "kenergyengineering.channel_connector.mode.rem": "模式: 移除频道",

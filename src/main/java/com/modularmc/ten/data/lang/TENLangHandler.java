@@ -60,7 +60,7 @@ public final class TENLangHandler {
         add(provider, "channel_connector.1", "Add the second clicked channel to the first one as an input", "在第一次选取的频道中添加第二次选取的频道作为输入");
         add(provider, "channel_connector.2", "When in [Add Output Channel] Mode: ", "处于[添加推送频道]模式时: ");
         add(provider, "channel_connector.3", "Add the second clicked channel to the first one as an output", "在第一次选取的频道中添加第二次选取的频道作为输出");
-        add(provider, "channel_connector.4", "Sneak and press the mode switch key to clear the selected position.", "潜行时按切换模式键来清空已选取的坐标。");
+        add(provider, "channel_connector.4", "Sneak-right-click in air to clear the selected position.", "潜行并在空中右键来清空已选取的坐标。");
         add(provider, "channel_connector.mode.in", "Mode: Add Input Channel", "模式: 添加抽取频道");
         add(provider, "channel_connector.mode.out", "Mode: Add Output Channel", "模式: 添加推送频道");
         add(provider, "channel_connector.mode.rem", "Mode: Remove Channel", "模式: 移除频道");

@@ -46,7 +46,7 @@ public class CommonProxy {
             if (block instanceof BaseMachineBlock) {
                 event.registerBlock(Capabilities.EnergyStorage.BLOCK, (level, pos, state, blockEntity, side) -> {
                     if (blockEntity instanceof com.modularmc.ten.common.blockentity.CableBlockEntity cable) {
-                        return cable.getEnergy();
+                        return cable.getEnergy(side);
                     }
                     if (blockEntity instanceof com.modularmc.ten.api.blockentity.CmMachineBlockEntity machine) {
                         return machine.getEnergyStorage(side);
@@ -56,7 +56,7 @@ public class CommonProxy {
 
                 event.registerBlock(Capabilities.ItemHandler.BLOCK, (level, pos, state, blockEntity, side) -> {
                     if (blockEntity instanceof com.modularmc.ten.common.blockentity.PipeBlockEntity pipe) {
-                        return pipe.getItemHandler();
+                        return pipe.getTransportHandler(side);
                     }
                     if (blockEntity instanceof com.modularmc.ten.api.blockentity.CmMachineBlockEntity machine) {
                         return machine.getItemHandler(side);
