@@ -85,6 +85,9 @@ public class CellBlockEntity extends CmMachineBlockEntity {
                 }
             }
         }
+
+        // Sync active state based on energy level for block model texture switching
+        setActive(energyStorage != null && energyStorage.getEnergyStored() > 0);
     }
 
     @Override
