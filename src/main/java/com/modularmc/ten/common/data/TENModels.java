@@ -27,8 +27,8 @@ public class TENModels {
                 TEN.id("block/machine_top"),
                 TEN.id(tex),
                 TEN.id("block/machine_side"),
-                TEN.id("block/machine_side"),
-                TEN.id("block/machine_side"))
+                TEN.id("block/machine_side_connection"),
+                TEN.id("block/machine_side_connection_flipped"))
                 .texture("particle", TEN.id("block/machine_side"));
     }
 
@@ -39,8 +39,8 @@ public class TENModels {
                 TEN.id("block/machine_top"),
                 TEN.id(tex + "_active"),
                 TEN.id("block/machine_side"),
-                TEN.id("block/machine_side"),
-                TEN.id("block/machine_side"))
+                TEN.id("block/machine_side_connection"),
+                TEN.id("block/machine_side_connection_flipped"))
                 .texture("particle", TEN.id("block/machine_side"));
     }
 
