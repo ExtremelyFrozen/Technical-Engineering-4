@@ -228,7 +228,6 @@
   "kenergyengineering.channel.pos": "Position: ",
   "kenergyengineering.channel.remove": "Successfully removed ",
   "kenergyengineering.channel.to": " to ",
-  "kenergyengineering.channel_connector": "Channel Connector",
   "kenergyengineering.channel_connector.0": "When in [Add Input Channel] Mode: ",
   "kenergyengineering.channel_connector.1": "Add the second clicked channel to the first one as an input",
   "kenergyengineering.channel_connector.2": "When in [Add Output Channel] Mode: ",

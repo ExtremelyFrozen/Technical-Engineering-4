@@ -1,6 +1,6 @@
 {
-  "parent": "neoforge:item/bucket_drip",
-  "apply_fluid_luminosity": true,
-  "fluid": "kenergyengineering:liquid_honey",
-  "loader": "neoforge:fluid_container"
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "kenergyengineering:block/liquid_honey_bucket"
+  }
 }

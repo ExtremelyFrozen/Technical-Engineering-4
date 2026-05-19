@@ -59,7 +59,7 @@ public final class TENLangHandler {
         add(provider, "channel.in", "Input Channel", "输入频道");
         add(provider, "channel.out", "Output Channel", "输出频道");
         // Removed: channel_energy, channel_item, channel_fluid — now auto-derived from TENBlocks.ZH_NAMES
-        add(provider, "channel_connector", "Channel Connector", "频道桥接器");
+        // Removed: channel_connector base key — now auto-derived from TENItems.ZH_NAMES
         add(provider, "channel_connector.0", "When in [Add Input Channel] Mode: ", "处于[添加抽取频道]模式时: ");
         add(provider, "channel_connector.1", "Add the second clicked channel to the first one as an input", "在第一次选取的频道中添加第二次选取的频道作为输入");
         add(provider, "channel_connector.2", "When in [Add Output Channel] Mode: ", "处于[添加推送频道]模式时: ");
