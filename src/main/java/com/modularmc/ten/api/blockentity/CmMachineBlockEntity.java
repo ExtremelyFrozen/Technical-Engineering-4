@@ -697,7 +697,7 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
             TENMachineBlockUIFactory.addUpgradeSlots(root, this);
         }
         TENMachineBlockUIFactory.addPlayerInventory(root);
-        TENMachineBlockUIFactory.addCommonSidebar(root, holder, this, new TENMachineBlockUIFactory.UIState());
+        TENMachineBlockUIFactory.addCommonSidebar(root, holder, this, new TENMachineBlockUIFactory.UIState(holder));
         contentBuilder.accept(root);
         return TENMachineBlockUIFactory.buildModularUI(root, holder.player);
     }

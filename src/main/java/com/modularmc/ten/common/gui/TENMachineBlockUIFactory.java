@@ -38,6 +38,8 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
@@ -113,20 +115,51 @@ public final class TENMachineBlockUIFactory {
                 () -> cycleRedstone(machine),
                 null));
 
-        root.addChild(textureElement(-27, 81, 26, 26, sprite(HANDLER, 152, 40, 26, 26), () -> controlTooltip(), () -> uiState.controlOpen = true, () -> uiState.controlOpen = true, () -> !uiState.controlOpen));
-        root.addChild(textureElement(-61, 81, 60, 85, sprite(HANDLER, 91, 40, 60, 85), null, null, null, () -> uiState.controlOpen));
-        root.addChild(textureElement(-11, 81, 10, 10, IGuiTexture.EMPTY, () -> controlTooltip(), () -> uiState.controlOpen = false, () -> uiState.controlOpen = false, () -> uiState.controlOpen));
+        var controlButton = textureElement(-27, 81, 26, 26, sprite(HANDLER, 152, 40, 26, 26), () -> controlTooltip(), () -> uiState.setControlOpen(true), null, null);
+        var controlPanel = textureElement(-61, 81, 60, 85, sprite(HANDLER, 91, 40, 60, 85), null, null, null, null);
+        var closeButton = textureElement(-11, 81, 10, 10, IGuiTexture.EMPTY, () -> controlTooltip(), () -> uiState.setControlOpen(false), null, null);
 
-        root.addChild(textureElement(-54, 145, 14, 14, sprite(HANDLER, 91, 126, 14, 14), () -> energyModeTooltip(), () -> uiState.selectedTransferMode = 0, () -> uiState.selectedTransferMode = 0, () -> uiState.controlOpen));
-        root.addChild(textureElement(-38, 145, 14, 14, sprite(HANDLER, 106, 126, 14, 14), () -> itemModeTooltip(), () -> uiState.selectedTransferMode = 1, () -> uiState.selectedTransferMode = 1, () -> uiState.controlOpen));
-        root.addChild(textureElement(-22, 145, 14, 14, sprite(HANDLER, 76, 126, 14, 14), () -> fluidModeTooltip(), () -> uiState.selectedTransferMode = 2, () -> uiState.selectedTransferMode = 2, () -> uiState.controlOpen));
+        var energyModeButton = textureElement(-54, 145, 14, 14, sprite(HANDLER, 91, 126, 14, 14), () -> energyModeTooltip(), () -> uiState.setSelectedTransferMode(0), null, null);
+        var itemModeButton = textureElement(-38, 145, 14, 14, sprite(HANDLER, 106, 126, 14, 14), () -> itemModeTooltip(), () -> uiState.setSelectedTransferMode(1), null, null);
+        var fluidModeButton = textureElement(-22, 145, 14, 14, sprite(HANDLER, 76, 126, 14, 14), () -> fluidModeTooltip(), () -> uiState.setSelectedTransferMode(2), null, null);
 
-        root.addChild(faceModeElement(machine, uiState, -39, 103, 0, "kenergyengineering.info.front"));
-        root.addChild(faceModeElement(machine, uiState, -25, 117, 1, "kenergyengineering.info.back"));
-        root.addChild(faceModeElement(machine, uiState, -53, 103, 2, "kenergyengineering.info.left"));
-        root.addChild(faceModeElement(machine, uiState, -25, 103, 3, "kenergyengineering.info.right"));
-        root.addChild(faceModeElement(machine, uiState, -39, 89, 4, "kenergyengineering.info.up"));
-        root.addChild(faceModeElement(machine, uiState, -39, 117, 5, "kenergyengineering.info.down"));
+        var frontButton = faceModeElement(machine, uiState, -39, 103, 0, "kenergyengineering.info.front");
+        var backButton = faceModeElement(machine, uiState, -25, 117, 1, "kenergyengineering.info.back");
+        var leftButton = faceModeElement(machine, uiState, -53, 103, 2, "kenergyengineering.info.left");
+        var rightButton = faceModeElement(machine, uiState, -25, 103, 3, "kenergyengineering.info.right");
+        var upButton = faceModeElement(machine, uiState, -39, 89, 4, "kenergyengineering.info.up");
+        var downButton = faceModeElement(machine, uiState, -39, 117, 5, "kenergyengineering.info.down");
+
+        root.addChild(controlButton);
+        root.addChild(controlPanel);
+        root.addChild(closeButton);
+        root.addChild(energyModeButton);
+        root.addChild(itemModeButton);
+        root.addChild(fluidModeButton);
+        root.addChild(frontButton);
+        root.addChild(backButton);
+        root.addChild(leftButton);
+        root.addChild(rightButton);
+        root.addChild(upButton);
+        root.addChild(downButton);
+
+        Runnable syncSidebar = () -> {
+            boolean open = uiState.isControlOpen();
+            controlButton.setDisplay(!open);
+            controlPanel.setDisplay(open);
+            closeButton.setDisplay(open);
+            energyModeButton.setDisplay(open);
+            itemModeButton.setDisplay(open);
+            fluidModeButton.setDisplay(open);
+            frontButton.setDisplay(open);
+            backButton.setDisplay(open);
+            leftButton.setDisplay(open);
+            rightButton.setDisplay(open);
+            upButton.setDisplay(open);
+            downButton.setDisplay(open);
+        };
+        syncSidebar.run();
+        root.addEventListener(UIEvents.TICK, event -> syncSidebar.run());
     }
 
     public static ItemSlot machineSlot(CmMachineBlockEntity machine, int index, int x, int y) {
@@ -158,18 +191,18 @@ public final class TENMachineBlockUIFactory {
     private static UIElement faceModeElement(CmMachineBlockEntity machine, UIState uiState, int x, int y, int logicalSide, String tooltipKey) {
         return dynamicTextureElement(
                 x, y, 12, 12,
-                () -> sprite(HANDLER, 121, 126 + faceMode(machine, uiState.selectedTransferMode, logicalSide) * 12, 12, 12),
+                () -> sprite(HANDLER, 121, 126 + faceMode(machine, uiState.getSelectedTransferMode(), logicalSide) * 12, 12, 12),
                 () -> List.of(
                         ComponentHelper.translated(ComponentHelper.GOLD, tooltipKey),
-                        ComponentHelper.translated("kenergyengineering.info." + FaceOption.toStr(faceMode(machine, uiState.selectedTransferMode, logicalSide)))),
+                        ComponentHelper.translated("kenergyengineering.info." + FaceOption.toStr(faceMode(machine, uiState.getSelectedTransferMode(), logicalSide)))),
                 null,
                 () -> {
                     Direction direction = logicalDirection(machine, logicalSide);
                     if (direction != null) {
-                        machine.rpcCycleFaceMode(RPCSender.ofServer(), uiState.selectedTransferMode, direction.get3DDataValue());
+                        machine.rpcCycleFaceMode(RPCSender.ofServer(), uiState.getSelectedTransferMode(), direction.get3DDataValue());
                     }
                 },
-                () -> uiState.controlOpen);
+                uiState::isControlOpen);
     }
 
     public static ProgressBar energyGauge(CmMachineBlockEntity machine, int x, int y, int width, int height, int xOff, int yOff, boolean displayValue) {
@@ -466,7 +499,45 @@ public final class TENMachineBlockUIFactory {
 
     public static final class UIState {
 
-        public int selectedTransferMode;
-        public boolean controlOpen;
+        private static final Map<String, Snapshot> CACHE = new ConcurrentHashMap<>();
+
+        private final String key;
+        private int selectedTransferMode;
+        private boolean controlOpen;
+
+        public UIState(BlockUIMenuType.BlockUIHolder holder) {
+            this.key = holder.player.getUUID() + "@" + holder.pos.asLong();
+            Snapshot snapshot = CACHE.computeIfAbsent(key, ignored -> new Snapshot());
+            this.selectedTransferMode = snapshot.selectedTransferMode;
+            this.controlOpen = snapshot.controlOpen;
+        }
+
+        public int getSelectedTransferMode() {
+            return selectedTransferMode;
+        }
+
+        public void setSelectedTransferMode(int selectedTransferMode) {
+            this.selectedTransferMode = selectedTransferMode;
+            snapshot().selectedTransferMode = selectedTransferMode;
+        }
+
+        public boolean isControlOpen() {
+            return controlOpen;
+        }
+
+        public void setControlOpen(boolean controlOpen) {
+            this.controlOpen = controlOpen;
+            snapshot().controlOpen = controlOpen;
+        }
+
+        private Snapshot snapshot() {
+            return CACHE.computeIfAbsent(key, ignored -> new Snapshot());
+        }
+    }
+
+    private static final class Snapshot {
+
+        private int selectedTransferMode;
+        private boolean controlOpen;
     }
 }
