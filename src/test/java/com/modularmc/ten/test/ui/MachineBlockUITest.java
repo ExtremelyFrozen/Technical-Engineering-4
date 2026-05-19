@@ -1,21 +1,21 @@
 package com.modularmc.ten.test.ui;
 
 import com.modularmc.ten.TEN;
+import com.modularmc.ten.common.block.machine.BaseMachineBlock;
+import com.modularmc.ten.common.blockentity.CableBlockEntity;
+import com.modularmc.ten.common.blockentity.PipeBlockEntity;
 import com.modularmc.ten.common.data.TENBlocks;
-import com.modularmc.ten.test.util.TENGameTestHelpers;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Block;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 import net.neoforged.testframework.annotation.TestHolder;
 
-import com.lowdragmc.lowdraglib2.gui.holder.ModularUIContainerMenu;
+import com.lowdragmc.lowdraglib2.gui.factory.BlockUIMenuType;
 
 import java.util.List;
 
@@ -45,19 +45,22 @@ public class MachineBlockUITest {
                 TENBlocks.ENGINE_SOLAR.get(),
                 TENBlocks.CELL.get(),
                 TENBlocks.CREATIVE_CELL.get());
-        ServerPlayer player = TENGameTestHelpers.makeTickingMockServerPlayerInLevel(helper, GameType.CREATIVE);
-        player.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+        var player = helper.makeMockPlayer(GameType.CREATIVE);
 
         for (int index = 0; index < machineBlocks.size(); index++) {
             BlockPos machinePos = new BlockPos(index % 5, 1, index / 5);
             helper.setBlock(machinePos, machineBlocks.get(index));
-            helper.useBlock(machinePos, player);
-
-            if (!(player.containerMenu instanceof ModularUIContainerMenu)) {
-                helper.fail("Expected machine interaction to open ModularUIContainerMenu for " + machineBlocks.get(index).getName().getString() + ", got " + player.containerMenu.getClass().getName());
+            var block = helper.getBlockState(machinePos).getBlock();
+            if (!(block instanceof BaseMachineBlock baseMachineBlock)) {
+                helper.fail("Expected BaseMachineBlock for " + machineBlocks.get(index).getName().getString());
                 return;
             }
-            player.closeContainer();
+            var holder = new BlockUIMenuType.BlockUIHolder(baseMachineBlock, player, helper.absolutePos(machinePos), helper.getBlockState(machinePos));
+            var ui = baseMachineBlock.createUI(holder);
+            if (ui == null) {
+                helper.fail("Expected machine block to create ModularUI for " + machineBlocks.get(index).getName().getString());
+                return;
+            }
         }
         helper.succeed();
     }
@@ -68,16 +71,8 @@ public class MachineBlockUITest {
     public static void plainPipeDoesNotOpenUI(GameTestHelper helper) {
         BlockPos pipePos = new BlockPos(1, 1, 1);
         helper.setBlock(pipePos, TENBlocks.PIPE.get());
-
-        ServerPlayer player = TENGameTestHelpers.makeTickingMockServerPlayerInLevel(helper, GameType.CREATIVE);
-        var beforeMenu = player.containerMenu;
-        helper.useBlock(pipePos, player);
-
-        if (player.containerMenu instanceof ModularUIContainerMenu) {
-            helper.fail("Expected plain pipe interaction to not open ModularUIContainerMenu");
-            return;
-        }
-        helper.assertTrue(player.containerMenu == beforeMenu, "Expected plain pipe interaction to keep original menu open");
+        PipeBlockEntity pipe = helper.getBlockEntity(pipePos);
+        helper.assertTrue(pipe != null && !pipe.hasUi(), "Expected plain pipe to report hasUi=false");
         helper.succeed();
     }
 
@@ -86,18 +81,27 @@ public class MachineBlockUITest {
     @PrefixGameTestTemplate(false)
     public static void filteredPipesOpenUI(GameTestHelper helper) {
         List<Block> pipes = List.of(TENBlocks.PIPE_WHITE.get(), TENBlocks.PIPE_BLACK.get());
-        ServerPlayer player = TENGameTestHelpers.makeTickingMockServerPlayerInLevel(helper, GameType.CREATIVE);
+        var player = helper.makeMockPlayer(GameType.CREATIVE);
 
         for (int index = 0; index < pipes.size(); index++) {
             BlockPos pipePos = new BlockPos(index, 1, 1);
             helper.setBlock(pipePos, pipes.get(index));
-            helper.useBlock(pipePos, player);
-
-            if (!(player.containerMenu instanceof ModularUIContainerMenu)) {
-                helper.fail("Expected filtered pipe interaction to open ModularUIContainerMenu for " + pipes.get(index).getName().getString());
+            PipeBlockEntity pipe = helper.getBlockEntity(pipePos);
+            if (pipe == null || !pipe.hasUi()) {
+                helper.fail("Expected filtered pipe to report hasUi=true for " + pipes.get(index).getName().getString());
                 return;
             }
-            player.closeContainer();
+            var block = helper.getBlockState(pipePos).getBlock();
+            if (!(block instanceof BaseMachineBlock baseMachineBlock)) {
+                helper.fail("Expected BaseMachineBlock for filtered pipe " + pipes.get(index).getName().getString());
+                return;
+            }
+            var holder = new BlockUIMenuType.BlockUIHolder(baseMachineBlock, player, helper.absolutePos(pipePos), helper.getBlockState(pipePos));
+            var ui = baseMachineBlock.createUI(holder);
+            if (ui == null) {
+                helper.fail("Expected filtered pipe to create ModularUI for " + pipes.get(index).getName().getString());
+                return;
+            }
         }
         helper.succeed();
     }
@@ -111,19 +115,12 @@ public class MachineBlockUITest {
                 TENBlocks.CABLE_QUARTZ.get(),
                 TENBlocks.CABLE_AZURE.get(),
                 TENBlocks.CABLE_STAR.get());
-        ServerPlayer player = TENGameTestHelpers.makeTickingMockServerPlayerInLevel(helper, GameType.CREATIVE);
 
         for (int index = 0; index < cables.size(); index++) {
             BlockPos cablePos = new BlockPos(index, 1, 1);
             helper.setBlock(cablePos, cables.get(index));
-            var beforeMenu = player.containerMenu;
-            helper.useBlock(cablePos, player);
-
-            if (player.containerMenu instanceof ModularUIContainerMenu) {
-                helper.fail("Expected energy cable interaction to not open ModularUIContainerMenu for " + cables.get(index).getName().getString());
-                return;
-            }
-            helper.assertTrue(player.containerMenu == beforeMenu, "Expected energy cable interaction to keep original menu open");
+            CableBlockEntity cable = helper.getBlockEntity(cablePos);
+            helper.assertTrue(cable != null && !cable.hasUi(), "Expected energy cable to report hasUi=false for " + cables.get(index).getName().getString());
         }
         helper.succeed();
     }

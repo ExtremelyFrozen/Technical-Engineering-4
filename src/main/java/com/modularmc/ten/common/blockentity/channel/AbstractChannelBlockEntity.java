@@ -3,14 +3,8 @@ package com.modularmc.ten.common.blockentity.channel;
 import com.modularmc.ten.TEN;
 import com.modularmc.ten.api.blockentity.CmMachineBlockEntity;
 import com.modularmc.ten.api.option.FaceOption;
-import com.modularmc.ten.common.gui.TENMachineBlockUIFactory;
 import com.modularmc.ten.utils.ComponentHelper;
-import com.lowdragmc.lowdraglib2.gui.factory.BlockUIMenuType;
-import com.lowdragmc.lowdraglib2.gui.texture.SpriteTexture;
-import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
-import com.lowdragmc.lowdraglib2.gui.ui.UIElement;
-import com.lowdragmc.lowdraglib2.gui.ui.elements.Label;
-import dev.vfyjxf.taffy.style.TaffyPosition;
+
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -21,6 +15,13 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 
+import com.lowdragmc.lowdraglib2.gui.factory.BlockUIMenuType;
+import com.lowdragmc.lowdraglib2.gui.texture.SpriteTexture;
+import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
+import com.lowdragmc.lowdraglib2.gui.ui.UIElement;
+import com.lowdragmc.lowdraglib2.gui.ui.elements.Label;
+import dev.vfyjxf.taffy.style.TaffyPosition;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -28,6 +29,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
 public abstract class AbstractChannelBlockEntity extends CmMachineBlockEntity {
+
     private static final ResourceLocation CHANNEL_HANDLER = TEN.id("textures/gui/channel.png");
 
     protected final List<BlockPos> outputs = new ArrayList<>();
@@ -312,6 +314,7 @@ public abstract class AbstractChannelBlockEntity extends CmMachineBlockEntity {
     private record ChannelEntryData(int index, BlockPos pos, boolean isInput) {}
 
     private static final class ChannelUIState {
+
         private static final Map<String, ChannelUIState> CACHE = new ConcurrentHashMap<>();
         private final String key;
         private int cursorFrom;

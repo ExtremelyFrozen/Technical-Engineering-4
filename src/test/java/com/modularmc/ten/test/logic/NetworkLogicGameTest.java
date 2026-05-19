@@ -8,12 +8,10 @@ import com.modularmc.ten.common.blockentity.channel.ChannelItemBlockEntity;
 import com.modularmc.ten.common.blockentity.machine.CellBlockEntity;
 import com.modularmc.ten.common.data.TENBlocks;
 import com.modularmc.ten.common.data.TENItems;
-import com.modularmc.ten.test.util.TENGameTestHelpers;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -41,7 +39,7 @@ public class NetworkLogicGameTest {
         helper.setBlock(sourcePos, TENBlocks.CHANNEL_ENERGY.get());
         helper.setBlock(targetPos, TENBlocks.CHANNEL_ENERGY.get());
 
-        ServerPlayer player = TENGameTestHelpers.makeTickingMockServerPlayerInLevel(helper, GameType.CREATIVE);
+        var player = helper.makeMockPlayer(GameType.CREATIVE);
         player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(TENItems.CHANNEL_CONNECTOR.get()));
         BlockPos absoluteSource = helper.absolutePos(sourcePos);
         BlockPos absoluteTarget = helper.absolutePos(targetPos);

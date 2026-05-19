@@ -53,8 +53,7 @@ public class ChannelItemBlockEntity extends AbstractChannelBlockEntity {
             root.addChild(TENMachineBlockUIFactory.machineSlot(this, 1, 25, 26));
             root.addChild(TENMachineBlockUIFactory.machineSlot(this, 2, 7, 44));
             root.addChild(TENMachineBlockUIFactory.machineSlot(this, 3, 25, 44));
-        }, root -> {
-        });
+        }, root -> {});
     }
 
     @Override
