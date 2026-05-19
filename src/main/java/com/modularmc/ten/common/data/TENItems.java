@@ -78,10 +78,7 @@ public class TENItems {
     public static final ItemEntry<Item> REDSTONE_AI_ADVANCED = texturedItem("redstone_ai_advanced", "Advanced Redstone AI", "自律红石智能芯片", "item/crafting/redstone_ai_advanced");
     public static final ItemEntry<Item> HYDRAULIC_WIDGET = texturedItem("hydraulic_widget", "Hydraulic Widget", "液压组件", "item/crafting/hydraulic_widget");
     public static final ItemEntry<Item> DETECTOR = texturedItem("detector", "Detector", "反射探测仪", "item/crafting/detector");
-    public static final ItemEntry<ChannelConnectorItem> CHANNEL_CONNECTOR = REGISTRATE.item("channel_connector", ChannelConnectorItem::new)
-            .lang("Channel Connector")
-            .model((ctx, prov) -> prov.generated(ctx::getEntry, prov.modLoc("item/channel_connector")))
-            .register();
+
     public static final ItemEntry<Item> ROYAL_JELLY = texturedItem("royal_jelly", "Royal Jelly", "蜂王浆", "item/royal_jelly");
     public static final ItemEntry<Item> SPICY_JELLY = texturedItem("spicy_jelly", "Spicy Jelly", "香辣蜂王浆", "item/spicy_jelly");
 
@@ -120,6 +117,7 @@ public class TENItems {
 
     public static final ItemEntry<SpannerItem> SPANNER = tool("spanner", "Spanner", "扳手", SpannerItem::new, "item/spanner");
     public static final ItemEntry<EnergyUnitItem> ENERGY_CAPACITY = tool("energy_capacity", "Energy Unit", "能量单元", EnergyUnitItem::new, "item/energy_capacity");
+    public static final ItemEntry<ChannelConnectorItem> CHANNEL_CONNECTOR = tool("channel_connector", "Channel Connector", "频道桥接器", ChannelConnectorItem::new, "item/channel_connector");
     // Upgrades
     public static final ItemEntry<? extends UpgradeItem> AUGMENTED_LEVELUP = upgrade("augmented_levelup", "Upgrade: Augmented Kit", "升级：增强组件", p -> new LevelupAug());
     public static final ItemEntry<? extends UpgradeItem> POWERED_LEVELUP = upgrade("powered_levelup", "Upgrade: Powered Kit", "升级：充能组件", p -> new LevelupPower());
