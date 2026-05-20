@@ -144,6 +144,8 @@ public enum Mat {
             return TEN.MOD_ID + ":raw_" + id + "_block";
         if (suffix.startsWith("raw_") && hasRaw)
             return TEN.MOD_ID + ":raw_" + id;
+        if (suffix.equals("deep_ore"))
+            return TEN.MOD_ID + ":deep_" + id + "_ore";
         return TEN.MOD_ID + ":" + id + "_" + suffix;
     }
 
