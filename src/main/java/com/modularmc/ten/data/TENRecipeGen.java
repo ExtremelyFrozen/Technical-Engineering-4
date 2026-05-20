@@ -49,8 +49,13 @@ public class TENRecipeGen implements DataProvider {
             if (mat.isRegistered("gear"))
                 futures.add(saveJson(cache, recipeDir.resolve("vanilla/material/" + mat.id + "_gear.json"), buildShapedGear(mat)));
 
-            for (var r : PULV) if (canPulv(mat, r))
-                futures.add(saveJson(cache, recipeDir.resolve("pulverizer/metal/" + mat.id + r.suffix() + ".json"), buildPulv(mat, r)));
+            for (var r : PULV) {
+                boolean canPulv = canPulv(mat, r);
+                if (!canPulv && "gems".equals(mat.compressTagCategory()) && "ingots".equals(r.tagCat))
+                    canPulv = mat != Mat.REDSTONE;
+                if (canPulv)
+                    futures.add(saveJson(cache, recipeDir.resolve("pulverizer/metal/" + mat.id + r.suffix() + ".json"), buildPulv(mat, r)));
+            }
 
             for (var r : SMELT) if (canSmelt(mat, r)) {
                 String inputId = smeltInput(mat, r);
@@ -203,7 +208,9 @@ public class TENRecipeGen implements DataProvider {
     private JsonObject buildPulv(Mat mat, PulvFmt r) {
         var j = new JsonObject();
         j.addProperty("type", TEN.MOD_ID + ":pulverizer");
-        j.add("inputs", arr(ingr("item", "tag", mat.tag(r.tagCat), null, null)));
+        String tagCat = mat.compressTagCategory();
+        if (tagCat == null) tagCat = r.tagCat;
+        j.add("inputs", arr(ingr("item", "tag", mat.tag(tagCat), null, null)));
 
         var outs = new JsonArray();
         outs.add(ingr("item", "static", mat.itemId("dust"), r.dustCount, null));

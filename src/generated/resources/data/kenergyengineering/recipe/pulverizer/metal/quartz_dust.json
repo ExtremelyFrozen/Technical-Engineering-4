@@ -4,23 +4,16 @@
     {
       "type": "tag",
       "form": "item",
-      "key": "c:ingots/tin"
+      "key": "c:gems/quartz"
     }
   ],
   "outputs": [
     {
       "type": "static",
-      "count": 2,
-      "form": "item",
-      "key": "kenergyengineering:tin_dust"
-    },
-    {
-      "type": "static",
-      "chance": 0.2,
       "count": 1,
       "form": "item",
-      "key": "minecraft:gravel"
+      "key": "kenergyengineering:quartz_dust"
     }
   ],
-  "time": 180
+  "time": 100
 }
