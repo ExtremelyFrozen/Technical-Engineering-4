@@ -188,7 +188,7 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         if (maxReceiveEnergy <= 0) maxReceiveEnergy = initialEnergyReceive;
         if (maxExtractEnergy <= 0) maxExtractEnergy = initialEnergyExtract;
 
-        if (itemHandler == null) {
+        if (itemHandler == null || itemHandler.getSlots() != inventorySize()) {
             itemHandler = new MachineItemHandler(inventorySize(), this::valid);
         } else {
             itemHandler.setValidator(this::valid);
@@ -370,13 +370,15 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         };
     }
 
-    public final boolean isGeneratorType() {
+    public final boolean canExternalExtract() {
         return switch (machineType()) {
             case com.modularmc.ten.api.option.MachineType.GENERATOR,
                  com.modularmc.ten.api.option.MachineType.ENGINE_SOLAR,
                  com.modularmc.ten.api.option.MachineType.ENGINE_EXTRACTION,
                  com.modularmc.ten.api.option.MachineType.ENGINE_METAL,
-                 com.modularmc.ten.api.option.MachineType.ENGINE_BIOMASS -> true;
+                 com.modularmc.ten.api.option.MachineType.ENGINE_BIOMASS,
+                 com.modularmc.ten.api.option.MachineType.CELL,
+                 com.modularmc.ten.api.option.MachineType.CREATIVE_CELL -> true;
             default -> false;
         };
     }
@@ -492,7 +494,7 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
 
             @Override
             public int extractEnergy(int maxExtract, boolean simulate) {
-                if (!isGeneratorType()) return 0;
+                if (!canExternalExtract()) return 0;
                 if (!signalAllowRun() || !canExtractEnergy(side)) return 0;
                 return energyStorage.extractEnergy(Math.min(maxExtract, maxExtractEnergy), simulate);
             }
@@ -509,7 +511,7 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
 
             @Override
             public boolean canExtract() {
-                return isGeneratorType() && canExtractEnergy(side);
+                return canExternalExtract() && canExtractEnergy(side);
             }
 
             @Override
@@ -611,7 +613,12 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
     @Override
     protected void readTileData(CompoundTag tag, HolderLookup.Provider registries) {
         if (energyStorage != null) energyStorage.setEnergy(tag.getInt("energy"));
-        if (itemHandler != null) itemHandler.deserializeNBT(registries, tag.getCompound("inventory"));
+        if (itemHandler != null) {
+            CompoundTag invTag = tag.getCompound("inventory");
+            if (!invTag.isEmpty() && invTag.getInt("Size") == itemHandler.getSlots()) {
+                itemHandler.deserializeNBT(registries, invTag);
+            }
+        }
         if (upgradeHandler != null) upgradeHandler.deserializeNBT(registries, tag.getCompound("upgrades"));
         upgradeSize = tag.contains("upgrade_size") ? tag.getInt("upgrade_size") : initialUpgradeSize;
         for (Direction direction : Direction.values()) {

@@ -73,7 +73,6 @@ public class CableBlockEntity extends CmBlockEntity {
         // Phase 1: Collect all sources (generators) and sinks (consumers)
         List<IEnergyStorage> sources = new ArrayList<>();
         List<IEnergyStorage> sinks = new ArrayList<>();
-        Set<BlockPos> sourcePositions = new HashSet<>();
 
         for (BlockPos cablePos : network) {
             for (Direction dir : Direction.values()) {
@@ -83,7 +82,6 @@ public class CableBlockEntity extends CmBlockEntity {
                 if (cap == null) continue;
                 if (cap.canExtract()) {
                     sources.add(cap);
-                    sourcePositions.add(neighbor);
                 } else if (cap.canReceive()) {
                     sinks.add(cap);
                 }

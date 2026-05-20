@@ -85,6 +85,20 @@ public class ConfigHolder {
         public boolean enableFarmManager = true;
     }
 
+    @Configurable
+    @Configurable.Comment("Farm Manager configuration options")
+    public FarmConfigs farm = new FarmConfigs();
+
+    public static class FarmConfigs {
+
+        @Configurable
+        @Configurable.Comment("Block IDs treated as bush-type crops (harvested without replanting)")
+        public String[] bushCrops = {
+            "minecraft:sweet_berry_bush"
+        };
+    }
+
+
     public static class EnergyUnitConfigs {
 
         @Configurable

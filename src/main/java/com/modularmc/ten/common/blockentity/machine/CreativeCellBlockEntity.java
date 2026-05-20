@@ -76,7 +76,7 @@ public class CreativeCellBlockEntity extends CmMachineBlockEntity {
         energyStorage.setEnergy(maxStorageEnergy);
         setActive(true);
 
-        if (!signalAllowRun() || itemHandler == null) return;
+        if (!signalAllowRun() || itemHandler == null || itemHandler.getSlots() < 2) return;
 
         for (int slot = 0; slot < 2; slot++) {
             ItemStack stack = itemHandler.getStackInSlot(slot);
