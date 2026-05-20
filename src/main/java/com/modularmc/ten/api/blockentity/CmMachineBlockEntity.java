@@ -372,13 +372,7 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
 
     public final boolean canExternalExtract() {
         return switch (machineType()) {
-            case com.modularmc.ten.api.option.MachineType.GENERATOR,
-                 com.modularmc.ten.api.option.MachineType.ENGINE_SOLAR,
-                 com.modularmc.ten.api.option.MachineType.ENGINE_EXTRACTION,
-                 com.modularmc.ten.api.option.MachineType.ENGINE_METAL,
-                 com.modularmc.ten.api.option.MachineType.ENGINE_BIOMASS,
-                 com.modularmc.ten.api.option.MachineType.CELL,
-                 com.modularmc.ten.api.option.MachineType.CREATIVE_CELL -> true;
+            case com.modularmc.ten.api.option.MachineType.GENERATOR, com.modularmc.ten.api.option.MachineType.ENGINE_SOLAR, com.modularmc.ten.api.option.MachineType.ENGINE_EXTRACTION, com.modularmc.ten.api.option.MachineType.ENGINE_METAL, com.modularmc.ten.api.option.MachineType.ENGINE_BIOMASS, com.modularmc.ten.api.option.MachineType.CELL, com.modularmc.ten.api.option.MachineType.CREATIVE_CELL -> true;
             default -> false;
         };
     }

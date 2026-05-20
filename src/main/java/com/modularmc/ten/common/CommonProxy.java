@@ -79,6 +79,7 @@ public class CommonProxy {
         event.registerItem(Capabilities.EnergyStorage.ITEM, (stack, ctx) -> {
             var data = com.modularmc.ten.component.EnergyUnitData.of(stack);
             return new IEnergyStorage() {
+
                 private int doReceive(int maxReceive) {
                     int capacity = EnergyUnitItem.maxEnergy();
                     int stored = data.getEnergy();

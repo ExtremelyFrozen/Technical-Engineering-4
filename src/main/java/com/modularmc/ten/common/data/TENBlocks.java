@@ -1,6 +1,5 @@
 package com.modularmc.ten.common.data;
 
-import com.modularmc.ten.TEN;
 import com.modularmc.ten.common.block.machine.CableBased;
 import com.modularmc.ten.common.block.machine.DirectionalMachineBlock;
 import com.modularmc.ten.common.block.machine.HorizontalMachineBlock;
@@ -206,6 +205,7 @@ public class TENBlocks {
                 .tag(TENTags.MACHINES)
                 .item().model((ctx, prov) -> prov.blockItem(ctx::getEntry)).build().register();
     }
+
     private static BlockEntry<HorizontalMachineBlock> cell(String n, String englishName, String cn) {
         ZH_NAMES.put(n, cn);
         return REGISTRATE.block(n, HorizontalMachineBlock::new)

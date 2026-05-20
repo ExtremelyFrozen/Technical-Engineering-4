@@ -94,10 +94,9 @@ public class ConfigHolder {
         @Configurable
         @Configurable.Comment("Block IDs treated as bush-type crops (harvested without replanting)")
         public String[] bushCrops = {
-            "minecraft:sweet_berry_bush"
+                "minecraft:sweet_berry_bush"
         };
     }
-
 
     public static class EnergyUnitConfigs {
 

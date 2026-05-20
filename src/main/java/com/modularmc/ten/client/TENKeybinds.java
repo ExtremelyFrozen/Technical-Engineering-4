@@ -13,7 +13,7 @@ import net.neoforged.neoforge.common.util.Lazy;
 import com.mojang.blaze3d.platform.InputConstants;
 import org.lwjgl.glfw.GLFW;
 
-@EventBusSubscriber(modid = TEN.MOD_ID, value = Dist.CLIENT, bus = EventBusSubscriber.Bus.MOD)
+@EventBusSubscriber(modid = TEN.MOD_ID, value = Dist.CLIENT)
 public class TENKeybinds {
 
     public static final String KEY_CATEGORY = "key.categories." + TEN.MOD_ID;
