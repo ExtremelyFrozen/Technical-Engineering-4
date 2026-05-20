@@ -9,7 +9,7 @@
 			"item": "kenergyengineering:indigo"
 		},
 		"C": {
-			"item": "kenergyengineering:cell"
+			"item": "kenergyengineering:energy_cell"
 		},
 		"D": {
 			"item": "kenergyengineering:azure_glass"

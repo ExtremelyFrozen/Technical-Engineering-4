@@ -79,7 +79,7 @@ public class CableBlockEntity extends CmBlockEntity {
                 if (level.getBlockEntity(neighbor) instanceof CableBlockEntity) continue;
                 IEnergyStorage cap = TransferNetworks.getEnergy(level, neighbor, dir.getOpposite());
                 if (cap == null) continue;
-                if (cap.canExtract()) {
+                if (cap.canExtract() && cap.extractEnergy(1, true) > 0) {
                     sources.add(cap);
                 } else if (cap.canReceive()) {
                     sinks.add(cap);
