@@ -8,6 +8,9 @@ import com.modularmc.ten.utils.WorkingHelper;
 import com.modularmc.ten.config.ConfigHolder;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.CropBlock;
 import net.minecraft.world.level.block.StemBlock;
@@ -167,6 +170,8 @@ public class FarmBlockEntity extends RadiusMachineBlockEntity {
             BlockPos pos = new BlockPos(cx, y, cz + k);
             if (!worldPosition.closerThan(pos, radius)) continue;
             BlockState state = level.getBlockState(pos);
+            BlockPos below = pos.below();
+            BlockState belowState = level.getBlockState(below);
             var ageProp = findAgeProperty(state);
 
             // Tier 1: Standard CropBlock
@@ -214,7 +219,17 @@ public class FarmBlockEntity extends RadiusMachineBlockEntity {
                 continue;
             }
 
-
+            // Auto-plant on empty farmland from seed slots
+            if (belowState.is(Blocks.FARMLAND) && state.isAir()) {
+                ItemStack seed = getSeed();
+                if (!seed.isEmpty() && seed.getItem() instanceof BlockItem bi) {
+                    Block plantBlock = bi.getBlock();
+                    if (plantBlock instanceof CropBlock) {
+                        level.setBlock(pos, plantBlock.defaultBlockState(), 3);
+                        seed.shrink(1);
+                    }
+                }
+            }
         }
         return maturity;
     }
