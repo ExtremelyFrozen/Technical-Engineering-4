@@ -3,11 +3,13 @@ package com.modularmc.ten.common.blockentity.machine;
 import com.modularmc.ten.api.blockentity.RadiusMachineBlockEntity;
 import com.modularmc.ten.api.option.IngredientType;
 import com.modularmc.ten.api.option.MachineType;
+import com.modularmc.ten.common.block.machine.HorizontalMachineBlock;
 import com.modularmc.ten.common.gui.TENMachineBlockUIFactory;
 import com.modularmc.ten.config.ConfigHolder;
 import com.modularmc.ten.utils.WorkingHelper;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
@@ -135,11 +137,10 @@ public class FarmBlockEntity extends RadiusMachineBlockEntity {
     }
 
     private int[] buildXOffsets() {
-        int rr = radius % 2 == 0 ? radius - 1 : radius;
-        int count = radius + rr;
-        int[] offsets = new int[count];
-        for (int i = 0; i < count; i++) {
-            offsets[i] = -rr + i;
+        // 9x9 square: 9 positions along the width axis (perpendicular to facing)
+        int[] offsets = new int[9];
+        for (int i = 0; i < 9; i++) {
+            offsets[i] = -4 + i;
         }
         return offsets;
     }
@@ -159,31 +160,61 @@ public class FarmBlockEntity extends RadiusMachineBlockEntity {
         xRowMaturity = newMaturity;
     }
 
-    private int scanRow(int xOffset) {
-        int cx = worldPosition.getX() + xOffset;
-        int y = worldPosition.getY();
-        int cz = worldPosition.getZ();
-        int rr = radius % 2 == 0 ? radius - 1 : radius;
+    private int scanRow(int widthOffset) {
+        if (level == null) return 0;
+
+        BlockState state = getBlockState();
+        Direction facing = state.getValue(HorizontalMachineBlock.FACING);
+
+        int mx = worldPosition.getX();
+        int my = worldPosition.getY();
+        int mz = worldPosition.getZ();
         int maturity = 0;
 
-        for (int k = -rr; k < radius; k++) {
-            BlockPos pos = new BlockPos(cx, y, cz + k);
-            if (!worldPosition.closerThan(pos, radius)) continue;
-            BlockState state = level.getBlockState(pos);
+        // Scan 9 blocks along the depth axis (back direction)
+        for (int d = 0; d < 9; d++) {
+            int dx, dz;
+            // widthOffset: axis perpendicular to facing
+            // d: depth axis (opposite of facing = behind)
+            switch (facing) {
+                case NORTH -> {
+                    dx = widthOffset;
+                    dz = d;
+                }
+                case SOUTH -> {
+                    dx = widthOffset;
+                    dz = -d;
+                }
+                case EAST -> {
+                    dx = -d;
+                    dz = widthOffset;
+                }
+                case WEST -> {
+                    dx = d;
+                    dz = widthOffset;
+                }
+                default -> {
+                    dx = widthOffset;
+                    dz = d;
+                }
+            }
+            BlockPos pos = new BlockPos(mx + dx, my, mz + dz);
+            if (pos.equals(worldPosition)) continue;
+            BlockState scanState = level.getBlockState(pos);
             BlockPos below = pos.below();
             BlockState belowState = level.getBlockState(below);
-            var ageProp = findAgeProperty(state);
+            var ageProp = findAgeProperty(scanState);
 
             // Tier 1: Standard CropBlock
-            if (state.getBlock() instanceof CropBlock crop) {
-                int age = state.getValue(CropBlock.AGE);
+            if (scanState.getBlock() instanceof CropBlock crop) {
+                int age = scanState.getValue(CropBlock.AGE);
                 int maxAge = crop.getMaxAge();
                 if (age >= maxAge) {
                     var lootBuilder = WorkingHelper.getLootBuilder(level, worldPosition, ItemStack.EMPTY);
-                    List<ItemStack> drops = state.getDrops(lootBuilder);
+                    List<ItemStack> drops = scanState.getDrops(lootBuilder);
                     if (canFitAll(drops)) {
                         fitAll(drops);
-                        level.setBlock(pos, state.setValue(CropBlock.AGE, 1), 3);
+                        level.setBlock(pos, scanState.setValue(CropBlock.AGE, 1), 3);
                     }
                 } else if (age >= maxAge - 1) {
                     maturity++;
@@ -192,15 +223,15 @@ public class FarmBlockEntity extends RadiusMachineBlockEntity {
             }
 
             // Tier 2: Bush/regrowable crops
-            if (ageProp != null && !(state.getBlock() instanceof StemBlock)) {
-                int age = state.getValue(ageProp);
+            if (ageProp != null && !(scanState.getBlock() instanceof StemBlock)) {
+                int age = scanState.getValue(ageProp);
                 int maxAge = ageProp.getPossibleValues().stream().max(Integer::compare).orElse(0);
                 if (age >= maxAge) {
                     var lootBuilder = WorkingHelper.getLootBuilder(level, worldPosition, ItemStack.EMPTY);
-                    List<ItemStack> drops = state.getDrops(lootBuilder);
+                    List<ItemStack> drops = scanState.getDrops(lootBuilder);
                     if (canFitAll(drops)) {
                         fitAll(drops);
-                        level.setBlock(pos, state.setValue(ageProp, Math.max(0, maxAge - 1)), 3);
+                        level.setBlock(pos, scanState.setValue(ageProp, Math.max(0, maxAge - 1)), 3);
                     }
                 } else if (age >= maxAge - 1) {
                     maturity++;
@@ -209,9 +240,9 @@ public class FarmBlockEntity extends RadiusMachineBlockEntity {
             }
 
             // Tier 3: Config list override
-            if (ageProp == null && isBushCrop(state)) {
+            if (ageProp == null && isBushCrop(scanState)) {
                 var lootBuilder = WorkingHelper.getLootBuilder(level, worldPosition, ItemStack.EMPTY);
-                List<ItemStack> drops = state.getDrops(lootBuilder);
+                List<ItemStack> drops = scanState.getDrops(lootBuilder);
                 if (canFitAll(drops)) {
                     fitAll(drops);
                     level.destroyBlock(pos, false);
@@ -220,7 +251,7 @@ public class FarmBlockEntity extends RadiusMachineBlockEntity {
             }
 
             // Auto-plant on empty farmland from seed slots
-            if (belowState.is(Blocks.FARMLAND) && state.isAir()) {
+            if (belowState.is(Blocks.FARMLAND) && scanState.isAir()) {
                 ItemStack seed = getSeed();
                 if (!seed.isEmpty() && seed.getItem() instanceof BlockItem bi) {
                     Block plantBlock = bi.getBlock();
