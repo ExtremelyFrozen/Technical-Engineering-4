@@ -9,18 +9,12 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.energy.IEnergyStorage;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Set;
-
 /**
- * Energy cable with zero internal buffer — pure pass-through.
+ * Energy cable — zero buffer, per-cable independent transfer.
  * <p>
- * Root cable (lowest coordinate in network) discovers all connected generators
- * and consumers each tick, then pulls directly from sources and pushes to sinks
- * via {@link TransferNetworks#moveEnergy}. No energy is stored in the cable itself.
- * <p>
- * Design reference: EnderIO conduits (NeoForge 1.21), Pipez.
+ * Design (Pipez-style): each cable independently pushes and pulls energy
+ * to/from its direct neighbors every tick. No network scanning, no root
+ * election, no inter-cable coordination. Reliable and predictable.
  */
 public class CableBlockEntity extends CmBlockEntity {
 
@@ -28,22 +22,81 @@ public class CableBlockEntity extends CmBlockEntity {
         super(type, pos, state);
     }
 
+    @Override
+    protected void tick() {
+        if (level == null || level.isClientSide()) return;
+
+        int moved = transferOnce();
+        setActive(moved > 0);
+    }
+
     /**
-     * Exposed capability — cables expose a dead-end storage that immediately
-     * forwards received energy to connected consumers.
+     * One pass: pull from each non-cable neighbor that canExtract,
+     * immediately push to first non-cable neighbor that canReceive.
+     * <p>
+     * All simulation before execution — no double-deduction.
+     */
+    private int transferOnce() {
+        int rate = transferFor(getBlockState());
+        int moved = 0;
+
+        for (Direction inDir : Direction.values()) {
+            BlockPos sourcePos = worldPosition.relative(inDir);
+            if (level.getBlockEntity(sourcePos) instanceof CableBlockEntity) continue;
+
+            IEnergyStorage source = TransferNetworks.getEnergy(level, sourcePos, inDir.getOpposite());
+            if (source == null || !source.canExtract()) continue;
+
+            // Simulate pull
+            int pulled = source.extractEnergy(rate, true);
+            if (pulled <= 0) continue;
+
+            // Find a sink and simulate push
+            int remaining = pulled;
+            for (Direction outDir : Direction.values()) {
+                if (remaining <= 0) break;
+
+                BlockPos sinkPos = worldPosition.relative(outDir);
+                if (sinkPos.equals(sourcePos)) continue;
+                if (level.getBlockEntity(sinkPos) instanceof CableBlockEntity) continue;
+
+                IEnergyStorage sink = TransferNetworks.getEnergy(level, sinkPos, outDir.getOpposite());
+                if (sink == null || !sink.canReceive()) continue;
+
+                int canAccept = sink.receiveEnergy(remaining, true);
+                if (canAccept <= 0) continue;
+
+                // Execute: pull from source, push to sink
+                int drained = source.extractEnergy(canAccept, false);
+                if (drained > 0) {
+                    int accepted = sink.receiveEnergy(drained, false);
+                    remaining -= accepted;
+                    moved += accepted;
+                }
+            }
+
+            // If we simulated a partial pull but didn't execute it,
+            // we just skip — the simulated extract doesn't change state
+        }
+
+        return moved;
+    }
+
+    /**
+     * Exposed capability — cables are dead ends. All transfer happens in
+     * {@link #transferOnce()} via neighbor capability access.
      */
     public IEnergyStorage getEnergy(Direction side) {
         int rate = transferFor(getBlockState());
         return new IEnergyStorage() {
 
             @Override
-            public int receiveEnergy(int amount, boolean simulate) {
-                if (amount <= 0) return 0;
-                return forwardReceived(rate, amount, simulate);
+            public int receiveEnergy(int amt, boolean sim) {
+                return 0;
             }
 
             @Override
-            public int extractEnergy(int amount, boolean simulate) {
+            public int extractEnergy(int amt, boolean sim) {
                 return 0;
             }
 
@@ -64,7 +117,7 @@ public class CableBlockEntity extends CmBlockEntity {
 
             @Override
             public boolean canReceive() {
-                return true;
+                return false;
             }
         };
     }
@@ -73,102 +126,6 @@ public class CableBlockEntity extends CmBlockEntity {
         return false;
     }
 
-    // ────────── Tick ──────────
-
-    @Override
-    protected void tick() {
-        if (level == null || level.isClientSide() || getAliveTime() % 5 != 0) {
-            return;
-        }
-        if (!isNetworkRoot()) {
-            return;
-        }
-        int moved = redistribute();
-        setActive(moved > 0);
-    }
-
-    private boolean isNetworkRoot() {
-        Set<BlockPos> network = TransferNetworks.collectConnected(level, worldPosition,
-                (lvl, pos) -> lvl.getBlockEntity(pos) instanceof CableBlockEntity);
-        return TransferNetworks.isRoot(network, worldPosition);
-    }
-
-    // ────────── Network energy distribution ──────────
-
-    /**
-     * Main transfer: collect sources & sinks across the cable network,
-     * then move energy using {@link TransferNetworks#moveEnergy}.
-     */
-    private int redistribute() {
-        Set<BlockPos> network = TransferNetworks.collectConnected(level, worldPosition,
-                (lvl, pos) -> lvl.getBlockEntity(pos) instanceof CableBlockEntity);
-        if (network.isEmpty()) return 0;
-
-        int rate = transferFor(getBlockState());
-        int moved = 0;
-
-        // Collect sources and sinks (deduplicated by position)
-        Map<BlockPos, IEnergyStorage> sources = new LinkedHashMap<>();
-        Map<BlockPos, IEnergyStorage> sinks = new LinkedHashMap<>();
-
-        for (BlockPos cablePos : network) {
-            for (Direction dir : Direction.values()) {
-                BlockPos neighbor = cablePos.relative(dir);
-                if (network.contains(neighbor)) continue;
-                IEnergyStorage cap = TransferNetworks.getEnergy(level, neighbor, dir.getOpposite());
-                if (cap == null) continue;
-                if (cap.canExtract()) sources.putIfAbsent(neighbor, cap);
-                if (cap.canReceive()) sinks.putIfAbsent(neighbor, cap);
-            }
-        }
-
-        if (sources.isEmpty() || sinks.isEmpty()) return 0;
-
-        // Move energy: each source → each sink
-        // moveEnergy handles simulate-then-execute correctly, no double-deduction
-        for (var sourceEntry : sources.entrySet()) {
-            BlockPos sourcePos = sourceEntry.getKey();
-            IEnergyStorage source = sourceEntry.getValue();
-            for (var sinkEntry : sinks.entrySet()) {
-                if (sinkEntry.getKey().equals(sourcePos)) continue;
-                moved += TransferNetworks.moveEnergy(source, sinkEntry.getValue(), rate, false);
-            }
-        }
-
-        return moved;
-    }
-
-    /**
-     * On-demand forwarding: when a generator pushes energy into this cable
-     * (via {@link #getEnergy} receiveEnergy), we forward to all consumers.
-     */
-    private int forwardReceived(int rate, int amount, boolean simulate) {
-        Set<BlockPos> network = TransferNetworks.collectConnected(level, worldPosition,
-                (lvl, pos) -> lvl.getBlockEntity(pos) instanceof CableBlockEntity);
-        if (network.isEmpty()) return 0;
-
-        int toDistribute = Math.min(amount, rate);
-        int totalAccepted = 0;
-        Map<BlockPos, IEnergyStorage> seen = new LinkedHashMap<>();
-
-        for (BlockPos cablePos : network) {
-            for (Direction dir : Direction.values()) {
-                if (toDistribute <= 0) break;
-                BlockPos neighbor = cablePos.relative(dir);
-                if (network.contains(neighbor) || seen.containsKey(neighbor)) continue;
-                IEnergyStorage cap = TransferNetworks.getEnergy(level, neighbor, dir.getOpposite());
-                if (cap == null || !cap.canReceive()) continue;
-                seen.put(neighbor, cap);
-                int accepted = cap.receiveEnergy(toDistribute, simulate);
-                totalAccepted += accepted;
-                toDistribute -= accepted;
-            }
-        }
-        return totalAccepted;
-    }
-
-    // ────────── Rate / tier lookup ──────────
-
     private static int transferFor(BlockState state) {
         String name = SafeOperationHelper.regNameOf(state.getBlock());
         if ("cable_star".equals(name)) return 200_000;
@@ -176,8 +133,6 @@ public class CableBlockEntity extends CmBlockEntity {
         if ("cable_quartz".equals(name)) return 1_000;
         return 200;
     }
-
-    // ────────── Visual active state ──────────
 
     private void setActive(boolean active) {
         if (level == null) return;
