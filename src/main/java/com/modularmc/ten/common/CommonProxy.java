@@ -47,6 +47,9 @@ public class CommonProxy {
         for (var block : net.minecraft.core.registries.BuiltInRegistries.BLOCK) {
             if (block instanceof BaseMachineBlock) {
                 event.registerBlock(Capabilities.EnergyStorage.BLOCK, (level, pos, state, blockEntity, side) -> {
+                    if (blockEntity instanceof com.modularmc.ten.common.blockentity.CableBlockEntity cable) {
+                        return cable.getEnergy(side);
+                    }
                     if (blockEntity instanceof com.modularmc.ten.api.blockentity.CmMachineBlockEntity machine) {
                         return machine.getEnergyStorage(side);
                     }
