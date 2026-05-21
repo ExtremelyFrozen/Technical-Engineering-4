@@ -130,9 +130,6 @@ public class BaseMachineBlock extends Block implements EntityBlock, BlockUIMenuT
         if (holder.player.level().getBlockEntity(holder.pos) instanceof PipeBlockEntity pipe && pipe.hasUi()) {
             return pipe.createUI(holder);
         }
-        if (holder.player.level().getBlockEntity(holder.pos) instanceof CableBlockEntity cable && cable.hasUi()) {
-            return cable.createUI(holder);
-        }
         return TENMachineBlockUIFactory.createFallback(holder);
     }
 
