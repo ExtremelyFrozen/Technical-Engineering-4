@@ -21,8 +21,8 @@ import com.lowdragmc.lowdraglib2.gui.ui.UIElement;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.Label;
 import dev.vfyjxf.taffy.style.TaffyPosition;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
 public class CableBlockEntity extends CmBlockEntity {
@@ -69,9 +69,9 @@ public class CableBlockEntity extends CmBlockEntity {
         int rate = transferFor(getBlockState());
         int moved = 0;
 
-        // Phase 1: Collect all sources (generators) and sinks (consumers)
-        List<IEnergyStorage> sources = new ArrayList<>();
-        List<IEnergyStorage> sinks = new ArrayList<>();
+        // Phase 1: Collect all sources and sinks with their positions
+        Map<BlockPos, IEnergyStorage> sources = new HashMap<>();
+        Map<BlockPos, IEnergyStorage> sinks = new HashMap<>();
 
         for (BlockPos cablePos : network) {
             for (Direction dir : Direction.values()) {
@@ -79,54 +79,41 @@ public class CableBlockEntity extends CmBlockEntity {
                 if (level.getBlockEntity(neighbor) instanceof CableBlockEntity) continue;
                 IEnergyStorage cap = TransferNetworks.getEnergy(level, neighbor, dir.getOpposite());
                 if (cap == null) continue;
-                if (cap.canExtract() && cap.extractEnergy(1, true) > 0) {
-                    sources.add(cap);
-                } else if (cap.canReceive()) {
-                    sinks.add(cap);
-                }
+                if (cap.canExtract()) sources.put(neighbor, cap);
+                if (cap.canReceive()) sinks.put(neighbor, cap);
             }
         }
 
-        // Phase 2: Source -> sink direct transfer (buffer as overflow)
-        for (IEnergyStorage source : sources) {
-            int pulled = source.extractEnergy(rate, true);
+        // Phase 2: Extract from source (actual), push to sinks first, then buffer
+        for (var sourceEntry : sources.entrySet()) {
+            IEnergyStorage source = sourceEntry.getValue();
+            int pulled = source.extractEnergy(rate, false);
             if (pulled <= 0) continue;
+            moved += pulled;
 
-            // Try direct to sinks first
             int remaining = pulled;
-            for (IEnergyStorage sink : sinks) {
+            for (var sinkEntry : sinks.entrySet()) {
                 if (remaining <= 0) break;
-                int accepted = sink.receiveEnergy(Math.min(remaining, rate), false);
+                if (sinkEntry.getKey().equals(sourceEntry.getKey())) continue; // skip self
+                int accepted = sinkEntry.getValue().receiveEnergy(Math.min(remaining, rate), false);
                 remaining -= accepted;
-                moved += accepted;
             }
 
             // Overflow into cable buffer
             if (remaining > 0) {
-                int intoBuffer = fillNetwork(network, remaining, true);
-                if (intoBuffer > 0) {
-                    int drained = source.extractEnergy(intoBuffer, false);
-                    fillNetwork(network, drained, false);
-                    moved += drained;
-                } else if (remaining < pulled) {
-                    source.extractEnergy(pulled - remaining, false);
-                }
-            } else {
-                source.extractEnergy(pulled, false);
+                fillNetwork(network, remaining, false);
             }
         }
 
-        // Phase 3: Cable buffer -> sinks (for energy left in buffer from previous cycles)
+        // Phase 3: Cable buffer -> sinks (energy left in buffer from previous cycles)
         int bufferEnergy = drainNetwork(network, Integer.MAX_VALUE, true);
         if (bufferEnergy > 0) {
-            for (IEnergyStorage sink : sinks) {
+            for (var sinkEntry : sinks.entrySet()) {
                 if (bufferEnergy <= 0) break;
-                int fromBuffer = Math.min(bufferEnergy, rate);
-                int accepted = sink.receiveEnergy(fromBuffer, true);
+                int accepted = sinkEntry.getValue().receiveEnergy(Math.min(bufferEnergy, rate), false);
                 if (accepted <= 0) continue;
                 int actual = drainNetwork(network, accepted, false);
                 if (actual > 0) {
-                    sink.receiveEnergy(actual, false);
                     moved += actual;
                     bufferEnergy -= actual;
                 }
