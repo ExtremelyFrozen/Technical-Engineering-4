@@ -14,15 +14,13 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Energy cable with zero internal buffer.
+ * Energy cable with zero internal buffer — pure pass-through.
  * <p>
- * Design (inspired by EnderIO conduits):
- * <ul>
- * <li>No internal energy storage — cables are pure pass-through</li>
- * <li>Root cable (lowest coordinate in network) performs transfer each tick</li>
- * <li>Pulls from generators → pushes directly to consumers, no buffer in between</li>
- * <li>Each tick processes one source→sink pair to keep it simple and fair</li>
- * </ul>
+ * Root cable (lowest coordinate in network) discovers all connected generators
+ * and consumers each tick, then pulls directly from sources and pushes to sinks
+ * via {@link TransferNetworks#moveEnergy}. No energy is stored in the cable itself.
+ * <p>
+ * Design reference: EnderIO conduits (NeoForge 1.21), Pipez.
  */
 public class CableBlockEntity extends CmBlockEntity {
 
@@ -31,8 +29,8 @@ public class CableBlockEntity extends CmBlockEntity {
     }
 
     /**
-     * Returns a capability wrapper that treats the cable as a dead-end.
-     * Real transfer happens in {@link #redistribute()} on the root cable.
+     * Exposed capability — cables expose a dead-end storage that immediately
+     * forwards received energy to connected consumers.
      */
     public IEnergyStorage getEnergy(Direction side) {
         int rate = transferFor(getBlockState());
@@ -40,14 +38,13 @@ public class CableBlockEntity extends CmBlockEntity {
 
             @Override
             public int receiveEnergy(int amount, boolean simulate) {
-                if (amount <= 0 || !canReceive()) return 0;
-                // On-demand forward to consumers
-                return forwardToConsumers(rate, amount, simulate);
+                if (amount <= 0) return 0;
+                return forwardReceived(rate, amount, simulate);
             }
 
             @Override
             public int extractEnergy(int amount, boolean simulate) {
-                return 0; // Cables do not store energy
+                return 0;
             }
 
             @Override
@@ -76,7 +73,7 @@ public class CableBlockEntity extends CmBlockEntity {
         return false;
     }
 
-    // ────────── Tick: root cable orchestrates transfer ──────────
+    // ────────── Tick ──────────
 
     @Override
     protected void tick() {
@@ -96,9 +93,11 @@ public class CableBlockEntity extends CmBlockEntity {
         return TransferNetworks.isRoot(network, worldPosition);
     }
 
+    // ────────── Network energy distribution ──────────
+
     /**
-     * Pull energy from all connected generators and push to all connected consumers.
-     * No intermediate buffer — energy passes through in the same tick.
+     * Main transfer: collect sources & sinks across the cable network,
+     * then move energy using {@link TransferNetworks#moveEnergy}.
      */
     private int redistribute() {
         Set<BlockPos> network = TransferNetworks.collectConnected(level, worldPosition,
@@ -108,7 +107,7 @@ public class CableBlockEntity extends CmBlockEntity {
         int rate = transferFor(getBlockState());
         int moved = 0;
 
-        // Collect sources (canExtract) and sinks (canReceive), deduplicated by position
+        // Collect sources and sinks (deduplicated by position)
         Map<BlockPos, IEnergyStorage> sources = new LinkedHashMap<>();
         Map<BlockPos, IEnergyStorage> sinks = new LinkedHashMap<>();
 
@@ -125,12 +124,13 @@ public class CableBlockEntity extends CmBlockEntity {
 
         if (sources.isEmpty() || sinks.isEmpty()) return 0;
 
-        // Move energy: each source → each sink (TransferNetworks.moveEnergy handles simulation)
+        // Move energy: each source → each sink
+        // moveEnergy handles simulate-then-execute correctly, no double-deduction
         for (var sourceEntry : sources.entrySet()) {
             BlockPos sourcePos = sourceEntry.getKey();
             IEnergyStorage source = sourceEntry.getValue();
             for (var sinkEntry : sinks.entrySet()) {
-                if (sinkEntry.getKey().equals(sourcePos)) continue; // Skip self
+                if (sinkEntry.getKey().equals(sourcePos)) continue;
                 moved += TransferNetworks.moveEnergy(source, sinkEntry.getValue(), rate, false);
             }
         }
@@ -138,29 +138,27 @@ public class CableBlockEntity extends CmBlockEntity {
         return moved;
     }
 
-    // ────────── On-demand forwarding when energy enters the cable ──────────
-
     /**
-     * Forward incoming energy directly to connected consumers.
-     * Called from {@link #getEnergy(Direction)} when a generator pushes into the cable.
+     * On-demand forwarding: when a generator pushes energy into this cable
+     * (via {@link #getEnergy} receiveEnergy), we forward to all consumers.
      */
-    private int forwardToConsumers(int rate, int amount, boolean simulate) {
+    private int forwardReceived(int rate, int amount, boolean simulate) {
         Set<BlockPos> network = TransferNetworks.collectConnected(level, worldPosition,
                 (lvl, pos) -> lvl.getBlockEntity(pos) instanceof CableBlockEntity);
         if (network.isEmpty()) return 0;
 
         int toDistribute = Math.min(amount, rate);
         int totalAccepted = 0;
+        Map<BlockPos, IEnergyStorage> seen = new LinkedHashMap<>();
 
-        Map<BlockPos, IEnergyStorage> seenConsumers = new LinkedHashMap<>();
         for (BlockPos cablePos : network) {
             for (Direction dir : Direction.values()) {
                 if (toDistribute <= 0) break;
                 BlockPos neighbor = cablePos.relative(dir);
-                if (network.contains(neighbor) || seenConsumers.containsKey(neighbor)) continue;
+                if (network.contains(neighbor) || seen.containsKey(neighbor)) continue;
                 IEnergyStorage cap = TransferNetworks.getEnergy(level, neighbor, dir.getOpposite());
                 if (cap == null || !cap.canReceive()) continue;
-                seenConsumers.put(neighbor, cap);
+                seen.put(neighbor, cap);
                 int accepted = cap.receiveEnergy(toDistribute, simulate);
                 totalAccepted += accepted;
                 toDistribute -= accepted;
