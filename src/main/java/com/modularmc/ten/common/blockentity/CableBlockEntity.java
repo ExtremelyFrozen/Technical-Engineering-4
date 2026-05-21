@@ -76,45 +76,6 @@ public class CableBlockEntity extends CmBlockEntity {
         return moved;
     }
 
-    /**
-     * Exposed capability — dead end. All transfer happens in {@link #transferOnce()}.
-     */
-    public IEnergyStorage getEnergy(Direction side) {
-        int rate = transferFor(getBlockState());
-        return new IEnergyStorage() {
-
-            @Override
-            public int receiveEnergy(int amt, boolean sim) {
-                return 0;
-            }
-
-            @Override
-            public int extractEnergy(int amt, boolean sim) {
-                return 0;
-            }
-
-            @Override
-            public int getEnergyStored() {
-                return 0;
-            }
-
-            @Override
-            public int getMaxEnergyStored() {
-                return rate;
-            }
-
-            @Override
-            public boolean canExtract() {
-                return false;
-            }
-
-            @Override
-            public boolean canReceive() {
-                return false;
-            }
-        };
-    }
-
     public boolean hasUi() {
         return false;
     }
