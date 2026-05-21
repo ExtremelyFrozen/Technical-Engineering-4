@@ -9,17 +9,25 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.energy.IEnergyStorage;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
- * Energy cable — zero buffer, per-cable independent transfer.
+ * Energy cable with tiny tick-buffer — Pipez-style design.
  * <p>
- * Design (simplified Pipez-style): each cable collects all neighbor sources
- * and sinks, then transfers from each source to each sink. No two-phase
- * direction iteration — prevents source↔sink loopback.
+ * Each tick:
+ * <ol>
+ * <li>Pull from connected generators → buffer (up to transfer rate)</li>
+ * <li>Push buffer → connected consumers (skip generator positions)</li>
+ * </ol>
+ * The buffer acts as a one-way valve: energy flows source→cable→sink,
+ * never backwards.
+ * <p>
+ * No energy capability registered — cables are invisible to capability queries.
  */
 public class CableBlockEntity extends CmBlockEntity {
+
+    private int tickBuffer = 0;
 
     public CableBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
@@ -32,44 +40,42 @@ public class CableBlockEntity extends CmBlockEntity {
         setActive(moved > 0);
     }
 
-    /**
-     * Two-phase transfer: collect sources & sinks first, then move energy.
-     * No direction-based loopback (source != sink positions).
-     */
     private int transferOnce() {
         int rate = transferFor(getBlockState());
         int moved = 0;
+        Set<BlockPos> pulledFrom = new HashSet<>();
 
-        // Phase 1: collect all sources and sinks (deduplicated by position)
-        Map<BlockPos, IEnergyStorage> sources = new LinkedHashMap<>();
-        Map<BlockPos, IEnergyStorage> sinks = new LinkedHashMap<>();
-
-        for (Direction dir : Direction.values()) {
-            BlockPos neighbor = worldPosition.relative(dir);
-            if (level.getBlockEntity(neighbor) instanceof CableBlockEntity) continue;
-            IEnergyStorage cap = TransferNetworks.getEnergy(level, neighbor, dir.getOpposite());
-            if (cap == null) continue;
-            // Source: canExtract AND has extractable energy right now
-            if (cap.canExtract()) {
-                int testPull = cap.extractEnergy(rate, true);
-                if (testPull > 0) {
-                    sources.put(neighbor, cap);
-                    continue; // skip adding as sink — prevent loopback
+        // Phase 1: Pull from sources into buffer (track source positions)
+        if (tickBuffer < rate) {
+            int space = rate - tickBuffer;
+            for (Direction dir : Direction.values()) {
+                if (space <= 0) break;
+                BlockPos neighbor = worldPosition.relative(dir);
+                if (level.getBlockEntity(neighbor) instanceof CableBlockEntity) continue;
+                IEnergyStorage source = TransferNetworks.getEnergy(level, neighbor, dir.getOpposite());
+                if (source == null || !source.canExtract()) continue;
+                int pulled = source.extractEnergy(space, false);
+                if (pulled > 0) {
+                    pulledFrom.add(neighbor);
+                    tickBuffer += pulled;
+                    space -= pulled;
+                    moved += pulled;
                 }
             }
-            // Sink: canReceive AND not already a source
-            if (cap.canReceive()) sinks.putIfAbsent(neighbor, cap);
         }
 
-        if (sources.isEmpty() || sinks.isEmpty()) return 0;
-
-        // Phase 2: each source → each sink (skip self-loop where source == sink position)
-        for (var srcEntry : sources.entrySet()) {
-            BlockPos srcPos = srcEntry.getKey();
-            IEnergyStorage src = srcEntry.getValue();
-            for (var snkEntry : sinks.entrySet()) {
-                if (snkEntry.getKey().equals(srcPos)) continue;
-                moved += TransferNetworks.moveEnergy(src, snkEntry.getValue(), rate, false);
+        // Phase 2: Push buffer to consumers (skip source positions)
+        if (tickBuffer > 0) {
+            for (Direction dir : Direction.values()) {
+                if (tickBuffer <= 0) break;
+                BlockPos neighbor = worldPosition.relative(dir);
+                if (level.getBlockEntity(neighbor) instanceof CableBlockEntity) continue;
+                if (pulledFrom.contains(neighbor)) continue; // Skip positions we just pulled from
+                IEnergyStorage sink = TransferNetworks.getEnergy(level, neighbor, dir.getOpposite());
+                if (sink == null || !sink.canReceive()) continue;
+                int accepted = sink.receiveEnergy(tickBuffer, false);
+                tickBuffer -= accepted;
+                moved += accepted;
             }
         }
 
