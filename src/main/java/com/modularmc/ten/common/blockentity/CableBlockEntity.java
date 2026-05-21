@@ -13,17 +13,10 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Energy cable with tiny tick-buffer — Pipez-style design.
+ * Energy cable with tick-buffer — Pipez-style design.
  * <p>
- * Each tick:
- * <ol>
- * <li>Pull from connected generators → buffer (up to transfer rate)</li>
- * <li>Push buffer → connected consumers (skip generator positions)</li>
- * </ol>
- * The buffer acts as a one-way valve: energy flows source→cable→sink,
- * never backwards.
- * <p>
- * No energy capability registered — cables are invisible to capability queries.
+ * Only pulls from sources when at least one valid sink exists.
+ * Buffer only holds energy in transit between source and sink.
  */
 public class CableBlockEntity extends CmBlockEntity {
 
@@ -42,74 +35,57 @@ public class CableBlockEntity extends CmBlockEntity {
 
     private int transferOnce() {
         int rate = transferFor(getBlockState());
+        int moved = 0;
 
-        int pulledTotal = 0;
-        int pushedTotal = 0;
+        // Phase 1: Check if any valid sink exists (skip pulling if none)
+        boolean hasSink = false;
+        for (Direction dir : Direction.values()) {
+            BlockPos neighbor = worldPosition.relative(dir);
+            if (level.getBlockEntity(neighbor) instanceof CableBlockEntity) continue;
+            IEnergyStorage cap = TransferNetworks.getEnergy(level, neighbor, dir.getOpposite());
+            if (cap != null && cap.canReceive()) {
+                hasSink = true;
+                break;
+            }
+        }
+
         Set<BlockPos> pulledFrom = new HashSet<>();
 
-        // Phase 1: Pull from sources into buffer (track source positions)
-        if (tickBuffer < rate) {
+        // Phase 2: Pull from sources into buffer (only if a sink exists)
+        if (hasSink && tickBuffer < rate) {
             int space = rate - tickBuffer;
             for (Direction dir : Direction.values()) {
                 if (space <= 0) break;
                 BlockPos neighbor = worldPosition.relative(dir);
                 if (level.getBlockEntity(neighbor) instanceof CableBlockEntity) continue;
                 IEnergyStorage source = TransferNetworks.getEnergy(level, neighbor, dir.getOpposite());
-                if (source == null) {
-                    System.out.println("[CABLE] P1 skip null cap " + neighbor + " side=" + dir);
-                    continue;
-                }
-                if (!source.canExtract()) {
-                    System.out.println("[CABLE] P1 skip !canExtract " + neighbor + " side=" + dir);
-                    continue;
-                }
+                if (source == null || !source.canExtract()) continue;
                 int pulled = source.extractEnergy(space, false);
                 if (pulled > 0) {
-                    System.out.println("[CABLE] P1 pulled " + pulled + " from " + neighbor + " side=" + dir + " (src energy=" + source.getEnergyStored() + "/" + source.getMaxEnergyStored() + ")");
                     pulledFrom.add(neighbor);
                     tickBuffer += pulled;
                     space -= pulled;
-                    pulledTotal += pulled;
-                } else {
-                    System.out.println("[CABLE] P1 extract 0 from " + neighbor + " side=" + dir + " canExtract=" + source.canExtract());
+                    moved += pulled;
                 }
             }
         }
 
-        // Phase 2: Push buffer to consumers (skip source positions)
+        // Phase 3: Push buffer to sinks (skip positions we just pulled from)
         if (tickBuffer > 0) {
             for (Direction dir : Direction.values()) {
                 if (tickBuffer <= 0) break;
                 BlockPos neighbor = worldPosition.relative(dir);
                 if (level.getBlockEntity(neighbor) instanceof CableBlockEntity) continue;
-                if (pulledFrom.contains(neighbor)) {
-                    System.out.println("[CABLE] P2 skip source pos " + neighbor);
-                    continue;
-                }
+                if (pulledFrom.contains(neighbor)) continue;
                 IEnergyStorage sink = TransferNetworks.getEnergy(level, neighbor, dir.getOpposite());
-                if (sink == null) {
-                    System.out.println("[CABLE] P2 skip null cap " + neighbor + " side=" + dir);
-                    continue;
-                }
-                if (!sink.canReceive()) {
-                    System.out.println("[CABLE] P2 skip !canReceive " + neighbor + " side=" + dir + " energy=" + sink.getEnergyStored() + "/" + sink.getMaxEnergyStored());
-                    continue;
-                }
-                int before = sink.getEnergyStored();
+                if (sink == null || !sink.canReceive()) continue;
                 int accepted = sink.receiveEnergy(tickBuffer, false);
-                int after = sink.getEnergyStored();
-                System.out.println("[CABLE] P2 pushed " + accepted + " to " + neighbor + " side=" + dir + " (before=" + before + " after=" + after + " canReceive=" + sink.canReceive() + " maxCap=" + sink.getMaxEnergyStored() + ")");
                 tickBuffer -= accepted;
-                pushedTotal += accepted;
+                moved += accepted;
             }
         }
 
-        if (tickBuffer > 0) {
-            System.out.println("[CABLE] WARN tickBuffer=" + tickBuffer + " remaining after P2");
-        }
-
-        System.out.println("[CABLE] tick rate=" + rate + " pulled=" + pulledTotal + " pushed=" + pushedTotal + " buf=" + tickBuffer + " moved=" + (pulledTotal + pushedTotal));
-        return pulledTotal + pushedTotal;
+        return moved;
     }
 
     public boolean hasUi() {
