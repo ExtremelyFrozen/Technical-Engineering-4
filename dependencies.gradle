@@ -60,4 +60,6 @@ dependencies {
     localRuntime("me.shedaniel.cloth:cloth-config-neoforge:15.0.140")
     // Powah! Rearchitected - dev testing energy mod
     localRuntime("maven.modrinth:powah:6.2.8-neoforge")
+    // GuideMe - required by Powah for in-game guidebook
+    localRuntime("maven.modrinth:guideme:21.1.15")
 }
