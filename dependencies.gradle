@@ -58,4 +58,6 @@ dependencies {
     //////////////////////////
     localRuntime("dev.architectury:architectury-neoforge:13.0.8")
     localRuntime("me.shedaniel.cloth:cloth-config-neoforge:15.0.140")
+    // Powah! Rearchitected - dev testing energy mod
+    localRuntime("maven.modrinth:powah:6.2.8-neoforge")
 }

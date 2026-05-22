@@ -62,6 +62,19 @@ public class FormsCombinedRecipe implements RandRecipe {
     public boolean matches(IItemHandler inv, List<? extends IFluidHandler> tanks,
                            FormsCombinedIngredient.IngredientTypeGetter slotType,
                            FormsCombinedIngredient.IngredientTypeGetter tankType) {
+        // Strict exact matching: occupied input slot count must equal required ingredient count
+        int occupiedSlots = 0;
+        for (int i = 0; i < inv.getSlots(); i++) {
+            if (slotType.get(i).canIn() && !inv.getStackInSlot(i).isEmpty()) {
+                occupiedSlots++;
+            }
+        }
+        int requiredIngredients = 0;
+        for (var ing : input) {
+            if ("item".equals(ing.form)) requiredIngredients++;
+        }
+        if (occupiedSlots != requiredIngredients) return false;
+
         for (var i : input) {
             if (!i.check(slotType, tankType, inv, tanks)) return false;
         }

@@ -1,9 +1,9 @@
-feat(recipe): use chance:0 for non-consumed mould inputs
+feat(recipe): strict exact slot matching for machine recipes
 
-- FormsCombinedIngredient: chance() <= 0 means not consumed (moulds)
-- RecipeMachineBlockEntity.shrinkInputs(): skip items with chance <= 0
-- TENRecipeGen: mould entries get chance:0.0 in generated JSON
-- TENEmiRecipe / TENJeiCategory: show not_consumed tooltip when chance <= 0
-- Manual JSON recipes: mould entries add "chance": 0
-- Lang: kenergyengineering.not_consumed = Not consumed / 不消耗
-- Run data generator to regenerate all recipe JSONs
+FormsCombinedRecipe.matches(): occupied input slot count must equal
+required item ingredient count before checking individual ingredients.
+
+Previously any extra item in an unused input slot was silently ignored,
+allowing recipes to match when unintended items were present.
+
+feat(deps): add Powah! Rearchitected v6.2.8 as dev testing runtime mod
