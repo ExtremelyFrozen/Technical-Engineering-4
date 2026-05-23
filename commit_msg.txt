@@ -1,9 +1,7 @@
-feat(recipe): strict exact slot matching for machine recipes
+feat(gui): add machine name label to all machine UIs
 
-FormsCombinedRecipe.matches(): occupied input slot count must equal
-required item ingredient count before checking individual ingredients.
+buildMachineUI(): adds a Label widget at (6,4) showing the localized
+block name (e.g. 'Induction Furnace' / '感应炉') at the top-left
+corner of every machine GUI.
 
-Previously any extra item in an unused input slot was silently ignored,
-allowing recipes to match when unintended items were present.
-
-feat(deps): add Powah! Rearchitected v6.2.8 as dev testing runtime mod
+Uses holder.blockState.getBlock().getName() for localization support.

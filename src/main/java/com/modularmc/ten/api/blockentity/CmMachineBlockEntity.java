@@ -30,10 +30,12 @@ import net.neoforged.neoforge.items.IItemHandler;
 import com.lowdragmc.lowdraglib2.gui.factory.BlockUIMenuType;
 import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
 import com.lowdragmc.lowdraglib2.gui.ui.UIElement;
+import com.lowdragmc.lowdraglib2.gui.ui.elements.Label;
 import com.lowdragmc.lowdraglib2.syncdata.annotation.DescSynced;
 import com.lowdragmc.lowdraglib2.syncdata.annotation.Persisted;
 import com.lowdragmc.lowdraglib2.syncdata.annotation.RPCMethod;
 import com.lowdragmc.lowdraglib2.syncdata.rpc.RPCSender;
+import dev.vfyjxf.taffy.style.TaffyPosition;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -705,6 +707,16 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
                                              Consumer<UIElement> contentBuilder) {
         initMachine();
         var root = TENMachineBlockUIFactory.createRoot(background);
+        // Machine name label at top-left
+        root.addChild(new Label()
+                .setText(holder.blockState.getBlock().getName())
+                .layout(layout -> {
+                    layout.positionType(TaffyPosition.ABSOLUTE);
+                    layout.left(6);
+                    layout.top(4);
+                    layout.width(0);
+                    layout.height(10);
+                }));
         inventoryBuilder.accept(root);
         if (hasUpgrade()) {
             TENMachineBlockUIFactory.addUpgradeSlots(root, this);
