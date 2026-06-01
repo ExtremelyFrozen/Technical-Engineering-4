@@ -3,7 +3,7 @@
   "cookingtime": 100,
   "experience": 0.35,
   "ingredient": {
-    "item": "kenergyengineering:tin_deep_ore"
+    "item": "kenergyengineering:deep_tin_ore"
   },
   "result": {
     "id": "kenergyengineering:tin_ingot"

@@ -3,7 +3,7 @@
   "cookingtime": 100,
   "experience": 0.35,
   "ingredient": {
-    "item": "kenergyengineering:nickel_deep_ore"
+    "item": "kenergyengineering:deep_nickel_ore"
   },
   "result": {
     "id": "kenergyengineering:nickel_ingot"

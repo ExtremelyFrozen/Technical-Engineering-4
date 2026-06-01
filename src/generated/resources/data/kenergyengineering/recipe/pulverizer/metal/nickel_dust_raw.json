@@ -4,7 +4,7 @@
     {
       "type": "tag",
       "form": "item",
-      "key": "c:raw_materials/nickel"
+      "key": "c:ingots/nickel"
     }
   ],
   "outputs": [

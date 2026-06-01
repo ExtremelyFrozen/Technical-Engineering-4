@@ -25,6 +25,10 @@ dependencies {
     compileOnly(forge.iris)
     compileOnly(forge.modernfix)
 
+    // Curios API (optional - for curio slot support)
+    compileOnly("maven.modrinth:curios:9.5.0+1.21.1")
+    localRuntime("maven.modrinth:curios:9.5.0+1.21.1")
+
     // Standard runtime mods //
     localRuntime(libs.testframework)
 
@@ -54,4 +58,8 @@ dependencies {
     //////////////////////////
     localRuntime("dev.architectury:architectury-neoforge:13.0.8")
     localRuntime("me.shedaniel.cloth:cloth-config-neoforge:15.0.140")
+    // Powah! Rearchitected - dev testing energy mod
+    localRuntime("maven.modrinth:powah:6.2.8-neoforge")
+    // GuideMe - required by Powah for in-game guidebook
+    localRuntime("maven.modrinth:guideme:21.1.15")
 }

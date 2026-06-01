@@ -40,7 +40,7 @@ public class CellBlockEntity extends CmMachineBlockEntity {
         var energy = stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM);
         if (energy == null) return false;
         if (slot == 0) {
-            return energy.canExtract() && energy.getEnergyStored() >= energy.getMaxEnergyStored();
+            return energy.canExtract();
         }
         if (slot == 1) {
             return energy.canReceive() && energy.getEnergyStored() < energy.getMaxEnergyStored();
@@ -59,6 +59,11 @@ public class CellBlockEntity extends CmMachineBlockEntity {
     @Override
     public void tick() {
         doBaseData();
+
+        // Sync active state based on energy level for block model texture switching
+        // Always runs, even when io is disabled, so the block model shows correct texture
+        setActive(energyStorage != null && energyStorage.getEnergyStored() > 0);
+
         if (!signalAllowRun() || energyStorage == null || itemHandler == null) {
             return;
         }

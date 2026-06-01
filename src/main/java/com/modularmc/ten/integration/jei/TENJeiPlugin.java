@@ -87,6 +87,8 @@ public class TENJeiPlugin implements IModPlugin {
             var type = new RecipeType<FormsCombinedRecipe>(data.id, FormsCombinedRecipe.class);
             registration.addRecipeCatalyst(data.icon, type);
         }
+        // Smelter — uses vanilla RecipeType.SMELTING
+        registration.addRecipeCatalyst(icon("machine_smelter"), mezz.jei.api.constants.RecipeTypes.SMELTING);
     }
 
     @Override

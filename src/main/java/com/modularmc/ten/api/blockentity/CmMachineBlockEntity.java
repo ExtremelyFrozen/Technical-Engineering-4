@@ -30,10 +30,12 @@ import net.neoforged.neoforge.items.IItemHandler;
 import com.lowdragmc.lowdraglib2.gui.factory.BlockUIMenuType;
 import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
 import com.lowdragmc.lowdraglib2.gui.ui.UIElement;
+import com.lowdragmc.lowdraglib2.gui.ui.elements.Label;
 import com.lowdragmc.lowdraglib2.syncdata.annotation.DescSynced;
 import com.lowdragmc.lowdraglib2.syncdata.annotation.Persisted;
 import com.lowdragmc.lowdraglib2.syncdata.annotation.RPCMethod;
 import com.lowdragmc.lowdraglib2.syncdata.rpc.RPCSender;
+import dev.vfyjxf.taffy.style.TaffyPosition;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -188,7 +190,7 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         if (maxReceiveEnergy <= 0) maxReceiveEnergy = initialEnergyReceive;
         if (maxExtractEnergy <= 0) maxExtractEnergy = initialEnergyExtract;
 
-        if (itemHandler == null) {
+        if (itemHandler == null || itemHandler.getSlots() != inventorySize()) {
             itemHandler = new MachineItemHandler(inventorySize(), this::valid);
         } else {
             itemHandler.setValidator(this::valid);
@@ -370,6 +372,13 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         };
     }
 
+    public final boolean canExternalExtract() {
+        return switch (machineType()) {
+            case com.modularmc.ten.api.option.MachineType.GENERATOR, com.modularmc.ten.api.option.MachineType.ENGINE_SOLAR, com.modularmc.ten.api.option.MachineType.ENGINE_EXTRACTION, com.modularmc.ten.api.option.MachineType.ENGINE_METAL, com.modularmc.ten.api.option.MachineType.ENGINE_BIOMASS, com.modularmc.ten.api.option.MachineType.CELL, com.modularmc.ten.api.option.MachineType.CREATIVE_CELL -> true;
+            default -> false;
+        };
+    }
+
     public void doBaseData() {
         initMachine();
         if (energyStorage == null) return;
@@ -481,6 +490,7 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
 
             @Override
             public int extractEnergy(int maxExtract, boolean simulate) {
+                if (!canExternalExtract()) return 0;
                 if (!signalAllowRun() || !canExtractEnergy(side)) return 0;
                 return energyStorage.extractEnergy(Math.min(maxExtract, maxExtractEnergy), simulate);
             }
@@ -497,7 +507,7 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
 
             @Override
             public boolean canExtract() {
-                return canExtractEnergy(side);
+                return canExternalExtract() && canExtractEnergy(side);
             }
 
             @Override
@@ -599,7 +609,12 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
     @Override
     protected void readTileData(CompoundTag tag, HolderLookup.Provider registries) {
         if (energyStorage != null) energyStorage.setEnergy(tag.getInt("energy"));
-        if (itemHandler != null) itemHandler.deserializeNBT(registries, tag.getCompound("inventory"));
+        if (itemHandler != null) {
+            CompoundTag invTag = tag.getCompound("inventory");
+            if (!invTag.isEmpty() && invTag.getInt("Size") == itemHandler.getSlots()) {
+                itemHandler.deserializeNBT(registries, invTag);
+            }
+        }
         if (upgradeHandler != null) upgradeHandler.deserializeNBT(registries, tag.getCompound("upgrades"));
         upgradeSize = tag.contains("upgrade_size") ? tag.getInt("upgrade_size") : initialUpgradeSize;
         for (Direction direction : Direction.values()) {
@@ -692,6 +707,16 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
                                              Consumer<UIElement> contentBuilder) {
         initMachine();
         var root = TENMachineBlockUIFactory.createRoot(background);
+        // Machine name label at top-left
+        root.addChild(new Label()
+                .setText(holder.blockState.getBlock().getName())
+                .layout(layout -> {
+                    layout.positionType(TaffyPosition.ABSOLUTE);
+                    layout.left(6);
+                    layout.top(4);
+                    layout.width(0);
+                    layout.height(10);
+                }));
         inventoryBuilder.accept(root);
         if (hasUpgrade()) {
             TENMachineBlockUIFactory.addUpgradeSlots(root, this);

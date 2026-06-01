@@ -40,7 +40,7 @@ public final class TENLangHandler {
         add(provider, "cable_star.0", "Transfer: Infinite FE", "传输能量: 无限 FE");
         // Removed: spanner — now auto-derived from item registration
         add(provider, "not_consumed", "Not consumed", "不消耗");
-        add(provider, "energy_capacity", "FE Capacity", "FE电容");
+        // Removed: energy_capacity — now auto-derived from item registration
         add(provider, "shift", "Press [SHIFT] to see more", "按住 [SHIFT] 查看更多信息");
         add(provider, "info.too_much_upgrades", "This machine has too many upgrades!", "这台机器的升级组件太多了！");
         add(provider, "info.not_support_upgrade", "This machine does not support this upgrade!", "这台机器不支持这个升级！");
@@ -48,6 +48,10 @@ public final class TENLangHandler {
         add(provider, "key.c", "Change Holding Item Mode", "Change Holding Item Mode");
         add(provider, "locked_slot", "This slot has not been unlocked yet.", "未解锁槽位");
         add(provider, "jei_addition_chance", "Additional Chance: ", "副产概率: ");
+        add(provider, "energy_capacity.charging_on", "Charging enabled", "全身充能已开启");
+        add(provider, "energy_capacity.charging_off", "Charging disabled", "全身充能已关闭");
+        add(provider, "key.categories." + TEN.MOD_ID, "Kenergy Engineering", "Kenergy Engineering");
+        add(provider, "key." + TEN.MOD_ID + ".toggle_charge", "Toggle Energy Unit Charging", "切换能量单元充能");
     }
 
     private static void addChannel(RegistrateLangProvider provider) {
@@ -55,7 +59,7 @@ public final class TENLangHandler {
         add(provider, "channel.in", "Input Channel", "输入频道");
         add(provider, "channel.out", "Output Channel", "输出频道");
         // Removed: channel_energy, channel_item, channel_fluid — now auto-derived from TENBlocks.ZH_NAMES
-        add(provider, "channel_connector", "Channel Connector", "频道桥接器");
+        // Removed: channel_connector base key — now auto-derived from TENItems.ZH_NAMES
         add(provider, "channel_connector.0", "When in [Add Input Channel] Mode: ", "处于[添加抽取频道]模式时: ");
         add(provider, "channel_connector.1", "Add the second clicked channel to the first one as an input", "在第一次选取的频道中添加第二次选取的频道作为输入");
         add(provider, "channel_connector.2", "When in [Add Output Channel] Mode: ", "处于[添加推送频道]模式时: ");

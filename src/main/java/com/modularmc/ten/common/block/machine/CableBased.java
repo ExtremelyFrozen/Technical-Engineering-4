@@ -22,6 +22,7 @@ import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.level.material.MapColor;
 import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.neoforged.neoforge.capabilities.Capabilities;
 
@@ -39,7 +40,50 @@ public class CableBased extends HorizontalMachineBlock implements SimpleWaterlog
             Direction.UP, IntegerProperty.create("up", 0, 2),
             Direction.DOWN, IntegerProperty.create("down", 0, 2));
 
-    protected static final VoxelShape CORE_SHAPE = Block.box(3, 3, 3, 13, 13, 13);
+    protected static final VoxelShape CORE_SHAPE = Block.box(5, 5, 5, 11, 11, 11);
+    // ── Shape helpers matching JSON model sizes ──────────────────────────
+    // Type 1 (part) — 6×6×5 connector: core face → block edge
+    private static final VoxelShape[] PART_SHAPES = new VoxelShape[6];
+    // Type 2 (connect) — 6×6×4 inner + 8×8×2 flange at block edge
+    private static final VoxelShape[] CONNECT_SHAPES = new VoxelShape[6];
+    static {
+        Direction[] dirs = Direction.values();
+        for (int i = 0; i < 6; i++) {
+            Direction d = dirs[i];
+            VoxelShape part, connect;
+            switch (d) {
+                case NORTH -> {
+                    part = Block.box(5, 5, 0, 11, 11, 5);
+                    connect = Shapes.or(Block.box(5, 5, 1, 11, 11, 5), Block.box(4, 4, 0, 12, 12, 2));
+                }
+                case SOUTH -> {
+                    part = Block.box(5, 5, 11, 11, 11, 16);
+                    connect = Shapes.or(Block.box(5, 5, 11, 11, 11, 15), Block.box(4, 4, 14, 12, 12, 16));
+                }
+                case EAST -> {
+                    part = Block.box(11, 5, 5, 16, 11, 11);
+                    connect = Shapes.or(Block.box(11, 5, 5, 15, 11, 11), Block.box(14, 4, 4, 16, 12, 12));
+                }
+                case WEST -> {
+                    part = Block.box(0, 5, 5, 5, 11, 11);
+                    connect = Shapes.or(Block.box(1, 5, 5, 5, 11, 11), Block.box(0, 4, 4, 2, 12, 12));
+                }
+                case UP -> {
+                    part = Block.box(5, 11, 5, 11, 16, 11);
+                    connect = Shapes.or(Block.box(5, 11, 5, 11, 15, 11), Block.box(4, 14, 4, 12, 16, 12));
+                }
+                case DOWN -> {
+                    part = Block.box(5, 0, 5, 11, 5, 11);
+                    connect = Shapes.or(Block.box(5, 1, 5, 11, 5, 11), Block.box(4, 0, 4, 12, 2, 12));
+                }
+                default -> {
+                    throw new AssertionError("unexpected direction: " + d);
+                }
+            }
+            PART_SHAPES[i] = part;
+            CONNECT_SHAPES[i] = connect;
+        }
+    }
 
     public CableBased(Properties props) {
         super(props);
@@ -63,12 +107,26 @@ public class CableBased extends HorizontalMachineBlock implements SimpleWaterlog
 
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext ctx) {
-        return CORE_SHAPE;
+        return buildShape(state);
     }
 
     @Override
     public VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext ctx) {
-        return CORE_SHAPE;
+        return buildShape(state);
+    }
+
+    private static VoxelShape buildShape(BlockState state) {
+        VoxelShape shape = CORE_SHAPE;
+        Direction[] dirs = Direction.values();
+        for (int i = 0; i < 6; i++) {
+            int conn = state.getValue(CONNECTION.get(dirs[i]));
+            if (conn == 1) {
+                shape = Shapes.or(shape, PART_SHAPES[i]);
+            } else if (conn == 2) {
+                shape = Shapes.or(shape, CONNECT_SHAPES[i]);
+            }
+        }
+        return shape;
     }
 
     public void updateConnections(Level level, BlockPos pos) {
@@ -122,6 +180,14 @@ public class CableBased extends HorizontalMachineBlock implements SimpleWaterlog
     @Override
     public FluidState getFluidState(BlockState state) {
         return state.getValue(WATERLOGGED) ? Fluids.WATER.getSource(false) : super.getFluidState(state);
+    }
+
+    @Override
+    public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean movedByPiston) {
+        super.onPlace(state, level, pos, oldState, movedByPiston);
+        if (!level.isClientSide()) {
+            updateConnections(level, pos);
+        }
     }
 
     @Override

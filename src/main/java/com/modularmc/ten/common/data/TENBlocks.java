@@ -1,6 +1,5 @@
 package com.modularmc.ten.common.data;
 
-import com.modularmc.ten.TEN;
 import com.modularmc.ten.common.block.machine.CableBased;
 import com.modularmc.ten.common.block.machine.DirectionalMachineBlock;
 import com.modularmc.ten.common.block.machine.HorizontalMachineBlock;
@@ -73,60 +72,30 @@ public class TENBlocks {
     public static final BlockEntry<CableBased> PIPE_BLACK = cable("pipe_black", "Exceptional Item Pipe", "排除物品管道");
 
     // === Cell ===
-    public static final BlockEntry<HorizontalMachineBlock> CELL = REGISTRATE
-            .block("energy_cell", HorizontalMachineBlock::new)
-            .lang("Energy Cell")
-            .properties(p -> p.noOcclusion())
-            .blockstate((ctx, prov) -> TENModels.energyCellBlockstate(prov, ctx.getEntry()))
-            .item().model((ctx, prov) -> prov.blockItem(ctx::getEntry)).build().register();
-
-    public static final BlockEntry<HorizontalMachineBlock> CREATIVE_CELL = REGISTRATE
-            .block("creative_energy_cell", HorizontalMachineBlock::new)
-            .lang("Creative Energy Cell")
-            .properties(p -> p.noOcclusion())
-            .blockstate((ctx, prov) -> {
-                var empty = prov.models().getExistingFile(TEN.id("block/creative_energy_cell_empty"));
-                var normal = prov.models().getExistingFile(TEN.id("block/creative_energy_cell"));
-                var builder = prov.getVariantBuilder(ctx.getEntry());
-                for (var dir : Direction.Plane.HORIZONTAL) {
-                    int y = switch (dir) {
-                        case EAST -> 90;
-                        case SOUTH -> 180;
-                        case WEST -> 270;
-                        default -> 0;
-                    };
-                    builder.partialState()
-                            .with(HorizontalMachineBlock.FACING, dir)
-                            .with(HorizontalMachineBlock.ACTIVE, false)
-                            .modelForState().modelFile(empty).rotationY(y).addModel()
-                            .partialState()
-                            .with(HorizontalMachineBlock.FACING, dir)
-                            .with(HorizontalMachineBlock.ACTIVE, true)
-                            .modelForState().modelFile(normal).rotationY(y).addModel();
-                }
-            })
-            .item().model((ctx, prov) -> prov.blockItem(ctx::getEntry)).build().register();
+    public static final BlockEntry<HorizontalMachineBlock> CELL = cell("energy_cell", "Energy Cell", "能量单元");
+    public static final BlockEntry<HorizontalMachineBlock> CREATIVE_CELL = cell("creative_energy_cell", "Creative Energy Cell", "创造能量单元");
 
     // === Channels ===
     public static final BlockEntry<DirectionalMachineBlock> CHANNEL_ENERGY = REGISTRATE
             .block("channel_energy", DirectionalMachineBlock::new)
             .lang("Energy Channel")
+            .tag(TENTags.MACHINES)
             .blockstate((ctx, prov) -> TENModels.channelBlockstate(prov, ctx.getEntry(), "channel_energy"))
             .item().model((ctx, prov) -> prov.blockItem(ctx::getEntry)).build().register();
     public static final BlockEntry<DirectionalMachineBlock> CHANNEL_ITEM = REGISTRATE
             .block("channel_item", DirectionalMachineBlock::new)
             .lang("Item Channel")
+            .tag(TENTags.MACHINES)
             .blockstate((ctx, prov) -> TENModels.channelBlockstate(prov, ctx.getEntry(), "channel_item"))
             .item().model((ctx, prov) -> prov.blockItem(ctx::getEntry)).build().register();
     public static final BlockEntry<DirectionalMachineBlock> CHANNEL_FLUID = REGISTRATE
             .block("channel_fluid", DirectionalMachineBlock::new)
             .lang("Fluid Channel")
+            .tag(TENTags.MACHINES)
             .blockstate((ctx, prov) -> TENModels.channelBlockstate(prov, ctx.getEntry(), "channel_fluid"))
             .item().model((ctx, prov) -> prov.blockItem(ctx::getEntry)).build().register();
 
     static {
-        ZH_NAMES.put("energy_cell", "能量单元");
-        ZH_NAMES.put("creative_energy_cell", "创造能量单元");
         ZH_NAMES.put("channel_energy", "能量频道");
         ZH_NAMES.put("channel_item", "物品频道");
         ZH_NAMES.put("channel_fluid", "流体频道");
@@ -172,6 +141,7 @@ public class TENBlocks {
         ZH_NAMES.put(n, cn);
         return REGISTRATE.block(n, HorizontalMachineBlock::new)
                 .lang(englishName)
+                .tag(TENTags.MACHINES)
                 .blockstate((ctx, prov) -> {
                     var normal = TENModels.machine(prov, n);
                     var active = TENModels.machineActive(prov, n);
@@ -201,6 +171,7 @@ public class TENBlocks {
         ZH_NAMES.put(n, cn);
         return REGISTRATE.block(n, HorizontalMachineBlock::new)
                 .lang(englishName)
+                .tag(TENTags.MACHINES)
                 .blockstate((ctx, prov) -> {
                     var normal = TENModels.engine(prov, n);
                     var active = TENModels.engineActive(prov, n);
@@ -231,6 +202,17 @@ public class TENBlocks {
         return REGISTRATE.block(n, CableBased::new)
                 .lang(englishName)
                 .blockstate((ctx, prov) -> TENModels.cableMultipart(prov, ctx.getEntry(), n))
+                .tag(TENTags.MACHINES)
+                .item().model((ctx, prov) -> prov.blockItem(ctx::getEntry)).build().register();
+    }
+
+    private static BlockEntry<HorizontalMachineBlock> cell(String n, String englishName, String cn) {
+        ZH_NAMES.put(n, cn);
+        return REGISTRATE.block(n, HorizontalMachineBlock::new)
+                .lang(englishName)
+                .tag(TENTags.MACHINES)
+                .properties(p -> p.noOcclusion())
+                .blockstate((ctx, prov) -> TENModels.cellBlockstate(prov, ctx.getEntry(), n))
                 .item().model((ctx, prov) -> prov.blockItem(ctx::getEntry)).build().register();
     }
 

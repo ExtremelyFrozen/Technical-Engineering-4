@@ -2,11 +2,11 @@
   "parent": "minecraft:block/cube",
   "textures": {
     "down": "kenergyengineering:block/machine_bottom",
-    "east": "kenergyengineering:block/machine_side",
+    "east": "kenergyengineering:block/machine_side_connection",
     "north": "kenergyengineering:block/machine_smelter",
     "particle": "kenergyengineering:block/machine_side",
     "south": "kenergyengineering:block/machine_side",
     "up": "kenergyengineering:block/machine_top",
-    "west": "kenergyengineering:block/machine_side"
+    "west": "kenergyengineering:block/machine_side_connection_flipped"
   }
 }
