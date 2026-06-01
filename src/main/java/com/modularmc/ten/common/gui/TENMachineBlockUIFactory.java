@@ -46,8 +46,16 @@ import java.util.function.Supplier;
 public final class TENMachineBlockUIFactory {
 
     private static final ResourceLocation HANDLER = TEN.id("textures/gui/handler.png");
+    private static final ResourceLocation PLAYER_INVENTORY = TEN.id("textures/gui/modular/player_inventory.png");
+    private static final ResourceLocation ITEM_SLOT_SMALL = TEN.id("textures/gui/modular/item_slot_small.png");
+    private static final ResourceLocation FLUID_SLOT = TEN.id("textures/gui/modular/fluid_slot.png");
+    private static final ResourceLocation MACHINE_PROGRESS_BAR = TEN.id("textures/gui/modular/machine_progress_bar.png");
 
     private TENMachineBlockUIFactory() {}
+
+    public static UIElement createRoot() {
+        return createRoot(HANDLER);
+    }
 
     public static UIElement createRoot(ResourceLocation background) {
         return new UIElement()
@@ -79,6 +87,7 @@ public final class TENMachineBlockUIFactory {
     }
 
     public static void addPlayerInventory(UIElement root) {
+        root.addChild(textureElement(0, 82, 176, 84, fullTexture(PLAYER_INVENTORY, 176, 84), null, null, null, null));
         var inventory = absolute(new InventorySlots(), 8, 83, 162, 58);
         inventory.apply(slot -> {
             slot.style(style -> style.backgroundTexture(IGuiTexture.EMPTY));
@@ -91,15 +100,7 @@ public final class TENMachineBlockUIFactory {
         root.addChild(textureElement(23, -37, 131, 36, sprite(HANDLER, 0, 211, 131, 36), null, null, null, null));
         int[] xs = { 32, 51, 70, 89, 108, 127 };
         for (int i = 0; i < xs.length; i++) {
-            final int slotIndex = i;
             root.addChild(upgradeSlot(machine, i, xs[i], -28));
-            root.addChild(textureElement(
-                    xs[slotIndex], -28, 18, 18,
-                    sprite(HANDLER, 227, 0, 18, 18),
-                    () -> upgradeTooltip(machine, slotIndex),
-                    null,
-                    null,
-                    null));
         }
     }
 
@@ -120,13 +121,13 @@ public final class TENMachineBlockUIFactory {
         var closeButton = textureElement(-11, 81, 10, 10, IGuiTexture.EMPTY, () -> controlTooltip(), () -> uiState.setControlOpen(false), null, null);
 
         var energyModeButton = dynamicTextureElement(-54, 145, 14, 14,
-                () -> sprite(HANDLER, 91, 126 + (uiState.getSelectedTransferMode() == 0 ? 14 : 0), 14, 14),
+                () -> sprite(HANDLER, 91, 126 + (uiState.getSelectedTransferMode() == 0 ? 28 : 0), 14, 14),
                 () -> energyModeTooltip(), () -> uiState.setSelectedTransferMode(0), null, null);
         var itemModeButton = dynamicTextureElement(-38, 145, 14, 14,
-                () -> sprite(HANDLER, 106, 126 + (uiState.getSelectedTransferMode() == 1 ? 14 : 0), 14, 14),
+                () -> sprite(HANDLER, 106, 126 + (uiState.getSelectedTransferMode() == 1 ? 28 : 0), 14, 14),
                 () -> itemModeTooltip(), () -> uiState.setSelectedTransferMode(1), null, null);
         var fluidModeButton = dynamicTextureElement(-22, 145, 14, 14,
-                () -> sprite(HANDLER, 76, 126 + (uiState.getSelectedTransferMode() == 2 ? 14 : 0), 14, 14),
+                () -> sprite(HANDLER, 76, 126 + (uiState.getSelectedTransferMode() == 2 ? 28 : 0), 14, 14),
                 () -> fluidModeTooltip(), () -> uiState.setSelectedTransferMode(2), null, null);
 
         var frontButton = faceModeElement(machine, uiState, -39, 103, 0, "kenergyengineering.info.front");
@@ -181,12 +182,15 @@ public final class TENMachineBlockUIFactory {
     }
 
     private static ItemSlot upgradeSlot(CmMachineBlockEntity machine, int index, int x, int y) {
-        return itemSlot(new SlotItemHandler(machine.upgradeHandler, index, 0, 0), x, y, false);
+        var slot = itemSlot(new SlotItemHandler(machine.upgradeHandler, index, 0, 0), x, y, false);
+        syncTexture(slot, () -> upgradeSlotOverlay(machine, index));
+        slot.addEventListener(UIEvents.HOVER_TOOLTIPS, event -> event.hoverTooltips = new HoverTooltips(upgradeTooltip(machine, index), null, null, null));
+        return slot;
     }
 
     private static ItemSlot itemSlot(Slot slot, int x, int y, boolean isPlayerSlot) {
         var itemSlot = absolute(new ItemSlot(slot), x, y, 18, 18);
-        itemSlot.style(style -> style.backgroundTexture(IGuiTexture.EMPTY));
+        itemSlot.style(style -> style.backgroundTexture(fullTexture(ITEM_SLOT_SMALL, 18, 18)));
         itemSlot.slotStyle(style -> style
                 .slotOverlay(IGuiTexture.EMPTY)
                 .showSlotOverlayOnlyEmpty(false)
@@ -239,10 +243,16 @@ public final class TENMachineBlockUIFactory {
 
     public static ProgressBar progressGauge(CmMachineBlockEntity machine, int x, int y, int width, int height, int xOff, int yOff, boolean showPercent) {
         var progress = absolute(new ProgressBar(), x, y, width, height);
-        progress.barContainer(container -> container.style(style -> style.backgroundTexture(sprite(HANDLER, xOff, yOff, width, height)))
+        IGuiTexture emptyTexture = width == 80 && height == 5
+                ? sprite(MACHINE_PROGRESS_BAR, 0, 0, width, height)
+                : sprite(HANDLER, xOff, yOff, width, height);
+        IGuiTexture filledTexture = width == 80 && height == 5
+                ? sprite(MACHINE_PROGRESS_BAR, 0, height, width, height)
+                : sprite(HANDLER, xOff, yOff + height, width, height);
+        progress.barContainer(container -> container.style(style -> style.backgroundTexture(emptyTexture))
                 .layout(layout -> layout.paddingAll(0)));
         progress.barBackground.style(style -> style.backgroundTexture(IGuiTexture.EMPTY));
-        progress.bar(bar -> bar.style(style -> style.backgroundTexture(sprite(HANDLER, xOff, yOff + height, width, height))));
+        progress.bar(bar -> bar.style(style -> style.backgroundTexture(filledTexture)));
         progress.label.setDisplay(false);
         progress.progressBarStyle(style -> style.fillDirection(FillDirection.LEFT_TO_RIGHT).interpolate(false));
         progress.bindDataSource(SupplierDataSource.of(() -> (float) progressPercent(machine)));
@@ -254,9 +264,9 @@ public final class TENMachineBlockUIFactory {
 
     public static FluidSlot fluidGauge(CmMachineBlockEntity machine, int x, int y, int width, int height, int tankIndex, boolean showValue) {
         var slot = absolute(new FluidSlot(), x, y, width, height);
-        slot.style(style -> style.backgroundTexture(IGuiTexture.EMPTY));
+        slot.style(style -> style.backgroundTexture(sprite(FLUID_SLOT, 0, 0, width, height)));
         slot.slotStyle(style -> style
-                .slotOverlay(sprite(HANDLER, 0, 92, width, height))
+                .slotOverlay(sprite(FLUID_SLOT, 0, 0, width, height))
                 .fillDirection(FillDirection.DOWN_TO_UP)
                 .showFluidTooltips(false));
         slot.amountLabel.setDisplay(false);
@@ -501,6 +511,10 @@ public final class TENMachineBlockUIFactory {
 
     private static List<Component> upgradeTooltip(CmMachineBlockEntity machine, int slotIndex) {
         return slotIndex >= machine.upgSize ? List.of(ComponentHelper.translated(ComponentHelper.RED, "kenergyengineering.locked_slot")) : List.of();
+    }
+
+    private static IGuiTexture upgradeSlotOverlay(CmMachineBlockEntity machine, int slotIndex) {
+        return sprite(HANDLER, 227, slotIndex < machine.upgSize ? 36 : 0, 18, 18);
     }
 
     public static final class UIState {

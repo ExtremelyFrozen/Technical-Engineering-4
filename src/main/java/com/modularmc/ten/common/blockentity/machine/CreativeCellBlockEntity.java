@@ -72,7 +72,7 @@ public class CreativeCellBlockEntity extends CmMachineBlockEntity {
     public void tick() {
         doBaseData();
         if (energyStorage == null) return;
-        // Always full — extractEnergy can drain but this refills every tick
+        // Always full - extractEnergy can drain but this refills every tick
         energyStorage.setEnergy(maxStorageEnergy);
         setActive(true);
 

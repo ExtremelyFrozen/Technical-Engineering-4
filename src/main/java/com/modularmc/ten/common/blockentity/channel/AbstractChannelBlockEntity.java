@@ -30,7 +30,7 @@ import java.util.function.Consumer;
 
 public abstract class AbstractChannelBlockEntity extends CmMachineBlockEntity {
 
-    private static final ResourceLocation CHANNEL_HANDLER = TEN.id("textures/gui/channel.png");
+    private static final ResourceLocation CHANNEL_LIST = TEN.id("textures/gui/modular/channel_list.png");
 
     protected final List<BlockPos> outputs = new ArrayList<>();
     protected final List<BlockPos> inputs = new ArrayList<>();
@@ -233,7 +233,7 @@ public abstract class AbstractChannelBlockEntity extends CmMachineBlockEntity {
         for (int i = 0; i < 5; i++) {
             int y = 7 + i * 14;
             var background = absolute(new UIElement(), 53, y, 48, 13)
-                    .style(style -> style.backgroundTexture(SpriteTexture.of(CHANNEL_HANDLER).setSprite(0, 166, 48, 13)));
+                    .style(style -> style.backgroundTexture(SpriteTexture.of(CHANNEL_LIST).setSprite(0, 0, 48, 13)));
             var label = new Label();
             label.layout(layout -> {
                 layout.positionType(TaffyPosition.ABSOLUTE);
@@ -248,14 +248,14 @@ public abstract class AbstractChannelBlockEntity extends CmMachineBlockEntity {
         }
 
         root.addChild(absolute(new UIElement(), 107, 5, 12, 12)
-                .style(style -> style.backgroundTexture(SpriteTexture.of(CHANNEL_HANDLER).setSprite(84, 166, 12, 12)))
+                .style(style -> style.backgroundTexture(SpriteTexture.of(CHANNEL_LIST).setSprite(48, 0, 12, 12)))
                 .addEventListener(com.lowdragmc.lowdraglib2.gui.ui.event.UIEvents.MOUSE_DOWN, event -> {
                     if (event.button == 0) {
                         state.scrollUp();
                     }
                 }));
         root.addChild(absolute(new UIElement(), 107, 64, 12, 12)
-                .style(style -> style.backgroundTexture(SpriteTexture.of(CHANNEL_HANDLER).setSprite(96, 166, 12, 12)))
+                .style(style -> style.backgroundTexture(SpriteTexture.of(CHANNEL_LIST).setSprite(48, 12, 12, 12)))
                 .addEventListener(com.lowdragmc.lowdraglib2.gui.ui.event.UIEvents.MOUSE_DOWN, event -> {
                     if (event.button == 0) {
                         state.scrollDown(combinedEntryCount());
@@ -274,7 +274,7 @@ public abstract class AbstractChannelBlockEntity extends CmMachineBlockEntity {
                 }
                 var entry = entries.get(entryIndex);
                 entryBackgrounds[i].style(style -> style.backgroundTexture(
-                        SpriteTexture.of(CHANNEL_HANDLER).setSprite(0, entry.isInput ? 166 : 179, 48, 13)));
+                        SpriteTexture.of(CHANNEL_LIST).setSprite(0, entry.isInput ? 0 : 13, 48, 13)));
                 entryLabels[i].setText(ComponentHelper.translated(ComponentHelper.getKey("channel"))
                         .append(ComponentHelper.make("#", String.valueOf(entry.index)))
                         .withStyle(entry.isInput ? ChatFormatting.RED : ChatFormatting.GREEN));
