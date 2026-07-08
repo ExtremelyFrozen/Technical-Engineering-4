@@ -1,6 +1,7 @@
 package com.modularmc.ten.common.item;
 
 import com.modularmc.ten.TEN;
+import com.modularmc.ten.api.capability.CapabilityAdapters;
 import com.modularmc.ten.component.EnergyUnitData;
 
 import net.minecraft.world.entity.EquipmentSlot;
@@ -8,7 +9,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.energy.IEnergyStorage;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 
@@ -39,7 +39,7 @@ public class EnergyUnitHandler {
 
         for (ItemStack target : targets) {
             if (data.getEnergy() <= 0) break;
-            IEnergyStorage storage = target.getCapability(Capabilities.EnergyStorage.ITEM);
+            IEnergyStorage storage = CapabilityAdapters.getEnergy(target);
             if (storage == null) continue;
             int received = storage.receiveEnergy(Math.min(perTarget, data.getEnergy()), false);
             if (received > 0) {
@@ -87,19 +87,15 @@ public class EnergyUnitHandler {
             }
         }
 
-        collectCurios(player, targets);
+        // TODO: Re-enable Curios integration when Curios API is updated for 26.1.2
+        // collectCurios(player, targets);
         return targets;
     }
 
     private static boolean canCharge(ItemStack stack) {
         if (stack.getItem() instanceof EnergyUnitItem) return false;
-        IEnergyStorage storage = stack.getCapability(Capabilities.EnergyStorage.ITEM);
+        IEnergyStorage storage = CapabilityAdapters.getEnergy(stack);
         if (storage == null) return false;
         return storage.canReceive() && storage.getEnergyStored() < storage.getMaxEnergyStored();
-    }
-
-    private static void collectCurios(Player player, List<ItemStack> targets) {
-        if (!net.neoforged.fml.ModList.get().isLoaded("curios")) return;
-        com.modularmc.ten.common.item.CuriosIntegration.collectCurios(player, targets);
     }
 }

@@ -80,7 +80,7 @@ public class CompressorBlockEntity extends RecipeMachineBlockEntity {
     @Override
     public FormsCombinedRecipe findRecipe() {
         if (level == null) return null;
-        var recipes = level.getRecipeManager().getAllRecipesFor(TENRecipeTypes.COMPRESSOR_T.get());
+        var recipes = level.getServer().getRecipeManager().recipeMap().byType(TENRecipeTypes.COMPRESSOR_T.get());
         for (var holder : recipes) {
             var recipe = holder.value();
             if (recipe instanceof FormsCombinedRecipe r && r.matches(itemHandler, tanks, this::slotType, this::tankType)) {

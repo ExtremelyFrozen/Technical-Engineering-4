@@ -32,8 +32,8 @@ tasks.matching { it.name.startsWith('prepare') }.configureEach {
 var generateModMetadata = tasks.register("generateModMetadata", ProcessResources) {
     var neoVersion = libs.versions.neoForge.get()
     neoVersion = neoVersion.substring(0, neoVersion.lastIndexOf('.'))
-    var configurationVersion = forge.versions.configuration.get()
-    configurationVersion = configurationVersion.substring(0, configurationVersion.lastIndexOf('-'))
+    // Configuration 无 26.1.2 坐标，已禁用；后续迁移到 ModConfigSpec
+    var configurationVersion = "0.0.0" // placeholder — 迁移 ModConfigSpec 后移除
     var replaceProperties = [
             version                 : version_toml,
             mod_id                  : mod_id,

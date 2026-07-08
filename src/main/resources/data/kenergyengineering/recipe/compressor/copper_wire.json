@@ -1,0 +1,25 @@
+{
+  "type": "kenergyengineering:compressor",
+  "inputs": [
+    {
+      "type": "tag",
+      "form": "item",
+      "key": "c:ingots/copper"
+    },
+    {
+      "type": "static",
+      "chance": 0.0,
+      "form": "item",
+      "key": "kenergyengineering:mould_string"
+    }
+  ],
+  "outputs": [
+    {
+      "type": "static",
+      "count": 2,
+      "form": "item",
+      "key": "kenergyengineering:copper_wire"
+    }
+  ],
+  "time": 100
+}

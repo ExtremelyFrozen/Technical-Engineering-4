@@ -8,11 +8,11 @@ import com.modularmc.ten.utils.SafeOperationHelper;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.HolderLookup;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import net.neoforged.neoforge.energy.IEnergyStorage;
 
 import com.lowdragmc.lowdraglib2.gui.factory.BlockUIMenuType;
@@ -162,13 +162,13 @@ public class CableBlockEntity extends CmBlockEntity {
     }
 
     @Override
-    protected void readTileData(CompoundTag tag, HolderLookup.Provider registries) {
-        storage.setEnergy(tag.getInt("energy"));
+    protected void readTileData(ValueInput input) {
+        storage.setEnergy(input.getIntOr("energy", 0));
     }
 
     @Override
-    protected void writeTileData(CompoundTag tag, HolderLookup.Provider registries) {
-        tag.putInt("energy", storage.getEnergyStored());
+    protected void writeTileData(ValueOutput output) {
+        output.putInt("energy", storage.getEnergyStored());
     }
 
     private static int capacityFor(BlockState state) {

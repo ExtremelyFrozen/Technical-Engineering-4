@@ -6,6 +6,10 @@ public class LevelupRg extends UpgradeItem {
         super(0);
     }
 
+    public LevelupRg(Properties properties) {
+        super(0, properties);
+    }
+
     @Override
     public boolean effect(IUpgradableMachine machine) {
         if (machine.getCurrentRadius() > 0) {

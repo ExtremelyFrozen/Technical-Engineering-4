@@ -6,6 +6,10 @@ public class LevelupKnow extends UpgradeItem {
         super(0);
     }
 
+    public LevelupKnow(Properties properties) {
+        super(0, properties);
+    }
+
     @Override
     public boolean effect(IUpgradableMachine machine) {
         machine.onUpgradeApply(0, 5);

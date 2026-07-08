@@ -13,12 +13,10 @@ public interface IBaseRecipeCm extends Recipe<RecipeInput> {
 
     int inputLimit(FluidStack stack);
 
-    @Override
     default boolean isSpecial() {
         return true;
     }
 
-    @Override
     default boolean canCraftInDimensions(int w, int h) {
         return true;
     }

@@ -24,7 +24,7 @@ import net.minecraft.world.level.material.MapColor;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.neoforged.neoforge.capabilities.Capabilities;
+import com.modularmc.ten.api.capability.CapabilityAdapters;
 
 import java.util.Map;
 
@@ -152,10 +152,10 @@ public class CableBased extends HorizontalMachineBlock implements SimpleWaterlog
         if (isCable && neighborBe instanceof CableBlockEntity) {
             return 1;
         }
-        if (isPipe && level.getCapability(Capabilities.ItemHandler.BLOCK, neighbor, dir.getOpposite()) != null) {
+        if (isPipe && CapabilityAdapters.getItems(level, neighbor, dir.getOpposite()) != null) {
             return 2;
         }
-        if (isCable && level.getCapability(Capabilities.EnergyStorage.BLOCK, neighbor, dir.getOpposite()) != null) {
+        if (isCable && CapabilityAdapters.getEnergy(level, neighbor, dir.getOpposite()) != null) {
             return 2;
         }
         if (neighborBe instanceof CmMachineBlockEntity) {
@@ -191,8 +191,8 @@ public class CableBased extends HorizontalMachineBlock implements SimpleWaterlog
     }
 
     @Override
-    public void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighborBlock, BlockPos neighborPos, boolean moved) {
-        super.neighborChanged(state, level, pos, neighborBlock, neighborPos, moved);
+    public void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighborBlock, net.minecraft.world.level.redstone.Orientation orientation, boolean moved) {
+        super.neighborChanged(state, level, pos, neighborBlock, orientation, moved);
         if (!level.isClientSide()) {
             updateConnections(level, pos);
         }

@@ -8,9 +8,9 @@ import com.modularmc.ten.utils.SafeOperationHelper;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.HolderLookup;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.Container;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
@@ -246,13 +246,16 @@ public class PipeBlockEntity extends CmBlockEntity {
     }
 
     @Override
-    protected void readTileData(CompoundTag tag, HolderLookup.Provider registries) {
-        filterInventory.deserializeNBT(registries, tag.getCompound("filter"));
+    protected void readTileData(ValueInput input) {
+        super.readTileData(input);
+        // TODO: Re-enable filter inventory NBT persistence when ItemStackHandler
+        // serializeNBT/deserializeNBT are restored or replaced in NeoForge 26.1.2 API.
     }
 
     @Override
-    protected void writeTileData(CompoundTag tag, HolderLookup.Provider registries) {
-        tag.put("filter", filterInventory.serializeNBT(registries));
+    protected void writeTileData(ValueOutput output) {
+        super.writeTileData(output);
+        // TODO: Re-enable filter inventory NBT persistence.
     }
 
     private ItemSlot filterSlot(int index, int x, int y) {

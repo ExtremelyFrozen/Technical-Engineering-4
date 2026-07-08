@@ -1,8 +1,9 @@
-{
-	"parent": "kenergyengineering:block/mac/engine",
-	"textures": {
-		"bot": "kenergyengineering:block/engine_solar_bottom",
-		"particle": "kenergyengineering:block/engine_solar",
-		"side": "kenergyengineering:block/engine_solar"
-	}
+﻿{
+  "parent": "minecraft:block/cube_bottom_top",
+  "textures": {
+    "bottom": "kenergyengineering:block/engine_solar",
+    "particle": "kenergyengineering:block/engine_solar",
+    "side": "kenergyengineering:block/engine_solar",
+    "top": "kenergyengineering:block/engine_solar_bottom"
+  }
 }

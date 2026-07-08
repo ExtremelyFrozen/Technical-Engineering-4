@@ -1,14 +1,19 @@
 package com.modularmc.ten.data;
 
-import com.modularmc.ten.data.lang.TENLangHandler;
-
-import com.tterrag.registrate.providers.ProviderType;
-
-import static com.modularmc.ten.common.registry.Registration.REGISTRATE;
-
+/**
+ * Decommissioned — data generation migrated to {@link DataGenerators}.
+ * <p>
+ * Previously used Registrate's {@code REGISTRATE.addDataGenerator(ProviderType.LANG, ...)}.
+ * Now all data providers (language, recipes, models) are registered directly
+ * via {@link net.neoforged.neoforge.data.event.GatherDataEvent}.
+ */
 public final class TENDataGen {
 
+    /**
+     * No-op placeholder. Kept to avoid breaking {@code CommonProxy.init()} call sites.
+     * Will be removed after full migration.
+     */
     public static void init() {
-        REGISTRATE.addDataGenerator(ProviderType.LANG, TENLangHandler::init);
+        // Data generation is now handled by DataGenerators#gatherData
     }
 }

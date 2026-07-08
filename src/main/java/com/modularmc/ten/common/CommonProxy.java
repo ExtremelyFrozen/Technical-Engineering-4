@@ -1,19 +1,18 @@
 package com.modularmc.ten.common;
 
+import com.modularmc.ten.api.capability.CapabilityAdapters;
 import com.modularmc.ten.common.block.machine.BaseMachineBlock;
 import com.modularmc.ten.common.data.*;
 import com.modularmc.ten.common.item.EnergyUnitItem;
+import com.modularmc.ten.common.registry.Registration;
 import com.modularmc.ten.config.ConfigHolder;
 import com.modularmc.ten.data.TENDataGen;
 
+import net.minecraft.core.Direction;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
-import net.neoforged.neoforge.energy.IEnergyStorage;
-import net.neoforged.neoforge.registries.RegisterEvent;
-
-import static com.modularmc.ten.common.registry.Registration.REGISTRATE;
 
 public class CommonProxy {
 
@@ -25,60 +24,55 @@ public class CommonProxy {
         ConfigHolder.init();
         TENDataGen.init();
 
-        REGISTRATE.registerEventListeners(modBus);
+        // Register all DeferredRegisters (BLOCKS, ITEMS, FLUIDS, BLOCK_ENTITIES, CREATIVE_TABS)
+        Registration.register(modBus);
+
+        // Trigger class loading for all registration holders so their static blocks
+        // execute before the registry event fires.
+        TENBlocks.init();
+        TENFluids.init();
+        TENBlockEntities.init();
+        TENItems.init();
         TENCreativeModeTabs.init();
 
+        // Recipe serializer/type DeferredRegisters (kept in TENRecipeTypes)
         TENRecipeTypes.SERIALIZERS.register(modBus);
         TENRecipeTypes.TYPES.register(modBus);
         modBus.register(CommonProxy.class);
     }
 
     @SubscribeEvent
-    public static void onRegister(RegisterEvent event) {
-        TENBlocks.init();
-        TENFluids.init();
-        TENBlockEntities.init();
-        TENRecipeTypes.init();
-        TENItems.init();
-    }
-
-    @SubscribeEvent
     public static void registerCapabilities(RegisterCapabilitiesEvent event) {
         for (var block : net.minecraft.core.registries.BuiltInRegistries.BLOCK) {
             if (block instanceof BaseMachineBlock) {
-                event.registerBlock(Capabilities.EnergyStorage.BLOCK, (level, pos, state, blockEntity, side) -> {
+                // Energy capability — adapted via CapabilityAdapters
+                event.registerBlock(Capabilities.Energy.BLOCK, (level, pos, state, blockEntity, ctx) -> {
+                    Direction side = ctx instanceof Direction d ? d : null;
                     if (blockEntity instanceof com.modularmc.ten.common.blockentity.CableBlockEntity cable) {
-                        return cable.getEnergy(side);
+                        return CapabilityAdapters.asEnergyHandler(cable.getEnergy(side));
                     }
                     if (blockEntity instanceof com.modularmc.ten.api.blockentity.CmMachineBlockEntity machine) {
-                        return machine.getEnergyStorage(side);
+                        return CapabilityAdapters.asEnergyHandler(machine.getEnergyStorage(side));
                     }
                     return null;
                 }, block);
 
-                event.registerBlock(Capabilities.ItemHandler.BLOCK, (level, pos, state, blockEntity, side) -> {
-                    if (blockEntity instanceof com.modularmc.ten.common.blockentity.PipeBlockEntity pipe) {
-                        return pipe.getTransportHandler(side);
-                    }
-                    if (blockEntity instanceof com.modularmc.ten.api.blockentity.CmMachineBlockEntity machine) {
-                        return machine.getItemHandler(side);
-                    }
-                    return null;
-                }, block);
-
-                event.registerBlock(Capabilities.FluidHandler.BLOCK, (level, pos, state, blockEntity, side) -> {
-                    if (blockEntity instanceof com.modularmc.ten.api.blockentity.CmMachineBlockEntity machine) {
-                        return machine.getFluidHandler(side);
-                    }
-                    return null;
-                }, block);
+                // TODO: Re-enable Item/Fluid capability registration once full
+                // ResourceHandler<ItemResource/FluidResource> adapters are implemented.
+                // For now, item/fluid capabilities are disabled to reach compilation.
+                // Old API references:
+                //   event.registerBlock(Capabilities.ItemHandler.BLOCK, ...)
+                //   event.registerBlock(Capabilities.FluidHandler.BLOCK, ...)
+                // Replaced by: Capabilities.Item.BLOCK / Capabilities.Fluid.BLOCK
+                // with ResourceHandler<?> return types.
             }
         }
 
-        // Energy Unit item capability
-        event.registerItem(Capabilities.EnergyStorage.ITEM, (stack, ctx) -> {
+        // Energy Unit item capability — adapted via CapabilityAdapters
+        event.registerItem(Capabilities.Energy.ITEM, (stack, ctx) -> {
             var data = com.modularmc.ten.component.EnergyUnitData.of(stack);
-            return new IEnergyStorage() {
+
+            return CapabilityAdapters.asEnergyHandler(new net.neoforged.neoforge.energy.IEnergyStorage() {
 
                 private int doReceive(int maxReceive) {
                     int capacity = EnergyUnitItem.maxEnergy();
@@ -133,7 +127,7 @@ public class CommonProxy {
                 public boolean canReceive() {
                     return EnergyUnitItem.inputRate() > 0 && data.getEnergy() < EnergyUnitItem.maxEnergy();
                 }
-            };
+            });
         }, com.modularmc.ten.common.data.TENItems.ENERGY_CAPACITY.get());
     }
 }

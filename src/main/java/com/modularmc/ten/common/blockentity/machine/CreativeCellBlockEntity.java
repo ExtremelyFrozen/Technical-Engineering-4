@@ -1,6 +1,7 @@
 package com.modularmc.ten.common.blockentity.machine;
 
 import com.modularmc.ten.api.blockentity.CmMachineBlockEntity;
+import com.modularmc.ten.api.capability.CapabilityAdapters;
 import com.modularmc.ten.api.option.IngredientType;
 import com.modularmc.ten.api.option.MachineType;
 import com.modularmc.ten.common.gui.TENMachineBlockUIFactory;
@@ -38,7 +39,7 @@ public class CreativeCellBlockEntity extends CmMachineBlockEntity {
 
     @Override
     public boolean valid(int slot, ItemStack stack) {
-        var energy = stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM);
+        var energy = CapabilityAdapters.getEnergy(stack);
         if (energy == null) return false;
         return energy.canReceive() && energy.getEnergyStored() < energy.getMaxEnergyStored();
     }
@@ -81,7 +82,7 @@ public class CreativeCellBlockEntity extends CmMachineBlockEntity {
         for (int slot = 0; slot < 2; slot++) {
             ItemStack stack = itemHandler.getStackInSlot(slot);
             if (stack.getCount() != 1) continue;
-            var energy = stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM);
+            var energy = CapabilityAdapters.getEnergy(stack);
             if (energy == null || !energy.canReceive()) continue;
             int accepted = energy.receiveEnergy(Integer.MAX_VALUE, false);
             if (accepted > 0) {

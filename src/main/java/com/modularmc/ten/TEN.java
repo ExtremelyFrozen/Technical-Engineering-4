@@ -4,7 +4,7 @@ import com.modularmc.ten.common.CommonProxy;
 import com.modularmc.ten.config.ConfigHolder;
 import com.modularmc.ten.network.ToggleEnergyUnitPayload;
 
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModList;
 import net.neoforged.fml.common.Mod;
@@ -40,8 +40,8 @@ public class TEN {
         ToggleEnergyUnitPayload.register(registrar);
     }
 
-    public static ResourceLocation id(String path) {
-        return ResourceLocation.fromNamespaceAndPath(MOD_ID, path);
+    public static Identifier id(String path) {
+        return Identifier.fromNamespaceAndPath(MOD_ID, path);
     }
 
     public static class Mods {

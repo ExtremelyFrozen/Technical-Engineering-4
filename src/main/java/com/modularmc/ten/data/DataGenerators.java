@@ -17,14 +17,15 @@ import net.neoforged.neoforge.data.event.GatherDataEvent;
 public class DataGenerators {
 
     @SubscribeEvent
-    public static void gatherData(GatherDataEvent event) {
+    public static void gatherData(GatherDataEvent.Client event) {
         var generator = event.getGenerator();
         var output = generator.getPackOutput();
 
-        // Registrate handles block/item models, blockstates, and English lang entries automatically.
+        // TODO: 26.1.2 - Convert to new datagen API. event.includeClient()/includeServer() removed.
+        // Using boolean true as temporary fallback for all providers.
 
         // Chinese localization — reads from all ZH_NAMES/ZH_ENTRIES maps
-        generator.addProvider(event.includeClient(), new LanguageProvider(output, TEN.MOD_ID, "zh_cn") {
+        generator.addProvider(true, new LanguageProvider(output, TEN.MOD_ID, "zh_cn") {
 
             @Override
             protected void addTranslations() {
@@ -38,13 +39,11 @@ public class DataGenerators {
                 TENCreativeModeTabs.ZH_NAMES.forEach(this::add);
 
                 // 2a. Auto-generate standalone keys from item and block registrations
-                // (kenergyengineering.xxx = same value as item.kenergyengineering.xxx / block.kenergyengineering.xxx)
                 TENItems.ZH_NAMES.forEach((id, cn) -> add(TEN.MOD_ID + "." + id, cn));
                 TENBlocks.ZH_NAMES.forEach((id, cn) -> add(TEN.MOD_ID + "." + id, cn));
                 TENFluids.ZH_FLUID_KEYS.forEach((key, cn) -> add(key, cn));
 
-                // 2b. Tag translations (no registration function to hook into)
-                // Common tags (tag.c.*)
+                // 2b. Tag translations
                 add("tag.c.dusts.chlorium", "叶绿粉");
                 add("tag.c.dusts.nickel", "镍粉");
                 add("tag.c.dusts.powered_tin", "充能锡粉");
@@ -95,7 +94,6 @@ public class DataGenerators {
                 add("tag.c.storage_blocks.raw_nickel", "粗镍块");
                 add("tag.c.storage_blocks.raw_tin", "粗锡块");
                 add("tag.c.storage_blocks.tin", "锡块");
-                // Mod tags (tag.kenergyengineering.*)
                 add("tag.kenergyengineering.catalyst", "催化剂");
                 add("tag.kenergyengineering.common_ingots", "常见金属锭");
                 add("tag.kenergyengineering.mats.chlorium", "叶绿材料");
@@ -109,8 +107,6 @@ public class DataGenerators {
                 add("tag.kenergyengineering.uncommon_ingots", "稀有金属锭");
                 add("tag.kenergyengineering.valuable_ingots", "贵重金属锭");
 
-                // 2b5. Miscellaneous items not covered by standard registration paths
-
                 add("kenergyengineering.energy_core", "能量核心");
                 add("item.kenergyengineering.liquid_bizarrerie_bucket", "奇异物质桶");
                 add("kenergyengineering.liquid_honey", "蜂蜜");
@@ -121,13 +117,10 @@ public class DataGenerators {
                 add("kenergyengineering.liquid_spicy_jelly_bucket", "香辣蜂王浆桶");
                 add("item.kenergyengineering.liquid_xp_bucket", "液态经验桶");
                 add("kenergyengineering.machine_frame", "机械框架");
-
                 add("kenergyengineering.world_bag", "世界袋");
                 add("kenergyengineering.liquid_bizarrerie", "奇异物质");
                 add("kenergyengineering.liquid_xp", "液态经验");
 
-                // 2c. Supplement from hand-written zh_cn.json for entries not covered by maps above
-                // Map entries take priority since they are added first (LanguageProvider skips duplicates).
                 try {
                     var file = new java.io.File("src/main/resources/assets/" + TEN.MOD_ID + "/lang/zh_cn.json");
                     if (file.exists()) {
@@ -137,14 +130,14 @@ public class DataGenerators {
                         json.entrySet().forEach(entry -> add(entry.getKey(), entry.getValue().getAsString()));
                     }
                 } catch (Exception e) {
-                    // Silently skip if file doesn't exist (e.g. after deleting the hand-written file)
+                    // Silently skip if file doesn't exist
                 }
             }
         });
 
         // Material variant recipes — auto-generated from Mat enum
-        generator.addProvider(event.includeServer(), new TENRecipeGen(output, event.getLookupProvider()));
+        generator.addProvider(true, new TENRecipeGen(output, event.getLookupProvider()));
         // Vanilla pack/split recipes — separate from mod materials
-        generator.addProvider(event.includeServer(), new TENVanillaPackGen(output));
+        generator.addProvider(true, new TENVanillaPackGen(output));
     }
 }

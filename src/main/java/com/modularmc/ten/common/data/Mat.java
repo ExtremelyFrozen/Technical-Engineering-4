@@ -2,7 +2,7 @@ package com.modularmc.ten.common.data;
 
 import com.modularmc.ten.TEN;
 
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 /**
  * Material variant definition shared by:
@@ -155,12 +155,12 @@ public enum Mat {
     }
 
     /** Recipe resource location: "kenergyengineering:compressor/tin_plate". */
-    public ResourceLocation recipeId(String prefix, String suffix) {
+    public Identifier recipeId(String prefix, String suffix) {
         return TEN.id(prefix + "/" + id + "_" + suffix);
     }
 
     /** Recipe resource location (single segment): "kenergyengineering:vanilla/mould_gear". */
-    public ResourceLocation recipeId(String prefix) {
+    public Identifier recipeId(String prefix) {
         return TEN.id(prefix + "/" + id);
     }
 

@@ -36,7 +36,7 @@ public class ExtractorBlockEntity extends EngineBlockEntity {
 
     @Override
     public boolean valid(int slot, ItemStack stack) {
-        return MatchFuel.matchFuel(stack, true) > 0;
+        return MatchFuel.matchFuel(level, stack, true) > 0;
     }
 
     @Override
@@ -51,6 +51,6 @@ public class ExtractorBlockEntity extends EngineBlockEntity {
 
     @Override
     public int matchFuel(ItemStack stack, boolean simulate) {
-        return MatchFuel.matchFuel(stack, simulate);
+        return MatchFuel.matchFuel(level, stack, simulate);
     }
 }

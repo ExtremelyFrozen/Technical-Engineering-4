@@ -138,7 +138,7 @@ public class EncfluBlockEntity extends ProcessingMachineBlockEntity {
         if (!tanks.isEmpty()) {
             int amount = Math.max(1, enchantments.size() * 25);
             tanks.get(0).fill(
-                    new FluidStack((net.minecraft.world.level.material.Fluid) TENFluids.LIQUID_XP.getSource(), amount),
+                    new FluidStack(TENFluids.LIQUID_XP_SOURCE.get(), amount),
                     IFluidHandler.FluidAction.EXECUTE);
         }
     }

@@ -62,7 +62,10 @@ public class SolarBlockEntity extends EngineBlockEntity {
 
     @Override
     public int matchFuel(ItemStack stack, boolean simulate) {
-        if (level != null && level.canSeeSky(worldPosition.above()) && level.isDay() && !level.isRaining()) {
+        if (level != null && level.canSeeSky(worldPosition.above()) && !level.isRaining()) {
+            // TODO: 26.1.2 - Re-add day-only check when clock API is stable.
+            // Old: level.getDayTime() % 24000L < 12000L
+            // New: clockManager().getTotalTicks(DaylightClock) via ServerLevel
             return 600;
         }
         return 0;

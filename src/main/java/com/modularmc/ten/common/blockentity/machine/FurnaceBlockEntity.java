@@ -49,7 +49,7 @@ public class FurnaceBlockEntity extends ProcessingMachineBlockEntity {
     @Override
     public int baseTickTime() {
         var recipe = getCurrentRecipe();
-        return recipe.map(r -> r.value().getCookingTime() / 2).orElse(200);
+        return recipe.map(r -> r.value().cookingTime() / 2).orElse(200);
     }
 
     @Override
@@ -65,10 +65,10 @@ public class FurnaceBlockEntity extends ProcessingMachineBlockEntity {
     }
 
     private Optional<RecipeHolder<SmeltingRecipe>> getCurrentRecipe() {
-        if (level == null) return Optional.empty();
+        if (level == null || level.getServer() == null) return Optional.empty();
         ItemStack input = itemHandler.getStackInSlot(0);
         if (input.isEmpty()) return Optional.empty();
-        return level.getRecipeManager()
+        return level.getServer().getRecipeManager()
                 .getRecipeFor(RecipeType.SMELTING, new SingleRecipeInput(input), level);
     }
 
@@ -82,10 +82,7 @@ public class FurnaceBlockEntity extends ProcessingMachineBlockEntity {
         var recipeOpt = getCurrentRecipe();
         if (recipeOpt.isEmpty()) return false;
 
-        var registry = level != null ? level.registryAccess() : null;
-        if (registry == null) return false;
-
-        ItemStack result = recipeOpt.get().value().getResultItem(registry);
+        ItemStack result = recipeOpt.get().value().assemble(new SingleRecipeInput(itemHandler.getStackInSlot(0)));
         ItemStack output = itemHandler.getStackInSlot(1);
 
         if (output.isEmpty()) return false;
@@ -98,8 +95,7 @@ public class FurnaceBlockEntity extends ProcessingMachineBlockEntity {
         var recipeOpt = getCurrentRecipe();
         if (recipeOpt.isEmpty() || level == null) return;
 
-        var registry = level.registryAccess();
-        ItemStack result = recipeOpt.get().value().getResultItem(registry);
+        ItemStack result = recipeOpt.get().value().assemble(new SingleRecipeInput(itemHandler.getStackInSlot(0)));
         ItemStack output = itemHandler.getStackInSlot(1);
 
         if (output.isEmpty()) {

@@ -1,10 +1,11 @@
 package com.modularmc.ten.common.blockentity;
 
+import com.modularmc.ten.api.capability.CapabilityAdapters;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.energy.IEnergyStorage;
 import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
@@ -61,17 +62,17 @@ public final class TransferNetworks {
 
     @Nullable
     public static IEnergyStorage getEnergy(Level level, BlockPos pos, @Nullable Direction side) {
-        return level.getCapability(Capabilities.EnergyStorage.BLOCK, pos, side);
+        return CapabilityAdapters.getEnergy(level, pos, side);
     }
 
     @Nullable
     public static IItemHandler getItems(Level level, BlockPos pos, @Nullable Direction side) {
-        return level.getCapability(Capabilities.ItemHandler.BLOCK, pos, side);
+        return CapabilityAdapters.getItems(level, pos, side);
     }
 
     @Nullable
     public static IFluidHandler getFluids(Level level, BlockPos pos, @Nullable Direction side) {
-        return level.getCapability(Capabilities.FluidHandler.BLOCK, pos, side);
+        return CapabilityAdapters.getFluids(level, pos, side);
     }
 
     public static int moveEnergy(IEnergyStorage from, IEnergyStorage to, int limit, boolean simulate) {

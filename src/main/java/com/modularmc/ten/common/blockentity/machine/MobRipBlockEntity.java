@@ -10,9 +10,8 @@ import com.modularmc.ten.utils.SafeOperationHelper;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.SwordItem;
-import net.minecraft.world.item.TieredItem;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
@@ -50,7 +49,7 @@ public class MobRipBlockEntity extends RadiusMachineBlockEntity {
 
     @Override
     public boolean valid(int slot, ItemStack stack) {
-        return stack.getItem() instanceof TieredItem || stack.getItem() instanceof SwordItem;
+        return stack.has(DataComponents.TOOL);
     }
 
     @Override
@@ -85,12 +84,8 @@ public class MobRipBlockEntity extends RadiusMachineBlockEntity {
 
         ItemStack weapon = itemHandler.getStackInSlot(0);
         float damage = 0.5f;
-        if (!weapon.isEmpty()) {
-            if (weapon.getItem() instanceof SwordItem sword) {
-                damage = sword.getDamage(weapon);
-            } else if (weapon.getItem() instanceof TieredItem tiered) {
-                damage = tiered.getTier().getAttackDamageBonus();
-            }
+        if (!weapon.isEmpty() && weapon.has(DataComponents.TOOL)) {
+            damage = 1.0f;
         }
         target.hurt(target.damageSources().cactus(), damage);
         ItemNBTHelper.damage(weapon, level, 1);

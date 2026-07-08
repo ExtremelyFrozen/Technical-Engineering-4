@@ -23,7 +23,6 @@ public interface RandRecipe extends IBaseRecipeCm {
 
     List<FormsCombinedIngredient> output();
 
-    @Override
     default ItemStack getResultItem(HolderLookup.Provider registries) {
         return output().isEmpty() ? ItemStack.EMPTY : output().get(0).symbolItem();
     }

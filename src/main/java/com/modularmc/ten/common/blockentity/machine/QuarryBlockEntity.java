@@ -13,9 +13,9 @@ import com.modularmc.ten.utils.WorkingHelper;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.util.Mth;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.item.TieredItem;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.fluids.FluidStack;
@@ -55,7 +55,7 @@ public class QuarryBlockEntity extends RadiusMachineBlockEntity {
     @Override
     public boolean valid(int slot, ItemStack stack) {
         if (slot == 0) {
-            return stack.getItem() instanceof TieredItem;
+            return stack.has(DataComponents.TOOL);
         }
         return true;
     }
@@ -142,7 +142,7 @@ public class QuarryBlockEntity extends RadiusMachineBlockEntity {
         int dx = Mth.nextInt(level.getRandom(), -radius + 1, radius - 1);
         int dz = Mth.nextInt(level.getRandom(), -radius + 1, radius - 1);
         BlockPos target = worldPosition.offset(dx, 0, dz);
-        target = target.atY(Mth.randomBetweenInclusive(level.getRandom(), level.getMinBuildHeight(), worldPosition.getY() - 1));
+        target = target.atY(Mth.randomBetweenInclusive(level.getRandom(), level.getMinY(), worldPosition.getY() - 1));
         BlockState state = level.getBlockState(target);
         if (!canBreak(state)) {
             return;

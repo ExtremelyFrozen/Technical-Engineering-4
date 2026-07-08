@@ -1,41 +1,48 @@
 [versions]
-ldlib2 = "2.2.8"
-registrate = "MC1.21-1.3.0+67"
-configuration = "3.1.1-neoforge"
+ldlib2 = "26.1.2.27"
+# Registrate 无 26.1.2 可用版本，需迁移到 NeoForge DeferredRegister（Phase 1+）
+# registrate = "MC1.21-1.3.0+67"
+# Configuration 无 26.1.2 坐标，需迁移到 ModConfigSpec（Phase 1+，不改源码）
+# configuration = "3.1.1-neoforge"
 
-jei = "19.25.1.328"
-emi = "1.1.22+1.21.1"
+jei = "29.13.0.42"
+# EMI/Jade/Sodium/Iris/ModernFix/ModernUI/Spark 为可选 dep，Phase 4/5 恢复
+# emi = "1.1.22+1.21.1"
 
+## Phase 4/5: modrinth maven deps — 可选 runtime/客户端，暂禁用
+# jade = "15.10.0+neoforge"
+# sodium = "mc1.21.1-0.6.13-neoforge"
+# iris = "1.8.8+1.21.1-neoforge"
+# modernfix = "4SPHwiDB" # 5.24.3+mc1.21.1
+# modernui = "3.12.0.2"
 
-## modrinth maven ##
-jade = "15.10.0+neoforge"
-sodium = "mc1.21.1-0.6.13-neoforge"
-iris = "1.8.8+1.21.1-neoforge"
-modernfix = "4SPHwiDB" # 5.24.3+mc1.21.1
-modernui = "3.12.0.2"
-
-## curseforge maven ##
-spark = "6225208"
+## Phase 4/5: curseforge maven — 可选 runtime
+# spark = "6225208"
 
 ## libs ##
 
 
 [libraries]
-ldlib2              = { module = "com.lowdragmc.ldlib2:ldlib2-neoforge-1.21.1", version.ref = "ldlib2" }
-registrate          = { module = "com.tterrag.registrate:Registrate", version.ref = "registrate" }
-configuration       = { module = "dev.toma.configuration:configuration-1.21.1", version.ref = "configuration" }
+ldlib2              = { module = "com.lowdragmc.ldlib2:ldlib2-neoforge-26.1", version.ref = "ldlib2" }
+# 以下依赖无 26.1.2 可用坐标，已禁用 —— Phase 1+ 迁移后恢复
+# registrate          = { module = "com.tterrag.registrate:Registrate", version.ref = "registrate" }
+# configuration       = { module = "dev.toma.configuration:configuration-1.21.1", version.ref = "configuration" }
 
-jei-common-api      = { module = "mezz.jei:jei-1.21.1-common-api", version.ref = "jei" }
-jei-neoforge-api    = { module = "mezz.jei:jei-1.21.1-neoforge-api", version.ref = "jei" }
-jei-neoforge-impl   = { module = "mezz.jei:jei-1.21.1-neoforge", version.ref = "jei" }
-emi                 = { module = "dev.emi:emi-neoforge", version.ref = "emi" }
+# JEI 29.x 26.1.2 合并为单 artifact
+jei-common-api      = { module = "mezz.jei:jei-26.1.2-neoforge", version.ref = "jei" }
+jei-neoforge-api    = { module = "mezz.jei:jei-26.1.2-neoforge", version.ref = "jei" }
+jei-neoforge-impl   = { module = "mezz.jei:jei-26.1.2-neoforge", version.ref = "jei" }
+# Phase 4/5: EMI 等可选依赖
+# emi                 = { module = "dev.emi:emi-neoforge", version.ref = "emi" }
 
-jade                = { module = "maven.modrinth:jade", version.ref = "jade" }
-sodium              = { module = "maven.modrinth:sodium", version.ref = "sodium" }
-iris                = { module = "maven.modrinth:iris", version.ref = "iris" }
-modernui            = { module = "maven.modrinth:modern-ui", version.ref = "modernui" }
-modernfix           = { module = "maven.modrinth:modernfix", version.ref = "modernfix" }
+# Phase 4/5: Modrinth 可选 deps
+# jade                = { module = "maven.modrinth:jade", version.ref = "jade" }
+# sodium              = { module = "maven.modrinth:sodium", version.ref = "sodium" }
+# iris                = { module = "maven.modrinth:iris", version.ref = "iris" }
+# modernui            = { module = "maven.modrinth:modern-ui", version.ref = "modernui" }
+# modernfix           = { module = "maven.modrinth:modernfix", version.ref = "modernfix" }
 
-spark               = { module = "curse.maven:spark-361579", version.ref = "spark" }
+# Phase 4/5: CurseForge 可选 deps
+# spark               = { module = "curse.maven:spark-361579", version.ref = "spark" }
 [bundles]
 jei = ["jei-common-api", "jei-neoforge-api", "jei-neoforge-impl"]

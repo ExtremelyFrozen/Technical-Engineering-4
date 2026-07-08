@@ -1,26 +1,30 @@
 package com.modularmc.ten.common.data;
 
+import com.modularmc.ten.TEN;
 import com.modularmc.ten.common.item.ChannelConnectorItem;
 import com.modularmc.ten.common.item.EnergyUnitItem;
 import com.modularmc.ten.common.item.SpannerItem;
 import com.modularmc.ten.common.item.upgrades.*;
 
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.Item;
+import net.neoforged.neoforge.registries.DeferredHolder;
 
-import com.tterrag.registrate.util.entry.ItemEntry;
-import com.tterrag.registrate.util.nullness.NonNullFunction;
+import java.util.LinkedHashMap;
+import java.util.function.Supplier;
 
-import static com.modularmc.ten.common.registry.Registration.REGISTRATE;
+import static com.modularmc.ten.common.registry.Registration.ITEMS;
 
 public class TENItems {
 
-    public static final java.util.LinkedHashMap<String, String> ZH_NAMES = new java.util.LinkedHashMap<>();
+    public static final LinkedHashMap<String, String> ZH_NAMES = new LinkedHashMap<>();
 
-    static {
-        REGISTRATE.creativeModeTab(() -> TENCreativeModeTabs.ITEM_TAB);
-    }
+    // ══════════════════════════════════════════════════════════════════
+    // Bulk material variant registration (dusts, ingots, nuggets, etc.)
+    // ══════════════════════════════════════════════════════════════════
 
-    // === Bulk material variant registration ===
     static {
         // --- Dusts ---
         registerVariants("dust", "Dust", "粉",
@@ -63,122 +67,163 @@ public class TENItems {
                 Mat.NETHERITE, Mat.MUSHRIUM);
     }
 
+    // ══════════════════════════════════════════════════════════════════
     // Raw Materials
-    public static final ItemEntry<Item> RAW_TIN = texturedItem("raw_tin", "Raw Tin", "粗锡", "item/material/raw/raw_tin");
-    public static final ItemEntry<Item> RAW_NICKEL = texturedItem("raw_nickel", "Raw Nickel", "粗镍", "item/material/raw/raw_nickel");
+    // ══════════════════════════════════════════════════════════════════
 
+    public static final DeferredHolder<Item, Item> RAW_TIN
+            = simpleItem("raw_tin", "粗锡");
+    public static final DeferredHolder<Item, Item> RAW_NICKEL
+            = simpleItem("raw_nickel", "粗镍");
+
+    // ══════════════════════════════════════════════════════════════════
     // Crafting Components
-    public static final ItemEntry<Item> REDSTONE_CONDUCTOR = texturedItem("redstone_conductor", "Redstone Conductor", "红石传导元件", "item/crafting/redstone_conductor");
-    public static final ItemEntry<Item> REDSTONE_CONVERTER = texturedItem("redstone_converter", "Redstone Converter", "红石转化元件", "item/crafting/redstone_converter");
-    public static final ItemEntry<Item> REDSTONE_STORER = texturedItem("redstone_storer", "Redstone Storer", "红石转存元件", "item/crafting/redstone_storer");
-    public static final ItemEntry<Item> INDIGO = texturedItem("indigo", "Indigo", "靛青", "item/crafting/indigo");
-    public static final ItemEntry<Item> AZURE_GLASS = texturedItem("azure_glass", "Azure Glass", "琉璃", "item/crafting/azure_glass");
-    public static final ItemEntry<Item> BIZARRERIE = texturedItem("bizarrerie", "Bizarrerie", "奇异物质", "item/crafting/bizarrerie");
-    public static final ItemEntry<Item> REDSTONE_AI = texturedItem("redstone_ai", "Redstone AI", "红石智能芯片", "item/crafting/redstone_ai");
-    public static final ItemEntry<Item> REDSTONE_AI_ADVANCED = texturedItem("redstone_ai_advanced", "Advanced Redstone AI", "自律红石智能芯片", "item/crafting/redstone_ai_advanced");
-    public static final ItemEntry<Item> HYDRAULIC_WIDGET = texturedItem("hydraulic_widget", "Hydraulic Widget", "液压组件", "item/crafting/hydraulic_widget");
-    public static final ItemEntry<Item> DETECTOR = texturedItem("detector", "Detector", "反射探测仪", "item/crafting/detector");
+    // ══════════════════════════════════════════════════════════════════
 
-    public static final ItemEntry<Item> ROYAL_JELLY = texturedItem("royal_jelly", "Royal Jelly", "蜂王浆", "item/royal_jelly");
-    public static final ItemEntry<Item> SPICY_JELLY = texturedItem("spicy_jelly", "Spicy Jelly", "香辣蜂王浆", "item/spicy_jelly");
+    public static final DeferredHolder<Item, Item> REDSTONE_CONDUCTOR
+            = simpleItem("redstone_conductor", "红石传导元件");
+    public static final DeferredHolder<Item, Item> REDSTONE_CONVERTER
+            = simpleItem("redstone_converter", "红石转化元件");
+    public static final DeferredHolder<Item, Item> REDSTONE_STORER
+            = simpleItem("redstone_storer", "红石转存元件");
+    public static final DeferredHolder<Item, Item> INDIGO
+            = simpleItem("indigo", "靛青");
+    public static final DeferredHolder<Item, Item> AZURE_GLASS
+            = simpleItem("azure_glass", "琉璃");
+    public static final DeferredHolder<Item, Item> BIZARRERIE
+            = simpleItem("bizarrerie", "奇异物质");
+    public static final DeferredHolder<Item, Item> REDSTONE_AI
+            = simpleItem("redstone_ai", "红石智能芯片");
+    public static final DeferredHolder<Item, Item> REDSTONE_AI_ADVANCED
+            = simpleItem("redstone_ai_advanced", "自律红石智能芯片");
+    public static final DeferredHolder<Item, Item> HYDRAULIC_WIDGET
+            = simpleItem("hydraulic_widget", "液压组件");
+    public static final DeferredHolder<Item, Item> DETECTOR
+            = simpleItem("detector", "反射探测仪");
 
-    // === Moulds ===
-    static {
-        REGISTRATE.creativeModeTab(() -> TENCreativeModeTabs.TOOL_TAB);
-    }
+    public static final DeferredHolder<Item, Item> ROYAL_JELLY
+            = simpleItem("royal_jelly", "蜂王浆");
+    public static final DeferredHolder<Item, Item> SPICY_JELLY
+            = simpleItem("spicy_jelly", "香辣蜂王浆");
 
-    private static ItemEntry<Item> mould(String name, String englishName, String cn, String texturePath) {
-        ZH_NAMES.put(name, cn);
-        return REGISTRATE.item(name, Item::new)
-                .lang(englishName)
-                .model((ctx, prov) -> prov.generated(ctx::getEntry, prov.modLoc(texturePath)))
-                .register();
-    }
+    // ══════════════════════════════════════════════════════════════════
+    // Moulds
+    // ══════════════════════════════════════════════════════════════════
 
-    public static final ItemEntry<Item> MOULD_GEAR = mould("mould_gear", "Gear Mould", "模具-齿轮", "item/mold/model_gear");
-    public static final ItemEntry<Item> MOULD_PLATE = mould("mould_plate", "Plate Mould", "模具-板", "item/mold/model_plate");
-    public static final ItemEntry<Item> MOULD_ROD = mould("mould_rod", "Rod Mould", "模具-杆", "item/mold/model_rod");
-    public static final ItemEntry<Item> MOULD_STRING = mould("mould_string", "String Mould", "模具-线", "item/mold/model_string");
-    public static final ItemEntry<Item> MOULD_COMPRESSED_SMALL = mould("mould_compressed_small", "Compressed-small Mould", "模具-2x2压缩", "item/mold/compressed_small");
-    public static final ItemEntry<Item> MOULD_COMPRESSED_LARGE = mould("mould_compressed_large", "Compressed-large Mould", "模具-3x3压缩", "item/mold/compressed_large");
-    public static final ItemEntry<Item> MOULD_SPLIT = mould("mould_split", "Split Mould", "模具-解压缩", "item/mold/split");
-    public static final ItemEntry<Item> MOULD_COIN = mould("mould_coin", "Coin Mould", "模具-币", "item/mold/coin");
-    public static final ItemEntry<Item> MOULD_DENSE_PLATE = mould("mould_dense_plate", "Dense Plate Mould", "模具-致密板", "item/mold/dense_plate");
+    public static final DeferredHolder<Item, Item> MOULD_GEAR
+            = mould("mould_gear", "模具-齿轮");
+    public static final DeferredHolder<Item, Item> MOULD_PLATE
+            = mould("mould_plate", "模具-板");
+    public static final DeferredHolder<Item, Item> MOULD_ROD
+            = mould("mould_rod", "模具-杆");
+    public static final DeferredHolder<Item, Item> MOULD_STRING
+            = mould("mould_string", "模具-线");
+    public static final DeferredHolder<Item, Item> MOULD_COMPRESSED_SMALL
+            = mould("mould_compressed_small", "模具-2x2压缩");
+    public static final DeferredHolder<Item, Item> MOULD_COMPRESSED_LARGE
+            = mould("mould_compressed_large", "模具-3x3压缩");
+    public static final DeferredHolder<Item, Item> MOULD_SPLIT
+            = mould("mould_split", "模具-解压缩");
+    public static final DeferredHolder<Item, Item> MOULD_COIN
+            = mould("mould_coin", "模具-币");
+    public static final DeferredHolder<Item, Item> MOULD_DENSE_PLATE
+            = mould("mould_dense_plate", "模具-致密板");
 
-    // === Tools ===
-    private static <T extends Item> ItemEntry<T> tool(String name, String englishName, String cn,
-                                                      NonNullFunction<Item.Properties, T> factory, String texturePath) {
-        ZH_NAMES.put(name, cn);
-        return REGISTRATE.item(name, factory)
-                .lang(englishName)
-                .model((ctx, prov) -> prov.generated(ctx::getEntry, prov.modLoc(texturePath)))
-                .register();
-    }
+    // ══════════════════════════════════════════════════════════════════
+    // Tools
+    // ══════════════════════════════════════════════════════════════════
 
-    public static final ItemEntry<SpannerItem> SPANNER = tool("spanner", "Spanner", "扳手", SpannerItem::new, "item/spanner");
-    public static final ItemEntry<EnergyUnitItem> ENERGY_CAPACITY = tool("energy_capacity", "Energy Unit", "能量单元", EnergyUnitItem::new, "item/energy_capacity");
-    public static final ItemEntry<ChannelConnectorItem> CHANNEL_CONNECTOR = tool("channel_connector", "Channel Connector", "频道桥接器", ChannelConnectorItem::new, "item/channel_connector");
+    public static final DeferredHolder<Item, SpannerItem> SPANNER
+            = tool("spanner", "扳手", () -> new SpannerItem(new Item.Properties().setId(itemKey("spanner"))));
+    public static final DeferredHolder<Item, EnergyUnitItem> ENERGY_CAPACITY
+            = tool("energy_capacity", "能量单元", () -> new EnergyUnitItem(new Item.Properties().setId(itemKey("energy_capacity"))));
+    public static final DeferredHolder<Item, ChannelConnectorItem> CHANNEL_CONNECTOR
+            = tool("channel_connector", "频道桥接器", () -> new ChannelConnectorItem(new Item.Properties().setId(itemKey("channel_connector"))));
+
+    // ══════════════════════════════════════════════════════════════════
     // Upgrades
-    public static final ItemEntry<? extends UpgradeItem> AUGMENTED_LEVELUP = upgrade("augmented_levelup", "Upgrade: Augmented Kit", "升级：增强组件", p -> new LevelupAug());
-    public static final ItemEntry<? extends UpgradeItem> POWERED_LEVELUP = upgrade("powered_levelup", "Upgrade: Powered Kit", "升级：充能组件", p -> new LevelupPower());
-    public static final ItemEntry<? extends UpgradeItem> RELIC_LEVELUP = upgrade("relic_levelup", "Upgrade: Shulker Kit", "升级：潜影组件", p -> new LevelupShulker());
-    public static final ItemEntry<? extends UpgradeItem> PHOTOSYN_LEVELUP = upgrade("photosyn_levelup", "Upgrade: Photosynthetic Power", "升级：光合供能抑制", p -> new LevelupSyn());
-    public static final ItemEntry<? extends UpgradeItem> RANGE_LEVELUP = upgrade("range_levelup", "Upgrade: Range Expansion", "升级：作用范围扩展", p -> new LevelupRg());
-    public static final ItemEntry<? extends UpgradeItem> SMOKE_LEVELUP = upgrade("smoke_levelup", "Upgrade: Smoking Professor", "升级：食物专业烟熏", p -> new LevelupSmoke());
-    public static final ItemEntry<? extends UpgradeItem> BLAST_LEVELUP = upgrade("blast_levelup", "Upgrade: Blasting Professor", "升级：矿物专业冶炼", p -> new LevelupBlast());
-    public static final ItemEntry<? extends UpgradeItem> POTION_LEVELUP = upgrade("potion_levelup", "Upgrade: Potion Effect Extraction", "升级：药水效能榨取", p -> new LevelupPotion());
-    public static final ItemEntry<? extends UpgradeItem> STREAM_LEVELUP = upgrade("stream_levelup", "Upgrade: Starlight Energy Deliverance", "升级：星辉能量传输", p -> new LevelupStream());
-    public static final ItemEntry<? extends UpgradeItem> KNOWLEDGE_LEVELUP = upgrade("knowledge_levelup", "Upgrade: Knowledge Expansion", "升级：知识储备扩充", p -> new LevelupKnow());
-    public static final ItemEntry<? extends UpgradeItem> ICE_LEVELUP = upgrade("ice_levelup", "Upgrade: Frozen Soil Drilling", "升级：地下冻土开采", p -> new LevelupIce());
-    public static final ItemEntry<? extends UpgradeItem> MAGMA_LEVELUP = upgrade("magma_levelup", "Upgrade: Mantle Drilling", "升级：地幔深层钻井", p -> new LevelupMagma());
-    public static final ItemEntry<? extends UpgradeItem> MINERAL_LEVELUP = upgrade("mineral_levelup", "Upgrade: Mineral Detection", "升级：矿物探测仪器", p -> new LevelupMineral());
+    // ══════════════════════════════════════════════════════════════════
 
-    private static ItemEntry<Item> item(String name, String englishName, String cn) {
-        ZH_NAMES.put(name, cn);
-        return REGISTRATE.item(name, Item::new)
-                .lang(englishName)
-                .register();
+    public static final DeferredHolder<Item, UpgradeItem> AUGMENTED_LEVELUP
+            = upgrade("augmented_levelup", "升级：增强组件", () -> new LevelupAug(new Item.Properties().setId(itemKey("augmented_levelup"))));
+    public static final DeferredHolder<Item, UpgradeItem> POWERED_LEVELUP
+            = upgrade("powered_levelup", "升级：充能组件", () -> new LevelupPower(new Item.Properties().setId(itemKey("powered_levelup"))));
+    public static final DeferredHolder<Item, UpgradeItem> RELIC_LEVELUP
+            = upgrade("relic_levelup", "升级：潜影组件", () -> new LevelupShulker(new Item.Properties().setId(itemKey("relic_levelup"))));
+    public static final DeferredHolder<Item, UpgradeItem> PHOTOSYN_LEVELUP
+            = upgrade("photosyn_levelup", "升级：光合供能抑制", () -> new LevelupSyn(new Item.Properties().setId(itemKey("photosyn_levelup"))));
+    public static final DeferredHolder<Item, UpgradeItem> RANGE_LEVELUP
+            = upgrade("range_levelup", "升级：作用范围扩展", () -> new LevelupRg(new Item.Properties().setId(itemKey("range_levelup"))));
+    public static final DeferredHolder<Item, UpgradeItem> SMOKE_LEVELUP
+            = upgrade("smoke_levelup", "升级：食物专业烟熏", () -> new LevelupSmoke(new Item.Properties().setId(itemKey("smoke_levelup"))));
+    public static final DeferredHolder<Item, UpgradeItem> BLAST_LEVELUP
+            = upgrade("blast_levelup", "升级：矿物专业冶炼", () -> new LevelupBlast(new Item.Properties().setId(itemKey("blast_levelup"))));
+    public static final DeferredHolder<Item, UpgradeItem> POTION_LEVELUP
+            = upgrade("potion_levelup", "升级：药水效能榨取", () -> new LevelupPotion(new Item.Properties().setId(itemKey("potion_levelup"))));
+    public static final DeferredHolder<Item, UpgradeItem> STREAM_LEVELUP
+            = upgrade("stream_levelup", "升级：星辉能量传输", () -> new LevelupStream(new Item.Properties().setId(itemKey("stream_levelup"))));
+    public static final DeferredHolder<Item, UpgradeItem> KNOWLEDGE_LEVELUP
+            = upgrade("knowledge_levelup", "升级：知识储备扩充", () -> new LevelupKnow(new Item.Properties().setId(itemKey("knowledge_levelup"))));
+    public static final DeferredHolder<Item, UpgradeItem> ICE_LEVELUP
+            = upgrade("ice_levelup", "升级：地下冻土开采", () -> new LevelupIce(new Item.Properties().setId(itemKey("ice_levelup"))));
+    public static final DeferredHolder<Item, UpgradeItem> MAGMA_LEVELUP
+            = upgrade("magma_levelup", "升级：地幔深层钻井", () -> new LevelupMagma(new Item.Properties().setId(itemKey("magma_levelup"))));
+    public static final DeferredHolder<Item, UpgradeItem> MINERAL_LEVELUP
+            = upgrade("mineral_levelup", "升级：矿物探测仪器", () -> new LevelupMineral(new Item.Properties().setId(itemKey("mineral_levelup"))));
+
+    // ══════════════════════════════════════════════════════════════════
+    // Helpers
+    // ══════════════════════════════════════════════════════════════════
+
+    private static ResourceKey<Item> itemKey(String name) {
+        return ResourceKey.create(Registries.ITEM,
+                Identifier.fromNamespaceAndPath(TEN.MOD_ID, name));
     }
 
-    private static ItemEntry<Item> texturedItem(String name, String englishName, String cn, String texturePath) {
+    /** Register a simple {@link Item} with default properties. */
+    private static DeferredHolder<Item, Item> simpleItem(String name, String cn) {
         ZH_NAMES.put(name, cn);
-        return REGISTRATE.item(name, Item::new)
-                .lang(englishName)
-                .model((ctx, prov) -> prov.generated(ctx::getEntry, prov.modLoc(texturePath)))
-                .register();
+        var key = itemKey(name);
+        return ITEMS.register(name, () -> new Item(new Item.Properties().setId(key)));
     }
 
-    private static <T extends UpgradeItem> ItemEntry<T> upgrade(String name, String englishName, String cn, NonNullFunction<Item.Properties, T> factory) {
+    /** Register a mould item (simple Item, textured). */
+    private static DeferredHolder<Item, Item> mould(String name, String cn) {
         ZH_NAMES.put(name, cn);
-        return REGISTRATE.item(name, factory)
-                .lang(englishName)
-                .model((ctx, prov) -> prov.generated(ctx::getEntry, prov.modLoc("item/upgrade/" + name)))
-                .register();
+        var key = itemKey(name);
+        return ITEMS.register(name, () -> new Item(new Item.Properties().setId(key)));
     }
 
+    /** Register a tool item with custom class. */
+    private static <T extends Item> DeferredHolder<Item, T> tool(String name, String cn, Supplier<T> factory) {
+        ZH_NAMES.put(name, cn);
+        return ITEMS.register(name, factory);
+    }
+
+    /** Register an upgrade item. */
+    private static <T extends UpgradeItem> DeferredHolder<Item, T> upgrade(String name, String cn, Supplier<T> factory) {
+        ZH_NAMES.put(name, cn);
+        return ITEMS.register(name, factory);
+    }
+
+    /**
+     * Bulk-register material variant items from {@link Mat} entries.
+     * Each variant becomes {@code <material>_<category>} (e.g. {@code tin_ingot}).
+     */
     @SafeVarargs
     private static void registerVariants(String category, String categoryEn, String categoryCn,
-                                         NonNullFunction<Item.Properties, ? extends Item> factory,
-                                         Mat... materials) {
+                                          Mat... materials) {
         for (Mat mat : materials) {
             String name = mat.id + "_" + category;
             mat.markRegistered(category);
-            String englishName = mat.englishName(categoryEn);
-            String chineseName = mat.cn + categoryCn;
-            String texturePath = "item/material/" + category + "/" + name;
-
-            ZH_NAMES.put(name, chineseName);
-            REGISTRATE.item(name, factory)
-                    .lang(englishName)
-                    .model((ctx, prov) -> prov.generated(ctx::getEntry, prov.modLoc(texturePath)))
-                    .register();
+            ZH_NAMES.put(name, mat.cn + categoryCn);
+            var key = itemKey(name);
+            ITEMS.register(name, () -> new Item(new Item.Properties().setId(key)));
         }
     }
 
-    private static void registerVariants(String category, String categoryEn, String categoryCn,
-                                         Mat... materials) {
-        registerVariants(category, categoryEn, categoryCn, Item::new, materials);
-    }
-
+    /**
+     * Dummy init to trigger static initializers (kept for compatibility).
+     */
     public static void init() {}
 }

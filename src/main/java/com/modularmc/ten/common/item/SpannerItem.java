@@ -13,7 +13,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
-import net.minecraft.world.level.block.state.properties.DirectionProperty;
+import net.minecraft.world.level.block.state.properties.EnumProperty;
 
 public class SpannerItem extends TENBaseItem {
 
@@ -50,7 +50,7 @@ public class SpannerItem extends TENBaseItem {
     }
 
     private void rotateMachine(Level level, BlockPos pos, BlockState state) {
-        DirectionProperty prop = findFacingProperty(state);
+        EnumProperty<Direction> prop = findFacingProperty(state);
         if (prop == null) return;
 
         Direction current = state.getValue(prop);
@@ -71,7 +71,7 @@ public class SpannerItem extends TENBaseItem {
         };
     }
 
-    private static DirectionProperty findFacingProperty(BlockState state) {
+    private static EnumProperty<Direction> findFacingProperty(BlockState state) {
         if (state.hasProperty(BlockStateProperties.FACING)) {
             return BlockStateProperties.FACING;
         }
@@ -79,7 +79,9 @@ public class SpannerItem extends TENBaseItem {
             return BlockStateProperties.HORIZONTAL_FACING;
         }
         for (var prop : state.getProperties()) {
-            if (prop instanceof DirectionProperty dp && prop.getName().equals("facing")) {
+            if (prop instanceof EnumProperty<?> ep && ep.getName().equals("facing") && ep.getPossibleValues().stream().allMatch(v -> v instanceof Direction)) {
+                @SuppressWarnings("unchecked")
+                EnumProperty<Direction> dp = (EnumProperty<Direction>) ep;
                 return dp;
             }
         }

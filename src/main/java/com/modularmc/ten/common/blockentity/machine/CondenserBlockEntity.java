@@ -79,7 +79,7 @@ public class CondenserBlockEntity extends ProcessingMachineBlockEntity {
 
     @Override
     public boolean cooking() {
-        FluidStack produced = new FluidStack((net.minecraft.world.level.material.Fluid) TENFluids.LIQUID_BIZARRERIE.getSource(), 5);
+        FluidStack produced = new FluidStack(TENFluids.LIQUID_BIZARRERIE_SOURCE.get(), 5);
         if (tanks.isEmpty() || tanks.get(0).fill(produced, IFluidHandler.FluidAction.SIMULATE) < produced.getAmount()) {
             progress = 0;
             return true;
@@ -96,7 +96,7 @@ public class CondenserBlockEntity extends ProcessingMachineBlockEntity {
     @Override
     public void onCookFinish() {
         if (!tanks.isEmpty()) {
-            tanks.get(0).fill(new FluidStack((net.minecraft.world.level.material.Fluid) TENFluids.LIQUID_BIZARRERIE.getSource(), 5), IFluidHandler.FluidAction.EXECUTE);
+            tanks.get(0).fill(new FluidStack(TENFluids.LIQUID_BIZARRERIE_SOURCE.get(), 5), IFluidHandler.FluidAction.EXECUTE);
         }
     }
 }

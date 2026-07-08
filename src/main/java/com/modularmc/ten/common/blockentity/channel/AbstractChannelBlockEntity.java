@@ -8,12 +8,12 @@ import com.modularmc.ten.utils.ComponentHelper;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.HolderLookup;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 
 import com.lowdragmc.lowdraglib2.gui.factory.BlockUIMenuType;
 import com.lowdragmc.lowdraglib2.gui.texture.SpriteTexture;
@@ -30,7 +30,7 @@ import java.util.function.Consumer;
 
 public abstract class AbstractChannelBlockEntity extends CmMachineBlockEntity {
 
-    private static final ResourceLocation CHANNEL_HANDLER = TEN.id("textures/gui/channel.png");
+    private static final Identifier CHANNEL_HANDLER = TEN.id("textures/gui/channel.png");
 
     protected final List<BlockPos> outputs = new ArrayList<>();
     protected final List<BlockPos> inputs = new ArrayList<>();
@@ -160,39 +160,39 @@ public abstract class AbstractChannelBlockEntity extends CmMachineBlockEntity {
     }
 
     @Override
-    protected void readTileData(CompoundTag tag, HolderLookup.Provider registries) {
-        super.readTileData(tag, registries);
+    protected void readTileData(ValueInput input) {
+        super.readTileData(input);
         inputs.clear();
         outputs.clear();
-        int inputSize = tag.getInt("inputCount");
-        int outputSize = tag.getInt("outputCount");
+        int inputSize = input.getIntOr("inputCount", 0);
+        int outputSize = input.getIntOr("outputCount", 0);
         for (int i = 0; i < inputSize; i++) {
-            inputs.add(BlockPos.of(tag.getLong("input_" + i)));
+            inputs.add(BlockPos.of(input.getLongOr("input_" + i, 0L)));
         }
         for (int i = 0; i < outputSize; i++) {
-            outputs.add(BlockPos.of(tag.getLong("output_" + i)));
+            outputs.add(BlockPos.of(input.getLongOr("output_" + i, 0L)));
         }
-        currentInputIndex = tag.getInt("currentInputIndex");
-        currentOutputIndex = tag.getInt("currentOutputIndex");
+        currentInputIndex = input.getIntOr("currentInputIndex", 0);
+        currentOutputIndex = input.getIntOr("currentOutputIndex", 0);
     }
 
     @Override
-    protected void writeTileData(CompoundTag tag, HolderLookup.Provider registries) {
-        super.writeTileData(tag, registries);
-        tag.putInt("inputCount", inputs.size());
-        tag.putInt("outputCount", outputs.size());
+    protected void writeTileData(ValueOutput output) {
+        super.writeTileData(output);
+        output.putInt("inputCount", inputs.size());
+        output.putInt("outputCount", outputs.size());
         for (int i = 0; i < inputs.size(); i++) {
-            tag.putLong("input_" + i, inputs.get(i).asLong());
+            output.putLong("input_" + i, inputs.get(i).asLong());
         }
         for (int i = 0; i < outputs.size(); i++) {
-            tag.putLong("output_" + i, outputs.get(i).asLong());
+            output.putLong("output_" + i, outputs.get(i).asLong());
         }
-        tag.putInt("currentInputIndex", currentInputIndex);
-        tag.putInt("currentOutputIndex", currentOutputIndex);
+        output.putInt("currentInputIndex", currentInputIndex);
+        output.putInt("currentOutputIndex", currentOutputIndex);
     }
 
     protected ModularUI buildChannelUI(BlockUIMenuType.BlockUIHolder holder,
-                                       ResourceLocation background,
+                                       Identifier background,
                                        Consumer<UIElement> inventoryBuilder,
                                        Consumer<UIElement> contentBuilder) {
         return buildMachineUI(holder, background, root -> {

@@ -6,9 +6,11 @@ import com.modularmc.ten.utils.SafeOperationHelper;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Item.TooltipContext;
 import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.component.TooltipDisplay;
 
-import java.util.List;
+import java.util.function.Consumer;
 
 public class TENBaseItem extends Item {
 
@@ -21,12 +23,7 @@ public class TENBaseItem extends Item {
     }
 
     @Override
-    public String getDescriptionId() {
-        return super.getDescriptionId();
-    }
-
-    @Override
-    public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
+    public void appendHoverText(ItemStack stack, TooltipContext context, TooltipDisplay display, Consumer<Component> builder, TooltipFlag flag) {
         String path = SafeOperationHelper.regNameOf(this);
 
         for (int i = 0; true; i++) {
@@ -40,10 +37,10 @@ public class TENBaseItem extends Item {
             if (nl >= 0) {
                 String[] lines = text.split("\n", -1);
                 for (String line : lines) {
-                    tooltip.add(Component.literal(line).withStyle(ttc.getStyle()));
+                    builder.accept(Component.literal(line).withStyle(ttc.getStyle()));
                 }
             } else {
-                tooltip.add(ttc);
+                builder.accept(ttc);
             }
         }
     }

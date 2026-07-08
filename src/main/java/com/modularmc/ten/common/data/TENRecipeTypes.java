@@ -16,11 +16,18 @@ public class TENRecipeTypes {
     public static final DeferredRegister<RecipeSerializer<?>> SERIALIZERS = DeferredRegister.create(Registries.RECIPE_SERIALIZER, TEN.MOD_ID);
     public static final DeferredRegister<RecipeType<?>> TYPES = DeferredRegister.create(Registries.RECIPE_TYPE, TEN.MOD_ID);
 
-    public static final DeferredHolder<RecipeSerializer<?>, FormsCombinedRecipeSerializer<FormsCombinedRecipe>> PULVERIZER_S;
-    public static final DeferredHolder<RecipeSerializer<?>, FormsCombinedRecipeSerializer<FormsCombinedRecipe>> COMPRESSOR_S;
-    public static final DeferredHolder<RecipeSerializer<?>, FormsCombinedRecipeSerializer<FormsCombinedRecipe>> PSIONICANT_S;
-    public static final DeferredHolder<RecipeSerializer<?>, FormsCombinedRecipeSerializer<FormsCombinedRecipe>> INDUCTION_FURNACE_S;
-    public static final DeferredHolder<RecipeSerializer<?>, FormsCombinedRecipeSerializer<FormsCombinedRecipe>> REFINER_S;
+    // Helper serializer factories (keep private, use via asSerializer())
+    private static FormsCombinedRecipeSerializer<FormsCombinedRecipe> PULVERIZER_S0;
+    private static FormsCombinedRecipeSerializer<FormsCombinedRecipe> COMPRESSOR_S0;
+    private static FormsCombinedRecipeSerializer<FormsCombinedRecipe> PSIONICANT_S0;
+    private static FormsCombinedRecipeSerializer<FormsCombinedRecipe> INDUCTION_FURNACE_S0;
+    private static FormsCombinedRecipeSerializer<FormsCombinedRecipe> REFINER_S0;
+
+    public static final DeferredHolder<RecipeSerializer<?>, RecipeSerializer<FormsCombinedRecipe>> PULVERIZER_S;
+    public static final DeferredHolder<RecipeSerializer<?>, RecipeSerializer<FormsCombinedRecipe>> COMPRESSOR_S;
+    public static final DeferredHolder<RecipeSerializer<?>, RecipeSerializer<FormsCombinedRecipe>> PSIONICANT_S;
+    public static final DeferredHolder<RecipeSerializer<?>, RecipeSerializer<FormsCombinedRecipe>> INDUCTION_FURNACE_S;
+    public static final DeferredHolder<RecipeSerializer<?>, RecipeSerializer<FormsCombinedRecipe>> REFINER_S;
 
     public static final DeferredHolder<RecipeType<?>, RecipeType<FormsCombinedRecipe>> PULVERIZER_T;
     public static final DeferredHolder<RecipeType<?>, RecipeType<FormsCombinedRecipe>> COMPRESSOR_T;
@@ -35,11 +42,19 @@ public class TENRecipeTypes {
         INDUCTION_FURNACE_T = TYPES.register("induction_furnace", () -> new RecipeTypeCm<>("induction_furnace"));
         REFINER_T = TYPES.register("refiner", () -> new RecipeTypeCm<>("refiner"));
 
-        PULVERIZER_S = SERIALIZERS.register("pulverizer", () -> new FormsCombinedRecipeSerializer<>(FormsCombinedRecipe::new, PULVERIZER_T::get, 1, 4));
-        COMPRESSOR_S = SERIALIZERS.register("compressor", () -> new FormsCombinedRecipeSerializer<>(FormsCombinedRecipe::new, COMPRESSOR_T::get, 2, 1));
-        PSIONICANT_S = SERIALIZERS.register("psionicant", () -> new FormsCombinedRecipeSerializer<>(FormsCombinedRecipe::new, PSIONICANT_T::get, 2, 1));
-        INDUCTION_FURNACE_S = SERIALIZERS.register("induction_furnace", () -> new FormsCombinedRecipeSerializer<>(FormsCombinedRecipe::new, INDUCTION_FURNACE_T::get, 3, 1));
-        REFINER_S = SERIALIZERS.register("refiner", () -> new FormsCombinedRecipeSerializer<>(FormsCombinedRecipe::new, REFINER_T::get, 2, 2));
+        // Create serializer helpers
+        PULVERIZER_S0 = new FormsCombinedRecipeSerializer<>(FormsCombinedRecipe::new, PULVERIZER_T::get, 1, 4);
+        COMPRESSOR_S0 = new FormsCombinedRecipeSerializer<>(FormsCombinedRecipe::new, COMPRESSOR_T::get, 2, 1);
+        PSIONICANT_S0 = new FormsCombinedRecipeSerializer<>(FormsCombinedRecipe::new, PSIONICANT_T::get, 2, 1);
+        INDUCTION_FURNACE_S0 = new FormsCombinedRecipeSerializer<>(FormsCombinedRecipe::new, INDUCTION_FURNACE_T::get, 3, 1);
+        REFINER_S0 = new FormsCombinedRecipeSerializer<>(FormsCombinedRecipe::new, REFINER_T::get, 2, 2);
+
+        // Register RecipeSerializer records
+        PULVERIZER_S = SERIALIZERS.register("pulverizer", () -> PULVERIZER_S0.asSerializer());
+        COMPRESSOR_S = SERIALIZERS.register("compressor", () -> COMPRESSOR_S0.asSerializer());
+        PSIONICANT_S = SERIALIZERS.register("psionicant", () -> PSIONICANT_S0.asSerializer());
+        INDUCTION_FURNACE_S = SERIALIZERS.register("induction_furnace", () -> INDUCTION_FURNACE_S0.asSerializer());
+        REFINER_S = SERIALIZERS.register("refiner", () -> REFINER_S0.asSerializer());
     }
 
     public static void init() {}

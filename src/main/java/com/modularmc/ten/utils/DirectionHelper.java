@@ -11,7 +11,7 @@ import java.util.Queue;
 public class DirectionHelper {
 
     public static BlockPos offset(BlockPos p, Direction d) {
-        return p.offset(d.getNormal());
+        return p.relative(d);
     }
 
     public static Queue<Direction> newQueueOffer() {

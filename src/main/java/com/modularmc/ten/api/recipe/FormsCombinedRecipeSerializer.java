@@ -2,7 +2,9 @@ package com.modularmc.ten.api.recipe;
 
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.item.crafting.Recipe;
+import net.minecraft.world.item.crafting.RecipeInput;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
 
@@ -17,14 +19,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
 
-public class FormsCombinedRecipeSerializer<T extends FormsCombinedRecipe> implements RecipeSerializer<T> {
+public class FormsCombinedRecipeSerializer<T extends FormsCombinedRecipe> {
 
-    private record IngredientData(String form, String type, ResourceLocation key, int count, int amount, double chance) {}
+    private record IngredientData(String form, String type, Identifier key, int count, int amount, double chance) {}
 
     private static final Codec<IngredientData> INGREDIENT_DATA_CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Codec.STRING.fieldOf("form").forGetter(IngredientData::form),
             Codec.STRING.fieldOf("type").forGetter(IngredientData::type),
-            ResourceLocation.CODEC.fieldOf("key").forGetter(IngredientData::key),
+            Identifier.CODEC.fieldOf("key").forGetter(IngredientData::key),
             Codec.INT.optionalFieldOf("count", 1).forGetter(IngredientData::count),
             Codec.INT.optionalFieldOf("amount", 0).forGetter(IngredientData::amount),
             Codec.DOUBLE.optionalFieldOf("chance", 1.0d).forGetter(IngredientData::chance))
@@ -49,6 +51,7 @@ public class FormsCombinedRecipeSerializer<T extends FormsCombinedRecipe> implem
     private final Supplier<RecipeType<?>> recipeType;
     public final int sizeIn, sizeOut;
     private final MapCodec<T> codec;
+    private RecipeSerializer<T> cachedSerializer;
 
     public FormsCombinedRecipeSerializer(IFactoryCm<T> fac, Supplier<RecipeType<?>> recipeType, int si, int so) {
         this.factory = fac;
@@ -62,12 +65,10 @@ public class FormsCombinedRecipeSerializer<T extends FormsCombinedRecipe> implem
                 .apply(instance, (inputs, outputs, time) -> createRecipe(null, null, padIngredients(inputs, sizeIn), padIngredients(outputs, sizeOut), time)));
     }
 
-    @Override
     public MapCodec<T> codec() {
         return codec;
     }
 
-    @Override
     public StreamCodec<RegistryFriendlyByteBuf, T> streamCodec() {
         return StreamCodec.of(
                 (buf, recipe) -> {
@@ -85,7 +86,14 @@ public class FormsCombinedRecipeSerializer<T extends FormsCombinedRecipe> implem
                 });
     }
 
-    public T fromJson(ResourceLocation recipeId, JsonObject json) {
+    public RecipeSerializer<T> asSerializer() {
+        if (cachedSerializer == null) {
+            cachedSerializer = new RecipeSerializer<>(codec(), streamCodec());
+        }
+        return cachedSerializer;
+    }
+
+    public T fromJson(Identifier recipeId, JsonObject json) {
         List<FormsCombinedIngredient> ip = getInputs(json);
         List<FormsCombinedIngredient> op = getOutputs(json);
         int time = JsonParser.getIntOr(json, "time", 150);
@@ -121,11 +129,11 @@ public class FormsCombinedRecipeSerializer<T extends FormsCombinedRecipe> implem
         return ig;
     }
 
-    private T createRecipe(ResourceLocation regName, ResourceLocation id, List<FormsCombinedIngredient> ip,
+    private T createRecipe(Identifier regName, Identifier id, List<FormsCombinedIngredient> ip,
                            List<FormsCombinedIngredient> op, int time) {
         T recipe = factory.create(regName, id, ip, op, time);
-        recipe.recipeType = recipeType.get();
-        recipe.serializer = this;
+        recipe.recipeType = (RecipeType<? extends Recipe<RecipeInput>>) (RecipeType<?>) recipeType.get();
+        recipe.serializer = asSerializer();
         return recipe;
     }
 

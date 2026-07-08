@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "kenergyengineering:mushrium_ingot"
+    }
+  ],
+  "result": {
+    "count": 9,
+    "id": "kenergyengineering:mushrium_nugget"
+  }
+}

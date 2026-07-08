@@ -13,15 +13,16 @@ import com.modularmc.ten.common.item.upgrades.UpgradeItem;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.Containers;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import net.neoforged.neoforge.energy.IEnergyStorage;
 import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
@@ -35,7 +36,10 @@ import com.lowdragmc.lowdraglib2.syncdata.annotation.DescSynced;
 import com.lowdragmc.lowdraglib2.syncdata.annotation.Persisted;
 import com.lowdragmc.lowdraglib2.syncdata.annotation.RPCMethod;
 import com.lowdragmc.lowdraglib2.syncdata.rpc.RPCSender;
+import com.mojang.serialization.Codec;
 import dev.vfyjxf.taffy.style.TaffyPosition;
+import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -225,9 +229,9 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
 
     // ───── ldlib2 NBT: 确保反序列化前 handler 已初始化 ─────
     @Override
-    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+    protected void loadAdditional(ValueInput input) {
         initMachine();
-        super.loadAdditional(tag, registries);
+        super.loadAdditional(input);
     }
 
     public boolean hasUpgrade() {
@@ -607,36 +611,57 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
 
     // ───── NBT ─────
     @Override
-    protected void readTileData(CompoundTag tag, HolderLookup.Provider registries) {
-        if (energyStorage != null) energyStorage.setEnergy(tag.getInt("energy"));
+    protected void readTileData(ValueInput input) {
+        if (energyStorage != null) energyStorage.setEnergy(input.getInt("energy").orElse(0));
         if (itemHandler != null) {
-            CompoundTag invTag = tag.getCompound("inventory");
-            if (!invTag.isEmpty() && invTag.getInt("Size") == itemHandler.getSlots()) {
-                itemHandler.deserializeNBT(registries, invTag);
-            }
+            input.read("inventory", Codec.list(ItemStack.OPTIONAL_CODEC)).ifPresent(stacks -> {
+                for (int i = 0; i < Math.min(stacks.size(), itemHandler.getSlots()); i++) {
+                    itemHandler.setStackInSlot(i, stacks.get(i));
+                }
+            });
         }
-        if (upgradeHandler != null) upgradeHandler.deserializeNBT(registries, tag.getCompound("upgrades"));
-        upgradeSize = tag.contains("upgrade_size") ? tag.getInt("upgrade_size") : initialUpgradeSize;
+        if (upgradeHandler != null) {
+            input.read("upgrades", Codec.list(ItemStack.OPTIONAL_CODEC)).ifPresent(stacks -> {
+                for (int i = 0; i < Math.min(stacks.size(), upgradeHandler.getSlots()); i++) {
+                    upgradeHandler.setStackInSlot(i, stacks.get(i));
+                }
+            });
+        }
+        upgradeSize = input.getInt("upgrade_size").orElse(initialUpgradeSize);
         for (Direction direction : Direction.values()) {
-            energyFaceMode.put(direction, tag.getInt("direEnergy" + direction.get3DDataValue()));
-            itemFaceMode.put(direction, tag.getInt("direItem" + direction.get3DDataValue()));
-            fluidFaceMode.put(direction, tag.getInt("direFluid" + direction.get3DDataValue()));
+            int idx = direction.get3DDataValue();
+            energyFaceMode.put(direction, input.getInt("direEnergy" + idx).orElse(initialFaceModeEnergy()));
+            itemFaceMode.put(direction, input.getInt("direItem" + idx).orElse(initialFaceModeItem()));
+            fluidFaceMode.put(direction, input.getInt("direFluid" + idx).orElse(initialFaceModeFluid()));
         }
-        loadSerializedHandlers(tag, registries);
+        loadSerializedHandlers(input);
     }
 
     @Override
-    protected void writeTileData(CompoundTag tag, HolderLookup.Provider registries) {
-        if (energyStorage != null) tag.putInt("energy", energyStorage.getEnergyStored());
-        if (itemHandler != null) tag.put("inventory", itemHandler.serializeNBT(registries));
-        if (upgradeHandler != null) tag.put("upgrades", upgradeHandler.serializeNBT(registries));
-        tag.putInt("upgrade_size", upgradeSize);
-        for (Direction direction : Direction.values()) {
-            tag.putInt("direEnergy" + direction.get3DDataValue(), energyFaceMode.getOrDefault(direction, initialFaceModeEnergy()));
-            tag.putInt("direItem" + direction.get3DDataValue(), itemFaceMode.getOrDefault(direction, initialFaceModeItem()));
-            tag.putInt("direFluid" + direction.get3DDataValue(), fluidFaceMode.getOrDefault(direction, initialFaceModeFluid()));
+    protected void writeTileData(ValueOutput output) {
+        if (energyStorage != null) output.store("energy", Codec.INT, energyStorage.getEnergyStored());
+        if (itemHandler != null) {
+            var stacks = new java.util.ArrayList<ItemStack>();
+            for (int i = 0; i < itemHandler.getSlots(); i++) {
+                stacks.add(itemHandler.getStackInSlot(i));
+            }
+            output.store("inventory", Codec.list(ItemStack.OPTIONAL_CODEC), stacks);
         }
-        saveSerializedHandlers(tag, registries);
+        if (upgradeHandler != null) {
+            var stacks = new java.util.ArrayList<ItemStack>();
+            for (int i = 0; i < upgradeHandler.getSlots(); i++) {
+                stacks.add(upgradeHandler.getStackInSlot(i));
+            }
+            output.store("upgrades", Codec.list(ItemStack.OPTIONAL_CODEC), stacks);
+        }
+        output.store("upgrade_size", Codec.INT, upgradeSize);
+        for (Direction direction : Direction.values()) {
+            int idx = direction.get3DDataValue();
+            output.store("direEnergy" + idx, Codec.INT, energyFaceMode.getOrDefault(direction, initialFaceModeEnergy()));
+            output.store("direItem" + idx, Codec.INT, itemFaceMode.getOrDefault(direction, initialFaceModeItem()));
+            output.store("direFluid" + idx, Codec.INT, fluidFaceMode.getOrDefault(direction, initialFaceModeFluid()));
+        }
+        saveSerializedHandlers(output);
     }
 
     // ───── @RPCMethod: 替换自定义网络包 ─────
@@ -702,7 +727,7 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
     }
 
     protected final ModularUI buildMachineUI(BlockUIMenuType.BlockUIHolder holder,
-                                             ResourceLocation background,
+                                             Identifier background,
                                              Consumer<UIElement> inventoryBuilder,
                                              Consumer<UIElement> contentBuilder) {
         initMachine();
@@ -728,18 +753,18 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
     }
 
     // ───── Serialized handlers (tanks) ─────
-    protected void loadSerializedHandlers(CompoundTag tag, HolderLookup.Provider registries) {
+    protected void loadSerializedHandlers(ValueInput input) {
         for (int i = 0; i < tanks.size(); i++) {
-            CompoundTag tankTag = tag.getCompound("tank" + i);
-            if (!tankTag.isEmpty()) {
-                tanks.get(i).readFromNBT(registries, tankTag);
-            }
+            final int idx = i;
+            input.read("tank" + i, FluidStack.OPTIONAL_CODEC).ifPresent(fluid -> {
+                tanks.get(idx).setFluid(fluid);
+            });
         }
     }
 
-    protected void saveSerializedHandlers(CompoundTag tag, HolderLookup.Provider registries) {
+    protected void saveSerializedHandlers(ValueOutput output) {
         for (int i = 0; i < tanks.size(); i++) {
-            tag.put("tank" + i, tanks.get(i).writeToNBT(registries, new CompoundTag()));
+            output.store("tank" + i, FluidStack.OPTIONAL_CODEC, tanks.get(i).getFluid());
         }
     }
 
@@ -821,6 +846,44 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
             if (drained.getAmount() >= maxDrain) break;
         }
         return drained;
+    }
+
+    // Guard flag: true when the chunk is being unloaded (setRemoved should NOT drop contents in that case).
+    private transient boolean chunkUnloading = false;
+    // Guard flag: set by BaseMachineBlock.destroy() to prevent double-drop when
+    // player breaking also triggers setRemoved().
+    private transient boolean destroyDropsHandled = false;
+
+    /**
+     * Called by {@code BaseMachineBlock.destroy()} to signal that drops have
+     * already been handled, so {@link #setRemoved()} should not drop again.
+     */
+    public void markDestroyDropsHandled() {
+        this.destroyDropsHandled = true;
+    }
+
+    @Override
+    public void onChunkUnloaded() {
+        super.onChunkUnloaded();
+        this.chunkUnloading = true;
+    }
+
+    @Override
+    public void setRemoved() {
+        // Drop contents when the block is removed/replaced (NOT during chunk unload, where
+        // onChunkUnloaded() is called first and sets the guard flag).
+        // Also skip if BaseMachineBlock.destroy() already handled the drops.
+        if (!chunkUnloading && !destroyDropsHandled && level != null && !level.isClientSide()) {
+            dropAllContents();
+        }
+        super.setRemoved();
+    }
+
+    @Override
+    public void clearRemoved() {
+        super.clearRemoved();
+        this.chunkUnloading = false;
+        this.destroyDropsHandled = false;
     }
 
     public void dropAllContents() {

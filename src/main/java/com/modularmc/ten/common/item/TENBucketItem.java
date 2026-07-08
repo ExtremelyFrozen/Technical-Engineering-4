@@ -14,8 +14,4 @@ public class TENBucketItem extends BucketItem {
         super(fluid, properties);
     }
 
-    @Override
-    public String getDescriptionId() {
-        return super.getDescriptionId();
-    }
 }

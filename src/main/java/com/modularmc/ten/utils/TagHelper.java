@@ -3,7 +3,7 @@ package com.modularmc.ten.utils;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
@@ -32,15 +32,15 @@ public class TagHelper {
     }
 
     public static TagKey<Item> keyItem(String s) {
-        return TagKey.create(Registries.ITEM, ResourceLocation.parse(s));
+        return TagKey.create(Registries.ITEM, Identifier.parse(s));
     }
 
     public static TagKey<Fluid> keyFluid(String s) {
-        return TagKey.create(Registries.FLUID, ResourceLocation.parse(s));
+        return TagKey.create(Registries.FLUID, Identifier.parse(s));
     }
 
     public static TagKey<Block> keyBlock(String s) {
-        return TagKey.create(Registries.BLOCK, ResourceLocation.parse(s));
+        return TagKey.create(Registries.BLOCK, Identifier.parse(s));
     }
 
     public static boolean containsItem(Item t, TagKey<Item> s) {

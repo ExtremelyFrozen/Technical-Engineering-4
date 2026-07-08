@@ -7,116 +7,152 @@ import com.modularmc.ten.common.blockentity.channel.ChannelFluidBlockEntity;
 import com.modularmc.ten.common.blockentity.channel.ChannelItemBlockEntity;
 import com.modularmc.ten.common.blockentity.machine.*;
 
-import com.tterrag.registrate.util.entry.BlockEntityEntry;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.neoforged.neoforge.registries.DeferredHolder;
 
-import static com.modularmc.ten.common.registry.Registration.REGISTRATE;
+import java.util.function.Function;
+
+import static com.modularmc.ten.common.registry.Registration.BLOCK_ENTITIES;
 
 public class TENBlockEntities {
 
-    public static final BlockEntityEntry<CableBlockEntity> CABLE = REGISTRATE
-            .blockEntity("cable", CableBlockEntity::new)
-            .validBlocks(TENBlocks.CABLE, TENBlocks.CABLE_QUARTZ, TENBlocks.CABLE_AZURE, TENBlocks.CABLE_STAR)
-            .register();
+    /**
+     * Helper to create a BlockEntityType with a factory that first captures
+     * the type reference (for BEs whose constructor takes BlockEntityType).
+     */
+    private static <T extends BlockEntity> BlockEntityType<T> beType(
+            Function<BlockEntityType<T>, BlockEntityType.BlockEntitySupplier<T>> factoryBuilder,
+            Block... blocks) {
+        BlockEntityType<T>[] ref = new BlockEntityType[1];
+        BlockEntityType<T> type = new BlockEntityType<>((pos, state) -> factoryBuilder.apply(ref[0]).create(pos, state), blocks);
+        ref[0] = type;
+        return type;
+    }
 
-    public static final BlockEntityEntry<PipeBlockEntity> PIPE = REGISTRATE
-            .blockEntity("pipe", PipeBlockEntity::new)
-            .validBlocks(TENBlocks.PIPE, TENBlocks.PIPE_WHITE, TENBlocks.PIPE_BLACK)
-            .register();
+    // ── Cables ────────────────────────────────────────────────
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<CableBlockEntity>> CABLE
+            = BLOCK_ENTITIES.register("cable",
+            () -> beType(type -> (pos, state) -> new CableBlockEntity(type, pos, state),
+                    TENBlocks.CABLE.get(), TENBlocks.CABLE_QUARTZ.get(),
+                    TENBlocks.CABLE_AZURE.get(), TENBlocks.CABLE_STAR.get()));
 
-    public static final BlockEntityEntry<ChannelEnergyBlockEntity> CHANNEL_ENERGY = REGISTRATE
-            .blockEntity("channel_energy", ChannelEnergyBlockEntity::new)
-            .validBlocks(TENBlocks.CHANNEL_ENERGY)
-            .register();
+    // ── Pipes ─────────────────────────────────────────────────
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<PipeBlockEntity>> PIPE
+            = BLOCK_ENTITIES.register("pipe",
+            () -> beType(type -> (pos, state) -> new PipeBlockEntity(type, pos, state),
+                    TENBlocks.PIPE.get(), TENBlocks.PIPE_WHITE.get(), TENBlocks.PIPE_BLACK.get()));
 
-    public static final BlockEntityEntry<ChannelItemBlockEntity> CHANNEL_ITEM = REGISTRATE
-            .blockEntity("channel_item", ChannelItemBlockEntity::new)
-            .validBlocks(TENBlocks.CHANNEL_ITEM)
-            .register();
+    // ── Channels ──────────────────────────────────────────────
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<ChannelEnergyBlockEntity>> CHANNEL_ENERGY
+            = BLOCK_ENTITIES.register("channel_energy",
+            () -> beType(type -> (pos, state) -> new ChannelEnergyBlockEntity(type, pos, state),
+                    TENBlocks.CHANNEL_ENERGY.get()));
 
-    public static final BlockEntityEntry<ChannelFluidBlockEntity> CHANNEL_FLUID = REGISTRATE
-            .blockEntity("channel_fluid", ChannelFluidBlockEntity::new)
-            .validBlocks(TENBlocks.CHANNEL_FLUID)
-            .register();
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<ChannelItemBlockEntity>> CHANNEL_ITEM
+            = BLOCK_ENTITIES.register("channel_item",
+            () -> beType(type -> (pos, state) -> new ChannelItemBlockEntity(type, pos, state),
+                    TENBlocks.CHANNEL_ITEM.get()));
 
-    // Processing machines
-    public static final BlockEntityEntry<FurnaceBlockEntity> FURNACE = REGISTRATE
-            .blockEntity("machine_smelter", FurnaceBlockEntity::new)
-            .validBlocks(TENBlocks.MACHINE_SMELTER)
-            .register();
-    public static final BlockEntityEntry<PulverizerBlockEntity> PULVERIZER = REGISTRATE
-            .blockEntity("machine_pulverizer", PulverizerBlockEntity::new)
-            .validBlocks(TENBlocks.MACHINE_PULVERIZER)
-            .register();
-    public static final BlockEntityEntry<CompressorBlockEntity> COMPRESSOR = REGISTRATE
-            .blockEntity("machine_compressor", CompressorBlockEntity::new)
-            .validBlocks(TENBlocks.MACHINE_COMPRESSOR)
-            .register();
-    public static final BlockEntityEntry<RefinerBlockEntity> REFINER = REGISTRATE
-            .blockEntity("machine_refiner", RefinerBlockEntity::new)
-            .validBlocks(TENBlocks.MACHINE_REFINER)
-            .register();
-    public static final BlockEntityEntry<IndfurBlockEntity> INDUCTION_FURNACE = REGISTRATE
-            .blockEntity("machine_induction_furnace", IndfurBlockEntity::new)
-            .validBlocks(TENBlocks.MACHINE_INDUCTION_FURNACE)
-            .register();
-    public static final BlockEntityEntry<PsionicantBlockEntity> PSIONICANT = REGISTRATE
-            .blockEntity("machine_psionicant", PsionicantBlockEntity::new)
-            .validBlocks(TENBlocks.MACHINE_PSIONICANT)
-            .register();
-    public static final BlockEntityEntry<CondenserBlockEntity> CONDENSER = REGISTRATE
-            .blockEntity("machine_matter_condenser", CondenserBlockEntity::new)
-            .validBlocks(TENBlocks.MACHINE_CONDENSER)
-            .register();
-    public static final BlockEntityEntry<EncfluBlockEntity> ENCHFLU = REGISTRATE
-            .blockEntity("machine_enchantment_flusher", EncfluBlockEntity::new)
-            .validBlocks(TENBlocks.MACHINE_ENCHFLU)
-            .register();
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<ChannelFluidBlockEntity>> CHANNEL_FLUID
+            = BLOCK_ENTITIES.register("channel_fluid",
+            () -> beType(type -> (pos, state) -> new ChannelFluidBlockEntity(type, pos, state),
+                    TENBlocks.CHANNEL_FLUID.get()));
 
-    // Effect machines
-    public static final BlockEntityEntry<BeaconBlockEntity> BEACON = REGISTRATE
-            .blockEntity("machine_beacon_simulator", BeaconBlockEntity::new)
-            .validBlocks(TENBlocks.MACHINE_BEACON)
-            .register();
-    public static final BlockEntityEntry<MobRipBlockEntity> MOB_RIP = REGISTRATE
-            .blockEntity("machine_mob_ripper", MobRipBlockEntity::new)
-            .validBlocks(TENBlocks.MACHINE_MOB_RIPPER)
-            .register();
-    public static final BlockEntityEntry<FarmBlockEntity> FARM = REGISTRATE
-            .blockEntity("machine_farm_manager", FarmBlockEntity::new)
-            .validBlocks(TENBlocks.MACHINE_FARM)
-            .register();
-    public static final BlockEntityEntry<QuarryBlockEntity> QUARRY = REGISTRATE
-            .blockEntity("machine_quarry", QuarryBlockEntity::new)
-            .validBlocks(TENBlocks.MACHINE_QUARRY)
-            .register();
+    // ── Processing machines ───────────────────────────────────
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<FurnaceBlockEntity>> FURNACE
+            = BLOCK_ENTITIES.register("machine_smelter",
+            () -> beType(type -> (pos, state) -> new FurnaceBlockEntity(type, pos, state),
+                    TENBlocks.MACHINE_SMELTER.get()));
 
-    // Engines
-    public static final BlockEntityEntry<SolarBlockEntity> SOLAR = REGISTRATE
-            .blockEntity("engine_solar", SolarBlockEntity::new)
-            .validBlocks(TENBlocks.ENGINE_SOLAR)
-            .register();
-    public static final BlockEntityEntry<ExtractorBlockEntity> EXTRACTOR = REGISTRATE
-            .blockEntity("engine_extraction", ExtractorBlockEntity::new)
-            .validBlocks(TENBlocks.ENGINE_EXTRACTION)
-            .register();
-    public static final BlockEntityEntry<BiomassBlockEntity> BIOMASS = REGISTRATE
-            .blockEntity("engine_biomass", BiomassBlockEntity::new)
-            .validBlocks(TENBlocks.ENGINE_BIOMASS)
-            .register();
-    public static final BlockEntityEntry<MetalizerBlockEntity> METALIZER = REGISTRATE
-            .blockEntity("engine_metal", MetalizerBlockEntity::new)
-            .validBlocks(TENBlocks.ENGINE_METAL)
-            .register();
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<PulverizerBlockEntity>> PULVERIZER
+            = BLOCK_ENTITIES.register("machine_pulverizer",
+            () -> beType(type -> (pos, state) -> new PulverizerBlockEntity(type, pos, state),
+                    TENBlocks.MACHINE_PULVERIZER.get()));
 
-    public static final BlockEntityEntry<CellBlockEntity> CELL = REGISTRATE
-            .blockEntity("energy_cell", CellBlockEntity::new)
-            .validBlocks(TENBlocks.CELL)
-            .register();
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<CompressorBlockEntity>> COMPRESSOR
+            = BLOCK_ENTITIES.register("machine_compressor",
+            () -> beType(type -> (pos, state) -> new CompressorBlockEntity(type, pos, state),
+                    TENBlocks.MACHINE_COMPRESSOR.get()));
 
-    public static final BlockEntityEntry<CreativeCellBlockEntity> CREATIVE_CELL = REGISTRATE
-            .blockEntity("creative_energy_cell", CreativeCellBlockEntity::new)
-            .validBlocks(TENBlocks.CREATIVE_CELL)
-            .register();
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<RefinerBlockEntity>> REFINER
+            = BLOCK_ENTITIES.register("machine_refiner",
+            () -> beType(type -> (pos, state) -> new RefinerBlockEntity(type, pos, state),
+                    TENBlocks.MACHINE_REFINER.get()));
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<IndfurBlockEntity>> INDUCTION_FURNACE
+            = BLOCK_ENTITIES.register("machine_induction_furnace",
+            () -> beType(type -> (pos, state) -> new IndfurBlockEntity(type, pos, state),
+                    TENBlocks.MACHINE_INDUCTION_FURNACE.get()));
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<PsionicantBlockEntity>> PSIONICANT
+            = BLOCK_ENTITIES.register("machine_psionicant",
+            () -> beType(type -> (pos, state) -> new PsionicantBlockEntity(type, pos, state),
+                    TENBlocks.MACHINE_PSIONICANT.get()));
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<CondenserBlockEntity>> CONDENSER
+            = BLOCK_ENTITIES.register("machine_matter_condenser",
+            () -> beType(type -> (pos, state) -> new CondenserBlockEntity(type, pos, state),
+                    TENBlocks.MACHINE_CONDENSER.get()));
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<EncfluBlockEntity>> ENCHFLU
+            = BLOCK_ENTITIES.register("machine_enchantment_flusher",
+            () -> beType(type -> (pos, state) -> new EncfluBlockEntity(type, pos, state),
+                    TENBlocks.MACHINE_ENCHFLU.get()));
+
+    // ── Effect machines ────────────────────────────────────────
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<BeaconBlockEntity>> BEACON
+            = BLOCK_ENTITIES.register("machine_beacon_simulator",
+            () -> beType(type -> (pos, state) -> new BeaconBlockEntity(type, pos, state),
+                    TENBlocks.MACHINE_BEACON.get()));
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<MobRipBlockEntity>> MOB_RIP
+            = BLOCK_ENTITIES.register("machine_mob_ripper",
+            () -> beType(type -> (pos, state) -> new MobRipBlockEntity(type, pos, state),
+                    TENBlocks.MACHINE_MOB_RIPPER.get()));
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<FarmBlockEntity>> FARM
+            = BLOCK_ENTITIES.register("machine_farm_manager",
+            () -> beType(type -> (pos, state) -> new FarmBlockEntity(type, pos, state),
+                    TENBlocks.MACHINE_FARM.get()));
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<QuarryBlockEntity>> QUARRY
+            = BLOCK_ENTITIES.register("machine_quarry",
+            () -> beType(type -> (pos, state) -> new QuarryBlockEntity(type, pos, state),
+                    TENBlocks.MACHINE_QUARRY.get()));
+
+    // ── Engines ────────────────────────────────────────────────
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<SolarBlockEntity>> SOLAR
+            = BLOCK_ENTITIES.register("engine_solar",
+            () -> beType(type -> (pos, state) -> new SolarBlockEntity(type, pos, state),
+                    TENBlocks.ENGINE_SOLAR.get()));
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<ExtractorBlockEntity>> EXTRACTOR
+            = BLOCK_ENTITIES.register("engine_extraction",
+            () -> beType(type -> (pos, state) -> new ExtractorBlockEntity(type, pos, state),
+                    TENBlocks.ENGINE_EXTRACTION.get()));
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<BiomassBlockEntity>> BIOMASS
+            = BLOCK_ENTITIES.register("engine_biomass",
+            () -> beType(type -> (pos, state) -> new BiomassBlockEntity(type, pos, state),
+                    TENBlocks.ENGINE_BIOMASS.get()));
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<MetalizerBlockEntity>> METALIZER
+            = BLOCK_ENTITIES.register("engine_metal",
+            () -> beType(type -> (pos, state) -> new MetalizerBlockEntity(type, pos, state),
+                    TENBlocks.ENGINE_METAL.get()));
+
+    // ── Cells ──────────────────────────────────────────────────
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<CellBlockEntity>> CELL
+            = BLOCK_ENTITIES.register("energy_cell",
+            () -> beType(type -> (pos, state) -> new CellBlockEntity(type, pos, state),
+                    TENBlocks.CELL.get()));
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<CreativeCellBlockEntity>> CREATIVE_CELL
+            = BLOCK_ENTITIES.register("creative_energy_cell",
+            () -> beType(type -> (pos, state) -> new CreativeCellBlockEntity(type, pos, state),
+                    TENBlocks.CREATIVE_CELL.get()));
 
     public static void init() {}
 }

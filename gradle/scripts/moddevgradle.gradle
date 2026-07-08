@@ -1,10 +1,11 @@
 neoForge {
     version = libs.versions.neoForge.get()
 
-    parchment {
-        minecraftVersion = libs.versions.minecraft.get()
-        mappingsVersion = libs.versions.parchment.get()
-    }
+    // Parchment 无 26.1.2 兼容版本，使用 Mojang 参数名（Phase 0 禁用）
+    // parchment {
+    //     minecraftVersion = libs.versions.minecraft.get()
+    //     mappingsVersion = libs.versions.parchment.get()
+    // }
 
     accessTransformers {
         var file = project.file('src/main/resources/META-INF/accesstransformer.cfg')
@@ -21,6 +22,8 @@ neoForge {
 //
 //    interfaceInjectionData = project.files('injected_interfaces/interfaces.json')
 
+    addModdingDependenciesTo(sourceSets.client)
+    addModdingDependenciesTo(sourceSets.clientExtra)
     addModdingDependenciesTo(sourceSets.test)
     addModdingDependenciesTo(sourceSets.extra)
 
@@ -29,7 +32,8 @@ neoForge {
         "${mod_id}" {
             sourceSet(sourceSets.main)
             sourceSet(sourceSets.client)
-            sourceSet(sourceSets.test)
+            // Phase 4/5: test gametests need 1.21 rewrite — excluded from mod def for now
+            // sourceSet(sourceSets.test)
             sourceSet(sourceSets.extra)
             sourceSet(sourceSets.clientExtra)
         }
@@ -79,8 +83,8 @@ neoForge {
             environment('TEST', 'true')
         }
 
-        data {
-            data()
+        clientData {
+            clientData()
             sourceSet = sourceSets.main
             ideName = "Data Generation"
 

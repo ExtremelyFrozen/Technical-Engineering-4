@@ -7,7 +7,6 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
-import net.neoforged.neoforge.client.settings.KeyConflictContext;
 import net.neoforged.neoforge.common.util.Lazy;
 
 import com.mojang.blaze3d.platform.InputConstants;
@@ -19,12 +18,13 @@ public class TENKeybinds {
     public static final String KEY_CATEGORY = "key.categories." + TEN.MOD_ID;
     public static final String KEY_TOGGLE_CHARGE = "key." + TEN.MOD_ID + ".toggle_charge";
 
+    public static final KeyMapping.Category CATEGORY = new KeyMapping.Category(net.minecraft.resources.Identifier.parse(KEY_CATEGORY));
+
     public static final Lazy<KeyMapping> TOGGLE_CHARGE = Lazy.of(() -> new KeyMapping(
             KEY_TOGGLE_CHARGE,
-            KeyConflictContext.IN_GAME,
             InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_V,
-            KEY_CATEGORY));
+            CATEGORY));
 
     @SubscribeEvent
     public static void registerBindings(RegisterKeyMappingsEvent event) {

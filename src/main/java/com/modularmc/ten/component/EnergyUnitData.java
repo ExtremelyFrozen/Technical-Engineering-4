@@ -50,7 +50,7 @@ public class EnergyUnitData {
         }
         CompoundTag tag = custom.copyTag();
         return new EnergyUnitData(
-                tag.getInt(TAG_ENERGY),
-                tag.getBoolean(TAG_CHARGING));
+                tag.getInt(TAG_ENERGY).orElse(0),
+                tag.getBoolean(TAG_CHARGING).orElse(EnergyUnitItem.chargingDefault()));
     }
 }

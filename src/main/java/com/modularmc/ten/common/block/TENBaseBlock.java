@@ -26,8 +26,4 @@ public class TENBaseBlock extends Block {
         super(p);
     }
 
-    @Override
-    public String getDescriptionId() {
-        return super.getDescriptionId();
-    }
 }

@@ -50,7 +50,7 @@ public class ItemNBTHelper {
         if (data.isEmpty()) return 0;
         CompoundTag tag = data.copyTag();
         if (!tag.contains(name)) return 0;
-        return tag.getDouble(name);
+        return tag.getDouble(name).orElse(0.0);
     }
 
     public static void setTagD(ItemStack stack, String name, double cr) {

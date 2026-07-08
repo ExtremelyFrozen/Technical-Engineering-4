@@ -1,12 +1,13 @@
 package com.modularmc.ten.api.blockentity;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 
 import com.lowdragmc.lowdraglib2.syncdata.holder.blockentity.ISyncPersistRPCBlockEntity;
 import com.lowdragmc.lowdraglib2.syncdata.storage.FieldManagedStorage;
@@ -26,6 +27,18 @@ public abstract class CmBlockEntity extends BlockEntity implements ISyncPersistR
     public CmBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
     }
+
+    /**
+     * 2-arg constructor for Minecraft 1.21.1 BlockEntitySupplier compatibility.
+     * This is called during BlockEntityType creation; the actual type is passed
+     * by the block entity type registration framework.
+     * <p>
+     * WARNING: This constructor leaves {@code getType()} temporarily null during
+     * construction. The proper type is set either by {@link #setBlockEntityType}
+     * or by the {@link BlockEntityType#create} method.
+     */
+    // NOP: this base class still uses 3-arg constructor.
+    // Subclasses with 2-arg constructors should call super(TENBlockEntities.XXX.get(), pos, state)
 
     public int getAliveTime() {
         return globalTimer;
@@ -67,18 +80,18 @@ public abstract class CmBlockEntity extends BlockEntity implements ISyncPersistR
     }
 
     @Override
-    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.loadAdditional(tag, registries);
-        readTileData(tag, registries);
+    protected void loadAdditional(ValueInput input) {
+        super.loadAdditional(input);
+        readTileData(input);
     }
 
     @Override
-    protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.saveAdditional(tag, registries);
-        writeTileData(tag, registries);
+    protected void saveAdditional(ValueOutput output) {
+        super.saveAdditional(output);
+        writeTileData(output);
     }
 
-    protected void readTileData(CompoundTag tag, HolderLookup.Provider registries) {}
+    protected void readTileData(ValueInput input) {}
 
-    protected void writeTileData(CompoundTag tag, HolderLookup.Provider registries) {}
+    protected void writeTileData(ValueOutput output) {}
 }

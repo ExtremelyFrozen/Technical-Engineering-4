@@ -11,7 +11,6 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomData;
@@ -94,15 +93,15 @@ public class ChannelConnectorItem extends TENBaseItem implements IModeChangable 
     }
 
     @Override
-    public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
+    public InteractionResult use(Level level, Player player, InteractionHand hand) {
         if (!level.isClientSide()) {
             change(player);
         }
-        return InteractionResultHolder.sidedSuccess(player.getItemInHand(hand), level.isClientSide());
+        return InteractionResult.SUCCESS;
     }
 
     private static boolean hasSelection(ItemStack stack) {
-        return dataTag(stack).getBoolean(TAG_HAS_LAST);
+        return dataTag(stack).getBoolean(TAG_HAS_LAST).orElse(false);
     }
 
     private static void clearSelection(ItemStack stack) {
@@ -121,7 +120,7 @@ public class ChannelConnectorItem extends TENBaseItem implements IModeChangable 
 
     private static BlockPos getSelection(ItemStack stack) {
         CompoundTag tag = dataTag(stack);
-        return tag.contains(TAG_LAST) ? BlockPos.of(tag.getLong(TAG_LAST)) : BlockPos.ZERO;
+        return tag.contains(TAG_LAST) ? BlockPos.of(tag.getLong(TAG_LAST).orElse(0L)) : BlockPos.ZERO;
     }
 
     private static CompoundTag dataTag(ItemStack stack) {

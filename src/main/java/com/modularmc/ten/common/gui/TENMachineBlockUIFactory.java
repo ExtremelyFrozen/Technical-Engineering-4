@@ -11,7 +11,7 @@ import com.modularmc.ten.utils.DisplayHelper;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.Slot;
 import net.neoforged.neoforge.items.SlotItemHandler;
@@ -45,11 +45,11 @@ import java.util.function.Supplier;
 
 public final class TENMachineBlockUIFactory {
 
-    private static final ResourceLocation HANDLER = TEN.id("textures/gui/handler.png");
+    private static final Identifier HANDLER = TEN.id("textures/gui/handler.png");
 
     private TENMachineBlockUIFactory() {}
 
-    public static UIElement createRoot(ResourceLocation background) {
+    public static UIElement createRoot(Identifier background) {
         return new UIElement()
                 .layout(layout -> {
                     layout.width(176);
@@ -233,7 +233,7 @@ public final class TENMachineBlockUIFactory {
         progress.label.setDisplay(false);
         progress.progressBarStyle(style -> style.fillDirection(FillDirection.DOWN_TO_UP).interpolate(false));
         progress.bindDataSource(SupplierDataSource.of(() -> (float) percent.applyAsDouble(machine)));
-        progress.addEventListener(UIEvents.HOVER_TOOLTIPS, event -> event.hoverTooltips = new HoverTooltips(tooltipSupplier.get(), null, null, null));
+        progress.addEventListener(UIEvents.HOVER_TOOLTIPS, event -> event.hoverTooltips = HoverTooltips.create(tooltipSupplier.get().toArray()));
         return progress;
     }
 
@@ -247,7 +247,7 @@ public final class TENMachineBlockUIFactory {
         progress.progressBarStyle(style -> style.fillDirection(FillDirection.LEFT_TO_RIGHT).interpolate(false));
         progress.bindDataSource(SupplierDataSource.of(() -> (float) progressPercent(machine)));
         if (showPercent) {
-            progress.addEventListener(UIEvents.HOVER_TOOLTIPS, event -> event.hoverTooltips = new HoverTooltips(List.of(ComponentHelper.make((int) (progressPercent(machine) * 100) + "%")), null, null, null));
+            progress.addEventListener(UIEvents.HOVER_TOOLTIPS, event -> event.hoverTooltips = HoverTooltips.create(ComponentHelper.make((int) (progressPercent(machine) * 100) + "%")));
         }
         return progress;
     }
@@ -261,7 +261,7 @@ public final class TENMachineBlockUIFactory {
                 .showFluidTooltips(false));
         slot.amountLabel.setDisplay(false);
         slot.bind(machine.getFluidHandler(null), tankIndex);
-        slot.addEventListener(UIEvents.HOVER_TOOLTIPS, event -> event.hoverTooltips = new HoverTooltips(fluidTooltip(machine, tankIndex, showValue), null, null, null));
+        slot.addEventListener(UIEvents.HOVER_TOOLTIPS, event -> event.hoverTooltips = HoverTooltips.create(fluidTooltip(machine, tankIndex, showValue).toArray()));
         return slot;
     }
 
@@ -274,7 +274,7 @@ public final class TENMachineBlockUIFactory {
         var element = absolute(new UIElement(), x, y, width, height)
                 .style(style -> style.backgroundTexture(texture));
         if (tooltipSupplier != null) {
-            element.addEventListener(UIEvents.HOVER_TOOLTIPS, event -> event.hoverTooltips = new HoverTooltips(tooltipSupplier.get(), null, null, null));
+            element.addEventListener(UIEvents.HOVER_TOOLTIPS, event -> event.hoverTooltips = HoverTooltips.create(tooltipSupplier.get().toArray()));
         }
         if (localClick != null) {
             element.addEventListener(UIEvents.MOUSE_DOWN, event -> {
@@ -330,15 +330,15 @@ public final class TENMachineBlockUIFactory {
         return element;
     }
 
-    private static IGuiTexture sprite(ResourceLocation resourceLocation, int x, int y, int width, int height) {
+    private static IGuiTexture sprite(Identifier resourceLocation, int x, int y, int width, int height) {
         return SpriteTexture.of(resourceLocation).setSprite(x, y, width, height);
     }
 
-    private static IGuiTexture fullTexture(ResourceLocation resourceLocation, int width, int height) {
+    private static IGuiTexture fullTexture(Identifier resourceLocation, int width, int height) {
         return SpriteTexture.of(resourceLocation).setSprite(0, 0, width, height);
     }
 
-    public static ResourceLocation backgroundFor(int machineType) {
+    public static Identifier backgroundFor(int machineType) {
         return switch (machineType) {
             case MachineType.FURNACE -> TEN.id("textures/gui/one_to_one.png");
             case MachineType.PULVERIZER -> TEN.id("textures/gui/pulverizer.png");

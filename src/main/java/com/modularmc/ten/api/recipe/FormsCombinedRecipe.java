@@ -2,11 +2,13 @@ package com.modularmc.ten.api.recipe;
 
 import com.modularmc.ten.utils.TagHelper;
 
-import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
+import net.minecraft.world.item.crafting.PlacementInfo;
+import net.minecraft.world.item.crafting.Recipe;
+import net.minecraft.world.item.crafting.RecipeBookCategory;
 import net.minecraft.world.item.crafting.RecipeInput;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
@@ -19,16 +21,16 @@ import java.util.List;
 
 public class FormsCombinedRecipe implements RandRecipe {
 
-    protected ResourceLocation regName;
-    protected ResourceLocation id;
+    protected Identifier regName;
+    protected Identifier id;
     protected List<FormsCombinedIngredient> input;
     protected List<FormsCombinedIngredient> output;
     protected int time;
 
-    public RecipeSerializer<?> serializer;
-    public RecipeType<?> recipeType;
+    public RecipeSerializer<? extends Recipe<RecipeInput>> serializer;
+    public RecipeType<? extends Recipe<RecipeInput>> recipeType;
 
-    public FormsCombinedRecipe(ResourceLocation regName, ResourceLocation id,
+    public FormsCombinedRecipe(Identifier regName, Identifier id,
                                List<FormsCombinedIngredient> input,
                                List<FormsCombinedIngredient> output, int time) {
         this.regName = regName;
@@ -81,7 +83,6 @@ public class FormsCombinedRecipe implements RandRecipe {
         return true;
     }
 
-    @Override
     public NonNullList<Ingredient> getIngredients() {
         NonNullList<Ingredient> list = NonNullList.create();
         for (var i : input) {
@@ -90,7 +91,6 @@ public class FormsCombinedRecipe implements RandRecipe {
         return list;
     }
 
-    @Override
     public int inputLimit(ItemStack stack) {
         for (var ing : input) {
             if (ing.matchItems.contains(stack.getItem())) return ing.amountOrCount;
@@ -114,20 +114,42 @@ public class FormsCombinedRecipe implements RandRecipe {
     }
 
     @Override
-    public ItemStack assemble(RecipeInput inv, HolderLookup.Provider registries) {
+    public ItemStack assemble(RecipeInput inv) {
         return ItemStack.EMPTY;
     }
 
-    public ResourceLocation getId() {
+    @Override
+    public String group() {
+        return "";
+    }
+
+    @Override
+    public boolean showNotification() {
+        return true;
+    }
+
+    public Identifier getId() {
         return id;
     }
 
-    public RecipeType<?> getType() {
+    @Override
+    public RecipeType<? extends Recipe<RecipeInput>> getType() {
         return recipeType;
     }
 
-    public RecipeSerializer<?> getSerializer() {
+    @Override
+    public RecipeSerializer<? extends Recipe<RecipeInput>> getSerializer() {
         return serializer;
+    }
+
+    @Override
+    public RecipeBookCategory recipeBookCategory() {
+        return new RecipeBookCategory();
+    }
+
+    @Override
+    public PlacementInfo placementInfo() {
+        return PlacementInfo.NOT_PLACEABLE;
     }
 
     public List<FormsCombinedIngredient> output() {

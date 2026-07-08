@@ -29,7 +29,7 @@ sourceSets {
     }
 
     client {
-        compileClasspath += main.output
+        compileClasspath += main.output + main.compileClasspath
         runtimeClasspath += main.output + main.runtimeClasspath
     }
 
@@ -39,7 +39,7 @@ sourceSets {
     }
 
     extra {
-        compileClasspath += main.output
+        compileClasspath += main.output + main.compileClasspath
         runtimeClasspath += main.output + main.runtimeClasspath
     }
 
@@ -47,6 +47,8 @@ sourceSets {
         compileClasspath += client.output + extra.compileClasspath
         runtimeClasspath += client.output + client.runtimeClasspath + extra.runtimeClasspath
     }
+
+
 }
 
 configurations {
@@ -75,8 +77,9 @@ apply from: "$rootDir/gradle/scripts/resources.gradle"
 apply from: "$rootDir/gradle/scripts/publishing.gradle"
 apply from: "$rootDir/gradle/scripts/spotless.gradle"
 
+// main/resources → 权威；generated/resources 的重复项（recipe/lang）被 EXCLUDE 策略自动跳过
 processResources {
-    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
 
 

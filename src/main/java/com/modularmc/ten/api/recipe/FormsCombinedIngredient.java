@@ -3,9 +3,11 @@ package com.modularmc.ten.api.recipe;
 import com.modularmc.ten.api.option.IngredientType;
 import com.modularmc.ten.utils.TagHelper;
 
+import net.minecraft.core.Holder;
+import net.minecraft.core.HolderSet;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -33,7 +35,7 @@ public class FormsCombinedIngredient {
     TagKey<Item> ifTagItem;
     Collection<Fluid> matchFluids = new ArrayList<>();
     TagKey<Fluid> ifTagFluid;
-    ResourceLocation key;
+    Identifier key;
     int amountOrCount;
     double chance;
 
@@ -49,7 +51,7 @@ public class FormsCombinedIngredient {
         return form;
     }
 
-    public ResourceLocation key() {
+    public Identifier key() {
         return key;
     }
 
@@ -111,7 +113,15 @@ public class FormsCombinedIngredient {
     }
 
     public Ingredient toOriginStackIngredients() {
-        return "tag".equals(type) ? Ingredient.of(ifTagItem) : Ingredient.of(itemStacks().stream());
+        if ("tag".equals(type)) {
+            // Use tag-based ingredient: get all items in the tag
+            var tagContents = BuiltInRegistries.ITEM.getTagOrEmpty(ifTagItem);
+            for (var holder : tagContents) {
+                return Ingredient.of(holder.value());
+            }
+            return Ingredient.of();
+        }
+        return Ingredient.of(itemStacks().stream().map(ItemStack::getItem).toArray(n -> new Item[n]));
     }
 
     // Parsing
@@ -132,7 +142,7 @@ public class FormsCombinedIngredient {
         ing.form = form;
         ing.type = type;
         ing.amountOrCount = limit;
-        ing.key = ResourceLocation.parse(key);
+        ing.key = Identifier.parse(key);
         ing.chance = chance;
         switch (form) {
             case "item" -> {
@@ -162,7 +172,7 @@ public class FormsCombinedIngredient {
     public void writeTo(RegistryFriendlyByteBuf buf) {
         buf.writeUtf(form);
         buf.writeUtf(type);
-        buf.writeResourceLocation(key);
+        buf.writeIdentifier(key);
         buf.writeInt(amountOrCount);
         buf.writeDouble(chance);
     }
@@ -170,7 +180,7 @@ public class FormsCombinedIngredient {
     public static FormsCombinedIngredient parseFrom(RegistryFriendlyByteBuf buf) {
         String form = buf.readUtf();
         String type = buf.readUtf();
-        ResourceLocation rl = buf.readResourceLocation();
+        Identifier rl = buf.readIdentifier();
         int limit = buf.readInt();
         double chance = buf.readDouble();
         return create(limit, form, type, rl.toString(), chance);
@@ -196,11 +206,11 @@ public class FormsCombinedIngredient {
     }
 
     private static Item parseItem(String i) {
-        return BuiltInRegistries.ITEM.getOptional(ResourceLocation.parse(i)).orElse(Items.AIR);
+        return BuiltInRegistries.ITEM.getOptional(Identifier.parse(i)).orElse(Items.AIR);
     }
 
     private static Fluid parseFluid(String i) {
-        return BuiltInRegistries.FLUID.getOptional(ResourceLocation.parse(i)).orElse(Fluids.EMPTY);
+        return BuiltInRegistries.FLUID.getOptional(Identifier.parse(i)).orElse(Fluids.EMPTY);
     }
 
     @FunctionalInterface

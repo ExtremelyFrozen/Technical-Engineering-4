@@ -1,6 +1,7 @@
 package com.modularmc.ten.common.blockentity.machine;
 
 import com.modularmc.ten.api.blockentity.CmMachineBlockEntity;
+import com.modularmc.ten.api.capability.CapabilityAdapters;
 import com.modularmc.ten.api.option.IngredientType;
 import com.modularmc.ten.common.gui.TENMachineBlockUIFactory;
 
@@ -37,7 +38,7 @@ public class CellBlockEntity extends CmMachineBlockEntity {
 
     @Override
     public boolean valid(int slot, ItemStack stack) {
-        var energy = stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM);
+        var energy = CapabilityAdapters.getEnergy(stack);
         if (energy == null) return false;
         if (slot == 0) {
             return energy.canExtract();
@@ -72,7 +73,7 @@ public class CellBlockEntity extends CmMachineBlockEntity {
         ItemStack stack1 = itemHandler.getStackInSlot(1);
 
         if (stack0.getCount() == 1) {
-            var energy0 = stack0.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM);
+            var energy0 = CapabilityAdapters.getEnergy(stack0);
             if (energy0 != null && energy0.canExtract()) {
                 int diff = energy0.extractEnergy(Math.min(maxReceiveEnergy, maxStorageEnergy - energyStorage.getEnergyStored()), false);
                 if (diff > 0) {
@@ -82,7 +83,7 @@ public class CellBlockEntity extends CmMachineBlockEntity {
         }
 
         if (stack1.getCount() == 1) {
-            var energy1 = stack1.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM);
+            var energy1 = CapabilityAdapters.getEnergy(stack1);
             if (energy1 != null && energy1.canReceive()) {
                 int diff = energy1.receiveEnergy(Math.min(maxExtractEnergy, energyStorage.getEnergyStored()), false);
                 if (diff > 0) {

@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:blasting",
+  "cookingtime": 100,
+  "experience": 0.35,
+  "ingredient": {
+    "item": "kenergyengineering:deep_nickel_ore"
+  },
+  "result": {
+    "id": "kenergyengineering:nickel_ingot"
+  }
+}

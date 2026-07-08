@@ -8,7 +8,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
-import net.minecraft.world.level.block.state.properties.DirectionProperty;
+import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.level.material.MapColor;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
@@ -17,7 +17,7 @@ import java.util.Map;
 
 public class DirectionalMachineBlock extends BaseMachineBlock {
 
-    public static final DirectionProperty FACING = DirectionProperty.create("facing", d -> true);
+    public static final EnumProperty<Direction> FACING = EnumProperty.create("facing", Direction.class, d -> true);
 
     private static final Map<Direction, VoxelShape> SHAPES = Map.of(
             Direction.NORTH, Block.box(1, 1, 0, 15, 15, 3),

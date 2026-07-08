@@ -11,6 +11,11 @@ public abstract class UpgradeItem extends TENBaseItem {
         percent = per;
     }
 
+    public UpgradeItem(double per, Properties properties) {
+        super(properties.stacksTo(1));
+        percent = per;
+    }
+
     public boolean effect(IUpgradableMachine machine) {
         return true;
     }
