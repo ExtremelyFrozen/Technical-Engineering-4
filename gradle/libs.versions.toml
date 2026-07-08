@@ -1,10 +1,8 @@
-# TODO: 以下版本仅从 1.21 副本引导，需要对照 NeoForge 26.1.2 文档链确认。
-# 确认入口: skills/Minecraft模组导航/derived/neoforge/26.1.2/derived-loader-neoforge-26.1.2-reference.md
 [versions]
-minecraft = "1.21.5" # TODO: 26.x.x 对应 MC 1.21.5+，需确认准确对应版本
+minecraft = "26.1.2"
 neoForge = "26.1.2"
 loader = "4"          # TODO: 确认 26.1.2 线 loader 版本号
-parchment = "2024.11.17" # https://parchmentmc.org/docs/getting-started — TODO: 更新到 1.21.5 对应版本
+parchment = "2024.11.17" # https://parchmentmc.org/docs/getting-started — TODO: 更新到 26.1.2 对应版本
 shadow = "8.3.5"
 spotless = "8.4.0"
 modDevGradle = "2.0.141" # TODO: NeoForge 26.x.x 可能需要更新 modDevGradle 版本
