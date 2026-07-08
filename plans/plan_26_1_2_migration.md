@@ -9,15 +9,18 @@
 - **计划路径**: `plans/plan_26_1_2_migration.md`
 - **草稿路径**: `plans/.draft_plan_26_1_2_migration.md`
 - **workflow_mode**: standard
-- **版本状态**: `已批准`
+- **版本状态**: `已完成（初步目标）`
 - **创建日期**: 2026-07-08
 - **创建者**: 猫娘规划师-缇娅
 - **触发原因**: 草稿 v0.3 经猫娘审查官-艾琳审查通过，由规划师转换为正式计划
 - **审查结论**: 审查通过
-- **建议下一步**: 进入执行
+- **建议下一步**: 保留分支，后续扩展按新任务处理
 - **目标基线**: NeoForge 26.1.2 / Minecraft 1.21.1 / Java 25
-- **当前 HEAD**: `e28d930 fix: correct 26.1.2 version metadata`
+- **当前 HEAD**: `25b0daa feat: migrate project to 26.1.2 runtime baseline`
 - **远程分支**: `origin/26.1.2`
+- **收官选择**: `保留分支`
+- **验证证据**: `docs/closure_verification.md`
+- **最终提交**: `25b0daa`
 
 ## 1. 目标
 
@@ -564,6 +567,18 @@
 | **验收要点** | - [ ] `git status` 显示 `nothing to commit, working tree clean`（提交后）<br>- [ ] `git push origin 26.1.2 2>&1` 无 rejected/failed 输出 |
 | **回退** | 推送被拒绝 → `git pull --rebase origin 26.1.2` 解决冲突后重推 |
 
+#### 收尾记录（TASK-064 执行结果）
+
+| 属性 | 内容 |
+|------|------|
+| **执行状态** | ✅ 已完成（初步目标） |
+| **最终提交** | `25b0daa feat: migrate project to 26.1.2 runtime baseline` |
+| **远程分支** | `origin/26.1.2` |
+| **收官选择** | 保留分支（不创建 PR、不合并、不清理分支） |
+| **验证证据** | `docs/closure_verification.md` |
+| **分支策略** | 独立版本分支 `26.1.2` 长期保留，后续扩展按新任务处理 |
+| **系统状态** | `git status` → nothing to commit, working tree clean |
+
 ## 4. 依赖版本确认清单
 
 > **使用说明**: Phase 0 的 TASK-001 负责填充本清单的「证据来源」「验证命令」「状态」三列。状态列允许 `unknown`，
@@ -848,6 +863,6 @@
 Java:     需要 >= 25 (当前 toolchain 已设置)
 OS:       Windows
 NeoForge: 26.1.2
-Git HEAD: e28d930 fix: correct 26.1.2 version metadata
+Git HEAD: 25b0daa feat: migrate project to 26.1.2 runtime baseline
 远程:     origin/26.1.2
 ```
