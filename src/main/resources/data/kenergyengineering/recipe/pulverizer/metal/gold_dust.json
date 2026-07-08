@@ -1,0 +1,19 @@
+{
+	"type": "kenergyengineering:pulverizer",
+	"inputs": [
+		{
+			"form": "item",
+			"type": "tag",
+			"key": "c:ingots/gold"
+		}
+	],
+	"outputs": [
+		{
+			"form": "item",
+			"type": "static",
+			"key": "kenergyengineering:gold_dust",
+			"count": 1
+		}
+	],
+	"time": 100
+}

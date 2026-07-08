@@ -1,0 +1,26 @@
+{
+  "type": "kenergyengineering:pulverizer",
+  "inputs": [
+    {
+      "type": "tag",
+      "form": "item",
+      "key": "c:ingots/nickel"
+    }
+  ],
+  "outputs": [
+    {
+      "type": "static",
+      "count": 2,
+      "form": "item",
+      "key": "kenergyengineering:nickel_dust"
+    },
+    {
+      "type": "static",
+      "chance": 0.2,
+      "count": 1,
+      "form": "item",
+      "key": "minecraft:gravel"
+    }
+  ],
+  "time": 180
+}

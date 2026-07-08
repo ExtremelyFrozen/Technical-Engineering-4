@@ -1,0 +1,25 @@
+{
+	"type": "kenergyengineering:compressor",
+	"inputs": [
+		{
+			"form": "item",
+			"type": "tag",
+			"key": "c:ingots/iron",
+			"count": 4
+		},
+		{
+			"form": "item",
+			"type": "static",
+			"key": "kenergyengineering:mould_gear",
+			"chance": 0
+		}
+	],
+	"outputs": [
+		{
+			"form": "item",
+			"type": "static",
+			"key": "kenergyengineering:iron_gear"
+		}
+	],
+	"time": 100
+}

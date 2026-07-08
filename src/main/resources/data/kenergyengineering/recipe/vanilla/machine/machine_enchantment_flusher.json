@@ -1,0 +1,24 @@
+{
+	"type": "minecraft:crafting_shaped",
+	"pattern": ["BDB", "ACA", "BVB"],
+	"key": {
+		"A": {
+			"item": "minecraft:book"
+		},
+		"B": {
+			"tag": "c:plates/copper"
+		},
+		"C": {
+			"item": "kenergyengineering:redstone_storer"
+		},
+		"V": {
+			"item": "kenergyengineering:redstone_ai_advanced"
+		},
+		"D": {
+			"item": "minecraft:grindstone"
+		}
+	},
+	"result": {
+		"id": "kenergyengineering:machine_enchantment_flusher"
+	}
+}

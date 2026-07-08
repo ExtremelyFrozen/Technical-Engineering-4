@@ -1,0 +1,6 @@
+{
+	"parent": "kenergyengineering:block/cable/ccna",
+	"textures": {
+		"texture": "kenergyengineering:block/cable_star"
+	}
+}

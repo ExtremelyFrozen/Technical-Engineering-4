@@ -1,0 +1,21 @@
+{
+	"type": "minecraft:crafting_shaped",
+	"pattern": ["EBE", "DAD", "EBE"],
+	"key": {
+		"A": {
+			"item": "kenergyengineering:powered_levelup"
+		},
+		"B": {
+			"tag": "c:gears/powered_tin"
+		},
+		"D": {
+			"tag": "c:glass_blocks/colorless"
+		},
+		"E": {
+			"item": "minecraft:shulker_shell"
+		}
+	},
+	"result": {
+		"id": "kenergyengineering:relic_levelup"
+	}
+}

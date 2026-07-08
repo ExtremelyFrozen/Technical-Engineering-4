@@ -1,0 +1,21 @@
+{
+	"type": "minecraft:crafting_shaped",
+	"pattern": [" B ", "DAD", " C "],
+	"key": {
+		"A": {
+			"item": "minecraft:iron_bars"
+		},
+		"B": {
+			"tag": "c:gears/gold"
+		},
+		"C": {
+			"item": "minecraft:slime_ball"
+		},
+		"D": {
+			"item": "minecraft:gunpowder"
+		}
+	},
+	"result": {
+		"id": "kenergyengineering:range_levelup"
+	}
+}

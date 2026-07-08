@@ -1,0 +1,6 @@
+{
+	"parent": "kenergyengineering:block/pipe/pct",
+	"textures": {
+		"texture": "kenergyengineering:block/pipe_black"
+	}
+}

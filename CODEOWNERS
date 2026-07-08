@@ -1,0 +1,7 @@
+# All other changes require the primary team
+* @ExtremelyFrozen/devs
+
+# Specific files requiring admin approval
+CODEOWNERS @ExtremelyFrozen/admin
+LICENSE @ExtremelyFrozen/admin
+/README.md @ExtremelyFrozen/admin

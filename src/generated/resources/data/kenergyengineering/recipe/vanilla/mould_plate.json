@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "key": {
+    "A": {
+      "item": "kenergyengineering:tin_ingot"
+    }
+  },
+  "pattern": [
+    "A A",
+    "   ",
+    "A A"
+  ],
+  "result": {
+    "id": "kenergyengineering:mould_plate"
+  }
+}

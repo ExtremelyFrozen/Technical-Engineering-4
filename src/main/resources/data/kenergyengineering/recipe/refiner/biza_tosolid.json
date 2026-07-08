@@ -1,0 +1,19 @@
+{
+	"type": "kenergyengineering:refiner",
+	"inputs": [
+		{
+			"form": "fluid",
+			"type": "static",
+			"key": "kenergyengineering:liquid_bizarrerie",
+			"amount": 100
+		}
+	],
+	"outputs": [
+		{
+			"form": "item",
+			"type": "static",
+			"key": "kenergyengineering:bizarrerie"
+		}
+	],
+	"time": 50
+}

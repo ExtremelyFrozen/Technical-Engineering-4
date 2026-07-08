@@ -1,0 +1,9 @@
+{
+  "parent": "minecraft:block/cube_bottom_top",
+  "textures": {
+    "bottom": "kenergyengineering:block/engine_extraction",
+    "particle": "kenergyengineering:block/engine_extraction",
+    "side": "kenergyengineering:block/engine_extraction",
+    "top": "kenergyengineering:block/engine_extraction_bottom"
+  }
+}

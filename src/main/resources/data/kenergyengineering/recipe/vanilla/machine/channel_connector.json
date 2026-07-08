@@ -1,0 +1,19 @@
+{
+	"type": "minecraft:crafting_shaped",
+	"pattern": ["ABA", " C ", " C "],
+	"key": {
+		"A": {
+			"item": "minecraft:redstone"
+		},
+		"B": {
+			"item": "kenergyengineering:detector"
+		},
+		"C": {
+			"tag": "c:ingots/iron"
+		}
+	},
+	"result": {
+		"id": "kenergyengineering:channel_connector",
+		"count": 1
+	}
+}

@@ -1,0 +1,65 @@
+dependencies {
+    compileOnly(libs.jetbrains.annotations)
+
+    testImplementation(libs.testframework.get())
+
+    // LDLIB 2
+    implementation(forge.ldlib2.get())
+    jarJar(api(forge.ldlib2.get()))
+
+    // Registrate
+    jarJar(api(forge.registrate.get()))
+
+    // Configuration
+    jarJar(api(forge.configuration.get()))
+
+    // Recipe Viewers
+    compileOnly(forge.bundles.jei)
+    compileOnly(forge.emi)
+
+    // WAILA-likes
+    compileOnly(forge.jade)
+
+    // Rendering / Optimizations
+    compileOnly(forge.sodium)
+    compileOnly(forge.iris)
+    compileOnly(forge.modernfix)
+
+    // Curios API (optional - for curio slot support)
+    compileOnly("maven.modrinth:curios:9.5.0+1.21.1")
+    localRuntime("maven.modrinth:curios:9.5.0+1.21.1")
+
+    // Standard runtime mods //
+    localRuntime(libs.testframework)
+
+    localRuntime(forge.jade)
+    localRuntime(forge.spark)
+    localRuntime(forge.modernfix)
+
+    // Runtime Recipe Viewers - only enable one at a time.
+    // GTM's approach is to let EMI own the runtime path and keep JEI integration compile-only
+    // unless we are explicitly testing JEI itself.
+    localRuntime(forge.emi)
+//    localRuntime(forge.jei.neoforge.impl)
+
+    // Client-only runtime mods //
+    clientLocalRuntime(forge.sodium)
+    clientLocalRuntime(forge.iris)
+    clientLocalRuntime(forge.modernui)
+    clientLocalRuntime("maven.modrinth:itemzoomer:2.0.1-1.21.1")
+    renderNurseCfg(libs.renderNurse)
+
+    renderNurseCfg(libs.renderNurse)
+
+    //////////////////////////////////////////////////////
+    // Runtime mods for dev testing with unclean client //
+    //////////////////////////////////////////////////////
+
+    //////////////////////////
+    localRuntime("dev.architectury:architectury-neoforge:13.0.8")
+    localRuntime("me.shedaniel.cloth:cloth-config-neoforge:15.0.140")
+    // Powah! Rearchitected - dev testing energy mod
+    localRuntime("maven.modrinth:powah:6.2.8-neoforge")
+    // GuideMe - required by Powah for in-game guidebook
+    localRuntime("maven.modrinth:guideme:21.1.15")
+}

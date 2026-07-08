@@ -1,0 +1,21 @@
+{
+	"type": "minecraft:crafting_shaped",
+	"pattern": [" B ", "DAD", " C "],
+	"key": {
+		"A": {
+			"tag": "c:gems/diamond"
+		},
+		"B": {
+			"item": "kenergyengineering:indigo"
+		},
+		"C": {
+			"item": "kenergyengineering:energy_cell"
+		},
+		"D": {
+			"item": "kenergyengineering:azure_glass"
+		}
+	},
+	"result": {
+		"id": "kenergyengineering:mineral_levelup"
+	}
+}

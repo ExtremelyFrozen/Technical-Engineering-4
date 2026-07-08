@@ -1,0 +1,57 @@
+repositories {
+    mavenLocal()
+    mavenCentral()
+    // force gradle to download FastUtil & LWJGL from the central maven so we can get source artifacts
+    exclusiveContent { // Force
+        forRepository { mavenCentral() }
+        filter {
+            includeGroup("it.unimi.dsi")
+            includeGroup("org.lwjgl")
+            includeGroup("com.google.guava")
+            includeGroup("io.netty")
+        }
+    }
+    maven {
+        url = "https://maven.quiltmc.org/repository/release/"
+    }
+    maven { // JEI
+        name = "Jared's Maven"
+        url = "https://maven.blamejared.com/"
+    }
+    maven { // JEI mirror, AE2
+        name = "ModMaven"
+        url = "https://modmaven.dev"
+    }
+    maven { // LDLib, Shimmer
+        name = "FirstDarkDev Maven"
+        url = "https://maven.firstdark.dev/snapshots"
+    }
+    exclusiveContent { // Configuration
+        forRepository { maven { url = "https://repo.repsy.io/mvn/toma/public" } }
+        filter { includeGroup("dev.toma.configuration")}
+    }
+    exclusiveContent { // tterrag - registrate
+        forRepository { maven { url = "https://mvn.devos.one/snapshots/" } }
+        filter { includeGroup("com.tterrag.registrate") }
+    }
+    exclusiveContent { // terraformers - EMI
+        forRepository { maven { url = "https://maven.terraformersmc.com/releases/" } }
+        filter { includeGroup("dev.emi") }
+    }
+    exclusiveContent { // Modrinth Maven
+        forRepository { maven { url = "https://api.modrinth.com/maven" } }
+        filter { includeGroup("maven.modrinth") }
+    }
+    exclusiveContent { // Curseforge Maven
+        forRepository { maven { url = "https://cursemaven.com" } }
+        filter { includeGroup("curse.maven") }
+    }
+    exclusiveContent { // Architectury
+        forRepository { maven { url = "https://maven.architectury.dev/" } }
+        filter { includeGroup("dev.architectury") }
+    }
+    exclusiveContent { // Cloth Config (shedaniel)
+        forRepository { maven { url = "https://maven.shedaniel.me/" } }
+        filter { includeGroup("me.shedaniel.cloth") }
+    }
+}
