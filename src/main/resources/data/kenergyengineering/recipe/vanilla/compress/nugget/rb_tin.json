@@ -1,9 +1,7 @@
 {
   "type": "minecraft:crafting_shapeless",
   "ingredients": [
-    {
-      "item": "kenergyengineering:tin_ingot"
-    }
+    "kenergyengineering:tin_ingot"
   ],
   "result": {
     "count": 9,

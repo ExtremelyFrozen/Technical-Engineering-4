@@ -1,9 +1,7 @@
 {
   "type": "minecraft:crafting_shaped",
   "key": {
-    "C": {
-      "item": "kenergyengineering:mushrium_nugget"
-    }
+    "C": "kenergyengineering:mushrium_nugget"
   },
   "pattern": [
     "CCC",

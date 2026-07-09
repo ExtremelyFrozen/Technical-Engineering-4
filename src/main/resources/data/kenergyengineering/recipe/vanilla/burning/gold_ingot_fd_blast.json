@@ -1,11 +1,9 @@
 {
-	"type": "minecraft:blasting",
-	"ingredient": {
-		"item": "kenergyengineering:gold_dust"
-	},
-	"result": {
-		"id": "minecraft:gold_ingot"
-	},
-	"experience": 0,
-	"cookingtime": 100
+  "type": "minecraft:blasting",
+  "ingredient": "kenergyengineering:gold_dust",
+  "result": {
+    "id": "minecraft:gold_ingot"
+  },
+  "experience": 0,
+  "cookingtime": 100
 }

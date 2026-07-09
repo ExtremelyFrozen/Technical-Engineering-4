@@ -2,9 +2,7 @@
   "type": "minecraft:smelting",
   "cookingtime": 200,
   "experience": 0.0,
-  "ingredient": {
-    "item": "kenergyengineering:netherite_dust"
-  },
+  "ingredient": "kenergyengineering:netherite_dust",
   "result": {
     "id": "minecraft:netherite_ingot"
   }

@@ -2,9 +2,7 @@
   "type": "minecraft:smelting",
   "cookingtime": 200,
   "experience": 0.35,
-  "ingredient": {
-    "item": "kenergyengineering:deep_nickel_ore"
-  },
+  "ingredient": "kenergyengineering:deep_nickel_ore",
   "result": {
     "id": "kenergyengineering:nickel_ingot"
   }

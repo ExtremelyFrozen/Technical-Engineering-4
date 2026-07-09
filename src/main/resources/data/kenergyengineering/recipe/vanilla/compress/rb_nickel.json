@@ -1,9 +1,7 @@
 {
   "type": "minecraft:crafting_shapeless",
   "ingredients": [
-    {
-      "item": "kenergyengineering:nickel_block"
-    }
+    "kenergyengineering:nickel_block"
   ],
   "result": {
     "count": 9,

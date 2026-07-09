@@ -1,0 +1,323 @@
+﻿# Plan: 26.1.2 Resource Path Fix — Kenergy Engineering
+
+> authority: `skills/编排沙盘/templates/plans/正式计划模板.md`
+> 本计划由草稿 `plans/.draft_plan_26_1_2_resource_fix.md` v0.1 经审查通过后，由猫娘规划师-缇娅按正式计划模板重建。
+
+## 计划元数据
+
+- **计划ID**: `26_1_2_resource_fix`
+- **计划路径**: `plans/plan_26_1_2_resource_fix.md`
+- **草稿路径**: `plans/.draft_plan_26_1_2_resource_fix.md`
+- **workflow_mode**: standard
+- **版本状态**: `已批准`
+- **创建日期**: 2026-07-09
+- **创建者**: 猫娘规划师-缇娅
+- **触发原因**: 26.1.2 迁移已完成，客户端 runClient 成功启动并进入世界，但存在非致命数据/资源错误（配方解析失败、water tag 缺失流体 ID、missing item model 警告、缺少 FluidModel、音效缺失）。草稿经猫娘审查官-艾琳审查通过，建议小修后转正式计划。
+- **审查结论**: 审查通过
+- **建议下一步**: 进入执行
+- **目标基线**: NeoForge 26.1.2 / Minecraft 1.21.1 — 资源路径与数据格式修复
+- **当前 HEAD**: 继承自 26.1.2 迁移分支
+
+## 1. 目标
+
+> 修复 26.1.2 客户端 runClient 日志中所有与资源/数据相关的非致命错误和警告，使以下指标归零或降到可接受范围：
+> - ❌ 0 个配方解析 ERROR
+> - ❌ 0 个 tag 引用解析错误
+> - ⚠️ missing item model WARN 从 ~40+ 降到 ≤ 3
+> - ❌ 0 个流体模型缺失 ERROR
+> - ❌ 0 个音效引用解析错误
+>
+> 本计划**不修改 Java 源码**，专注资源文件（JSON/PNG/OGG）的路径、格式、引用完整性修复。
+
+## 2. 范围
+
+### 在范围内
+
+- runClient 日志错误清单提取与分类（TASK-A）
+- `data/kenergyengineering/recipe/vanilla/` 下约 20 个配方 ingredient 格式修复，适配 NeoForge 26.1.2 数据组件格式（TASK-B）
+- `data/minecraft/tags/fluid/water.json` 中缺失/错误的流体 ID 修正（TASK-C）
+- 约 40+ missing item model 的补齐或资源路径确认，按注册物品逐一比对（TASK-D）
+- 5 个缺失 FluidModel 的补齐或可接受占位模型（TASK-E）
+- `starlight.ogg` 缺失处理：补资源 / 改 sounds.json / 移除无效 sound event，按决策门槛执行（TASK-F）
+- 语言文件注册诊断与 tooltip 修复，确保注册物品在游戏中正常显示名称和工具提示文本（TASK-H）
+- 全流程验证：runClient 无 ERROR、processResources 通过、runData 可执行（TASK-G）
+
+### 不在范围内（明确排除）
+
+- JEI/EMI/Jade 功能恢复或适配
+- 完整 GUI 美化或完善
+- Item/Fluid capability → Resource/Transaction 功能迁移
+- Java 源码重构、功能移植
+- 任何新功能开发
+- 性能优化
+- 测试覆盖率提升
+
+## 3. 问题清单（已知症状）
+
+| # | 问题描述 | 影响范围 | 严重度 | 关联 TASK |
+|---|---------|---------|--------|----------|
+| 1 | 约 20 个配方解析失败，集中在 `data/kenergyengineering/recipe/vanilla/...`，日志提示 ingredient 格式缺少 `neoforge:ingredient_type` | 配方不加载，相关合成不可用 | 中 | TASK-B |
+| 2 | `minecraft:water` tag 缺少 `flowing_liquid_xp` 和 `flowing_liquid_bizarrerie`（已查明：tag 中使用了 `flowing_liquid_xp`/`flowing_liquid_bizarrerie` 但实际注册名为 `liquid_xp_flowing`/`liquid_bizarrerie_flowing`） | 流体 tag 分类不完整，可能影响流体交互逻辑 | 低 | TASK-C |
+| 3 | 约 40+ missing item model 警告 | 物品在背包/JEI 中显示 missing 模型 | 低-中 | TASK-D |
+| 4 | 5 个流体缺少 FluidModel | 流体无模型渲染 | 低 | TASK-E |
+| 5 | 音效 `starlight.ogg` 缺失 | `sounds.json` 引用的 `kenergyengineering:starlight` 音效文件不存在 | 低 | TASK-F |
+| 6 | 用户勘探补充：纹理路径错误或未正确指向，模型 JSON 中 `textures` 字段引用的路径与 `textures/` 目录下实际 PNG 文件不匹配 | 物品/方块/流体纹理显示异常或缺失 | 中 | TASK-D, TASK-E |
+| 7 | 用户勘探补充：所有注册物品无 tooltip/名称，语言文件注册存在问题，物品悬停时不显示任何文本（Missing translation 前缀） | 物品无名称和 tooltip，交互体验严重缺失 | 中 | TASK-H |
+
+## 4. 执行 TASK
+
+---
+
+### TASK-A: 复现并提取 runClient 日志中的资源错误清单
+
+| 属性 | 内容 |
+|------|------|
+| **task_id** | TASK-A |
+| **phase** | Phase 1 — 证据采集 |
+| **目标** | 系统化提取 runClient 运行日志中所有资源相关 ERROR/WARN，生成分类清单供后续 TASK 精确修复 |
+| **输入** | 当前项目代码 + resource 目录 |
+| **输出** | `plans/.evidence/evidence_26_1_2_resource_fix_01.md` — 日志错误分类清单（含时间戳、错误类型、文件路径、建议措施） |
+| **依赖** | 无（独立执行） |
+| **DoD** | □ 运行 `gradlew.bat runClient --no-daemon` 将控制台输出全量重定向到 `build/resource_fix_log.txt`<br>□ 从日志中按 ERROR/WARN 级别提取所有资源相关条目<br>□ 配方解析错误：记录失败配方路径、错误消息原文<br>□ Tag 错误：记录缺失流体 ID、错误消息<br>□ Missing item model：记录缺失模型路径列表<br>□ FluidModel 缺失：记录缺失流体名称列表<br>□ 音效错误：记录缺失文件路径<br>□ **翻译/语言错误**：提取 Missing translation 警告（形如 `Missing translation: item.kenergyengineering.xxx`），记录所有未注册的 translation key<br>□ **纹理缺失/路径错误**：提取形如 `Texture ... not found`、`Missing texture`、`Couldn't load texture` 的警告，记录缺失纹理路径与引用源文件<br>□ **JSON 解析错误**：提取形如 `Invalid JSON`、`JSON parse error`、`Unrecognized field` 的错误，记录失败文件路径与错误原文<br>□ 输出按 TASK-B~H 分组的多维结构化清单，每项含 `问题类型 / 文件路径 / 错误原文 / 建议修复动作` |
+| **验收要点** | - [ ] 日志文件已保存到 build/ 目录<br>- [ ] 分类清单已写入证据文件<br>- [ ] 每类问题的错误计数明确<br>- [ ] 未知/额外问题也被标注 |
+| **回退** | 日志文件过大 → 提取 ERROR 级和 WARN 级资源相关行的 grep 结果；启动失败 → 上报指挥官确认环境问题 |
+
+**预计工作量**: 0.5h
+
+---
+
+### TASK-B: 修复 NeoForge 26.1.2 配方 ingredient 格式
+
+| 属性 | 内容 |
+|------|------|
+| **task_id** | TASK-B |
+| **phase** | Phase 2 — 配方修复 |
+| **目标** | 仅修复 TASK-A 确认失败的配方文件，避免全局盲改 |
+| **输入** | TASK-A 输出的失败配方清单 |
+| **输出** | 修复后的配方 JSON 文件 |
+| **依赖** | TASK-A（需要明确的失败文件列表） |
+| **DoD** | □ 【证据采集】执行配方格式外部检索，由诺雅收集 NeoForge 26.1.2 (Minecraft 1.21.1) 官方配方 ingredient 格式规范，落盘到 `plans/.evidence/neo_forge_26_1_2_recipe_format.md`<br> - 检索目标：NeoForge 26.1.2 或 Minecraft 1.21.1 配方 JSON 中 ingredient 字段的合法格式（含 `neoforge:ingredient_type` 的使用场景、`data_components` 要求、result 字段结构）<br> - 输出：摘要文档，含示例代码片段、关键字段说明、与旧格式的差异对比<br> - 验收：证据文件包含至少 2 个官方示例（含 ingredient_type 的 recipe 完整 JSON），且明确标注 result 字段的结构要求<br>□ 根据证据文件确认的格式规范逐文件修复失败配方<br>□ 修复策略（按优先级）：<br> 1. 确认失败的 recipe type 是 `minecraft:crafting_shaped/shapeless/smelting/blasting` 等标准类型<br> 2. 若 ingredient 使用 `"item"` / `"tag"` 但缺少 `neoforge:ingredient_type`，按证据文件规范的格式补全<br> 3. `result` 字段格式以证据采集确认的规范为准，不预设固定格式<br>□ 修复后每文件执行 JSON 格式校验（非空、语法正确）<br>□ 所有修复在 runData 或 runClient 中不产生新 ERROR |
+| **验收要点** | - [ ] 修复文件数量 = TASK-A 报告的失败数，不多不少<br>- [ ] 修复前后用 git diff 确认改动范围可控<br>- [ ] runClient 不再报告配方解析 ERROR<br>- [ ] runData 配方生成无异常 |
+| **回退** | 若某配方格式难以确认正确的 NeoForge 26.1.2 格式，标注 `# TODO: 需确认格式` 并暂时从配方目录移除/重命名，确保不阻塞启动。后续统一处理 |
+
+**预计工作量**: 2~3h（含格式验证）
+
+**参考**: `plans/.evidence/neo_forge_26_1_2_recipe_format.md` — 由 TASK-B 证据采集步骤先行产出，诺雅检索后落盘
+
+---
+
+### TASK-C: 修复 water tag 中缺失/错误流体 ID
+
+| 属性 | 内容 |
+|------|------|
+| **task_id** | TASK-C |
+| **phase** | Phase 2 — Tag 修复 |
+| **目标** | 修正 `data/minecraft/tags/fluid/water.json` 中流体引用 ID，使其与源码注册名一致 |
+| **输入** | 当前 water.json 内容 + TENFluids.java 注册名 |
+| **输出** | 修正后的 `water.json` |
+| **依赖** | 无（可并行于 TASK-A 之后独立执行） |
+| **DoD** | □ 对照 `TENFluids.java` 中 `FLUIDS.register(...)` 确认所有流体注册名<br>□ 当前水 tag 内容：<br> - `kenergyengineering:liquid_xp` → ✓ 正确<br> - `kenergyengineering:flowing_liquid_xp` → ✗ 注册名为 `kenergyengineering:liquid_xp_flowing`<br> - `kenergyengineering:liquid_bizarrerie` → ✓ 正确<br> - `kenergyengineering:flowing_liquid_bizarrerie` → ✗ 注册名为 `kenergyengineering:liquid_bizarrerie_flowing`<br>□ 修正为正确的 flowing 注册名：<br> - `kenergyengineering:liquid_xp_flowing`<br> - `kenergyengineering:liquid_bizarrerie_flowing`<br>□ 确认是否还需要添加其他流体（liquid_honey / liquid_honey_flowing / liquid_royal_jelly / etc.）的水 tag 条目（由 TASK-A 日志和 TENFluids.java 共同决定）<br>□ JSON 语法校验通过 |
+| **验收要点** | - [ ] runClient 日志中不出现 `fluid kenergyengineering:flowing_liquid_* not found` 类错误<br>- [ ] git diff 仅修改预期的 tag 条目 |
+| **回退** | 若 fluid ID 仍无法解析，添加 `"required": false` 标记避免 ERROR，标记为已知问题 |
+
+**预计工作量**: 0.5h
+
+---
+
+### TASK-D: 补齐 missing item model 或确认资源生成路径
+
+| 属性 | 内容 |
+|------|------|
+| **task_id** | TASK-D |
+| **phase** | Phase 3 — 模型补齐 |
+| **目标** | 通过比对注册物品与已有模型文件，补齐缺失的 item model JSON，使 missing model 警告归零或降至可接受范围 |
+| **输入** | TASK-A 的 missing model 清单 + `TENItems.java` / `TENBlocks.java` 注册表 + 已有 `models/item/` 文件 |
+| **输出** | 补齐的 item model JSON 文件 |
+| **依赖** | TASK-A（需要准确的 missing 列表） |
+| **DoD** | □ 从 Java 注册类提取所有注册物品和方块物品的 registry name 列表<br>□ 扫描 `models/item/` 目录已有文件做对比<br>□ 对 missing 的 item 模型，创建标准 parent 模型（`parent: "item/generated"` 或 `parent: "block/..."` for block items），带对应 texture 引用<br>□ 若某物品无对应 PNG texture，创建指向已有相近材质的占位模型（或生成空白占位），日志中声明<br>□ 对有对应 block 的 item，使用 `parent: "kenergyengineering:block/<block_name>"`<br>□ 所有 JSON 语法校验通过<br>□ **【Texture 引用遍历】** 对所有 `assets/kenergyengineering/models/item/**/*.json` 和 `models/block/**/*.json` 的 `textures` 字段做引用遍历：<br> - 解析每个 model JSON 中 `textures` 对象的每个值（如 `"kenergyengineering:item/xxx"`）<br> - 确认对应的 `assets/kenergyengineering/textures/**/*.png` 文件存在<br> - 若纹理路径指向 `minecraft:` 命名空间，确认 Minecraft 原版资源存在<br> - 缺失纹理记录到证据文件，创建占位 PNG 或修正路径<br>□ runClient 不再报告该物品的 missing model WARN |
+| **验收要点** | - [ ] 补齐模型数量 = TASK-A 报告的 missing 数 - 可接受忽略数<br>- [ ] 每个模型 JSON 至少含 `parent` 字段<br>- [ ] block item 的模型正确指向 block 模型<br>- [ ] 非阻塞项目启动和世界加载 |
+| **回退** | 对于 datagen 自动生成的模型（`src/generated/resources/`），若已通过 runData 覆盖，不手动维护。手动只修 `src/main/resources/` 下的模型 |
+
+**预计工作量**: 2~3h
+
+---
+
+### TASK-E: 补齐 5 个流体 FluidModel
+
+| 属性 | 内容 |
+|------|------|
+| **task_id** | TASK-E |
+| **phase** | Phase 3 — 流体模型 |
+| **目标** | 为缺少 FluidModel 的流体补齐模型资源，或建立可接受占位 |
+| **输入** | TASK-A 的流体模型缺失清单 + `TENFluids.java` 注册表 |
+| **输出** | 补齐的流体 blockstate / 模型 / texture 引用文件 |
+| **依赖** | TASK-A（需要准确的缺失列表） |
+| **DoD** | □ 确认当前已有流体模型资源位置：<br> - `blockstates/liquid_*.json` — 5 个流体各有<br> - `models/block/liquid_*.json` — 5 个<br> - `models/block/fluid/liquid_*.json` — 5 个<br> - `textures/block/liquid_*.png` + 流动版<br> - `textures/fluid/liquid_*.png` + 流动版<br>□ 确认 FluidModel 缺失的具体含义：是缺少 `models/item/liquid_*_bucket.json`，还是缺少 `blockstates/fluid/` 注册，或是需要 `.mcmeta` 动画配置<br>□ 根据 TASK-A 日志内容执行修复方案：<br> - 方案 1：补齐缺失的 blockstate variant 或 model JSON<br> - 方案 2：创建最小占位模型（如 "particle" only）<br> - 方案 3：若为 bucket 模型缺失，确保 `models/item/liquid_*_bucket.json` 存在<br>□ 所有 JSON 语法校验通过<br>□ **【流体引用审计】** 对流体相关的资源文件做完整性遍历：<br> - `blockstates/liquid_*.json`：确认所有 variant/model 引用指向现有文件<br> - `models/block/liquid_*.json` 和 `models/block/fluid/liquid_*.json`：解析 `textures` 字段，确认每个引用的纹理在 `textures/block/` 或 `textures/fluid/` 下有对应 `*.png`<br> - 确认 `textures/block/liquid_*.png` 及其流动变体（`*_flow.png` / `*_flowing.png`）存在<br> - 确认 `textures/fluid/liquid_*.png` 及其流动变体存在<br> - 若需 `.mcmeta` 动画配置，确认对应 `*.png.mcmeta` 存在或确认为静态纹理<br>□ runClient 不报告该流体的模型缺失 ERROR |
+| **验收要点** | - [ ] 流体在游戏中显示正确的粒子/纹理（或有可接受占位）<br>- [ ] 流体方块在世界中不显示紫黑块 |
+| **回退** | 若无法快速获取合适纹理，使用纯色占位并标注 |
+
+**预计工作量**: 1~2h
+
+---
+
+### TASK-F: 处理 `starlight.ogg` 缺失
+
+| 属性 | 内容 |
+|------|------|
+| **task_id** | TASK-F |
+| **phase** | Phase 3 — 音效修复 |
+| **目标** | 解决 `sounds.json` 中 `kenergyengineering:starlight` 引用但 `sounds/starlight.ogg` 文件缺失的问题 |
+| **输入** | `sounds.json` 内容 + TASK-A 音效错误详情 |
+| **输出** | 按决策门槛执行以下方案之一： |
+| **依赖** | TASK-A |
+| **DoD** | 决策门槛如下（按优先级评估）：<br>□ **方案 1（补资源）**: 若原项目存在 starlight.ogg（在旧 1.20.1 分支中），从旧分支检出并放入 `assets/kenergyengineering/sounds/starlight.ogg` → 优先执行，最完整<br>□ **方案 2（改 sounds.json 路径）**: 若 .ogg 文件名存在但路径不匹配，修正 `sounds.json` 中的 `name` 字段<br>□ **方案 3（移除无效 sound event）**: 若无法获取 .ogg 文件，从 `sounds.json` 中移除 `starlight` 条目，并在 Java sound 注册侧确认不引用该 sound event<br>□ 选择依据：优先方案 1，方案 1 不可行则方案 2，方案 2 不可行则方案 3<br>□ 执行后 runClient 不报该音效 ERROR/WARN |
+| **验收要点** | - [ ] 日志中无 `Missing sound file: kenergyengineering:starlight` 类错误<br>- [ ] 如保留该音效，在游戏中可播放 |
+| **回退** | 使用静默空 .ogg 文件作为占位（约 0.1s 静音） |
+
+**预计工作量**: 0.5~1h
+
+---
+
+### TASK-H: 语言文件注册与 tooltip 诊断修复
+
+| 属性 | 内容 |
+|------|------|
+| **task_id** | TASK-H |
+| **phase** | Phase 1.5 — 语言诊断（可与 Phase 2 并行） |
+| **scope** | 资产语言文件 (`assets/kenergyengineering/lang/`) + Java 注册侧 (Items/Blocks/Fluids) 的 `descriptionId` / `Item.Properties` 注册 |
+| **目标** | 诊断并修复所有注册物品/方块/流体在游戏中不显示名称和 tooltip 的问题，使悬停时正确显示本地化名称和描述文本 |
+| **输入** | TASK-A 日志中的 Missing translation 警告 + `TENItems.java` / `TENBlocks.java` / `TENFluids.java` 注册表 + `en_us.json` / `zh_cn.json` |
+| **输出** | 修复后的语言 JSON 文件；若涉及 API/代码层问题，输出诊断报告转代码修复 |
+| **依赖** | TASK-A（需要 Missing translation 清单）；可与 TASK-B/C 并行执行 |
+| **DoD** | □ **JSON 语法验证**：对所有 `assets/kenergyengineering/lang/*.json` 执行 JSON 格式校验，确保语法正确、无 BOM、无尾逗号<br>□ **注册名提取**：从 `TENItems.java`、`TENBlocks.java`、`TENFluids.java` 的 `register(...)` 调用中提取所有 registry name，生成完整注册名清单<br>□ **语言文件覆盖比对**：<br> - 对 `en_us.json` 逐一检查 `item.kenergyengineering.<registry_name>` / `block.kenergyengineering.<registry_name>` / `fluid.kenergyengineering.<registry_name>` / `entity.kenergyengineering.<registry_name>` 是否存在<br> - 对 `zh_cn.json` 执行同样比对<br> - 记录缺失的 translation key 到证据文件 `plans/.evidence/evidence_26_1_2_resource_fix_lang_gap.md`<br>□ **descriptionId/注册确认**：<br> - 检查 Java 注册侧是否显式设置 `Item.Properties` 或调用了会影响 `descriptionId` 的 API<br> - 若注册侧使用了自定义 `descriptionId` 或 `RegistryObject` 的 `getId()` 与语言文件 key 不匹配，记录为代码层问题（转交修复，不修改源码）<br>□ **修复语言文件**：<br> - 补齐 `en_us.json` 中缺失的 key，值为对应注册名的英文标题（如 `"item.kenergyengineering.quantum_capacitor": "Quantum Capacitor"`）<br> - 补齐 `zh_cn.json` 中缺失的 key，值为对应注册名的中文标题（如 `"item.kenergyengineering.quantum_capacitor": "量子电容器"`）<br> - 对已有 tooltip 文本，确认格式与 1.21.1 组件系统兼容（`description` 组件而非旧版 `tooltip`）<br>□ **runClient 手动验证**：<br> - 启动 runClient，进入创造模式物品栏<br> - 对所有注册物品悬停鼠标，确认显示正确名称和 tooltip<br> - 截图/日志记录验证结果<br>□ **日志验证**：<br> - runClient 日志中无 `Missing translation: item.kenergyengineering.xxx` 类警告<br> - 若仍有 Missing translation，迭代补齐直至归零 |
+| **验收要点** | - [ ] `en_us.json` 覆盖所有 `item.*` / `block.*` / `fluid.*` / `entity.*` 注册名<br>- [ ] `zh_cn.json` 同样全覆盖<br>- [ ] runClient 日志无 Missing translation 警告<br>- [ ] 游戏中所有注册物品悬停显示正确名称<br>- [ ] 若发现 API 层问题（非纯资源问题），已输出诊断报告转交代码修复 |
+| **回退** | 对于自动生成本（datagen 输出 `src/generated/resources/` 下的语言文件），确认其生成逻辑正确后优先依赖 runData 重新生成，不手动编辑。手动只修 `src/main/resources/assets/kenergyengineering/lang/` 下的文件 |
+| **预计工作量** | 2~3h（含语言诊断、比对、补齐、验证） |
+
+---
+
+### TASK-G: 全流程验证
+
+| 属性 | 内容 |
+|------|------|
+| **task_id** | TASK-G |
+| **phase** | Phase 4 — 收口验证 |
+| **目标** | 确认所有修复后的资源不出 ERROR，WARN 降到可接受范围 |
+| **输入** | TASK-A~H 的所有输出 |
+| **输出** | 验证结果报告（直接在计划中记录） |
+| **依赖** | TASK-B ~ TASK-H 全部完成 |
+| **DoD** | □ 执行 `gradlew.bat processResources --no-daemon` 通过<br>□ 执行 `gradlew.bat runData --no-daemon` 通过（若 runData 成功运行）<br>□ 执行 `gradlew.bat runClient --no-daemon`：<br> - 0 个配方解析 ERROR<br> - 0 个 tag 引用 ERROR<br> - 0 个流体模型缺失 ERROR<br> - 0 个音效缺失 ERROR<br> - 0 个 Missing translation 警告<br> - 0 个纹理缺失/纹理路径错误（`Texture not found` / `Missing texture` / `Couldn't load texture`）<br> - missing item model WARN ≤ 3（+ 已记录有因的忽略项）<br>□ `build/resource_fix_log.txt` 存档最终验证日志<br>□ 所有修复文件的 `git diff --stat` 在合理范围内 |
+| **验收要点** | - [ ] 三次独立 runClient 验证通过<br>- [ ] 无新增错误类型 |
+| **回退** | 若出现回归：git diff 逐个还原问题 TASK 的改动，单独验证 |
+
+**预计工作量**: 1h（含运行时间）
+
+---
+
+## 5. 依赖链与执行顺序
+
+```text
+TASK-A (证据采集, 无依赖)
+  ├── TASK-B (配方修复, 依赖 A)  ← 可半并行：拿到清单即开工
+  ├── TASK-C (tag 修复, 依赖 A)  ← 可半并行：拿到清单即开工
+  ├── TASK-D (item model, 依赖 A)
+  ├── TASK-E (fluid model, 依赖 A)
+  ├── TASK-F (音效, 依赖 A)
+  ├── TASK-H (语言/tooltip, 依赖 A)  ← 可并行于 Phase 2/3
+  │     └── 若发现 API 层注册问题 → 上报指挥官转代码修复
+        ↓
+TASK-G (全流程验证, 依赖 B~H 全部完成)
+```
+
+**执行顺序建议**:
+1. Phase 1: TASK-A（证据采集，必须最先）
+2. Phase 1.5: TASK-H（语言诊断，可最早启动，与 Phase 2/3 并行）
+3. Phase 2: TASK-B + TASK-C（可并行，独立修改不影响）
+4. Phase 3: TASK-D + TASK-E + TASK-F（可并行）
+5. Phase 4: TASK-G（必须最后）
+
+---
+
+## 6. 依赖分析
+
+| 依赖类型 | 说明 |
+|---------|------|
+| **串行依赖** | TASK-B~H 依赖 TASK-A 的输出（失败文件/缺失 translation 清单）；TASK-G 依赖所有修复完成 |
+| **并行可行** | TASK-B + TASK-C（Phase 2 内可并行）；TASK-H（Phase 1.5）+ TASK-B/C/D/E/F 均可并行；TASK-D + TASK-E + TASK-F（Phase 3 内可并行） |
+| **阻塞风险** | TASK-A 必须最先完成，否则后续任务无准确的修复清单 → 可能错改/漏改 |
+| **资源竞争** | 低 — TASK-H 修改 `lang/` 文件，TASK-D/E 修改 `models/` 和 `textures/`，TASK-B/C/F 修改 `data/` 和 `sounds/`，互不冲突 |
+
+---
+
+## 7. 工作量评估与排序
+
+| TASK | 预估工时 | 并行组 | 优先级 |
+|------|---------|--------|--------|
+| TASK-A | 0.5h | Phase 1 | 🔴 最高（阻塞后续） |
+| TASK-B | 2~3h | Phase 2 | 🟡 高 |
+| TASK-C | 0.5h | Phase 2 | 🟡 高 |
+| TASK-H | 2~3h | Phase 1.5（与 Phase 2/3 并行） | 🟡 高 |
+| TASK-D | 2~3h | Phase 3 | 🟢 中 |
+| TASK-E | 1~2h | Phase 3 | 🟢 中 |
+| TASK-F | 0.5~1h | Phase 3 | 🟢 中 |
+| TASK-G | 1h | Phase 4 | 🟡 高（收口） |
+| **合计** | **9.5~14h** | — | — |
+
+---
+
+## 8. 风险与降级方案
+
+| 风险 | 概率 | 影响 | 降级方案 |
+|------|------|------|---------|
+| TASK-A 日志中存在超出已知 5 类的新错误 | 中 | 范围蔓延 | 在证据文件中记录并分类；新增问题若影响启动/游戏核心功能，创建新 TASK 加入计划；若为 cosmetic 级别，标注已知并延后处理 |
+| TASK-B 配方格式在 NeoForge 26.1.2 中需更复杂的 data component 格式 | 低-中 | 修复成本上升 | 查阅 NeoForge MDG 文档 / NeoForge 26.1.2 release notes；若格式变更过大，将失败配方标记为 `broken_wontfix`，在 DoD 中说明 |
+| 旧分支无 starlight.ogg | 中 | 方案 1 不可用 | 执行方案 3（移除 sound event），需同时确认 Java 侧无硬引用 |
+| Missing item model 清单中有大量 datagen 生成的模型 | 高（常见） | 手动补齐无效 | 仅确认 `src/generated/resources/` 有覆盖；若 datagen 未运行，优先修复 datagen 代码使其生成正确模型（但本计划不修改源码 → 列为超出范围，上报指挥官） |
+| runData 本身不兼容 26.1.2 无法运行 | 中 | Block TASK-G | runData 不可行时，仅以 runClient + processResources 验证 |
+| 修复后引入新的配方解析错误 | 低 | 回归 | 每个修复文件后立即 gradlew build 验证；TASK-G 做全量回归 |
+| TASK-H 诊断发现语言问题根源在 Java 注册侧 API（如 `descriptionId` 未正确赋值、`Item.Properties` 缺失 `.description()`），无法通过纯资源修复 | 中 | 需要修改源码，超出本计划范围 | 在证据文件中输出完整诊断报告，明确标注代码层修复建议；上报指挥官决策是否另立代码修复计划或纳入当前计划范围 |
+
+---
+
+## 9. 非目标（重申）
+
+以下内容**明确不包含**在本计划中：
+
+- ❌ JEI/EMI/Jade 功能恢复或适配 — 需额外配置和兼容性测试
+- ❌ 完整 GUI 美化 — 已有 GUI 入口可打开即为初步目标已达
+- ❌ Item/Fluid capability → Resource/Transaction 功能迁移 — 属于深层迁移
+- ❌ Java 源码重构 — 不做任何 `.java` 文件修改
+- ❌ 新功能开发
+- ❌ 测试覆盖率提升
+
+## 10. 验证命令参考
+
+```powershell
+# processResources 验证
+.\gradlew.bat processResources --no-daemon
+
+# runData 验证（若可运行）
+.\gradlew.bat runData --no-daemon
+
+# runClient 验证（全量日志）
+.\gradlew.bat runClient --no-daemon > build\resource_fix_log.txt 2>&1
+
+# 查看注册物品（用于对照 model 缺失）
+# 从编译输出的 class 或日志中提取注册表
+
+# JSON 语法验证（使用 python 或 node）
+# python -c "import json; json.load(open('file.json')); print('OK')"
+```
+
+## 11. 完成标准（汇总 DoD）
+
+- [ ] TASK-A: runClient 日志资源错误分类清单已落盘到 evidence 文件
+- [ ] TASK-B: 失败配方已修复，runClient 无配方解析 ERROR
+- [ ] TASK-C: water tag 流体 ID 已修正，注册名与 `TENFluids.java` 一致
+- [ ] TASK-D: missing item model 已补齐或确认覆盖，WARN ≤ 3
+- [ ] TASK-E: 流体 FluidModel 已补齐或占位，无紫黑流体块
+- [ ] TASK-F: `starlight.ogg` 缺失已处理，无音效 ERROR
+- [ ] TASK-H: 语言文件全覆盖，runClient 无 Missing translation 警告，物品悬停正确显示名称和 tooltip
+- [ ] TASK-G: processResources + runClient 全流程验证通过
+- [ ] 所有修改文件通过 JSON 语法校验
+- [ ] git diff 确认改动范围可控，无无关文件修改

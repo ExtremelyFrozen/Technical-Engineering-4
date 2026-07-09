@@ -1,4 +1,4 @@
-﻿{
+{
   "variants": {
     "active=false,facing=down": {
       "model": "kenergyengineering:block/channel_energy",

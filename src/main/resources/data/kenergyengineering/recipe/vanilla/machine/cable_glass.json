@@ -1,16 +1,14 @@
 {
-	"type": "minecraft:crafting_shaped",
-	"pattern": ["ABA"],
-	"key": {
-		"A": {
-			"tag": "c:glass_blocks/colorless"
-		},
-		"B": {
-			"item": "minecraft:redstone_block"
-		}
-	},
-	"result": {
-		"id": "kenergyengineering:cable",
-		"count": 4
-	}
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "ABA"
+  ],
+  "key": {
+    "A": "#c:glass_blocks/colorless",
+    "B": "minecraft:redstone_block"
+  },
+  "result": {
+    "id": "kenergyengineering:cable",
+    "count": 4
+  }
 }

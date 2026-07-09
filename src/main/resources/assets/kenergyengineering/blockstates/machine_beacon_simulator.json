@@ -1,4 +1,4 @@
-﻿{
+{
   "variants": {
     "active=false,facing=east": {
       "model": "kenergyengineering:block/machine_beacon_simulator",

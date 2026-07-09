@@ -1,9 +1,7 @@
 {
   "type": "minecraft:crafting_shaped",
   "key": {
-    "A": {
-      "item": "kenergyengineering:tin_ingot"
-    }
+    "A": "kenergyengineering:tin_ingot"
   },
   "pattern": [
     "A A",

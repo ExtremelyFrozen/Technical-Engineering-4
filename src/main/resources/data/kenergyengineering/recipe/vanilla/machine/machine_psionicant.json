@@ -1,24 +1,18 @@
 {
-	"type": "minecraft:crafting_shaped",
-	"pattern": ["BDB", "ACA", "BVB"],
-	"key": {
-		"A": {
-			"item": "minecraft:glowstone"
-		},
-		"B": {
-			"tag": "c:plates/gold"
-		},
-		"C": {
-			"item": "kenergyengineering:redstone_storer"
-		},
-		"V": {
-			"item": "kenergyengineering:redstone_ai"
-		},
-		"D": {
-			"item": "kenergyengineering:redstone_converter"
-		}
-	},
-	"result": {
-		"id": "kenergyengineering:machine_psionicant"
-	}
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "BDB",
+    "ACA",
+    "BVB"
+  ],
+  "key": {
+    "A": "minecraft:glowstone",
+    "B": "#c:plates/gold",
+    "C": "kenergyengineering:redstone_storer",
+    "V": "kenergyengineering:redstone_ai",
+    "D": "kenergyengineering:redstone_converter"
+  },
+  "result": {
+    "id": "kenergyengineering:machine_psionicant"
+  }
 }

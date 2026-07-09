@@ -2,9 +2,7 @@
   "type": "minecraft:blasting",
   "cookingtime": 100,
   "experience": 0.0,
-  "ingredient": {
-    "item": "kenergyengineering:nickel_dust"
-  },
+  "ingredient": "kenergyengineering:nickel_dust",
   "result": {
     "id": "kenergyengineering:nickel_ingot"
   }

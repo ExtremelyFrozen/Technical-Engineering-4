@@ -1,9 +1,7 @@
 {
   "type": "minecraft:crafting_shaped",
   "key": {
-    "C": {
-      "item": "kenergyengineering:netherite_nugget"
-    }
+    "C": "kenergyengineering:netherite_nugget"
   },
   "pattern": [
     "CCC",

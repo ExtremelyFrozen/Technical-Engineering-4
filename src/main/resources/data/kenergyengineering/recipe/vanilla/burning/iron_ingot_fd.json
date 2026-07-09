@@ -1,8 +1,6 @@
 {
 	"type": "minecraft:smelting",
-	"ingredient": {
-		"item": "kenergyengineering:iron_dust"
-	},
+	"ingredient": "kenergyengineering:iron_dust",
 	"result": {
 		"id": "minecraft:iron_ingot"
 	},

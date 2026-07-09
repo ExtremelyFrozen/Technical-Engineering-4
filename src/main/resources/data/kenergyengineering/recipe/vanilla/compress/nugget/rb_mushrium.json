@@ -1,9 +1,7 @@
 {
   "type": "minecraft:crafting_shapeless",
   "ingredients": [
-    {
-      "item": "kenergyengineering:mushrium_ingot"
-    }
+    "kenergyengineering:mushrium_ingot"
   ],
   "result": {
     "count": 9,

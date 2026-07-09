@@ -1,12 +1,14 @@
 {
-	"type": "minecraft:crafting_shaped",
-	"pattern": [" C ", "C C", " C "],
-	"key": {
-		"C": {
-			"tag": "c:ingots/tin"
-		}
-	},
-	"result": {
-		"id": "kenergyengineering:tin_gear"
-	}
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    " C ",
+    "C C",
+    " C "
+  ],
+  "key": {
+    "C": "#c:ingots/tin"
+  },
+  "result": {
+    "id": "kenergyengineering:tin_gear"
+  }
 }

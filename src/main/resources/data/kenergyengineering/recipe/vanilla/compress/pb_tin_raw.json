@@ -1,9 +1,7 @@
 {
   "type": "minecraft:crafting_shaped",
   "key": {
-    "C": {
-      "item": "kenergyengineering:raw_tin"
-    }
+    "C": "kenergyengineering:raw_tin"
   },
   "pattern": [
     "CCC",

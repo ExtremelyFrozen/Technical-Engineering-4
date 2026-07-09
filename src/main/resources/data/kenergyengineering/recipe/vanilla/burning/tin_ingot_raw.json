@@ -2,9 +2,7 @@
   "type": "minecraft:smelting",
   "cookingtime": 200,
   "experience": 0.35,
-  "ingredient": {
-    "item": "kenergyengineering:raw_tin"
-  },
+  "ingredient": "kenergyengineering:raw_tin",
   "result": {
     "id": "kenergyengineering:tin_ingot"
   }

@@ -1,18 +1,16 @@
 {
-	"type": "minecraft:crafting_shaped",
-	"pattern": ["CAC", "AAA", " B "],
-	"key": {
-		"A": {
-			"item": "minecraft:redstone"
-		},
-		"B": {
-			"tag": "c:ingots/gold"
-		},
-		"C": {
-			"tag": "c:ingots/copper"
-		}
-	},
-	"result": {
-		"id": "kenergyengineering:redstone_ai"
-	}
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "CAC",
+    "AAA",
+    " B "
+  ],
+  "key": {
+    "A": "minecraft:redstone",
+    "B": "#c:ingots/gold",
+    "C": "#c:ingots/copper"
+  },
+  "result": {
+    "id": "kenergyengineering:redstone_ai"
+  }
 }
