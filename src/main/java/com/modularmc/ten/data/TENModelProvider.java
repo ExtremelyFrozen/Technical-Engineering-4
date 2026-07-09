@@ -245,6 +245,41 @@ public class TENModelProvider implements DataProvider {
                     modId + ":block/" + bucketName);
         }
 
+        // ── Item Definitions (26.1.2: assets/<namespace>/items/<id>.json) ──
+        // NeoForge 26.1.2 / Minecraft 1.21.5 changed item model lookup:
+        // instead of resolving models/item/<id>.json directly, the runtime now
+        // requires an item definition at items/<id>.json with the format:
+        //   {"model": {"type": "minecraft:model", "model": "<model_location>"}}
+        // See: https://minecraft.wiki/w/Model#Item_models
+        var itemDefPath = output.getOutputFolder().resolve("assets/" + modId + "/items");
+
+        // Block items → reference block model directly
+        for (var name : blockNames) {
+            itemDefinition(cache, itemDefPath, futures, name, modId + ":block/" + name);
+        }
+
+        // Non-block items → reference flat item model path
+        // Item model files are always at models/item/<name>.json,
+        // referenced as kenergyengineering:item/<name>.
+        // NOTE: texture paths inside those model JSONs may differ (e.g.
+        // "kenergyengineering:item/material/dust/iron_dust" for layer0),
+        // but the item definition's model field must point to the model
+        // file location, not the texture path.
+        for (var entry : TENItems.ZH_NAMES.entrySet()) {
+            var name = entry.getKey();
+            if (blockNames.contains(name)) continue;
+            itemDefinition(cache, itemDefPath, futures, name, modId + ":item/" + name);
+        }
+
+        // Bucket item definitions — reference item model, not block model
+        // Bucket models are at models/item/<bucket_name>.json, so the
+        // definition must point to kenergyengineering:item/<bucket_name>.
+        for (var liquidName : LIQUID_NAMES) {
+            var bucketName = liquidName + "_bucket";
+            itemDefinition(cache, itemDefPath, futures, bucketName,
+                    modId + ":item/" + bucketName);
+        }
+
         return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
     }
 
@@ -522,13 +557,48 @@ public class TENModelProvider implements DataProvider {
 
     /** Item model using {@code item/generated} with a single layer. */
     private void generatedItemModel(CachedOutput cache, Path dir, List<CompletableFuture<?>> futures,
-                                     String name, String texturePath) {
+                                      String name, String texturePath) {
         var json = new JsonObject();
         json.addProperty("parent", "minecraft:item/generated");
         var textures = new JsonObject();
         textures.addProperty("layer0", texturePath);
         json.add("textures", textures);
         writeJson(cache, dir.resolve(name + ".json"), json, futures);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // Item definition generation (26.1.2)
+    // ═══════════════════════════════════════════════════════════════════
+
+    /**
+     * Generate an item definition JSON for NeoForge 26.1.2 / Minecraft 1.21.5.
+     * <p>
+     * File: {@code assets/<modId>/items/<name>.json}
+     * <p>
+     * This is the new item model definition format required at runtime.
+     * Without it, items report "Missing item model" even if
+     * {@code models/item/<name>.json} exists, because the model lookup chain
+     * in 26.1.2 first reads the item definition ({@code items/<id>.json}),
+     * then resolves the model location from it.
+     * <p>
+     * Format reference:
+     * <pre>{@code
+     * {
+     *   "model": {
+     *     "type": "minecraft:model",
+     *     "model": "<namespace>:<model_path>"
+     *   }
+     * }
+     * }</pre>
+     */
+    private void itemDefinition(CachedOutput cache, Path dir, List<CompletableFuture<?>> futures,
+                                 String name, String modelLocation) {
+        var outer = new JsonObject();
+        var inner = new JsonObject();
+        inner.addProperty("type", "minecraft:model");
+        inner.addProperty("model", modelLocation);
+        outer.add("model", inner);
+        writeJson(cache, dir.resolve(name + ".json"), outer, futures);
     }
 
     // ═══════════════════════════════════════════════════════════════════
