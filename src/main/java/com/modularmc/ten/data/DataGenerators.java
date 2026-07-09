@@ -139,5 +139,8 @@ public class DataGenerators {
         generator.addProvider(true, new TENRecipeGen(output, event.getLookupProvider()));
         // Vanilla pack/split recipes — separate from mod materials
         generator.addProvider(true, new TENVanillaPackGen(output));
+
+        // Model/blockstate provider — generates all blockstates, block models, and item models
+        generator.addProvider(true, new TENModelProvider(output, TEN.MOD_ID));
     }
 }
