@@ -1,0 +1,12 @@
+{
+  "replace": false,
+  "values": [
+    "#c:ores",
+    "#c:stones",
+    "#c:sands",
+    "#c:gravels",
+    "#c:netherracks",
+    "#c:obsidians",
+    "#c:cobblestones"
+  ]
+}

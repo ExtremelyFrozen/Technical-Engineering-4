@@ -1,0 +1,7 @@
+{
+  "replace": false,
+  "values": [
+    "#c:ingots/powered_tin",
+    "#c:dusts/powered_tin"
+  ]
+}

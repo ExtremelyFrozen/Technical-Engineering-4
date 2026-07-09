@@ -1,0 +1,9 @@
+{
+  "replace": false,
+  "values": [
+    "kenergyengineering:liquid_xp",
+    "kenergyengineering:liquid_xp_flowing",
+    "kenergyengineering:liquid_bizarrerie",
+    "kenergyengineering:liquid_bizarrerie_flowing"
+  ]
+}

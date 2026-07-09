@@ -1,0 +1,33 @@
+{
+  "replace": true,
+  "values": [
+    "kenergyengineering:machine_smelter",
+    "kenergyengineering:machine_pulverizer",
+    "kenergyengineering:machine_compressor",
+    "kenergyengineering:machine_refiner",
+    "kenergyengineering:machine_induction_furnace",
+    "kenergyengineering:machine_psionicant",
+    "kenergyengineering:machine_beacon_simulator",
+    "kenergyengineering:machine_mob_ripper",
+    "kenergyengineering:machine_quarry",
+    "kenergyengineering:machine_enchantment_flusher",
+    "kenergyengineering:machine_matter_condenser",
+    "kenergyengineering:machine_farm_manager",
+    "kenergyengineering:engine_extraction",
+    "kenergyengineering:engine_metal",
+    "kenergyengineering:engine_biomass",
+    "kenergyengineering:engine_solar",
+    "kenergyengineering:cable",
+    "kenergyengineering:cable_quartz",
+    "kenergyengineering:cable_azure",
+    "kenergyengineering:cable_star",
+    "kenergyengineering:pipe",
+    "kenergyengineering:pipe_white",
+    "kenergyengineering:pipe_black",
+    "kenergyengineering:energy_cell",
+    "kenergyengineering:creative_energy_cell",
+    "kenergyengineering:channel_energy",
+    "kenergyengineering:channel_item",
+    "kenergyengineering:channel_fluid"
+  ]
+}

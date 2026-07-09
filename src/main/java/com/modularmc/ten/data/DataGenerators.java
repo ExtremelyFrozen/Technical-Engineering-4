@@ -142,5 +142,11 @@ public class DataGenerators {
 
         // Model/blockstate provider — generates all blockstates, block models, and item models
         generator.addProvider(true, new TENModelProvider(output, TEN.MOD_ID));
+
+        // Block loot tables — generates self-drop loot for all 38 blocks
+        generator.addProvider(true, new TENLootTableProvider(output));
+
+        // Block, item, and fluid tags (mod + minecraft namespace)
+        generator.addProvider(true, new TENTagProvider(output));
     }
 }
