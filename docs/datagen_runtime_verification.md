@@ -461,3 +461,87 @@ ITEMS.register(name, () -> new TENBaseBlockItem(holder.get(), new Item.Propertie
 | `reconfigure()` fails on non-text streams (pipes, redirected output) | ✅ `ValueError` caught — no crash |
 | Future `text=True` subprocess added without explicit encoding | ⚠️ Low — code review / linting should catch |
 | `run_client.bat` gitignored — version-controlled copy not maintained | ⚠️ Low — file is local dev convenience, not part of CI/CD |
+
+---
+
+## 10. TASK-014: Brand Localization & Psionicant Tooltip
+
+**Date:** 2026-07-10
+**Branch:** `feat/26.1.2-datagen-migration`
+**Base:** Previous uncommitted changes preserved
+
+### Scope
+
+Brand migration from "科能工程3" / "Technical Engineering 3" to "科能工程:再技术化" (zh) / "Kenergy Engineering: Retechnicalized" (en) across all player-visible and current-product contexts. Also fixes psionicant tooltip from placeholder "Explore..." / "探索..." to finalized bilingual text.
+
+### Formal Brand Definitions
+
+| Language | Formal Name | Notes |
+|---|---|---|
+| Chinese | `科能工程:再技术化` | Half-width colon `:` |
+| English | `Kenergy Engineering: Retechnicalized` | Half-width colon, ASCII |
+| Key short (both) | `Kenergy Engineering` | Preserved for key categories |
+
+### Authoritative Source Changes
+
+| File | Change | Lines |
+|---|---|---|
+| `TEN.java` | `MOD_NAME`: full-width `：` → half-width `:` | 1 |
+| `TENLangHandler.java` | `adv.root`: old brand → formal names; `psionicant.0`: placeholder→finalized text + added `.1` | +4/-2 |
+| `TENCreativeModeTabs.java` | 4× `ZH_NAMES`: `科能工程3` → `科能工程:再技术化` | 4 |
+| `gradle.properties` | `mod_name`: added half-width colon | 1 |
+
+### Resource Lang File Changes
+
+| File | Change | Lines |
+|---|---|---|
+| `en_us.json` | 4× itemGroup brand + adv.root + psionicant.0→.1 | +6/-4 |
+| `zh_cn.json` (main) | Same keys as en_us | +6/-4 |
+| `zh_cn.json` (generated) | Same keys as en_us | +6/-4 |
+| `en_ud.json` | Unchanged — this task delivers en_us/zh_cn only | — |
+
+### README / CONTRIBUTING
+
+| File | Change |
+|---|---|
+| `README.md` | Title: added half-width colon |
+| `CONTRIBUTING.md` | Parenthetical brand: added half-width colon |
+
+### Preservation Rules Applied
+
+| Context | Rule | Example files |
+|---|---|---|
+| Historical/plans | Old brand preserved | `plans/`, `CHANGELOG.md` |
+| Technical identifiers | Unchanged | `modid`, `package`, `artifact` |
+| Old version references | Preserved | CHANGELOG old entries, migration notes |
+| Key category short name | Preserved as "Kenergy Engineering" | `en_us.json` + `zh_cn.json` key binding entry |
+
+### Psionicant Tooltip Final Values
+
+| Key | en | zh |
+|---|---|---|
+| `kenergyengineering.info.psionicant.0` | `Transforms specific pairs of materials into new items.` | `将特定的两种材料转化为新的物品。` |
+| `kenergyengineering.info.psionicant.1` | `Each recipe requires its own material pairing.` | `每种产物都需要对应的材料组合。` |
+
+### Validation Results
+
+| Validator | Status | Evidence |
+|---|---|---|
+| `validate_brand_localization.py` | ✅ GREEN | 6 checks: old brand, Java authority, lang brand, key category, psionicant exact, generated zh_cn consistency — en_us/zh_cn only |
+| `compileJava` | ✅ BUILD SUCCESSFUL | No compilation errors |
+
+### Datagen Verification
+
+`runClientData` initialized successfully showing `Kenergy Engineering: Retechnicalized 4.1.0` (half-width colon confirmed). Full generation timed out (600s limit) — expected per prior TASK verification notes. Generated zh_cn.json manually synced with authoritative sources.
+
+### Delivered Languages
+
+This task delivers **en_us/zh_cn only**. No en_ud generation or validation is included.
+
+### Residual Visual Risk
+
+| Risk | Mitigation |
+|---|---|---|
+| Creative tab titles (zh "科能工程:再技术化 | ...") need visual verification in-game | ⏳ Human to confirm on next `runClient` |
+| Psionicant tooltip bilingual correctness | ✅ Verified by validator. Visual appearance to be confirmed by human on next `runClient` |
+| Key category "Kenergy Engineering" preserved (both languages) | ✅ Confirmed by validator check |

@@ -1,6 +1,6 @@
 # 贡献指南
 
-欢迎参与 **Technical-Engineering 4 (Kenergy Engineering Retechnicalized)** 的开发。  
+欢迎参与 **Technical-Engineering 4 (Kenergy Engineering: Retechnicalized)** 的开发。  
 本文档概述了项目的结构、编码约定和贡献流程，帮助新贡献者快速上手。
 
 ---

@@ -206,7 +206,10 @@ public final class TENLangHandler {
         add("info.quarry.0", "Automatically digs all blocks below it.", "自动挖掘它下方的所有方块。");
         add("info.quarry.1", "It needs a pickaxe!", "需要一把镐子！");
         add("info.quarry.2", "Pay attention to your underground builds.", "注意你的地下工事。");
-        add("info.psionicant.0", "Explore...", "探索...");
+        add("info.psionicant.0", "Transforms specific pairs of materials into new items.",
+                "将特定的两种材料转化为新的物品。");
+        add("info.psionicant.1", "Each recipe requires its own material pairing.",
+                "每种产物都需要对应的材料组合。");
         add("info.induction_furnace.0", "The Induction Furnace can be used to make alloys.", "感应炉可以用来制作合金。");
         add("info.induction_furnace.1", "It produces more ingots than hand crafting.", "比你手工做的产量高！");
         add("info.enchantment_flusher.0", "Want to recycle enchantments from items?", "想回收物品上的附魔吗？");
@@ -223,7 +226,7 @@ public final class TENLangHandler {
 
     // ── Advancements ────────────────────────────────────────────────
     private static void addAdvancements() {
-        add("adv.root", "Technical Engineering 3", "科能工程3");
+        add("adv.root", "Kenergy Engineering: Retechnicalized", "科能工程:再技术化");
         add("adv.root.0", "And the dream begins.", "梦开始的地方");
         add("adv.copper", "Isn't that copper?", "这不是铜吗？");
         add("adv.copper.0", "Get a copper ore from caves.", "从山洞里搞个铜矿石。");

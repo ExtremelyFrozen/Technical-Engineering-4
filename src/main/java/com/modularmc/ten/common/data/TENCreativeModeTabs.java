@@ -149,10 +149,10 @@ public class TENCreativeModeTabs {
 
     // ── Title translations ────────────────────────────────────────
     static {
-        ZH_NAMES.put("itemGroup." + TEN.MOD_ID + ".block", "科能工程3 | 方块");
-        ZH_NAMES.put("itemGroup." + TEN.MOD_ID + ".machine", "科能工程3 | 机器");
-        ZH_NAMES.put("itemGroup." + TEN.MOD_ID + ".item", "科能工程3 | 物品");
-        ZH_NAMES.put("itemGroup." + TEN.MOD_ID + ".tool", "科能工程3 | 工具");
+        ZH_NAMES.put("itemGroup." + TEN.MOD_ID + ".block", "科能工程:再技术化 | 方块");
+        ZH_NAMES.put("itemGroup." + TEN.MOD_ID + ".machine", "科能工程:再技术化 | 机器");
+        ZH_NAMES.put("itemGroup." + TEN.MOD_ID + ".item", "科能工程:再技术化 | 物品");
+        ZH_NAMES.put("itemGroup." + TEN.MOD_ID + ".tool", "科能工程:再技术化 | 工具");
     }
 
     public static void init() {}

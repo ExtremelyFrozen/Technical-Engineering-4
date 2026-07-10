@@ -1,4 +1,4 @@
-# Kenergy Engineering Retechnicalized
+# Kenergy Engineering: Retechnicalized
 
 多版本容器结构。每个版本为独立 Gradle 项目与独立 Git 仓库，位于各自子目录中。
 
