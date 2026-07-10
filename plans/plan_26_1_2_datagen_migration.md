@@ -262,6 +262,45 @@
 
 ---
 
+### TASK-011: 修复 LDLib2 26.1.2.27 导致的容器 tooltip 全局消失
+
+| 属性 | 内容 |
+|------|------|
+| **task_id** | TASK-011 |
+| **phase** | Phase 6 — 依赖回归修复 |
+| **scope** | `gradle/forge.versions.toml`（ldlib2 版本号，从 `26.1.2.27` 更新为 `26.1.2.28`）；上游 LDLib2 Maven 仓库（只读证据，不修改） |
+| **目标** | 将 LDLib2 依赖升级至 26.1.2.28，恢复 vanilla 与项目物品在所有容器 screen 的 tooltip 显示。不做项目侧 Mixin 或 patch jar 修复。 |
+| **输入** | 根因调查结论：[LDLib2 commit 2f496355](https://github.com/Low-Drag-MC/LDLib2/commit/2f496355) 引入 `AbstractContainerScreenMixin` 对 `extractTooltip` 的过宽取消（导致所有 tooltip 消失）；上游修复 [commit 3744f67e](https://github.com/Low-Drag-MC/LDLib2/commit/3744f67e39920ded7a742aa654cdadaf4f07fd8a) 'Fixed vanilla tooltip rendering missing'；修复版本 26.1.2.27.a / 26.1.2.28 |
+| **输出** | `gradle/forge.versions.toml` 中 ldlib2 从 `26.1.2.27` 更新为 `26.1.2.28`<br>证据文件 `plans/.evidence/evidence_26_1_2_datagen_migration_003.md` |
+| **依赖** | 无（独立于 datagen Provider 任务链） |
+| **DoD** | □ `gradle/forge.versions.toml` 中 ldlib2 已从 `26.1.2.27` 更新为 `26.1.2.28`<br>□ `.\gradlew.bat dependencies --refresh-dependencies 2>&1` 依赖解析通过，无 LDLib2 相关解析错误<br>□ `.\gradlew.bat compileJava 2>&1` 编译通过<br>□ `runClient` 启动后：<br>　• 原版物品（如 dirt、diamond）在背包/箱子/工作台等容器 screen 中 tooltip 可见<br>　• 模组物品（kenergyengineering 物品）在容器 screen 中 tooltip 可见<br>　• `Missing item model` ERROR 保持 0（TASK-004 成果不被破坏）<br>□ FluidModel 10 条 WARN 保持作为独立已知问题（不纳入本 task 范围）<br>□ 证据文件已落盘到 `plans/.evidence/evidence_26_1_2_datagen_migration_003.md`<br>□ 变更已提交并推送（commit message: `fix: upgrade LDLib2 to 26.1.2.28 to restore container tooltips`） |
+| **验收结果** | ✅ 依赖版本已更新（26.1.2.28）且编译通过<br>✅ **标准名称 tooltip 恢复** — 原版物品 + 模组物品在容器 screen 中 tooltip 正常显示（用户视觉确认，2026-07-10）<br>✅ Missing item model = 0（TASK-004/TASK-009 成果保持）<br>✅ 未引入新 Mixin/patch jar<br>⚠️ FluidModel 10 条 WARN 仍独立存在（不纳入本 task 范围）<br>**决策**: TASK-011 验收通过 |
+| **回退** | 如 26.1.2.28 引入新问题 → 回退至 `26.1.2.27`，在 `docs/known_issues.md` 中记录 tooltip 全局消失（上游已修复，等下次统一打包升级）<br>不删除其他 datagen 迁移成果 |
+
+**预计工作量**: 1h（含依赖解析 + runClient 验证）
+
+---
+
+### TASK-012: 恢复 TE4 已有语言资源定义的自定义 block item tooltip
+
+| 属性 | 内容 |
+|------|------|
+| **task_id** | TASK-012 |
+| **phase** | Phase 6 — 依赖回归修复（延续） |
+| **scope** | `src/main/java/com/modularmc/ten/common/item/TENBaseBlockItem.java`（key resolver 逻辑）<br>`src/main/java/com/modularmc/ten/common/data/TENBlocks.java`（21 个 block item 注册类型切换）<br>`src/main/resources/assets/kenergyengineering/lang/en_us.json`（pulverizer 编号修正）<br>`src/main/resources/assets/kenergyengineering/lang/zh_cn.json`（pulverizer 编号修正）<br>测试/验证脚本<br>`docs/datagen_runtime_verification.md`（补充 tooltip 验证章节） |
+| **目标** | 让 21 个已有 lang tooltip 数据的 block items（12 machines + 4 engines + energy_cell + 4 cables）正确显示其自定义 tooltip。不改动无 tooltip lang 数据的其他 block items（ores / storage / pipes / channels / creative_energy_cell / plain materials / simple items / upgrades / channel_connector / EnergyUnitItem）。不添加 TOOLTIP_DISPLAY 组件、不使用全局 ItemTooltipEvent、不改 LDLib2。 |
+| **输入** | 根因调查结论：26.1.2 appendHoverText 新签名已正确，不需要 TOOLTIP_DISPLAY 组件。真正原因是 21 个有现成 lang tooltip 数据的 block items 仍注册为 plain `BlockItem`（`ITEMS.registerSimpleBlockItem`），`TENBaseBlockItem` 是死代码。现有 lang key 格式（取自 `en_us.json` 与 `zh_cn.json`）：<br>• machine（如 `machine_smelter`）→ `kenergyengineering.info.<去掉machine_前缀>.<n>`（如 `info.smelter.0`, `info.smelter.1`, `info.smelter.2`）<br>• engine（如 `engine_extraction`）→ `kenergyengineering.info.<registry_id>.<n>`（如 `info.engine_extraction.0`, `info.engine_extraction.1`）<br>• energy_cell → `kenergyengineering.info.energy_cell.<n>`（如 `info.energy_cell.0`, `info.energy_cell.1`）<br>• cable（如 `cable`、`cable_azure`）→ `kenergyengineering.<registry_id>.<n>`（直接 key，无 `info.` 前缀。如 `cable.0`, `cable_azure.0`）<br>另：`machine_pulverizer` 的 tooltip key 编号为 0,1,2,4（不连续），当前循环在第 3 项缺失时终止。 |
+| **输出** | • 修改后的 `TENBaseBlockItem.java` — 实现分层 key resolver<br>• 修改后的 `TENBlocks.java` — 21 个目标 block item 从 `registerSimpleBlockItem` 切换为 `TENBaseBlockItem`；其余 block item 保持原注册类型<br>• 修改后的 `en_us.json` / `zh_cn.json` — pulverizer 编号 4→3 修正<br>• 测试/验证脚本 — 静态映射断言 + key resolver 调用验证<br>• `docs/datagen_runtime_verification.md` 补充 — tooltip 验证章节 |
+| **依赖** | TASK-011（LDLib2 26.1.2.28 确保基础 tooltip 功能正常，避免验证时 LDLib2 层干扰） |
+| **实施设计** | **① Key resolver 逻辑**（`TENBaseBlockItem.java` appendHoverText）：<br>　- 根据 registry id 前缀/名称选择性决定 lang key 模式：<br>　　• `machine_` 前缀匹配 → 去掉 `machine_` 前缀，使用 `info.<name>.<n>` 模式（如 `machine_smelter` → 查 `info.smelter.0`, `info.smelter.1`…）<br>　　• `engine_` 前缀匹配 → 使用 `info.<registry_id>.<n>` 模式（如 `engine_extraction` → `info.engine_extraction.0`）<br>　　• `energy_cell` 精确匹配 → 使用 `info.energy_cell.<n>` 模式<br>　　• `cable` 前缀匹配 → 使用直接 key `<registry_id>.<n>` 模式（无 `info.` 前缀。如 `cable` → `cable.0`；`cable_azure` → `cable_azure.0`）<br>　　• 其余 registry id（无 tooltip 数据的 block item）→ 不回退至直接 key，不显示 tooltip（防止产生空行）<br>　- 遍历终止：n 从 0 递增，某 n 的 key 在 lang 中不存在时停止<br>　- **关键约束**：cable 不走 `info.` 前缀；非目标 block item 不产生错误也不显示空行<br>**② pulverizer 编号修正**：<br>　- en_us.json：第 312-315 行 `info.pulverizer.0/1/2/4` → 确认 `.4` 内容与 `.3` 语义一致后改为 `0/1/2/3`；若 `.3` 已存在则跳过<br>　- zh_cn.json：第 368-371 行同样编号修正<br>　- 仅修正编号，不修改内容顺序<br>**③ 注册类型切换**（`TENBlocks.java`）：<br>　- 12 machines：`machine()` helper 中 `ITEMS.registerSimpleBlockItem` → `ITEMS.register(name, ctx -> new TENBaseBlockItem(holder.get(), new Item.Properties()))`<br>　- 4 engines：同 machine 处理<br>　- energy_cell：`cell()` helper 中切换注册类型<br>　- 4 cables：因 `cable()` helper 同时服务 pipe（3 个），需拆分或加参数；确保仅 cable 系列使用 TENBaseBlockItem，pipe 保持 BlockItem<br>　- creative_energy_cell、channels、ores、storage、pipes 等全部保持原注册类型<br>**④ 不做的边界**：<br>　- ❌ 不添加 TOOLTIP_DISPLAY 数据组件<br>　- ❌ 不使用全局 `ItemTooltipEvent`<br>　- ❌ 不修改 LDLib2 代码或配置 |
+| **DoD** | □ `TENBaseBlockItem.java` key resolver 已按四类模式实现，回退/排除逻辑正确<br>□ `TENBlocks.java` 中 21 个目标 block item 已使用 `TENBaseBlockItem`，其余保持原类型<br>□ `en_us.json` + `zh_cn.json` pulverizer 编号已修正为连续（0,1,2,3）<br>□ 无 TOOLTIP_DISPLAY 数据组件引入<br>□ 无全局 `ItemTooltipEvent` 注册<br>□ 无 LDLib2 修改<br>□ **静态映射覆盖测试**：验证 21 个目标 block item 全部映射到 `TENBaseBlockItem`；验证非目标 block item 保持原类型（BlockItem / TENBaseItem）<br>□ **key resolver 直接调用测试**：对各类代表（machine_smelter → info.smelter.n、engine_extraction → info.engine_extraction.n、energy_cell → info.energy_cell.n、cable → cable.n）验证 key 解析路径正确；cable 不走 `info.` 前缀<br>□ `compileJava` 通过<br>□ `runClient` 启动后：<br>　• machine_smelter 显示 tooltip 3 行<br>　• engine_extraction 显示 tooltip 2 行<br>　• energy_cell 显示 tooltip 2 行<br>　• cable 显示 tooltip "Transfer: 1 kFE"<br>　• upgrade（如 `augmented_levelup`，已用 TENBaseItem）tooltip 保持正常（回归）<br>　• channel_connector tooltip 保持正常（回归）<br>□ Missing item model = 0（TASK-004/TASK-011 成果保持）<br>□ FluidModel 10 条 WARN 仍独立<br>□ `docs/datagen_runtime_verification.md` 已补充 tooltip 验证章节 |
+| **验收要点** | - [ ] 21 个目标 block item 在创造模式物品栏中全部显示自定义 tooltip<br>- [ ] machine_smelter（机器代表）tooltip 内容正确（3 行）<br>- [ ] engine_extraction（引擎代表）tooltip 内容正确（2 行）<br>- [ ] energy_cell tooltip 内容正确（2 行）<br>- [ ] cable（电缆代表）tooltip 显示 "Transfer: 1 kFE"<br>- [ ] upgrade / channel_connector 无退化<br>- [ ] Missing item model = 0<br>- [ ] FluidModel 10 条 WARN 仍独立 |
+| **回退** | 如 key resolver 导致部分 block item tooltip 异常/空指针 → 回退 `TENBlocks.java` 中异常项的注册类型为 `BlockItem`（恢复无自定义 tooltip 状态）；保留 `TENBaseBlockItem.java` key resolver 代码供后续迭代。不回退 LDLib2 28、不回退其他正常 block item。 |
+
+**预计工作量**: 3~4h（含实现 + 测试 + runClient 视觉验证）
+
+---
+
 ## 4. 依赖链与执行顺序
 
 ```text
@@ -274,7 +313,10 @@ TASK-001 (现状盘点与基线冻结, 无依赖)
               └── TASK-007 (DataGenerators 整合, 依赖 003~006)
                     └── TASK-008 (Diff 比对, 依赖 007)
                           └── TASK-009 (runClient 验证, 依赖 008)
-                                └── TASK-010 (提交与推送确认, 依赖 009)
+                                 └── TASK-010 (提交与推送确认, 依赖 009)
+
+TASK-011 (LDLib2 tooltip 修复, 无依赖)  ← 已验收通过，可关闭
+TASK-012 (TE4 自定义 block item tooltip 恢复, 依赖 TASK-011)  ← 需要基础 tooltip 功能正常后验证自定义层
 ```
 
 **并行策略**:
@@ -316,7 +358,9 @@ TASK-001 (现状盘点与基线冻结, 无依赖)
 | TASK-008 | 2~3h | Phase 4 | — | 🟡 高（比对） |
 | TASK-009 | 2~3h | Phase 4 | — | 🟡 高（验证） |
 | TASK-010 | 0.5h | Phase 5 | — | 🟢 中（收口） |
-| **合计** | **18~25.5h** | — | — | — |
+| TASK-011 | 1h | Phase 6 | — | 🟡 高（回归修复，已验收） |
+| TASK-012 | 3~4h | Phase 6 | — | 🟡 高（自定义 tooltip 恢复） |
+| **合计** | **22~30.5h** | — | — | — |
 
 ## 6. 风险与降级方案
 
@@ -358,6 +402,8 @@ TASK-001 (现状盘点与基线冻结, 无依赖)
 - [ ] TASK-008: generated vs golden baseline diff 报告已生成（含文件级差异 + JSON 内容 diff），差异已分类
 - [ ] TASK-009: runClient 资源错误归零（Missing model/blockstate/loot_table/tag = 0）；Missing texture 无非预期新增，对比 baseline 已解释和归档
 - [ ] TASK-010: 全阶段提交已推送至 `origin/feat/26.1.2-datagen-migration`，历史可追溯
+- [ ] TASK-011: LDLib2 已升级至 26.1.2.28，依赖解析 + compile 通过，runClient 验证容器 tooltip 恢复；**用户视觉确认通过**（标准名称 tooltip 恢复）；上游修复 commit 3744f67e 已引用；证据文件 `plans/.evidence/evidence_26_1_2_datagen_migration_003.md` 已落盘
+- [ ] TASK-012: 21 个目标 block item 自定义 tooltip 恢复；静态映射覆盖 21 项 + key resolver 调用测试通过；compileJava + runClient 验证通过；machine/engine/energy_cell/cable 各代表类型视觉抽查通过；Missing item model = 0 保持；FluidModel 10 条 WARN 仍独立
 - [ ] 每阶段推送已完成，无累积未推送变更
 - [ ] 如遇 Provider 暂不可实现，已降级保留静态资源并记录技术债
 

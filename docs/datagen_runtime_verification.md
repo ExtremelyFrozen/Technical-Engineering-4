@@ -151,7 +151,7 @@ All datagen-provided categories (language, tags, recipes, loot tables) pass with
 | Mod ID | Version |
 |---|---|
 | `kenergyengineering` | 4.1.0 |
-| `ldlib2` | 26.1.2.27 |
+| `ldlib2` | 26.1.2.28 (was 26.1.2.27 — upgraded for tooltip fix TASK-011) |
 | `minecraft` | 26.1.2 |
 | `neoforge` | 26.1.2.78 |
 | `testframework` | 26.1.2.78 |
@@ -177,7 +177,91 @@ All datagen-provided categories (language, tags, recipes, loot tables) pass with
 
 ---
 
-## 6. Conclusion
+## 6. TASK-011: LDLib2 26.1.2.27 → 26.1.2.28 Container Tooltip Fix
+
+**Date:** 2026-07-10
+**Branch:** `feat/26.1.2-datagen-migration`
+**Commit:** 13652c6 + unstaged changes (not yet committed)
+
+### Root Cause
+
+LDLib2 `AbstractContainerScreenMixin.ldlib2$renderTooltips` (`@Inject(method="extractTooltip", at=@At("HEAD"), cancellable=true)`) unconditionally called `ci.cancel()` when `getMenu() instanceof IItemSlotHolderMenu`, suppressing ALL tooltip rendering (both vanilla and mod items) in any container screen.
+
+### Fix
+
+Upstream commit [3744f67e](https://github.com/Low-Drag-MC/LDLib2/commit/3744f67e39920ded7a742aa654cdadaf4f07fd8a) added an `isItemSlot(this.hoveredSlot)` guard — only cancel tooltip rendering for LDLib-managed slots, letting vanilla slots render normally.
+
+### Bytecode Evidence (`javap -c -p`)
+
+**26.1.2.27 (BUGGY):**
+```
+private void ldlib2$renderTooltips(GuiGraphicsExtractor, int, int, CallbackInfo);
+  Code:
+    0: aload_0
+    1: invokevirtual getMenu:()AbstractContainerMenu;
+    4: instanceof IItemSlotHolderMenu
+    7: ifeq 15           ← skip if NOT IItemSlotHolderMenu
+   10: aload 4
+   12: invokevirtual ci.cancel:()V    ← CANCEL unconditionally!
+   15: return
+```
+
+**26.1.2.28 (FIXED):**
+```
+private void ldlib2$renderTooltips(GuiGraphicsExtractor, int, int, CallbackInfo);
+  Code:
+    0: aload_0
+    1: invokevirtual getMenu:()AbstractContainerMenu;
+    4: astore 6
+    6: aload 6
+    8: instanceof IItemSlotHolderMenu
+   11: ifeq 40
+   14: aload 6
+   16: checkcast IItemSlotHolderMenu
+   19: astore 5
+   21: aload 5
+   23: aload_0
+   24: getfield hoveredSlot:()Slot;
+   27: invokeinterface IItemSlotHolderMenu.isItemSlot:(Slot;)Z  ← NEW guard!
+   32: ifeq 40           ← skip cancel if NOT LDLib-managed slot
+   35: aload 4
+   37: invokevirtual ci.cancel:()V    ← Only cancel for LDLib-owned slots
+   40: return
+```
+
+### Changes Made
+
+- `gradle/forge.versions.toml`: `ldlib2` from `26.1.2.27` → `26.1.2.28`
+- `scripts/validate_ldlib_tooltip_fix.py`: New regression check
+- `docs/datagen_runtime_verification.md`: This update
+
+### Verification Results
+
+| Check | Result |
+|---|---|
+| Version string | ✅ `ldlib2 = "26.1.2.28"` in `forge.versions.toml` |
+| Dependency resolution | ✅ `ldlib2-neoforge-26.1:26.1.2.28` resolved in all configurations |
+| Jar hash | `fc2b6d81999d632a6dc02c4f42849dd2ef9047a4` |
+| Mixin class found | ✅ `AbstractContainerScreenMixin.class` present |
+| `isItemSlot` check in `ldlib2$renderTooltips` | ✅ CONFIRMED in bytecode |
+| Regression script (RED: 26.1.2.27) | ❌ FAILED (expected — version mismatch + no isItemSlot in bytecode) |
+| Regression script (GREEN: 26.1.2.28) | ✅ PASSED (version match + isItemSlot confirmed in bytecode) |
+| `compileJava` | ✅ BUILD SUCCESSFUL |
+| `runClient` startup | ✅ Loaded, 0 ERROR/FATAL, 0 missing item models |
+| Running LDLib2 version in client | ✅ `LowDragLib2 26.1.2.28 (ldlib2)` confirmed in `latest.log` |
+| **Visual tooltip verification** | ⏳ **Pending human confirmation** — cannot automate visual GUI inspection |
+
+### Residual Risk
+
+| Risk | Mitigation |
+|---|---|
+| 26.1.2.28 introduces new regressions | No ldlib2-related errors in `latest.log`. If found, revert to 26.1.2.27 and document in `docs/known_issues.md` |
+| Visual tooltip not confirmed | Bytecode evidence confirms fix logic. Upstream commit [3744f67e](https://github.com/Low-Drag-MC/LDLib2/commit/3744f67e39920ded7a742aa654cdadaf4f07fd8a) independently verified. Human to visually confirm: open inventory/chest/container screen, verify vanilla items (dirt, diamond) and TE4 items show tooltip on hover. |
+| FluidModel 10 WARN still present | Pre-existing, not in scope of TASK-011 |
+
+---
+
+## 7. Conclusion
 
 **Item definition layer fix (Round 2): ✅ CONFIRMED.**
 
