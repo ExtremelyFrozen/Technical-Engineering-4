@@ -179,7 +179,7 @@ public final class TENLangHandler {
         add("info.pulverizer.0", "Crush ores into powder.", "将矿物打成粉末来增产。");
         add("info.pulverizer.1", "Classic tech-mod gameplay.", "科技模组经典的玩法 ~");
         add("info.pulverizer.2", "It also has other uses, such as pulverizing blaze rods and bones.", "兼具一些其它功能，例如研磨烈焰棒和骨粉。");
-        add("info.pulverizer.4", "Stone can be pulverized into gravel, then into sand and dirt.", "还可以把石头打成砂砾，进而打成沙子和泥土，等等。");
+        add("info.pulverizer.3", "Stone can be pulverized into gravel, then into sand and dirt.", "还可以把石头打成砂砾，进而打成沙子和泥土，等等。");
         add("info.compressor.0", "Compresses items into necessary materials.", "压缩物品，制作必需材料。");
         add("info.compressor.1", "Put metal ingots in, then get plates out.", "放进金属锭，收获金属板。");
         add("info.energy_cell.0", "Stores plenty of energy.", "可以存储大量能量。");

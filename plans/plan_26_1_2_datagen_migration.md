@@ -9,12 +9,13 @@
 - **计划路径**: `plans/plan_26_1_2_datagen_migration.md`
 - **草稿路径**: `plans/.draft_plan_26_1_2_datagen_migration.md`
 - **workflow_mode**: standard
-- **版本状态**: `已批准`
+- **版本状态**: `✅ 全部完成 — 13/13 TASK 已验收`
 - **创建日期**: 2026-07-09
+- **完成日期**: 2026-07-11
 - **创建者**: 猫娘规划师-缇娅
 - **触发原因**: 此前勘探确认当前 datagen 只生成 recipe + zh_cn lang，未生成 blockstates/models/loot_table/tags。`TENModels.java` 已变成存根，旧 Registrate/BlockStateProvider 生成链被移除。当前 blockstates/models/loot/tags 是从旧 generated 迁移到 `src/main/resources` 的静态资源快照。用户怀疑 blockstates 问题源于 datagen 迁移未完成，希望全面修复和迁移"变构数据生成"。
 - **审查结论**: 审查通过
-- **建议下一步**: 进入执行
+- **建议下一步**: **最终复审 → 提交推送**。计划全部 13 个 TASK 已验收完成：Phase 1~5 datagen 全链路恢复（blockstates/models/loot/tags + 整合 + 验证），Phase 6 LDLib2 tooltip 回归修复 + 自定义 block item tooltip 恢复，Phase 7 脚本编码规范化。残留风险：FluidModel 10 条 WARN 为已知独立问题（未纳入本计划范围）
 - **目标基线**: NeoForge 26.1.2 / Minecraft 1.21.1 / Java 25
 - **当前 HEAD**: `a343a27 fix: resolve 26.1.2 resource data issues`
 - **远程分支**: `origin/feat/26.1.2-datagen-migration`
@@ -296,8 +297,30 @@
 | **DoD** | □ `TENBaseBlockItem.java` key resolver 已按四类模式实现，回退/排除逻辑正确<br>□ `TENBlocks.java` 中 21 个目标 block item 已使用 `TENBaseBlockItem`，其余保持原类型<br>□ `en_us.json` + `zh_cn.json` pulverizer 编号已修正为连续（0,1,2,3）<br>□ 无 TOOLTIP_DISPLAY 数据组件引入<br>□ 无全局 `ItemTooltipEvent` 注册<br>□ 无 LDLib2 修改<br>□ **静态映射覆盖测试**：验证 21 个目标 block item 全部映射到 `TENBaseBlockItem`；验证非目标 block item 保持原类型（BlockItem / TENBaseItem）<br>□ **key resolver 直接调用测试**：对各类代表（machine_smelter → info.smelter.n、engine_extraction → info.engine_extraction.n、energy_cell → info.energy_cell.n、cable → cable.n）验证 key 解析路径正确；cable 不走 `info.` 前缀<br>□ `compileJava` 通过<br>□ `runClient` 启动后：<br>　• machine_smelter 显示 tooltip 3 行<br>　• engine_extraction 显示 tooltip 2 行<br>　• energy_cell 显示 tooltip 2 行<br>　• cable 显示 tooltip "Transfer: 1 kFE"<br>　• upgrade（如 `augmented_levelup`，已用 TENBaseItem）tooltip 保持正常（回归）<br>　• channel_connector tooltip 保持正常（回归）<br>□ Missing item model = 0（TASK-004/TASK-011 成果保持）<br>□ FluidModel 10 条 WARN 仍独立<br>□ `docs/datagen_runtime_verification.md` 已补充 tooltip 验证章节 |
 | **验收要点** | - [ ] 21 个目标 block item 在创造模式物品栏中全部显示自定义 tooltip<br>- [ ] machine_smelter（机器代表）tooltip 内容正确（3 行）<br>- [ ] engine_extraction（引擎代表）tooltip 内容正确（2 行）<br>- [ ] energy_cell tooltip 内容正确（2 行）<br>- [ ] cable（电缆代表）tooltip 显示 "Transfer: 1 kFE"<br>- [ ] upgrade / channel_connector 无退化<br>- [ ] Missing item model = 0<br>- [ ] FluidModel 10 条 WARN 仍独立 |
 | **回退** | 如 key resolver 导致部分 block item tooltip 异常/空指针 → 回退 `TENBlocks.java` 中异常项的注册类型为 `BlockItem`（恢复无自定义 tooltip 状态）；保留 `TENBaseBlockItem.java` key resolver 代码供后续迭代。不回退 LDLib2 28、不回退其他正常 block item。 |
+| **验收结果** | ✅ **21 个目标 block item 视觉验收通过**（用户确认，2026-07-11）：<br>　• machine_smelter / engine_extraction / energy_cell / cable 各代表类型名称显示正常、自定义 tooltip 内容正确<br>　• upgrade（`augmented_levelup`）、channel_connector 无退化<br>　• 未误加到排除项（0 exclusions）<br>　• 裸 key 回归已通过 `useBlockDescriptionPrefix` 修复，`validate_custom_block_tooltips` name integrity PASS<br>✅ **Fresh verification**（2026-07-11）：<br>　• `validate_item_definitions 161/161 PASS`<br>　• `validate_ldlib_tooltip_fix 26.1.2.28 + isItemSlot PASS`<br>　• `validate_custom_block_tooltips 21/21、0 exclusions、0 lang gaps、name integrity PASS`<br>　• `compileJava BUILD SUCCESSFUL`<br>　• `runClient` 上一轮 BUILD SUCCESSFUL、0 ERROR/FATAL、kenergyengineering Missing item model=0、FluidModel 10 条 WARN 仍独立（已知）<br>✅ **最终审查已通过**：无阻断项，死代码已清理并复验<br>⚠️ FluidModel 10 条 WARN 仍独立存在（不纳入本 TASK 范围）<br>**决策**: TASK-012 验收通过 |
 
 **预计工作量**: 3~4h（含实现 + 测试 + runClient 视觉验证）
+
+---
+
+### TASK-013: 项目脚本编码规范化（UTF-8 锁定）
+
+| 属性 | 内容 |
+|------|------|
+| **task_id** | TASK-013（`plan_id=26_1_2_datagen_migration` 内局部唯一；独立计划 `plan_26_1_2_migration.md` 中的同名 TASK-013 因 plan_id 不同，不构成冲突） |
+| **phase** | Phase 7 — 脚本编码规范化 |
+| **scope** | `scripts/validate_item_definitions.py`、`scripts/validate_ldlib_tooltip_fix.py`、`scripts/validate_custom_block_tooltips.py`、`run_client.bat` |
+| **目标** | 本次为预防性标准化——当前三个 Python 脚本输出均为英文（UTF-8 兼容），reconfigure 后原行为不变。核心变更：三个 Python 脚本显式锁定 stdout/stderr 为 UTF-8 + 文本 I/O 全边界 encoding='utf-8' + subprocess 编码安全；`run_client.bat` 显式设置控制台代码页 65001 + UTF-8 无 BOM。排除项：Gradle wrapper（gradlew/gradlew.bat）、build/、run/、.gradle/、第三方生成脚本、仅英文输出的 Gradle DSL。 |
+| **输入** | 只读审计结果（见上下文）；现有脚本内容 |
+| **输出** | 修改后的 4 个自有脚本文件；编码验证结果 |
+| **依赖** | 无（独立于 datagen/tooltip 任务链）；作为临时插入任务执行于 TASK-012 实施过程中，完成后返回 TASK-012 |
+| **实施设计** | **① 三个 Python 脚本 — stdout/stderr UTF-8 锁定**：<br>　在 `import sys` 之后添加以下代码块（以下为 `<utf8_boilerplate>` 占位，实际实现时直接插入<!-- 具体实现代码在不可见区域，执行时按此规格变更 -->）：<br>　```python<br>　for _s in (sys.stdout, sys.stderr):<br>　    if _s is not None and hasattr(_s, 'reconfigure'):<br>　        try:<br>　            _s.reconfigure(encoding='utf-8')<br>　        except (ValueError, OSError):<br>　            pass<br>　```<br>　兼容重定向（`TextIOWrapper.reconfigure` 可靠）和旧版/受限环境下 `hasattr` 通过但 `reconfigure` 抛异常（安全跳过）；项目记录最低 Python 3.7，旧版环境不要求支持。<br>**② validate_ldlib_tooltip_fix.py — subprocess 编码修复**：<br>　两处 `subprocess.run(capture_output=True, text=True, timeout=30)` 增加 `encoding='utf-8', errors='replace'` 参数，防止外部工具输出的非 ASCII 字符解码阻断<br>**③ run_client.bat — 代码页 + 无 BOM**：<br>　首行保留 `@echo off`（如无则插入），第二行 `chcp 65001 >nul`，保持原有 `@gradlew runClient` 调用行为不变；文件必须保存为 UTF-8 无 BOM；记录运行基线为 Windows 10/11 + JDK25；不设置全局 `JAVA_TOOL_OPTIONS` 环境变量（避免干扰其他 Gradle/Java 进程）<br>**④ 排除项验证**：<br>　gradlew / gradlew.bat / build/ / run/ / .gradle / 第三方生成脚本不修改；Gradle DSL 仅英文输出不做无关重构<br>**⑤ 编码验证**：<br>　详见 DoD 中的验证命令 |
+| **DoD** | □ **Python 编码配置**：三个脚本均包含 UTF-8 reconfigure 代码块（`reconfigure(encoding='utf-8')`），置入后不影响现有英文输出<br>□ **subprocess 安全**：`validate_ldlib_tooltip_fix.py` 两处 `subprocess.run(text=True)` 已增加 `encoding='utf-8', errors='replace'`<br>□ **batch 代码页**：`run_client.bat` 首行为 `@echo off`，第二行 `chcp 65001 >nul`，文件编码为 UTF-8 无 BOM<br>□ **CI 脚本扫描**：检查 `.github/workflows/` 是否存在；若目录不存在或无中文输出则记录"无需修改"；若存在且有中文输出则按需处理（本任务不预设修改）<br>□ **PowerShell 现状**：当前项目中无自有 `.ps1` 文件，本次不创建；未来若增加 PowerShell 脚本且含中文输出，必须保存为 UTF-8 BOM；本任务不涉及<br>□ **排除确认**：gradlew / gradlew.bat / build/ / run/ / .gradle / 第三方脚本 / Gradle DSL 未修改<br>□ **文件编码验证**（所有命令返回 expected 结果）：<br>　• BOM 字节验证（4 文件逐文件，检查首 3 字节是否为 `0xEF 0xBB 0xBF`）：`$f = "scripts/validate_item_definitions.py"; $b = [System.IO.File]::ReadAllBytes((Join-Path $env:PROJECT_DIR $f)); if ($b.Length -ge 3 -and $b[0] -eq 0xEF -and $b[1] -eq 0xBB -and $b[2] -eq 0xBF) { "BOM DETECTED" } else { "NO BOM" }`——预期全部 4 文件返回 `"NO BOM"`<br>　• reconfigure 存在性：`Select-String -Path scripts/*.py -Pattern "reconfigure.*encoding.*utf-8" -CaseSensitive` → 3 个文件各匹配 1 行<br>　• subprocess encoding 存在性：`Select-String -Path scripts/validate_ldlib_tooltip_fix.py -Pattern "encoding=.utf-8.*errors=.replace"` → 匹配 2 行<br>　• chcp 存在性：`Select-String -Path run_client.bat -Pattern "chcp 65001"` → 匹配 1 行<br>　• @echo off 存在性：`(Get-Content run_client.bat)[0]` → 首行为 `@echo off`<br>□ **脚本运行验证**（不依赖完整 datagen / 客户端启动）：<br>　• `python scripts/validate_item_definitions.py --help 2>&1` 或快速模式退出码 0（非 崩溃）<br>　• `python scripts/validate_ldlib_tooltip_fix.py --help 2>&1` 退出码 0<br>　• `python scripts/validate_custom_block_tooltips.py --help 2>&1` 退出码 0<br>　• `cmd /c "echo N| .\run_client.bat"` 不报语法错（不等待完整 Gradle 启动）或 `.\gradlew.bat tasks --no-daemon` 可正常执行<br>□ 不提交/不推送（修改仅停留在本地工作区，供 TASK-013 验证通过后保留，继续 TASK-012）<br>□ **恢复 TASK-012**：确认 TASK-012 未提交的 Java/lang 文件不受影响；git status 显示 changes 仅限于 4 个脚本文件 + 计划文件本身 |
+| **验收要点** | - [ ] 三个 Python 脚本在 `print('中文测试')` 时 stdout/stderr 不抛 UnicodeEncodeError（手动注入语句快速验证）<br>- [ ] `cmd /c "run_client.bat"` 触发代碼页切换至 65001（`chcp` 输出验证）<br>- [ ] 所有验证命令通过<br>- [ ] TASK-012 未提交变更未被覆盖或丢失<br>- [ ] Gradle wrapper / 第三方脚本无意外修改<br>- [ ] 编码修改不会干扰 TASK-012 后续视觉回归验证 |
+| **回退** | 如某脚本的 `reconfigure` 在目标 Python 环境中不可用或抛出异常 → reconfigure 代码块本身已在 `if hasattr` 和 `try/except` 保护下（空操作安全回退）；如 `chcp 65001` 导致 batch 在某些系统上运行异常 → 注释掉该行，降级为脚本内备注编码要求 |
+| **验收结果** | ✅ **三个 Python 脚本 stdout/stderr UTF-8 reconfigure 已应用**（`validate_item_definitions.py`、`validate_ldlib_tooltip_fix.py`、`validate_custom_block_tooltips.py`）<br>✅ **subprocess 编码安全**：`validate_ldlib_tooltip_fix.py` 两处 `subprocess.run(text=True)` 已增加 `encoding='utf-8', errors='replace'`<br>✅ **run_client.bat 治理决策（用户选择「保持本地」）**：文件继续被 `.gitignore` 忽略，不作为仓库交付；当前机器内容已确认为 `@echo off` + `chcp 65001 >nul` + 调用 `call gradlew.bat runClient`、UTF-8 无 BOM<br>✅ **CI 脚本扫描**：`.github/workflows/` 下 12 个 workflows 无中文输出，无需修改；项目中无 `.ps1` 文件<br>✅ **编码验证全部 PASS**：BOM 字节验证（4 文件均 NO BOM）、reconfigure 存在性（3 文件各匹配 1 行）、subprocess encoding 存在性（匹配 2 行）、`chcp 65001` 存在性（匹配 1 行）、`@echo off` 首行确认<br>✅ **脚本运行验证通过**：三个 `.py --help` 退出码均为 0；`cmd /c "echo N| .\run_client.bat"` 不报语法错<br>✅ **排除确认**：gradlew / gradlew.bat / build/ / run/ / .gradle / 第三方脚本 / Gradle DSL 未修改<br>⚠️ **不单独提交**：`validate_custom_block_tooltips.py` 与 `docs/` 同属 TASK-012（尚未视觉验收），本轮不单独 commit，待 TASK-012 一并提交<br>**决策**: TASK-013 验收通过。下一跳：恢复 TASK-012，确保 TASK-012 未提交变更不受影响 |
+
+**预计工作量**: 1.5h（含修改 + 验证）
 
 ---
 
@@ -315,11 +338,15 @@ TASK-001 (现状盘点与基线冻结, 无依赖)
                           └── TASK-009 (runClient 验证, 依赖 008)
                                  └── TASK-010 (提交与推送确认, 依赖 009)
 
-TASK-011 (LDLib2 tooltip 修复, 无依赖)  ← 已验收通过，可关闭
-TASK-012 (TE4 自定义 block item tooltip 恢复, 依赖 TASK-011)  ← 需要基础 tooltip 功能正常后验证自定义层
+TASK-011 (LDLib2 tooltip 修复, 无依赖)  ← ✅ 已完成（验收通过）
+TASK-012 (TE4 自定义 block item tooltip 恢复, 依赖 TASK-011)  ← ✅ 已完成（用户视觉验收 + fresh verification 通过）
+TASK-013 (脚本编码规范化, 无依赖)  ← ✅ 已完成（验收通过）
 ```
 
 **并行策略**:
+- TASK-013 作为 TASK-012 实施中的临时插入任务独立执行，完成后已恢复 TASK-012
+- 所有 TASK 现已全部完成
+
 - **Phase 1 串行**: TASK-001 → TASK-002（002 依赖 001 的盘点结果以确定检索范围）
 - **Phase 2 全并行**: TASK-003/004/005/006 各自为独立的 Provider 类，无代码交叉依赖，可使用 skill://多线调度 并发启动
   - 每个并行线包含：实现 Provider → 单次 `runClientData` 验证 → 各自提交并推送
@@ -343,6 +370,9 @@ TASK-012 (TE4 自定义 block item tooltip 恢复, 依赖 TASK-011)  ← 需要�
 - TASK-008 ✅ → `git push origin feat/26.1.2-datagen-migration`
 - TASK-009 ✅ → `git push origin feat/26.1.2-datagen-migration`
 - TASK-010 ✅ → `git push origin feat/26.1.2-datagen-migration`（最终确认推送无 rejected）
+- TASK-011 ✅ → `git push origin feat/26.1.2-datagen-migration`（已推送）
+- TASK-012 ✅ → 待最终复审后推送
+- TASK-013 ✅ → 待最终复审后推送（与 TASK-012 一并提交）
 
 ## 5. 工作量评估与排序
 
@@ -359,8 +389,9 @@ TASK-012 (TE4 自定义 block item tooltip 恢复, 依赖 TASK-011)  ← 需要�
 | TASK-009 | 2~3h | Phase 4 | — | 🟡 高（验证） |
 | TASK-010 | 0.5h | Phase 5 | — | 🟢 中（收口） |
 | TASK-011 | 1h | Phase 6 | — | 🟡 高（回归修复，已验收） |
-| TASK-012 | 3~4h | Phase 6 | — | 🟡 高（自定义 tooltip 恢复） |
-| **合计** | **22~30.5h** | — | — | — |
+| TASK-012 | 3~4h | Phase 6 | — | 🟡 高 ✅（自定义 tooltip 恢复，已验收） |
+| TASK-013 | 1.5h | Phase 7 | 插入于 TASK-012 中 | 🟢 中 ✅（编码规范化，已验收） |
+| **合计** | **23.5~32h** | — | — | **全部 13 个 TASK 已完成** |
 
 ## 6. 风险与降级方案
 
@@ -375,6 +406,7 @@ TASK-012 (TE4 自定义 block item tooltip 恢复, 依赖 TASK-011)  ← 需要�
 | 7 | 某 Provider 生成的资源数量与注册项不匹配（遗漏部分方块/物品） | 中 | 中 | TASK-008 diff 可暴露遗漏；补全对应 Provider 中的 mapping |
 | 8 | runClient 中仍有非 datagen 相关的资源错误（如纹理文件本身缺失） | 中 | 低 | 属于上一计划已修复/已知问题；本计划只关注 datagen 可生成的部分 |
 | 9 | 即时推送策略在某个 TASK 产生破坏性变更后被发现 | 低 | 高 | 每个推送前执行 `runClientData` 快速验证；破坏性变更 revert 后重推 |
+| 10 | TASK-013 编码修改导致 Python 脚本在特定环境（CI/旧版 Python）运行异常 | 低 | 低 | reconfigure 代码块已在 `hasattr` + `try/except (ValueError, OSError)` 双重保护下；如有兼容问题，仅影响该验证脚本自身，不阻塞 datagen 链；可降级为脚本内编码注释提醒 |
 
 ## 7. 非目标（重申）
 
@@ -392,18 +424,19 @@ TASK-012 (TE4 自定义 block item tooltip 恢复, 依赖 TASK-011)  ← 需要�
 
 ## 8. 完成标准（汇总 DoD）
 
-- [ ] TASK-001: baseline 报告已生成（含 `data/minecraft/tags/` 引用本 mod 的 tag + `Missing texture` baseline），基线已冻结并推送至 `origin/feat/26.1.2-datagen-migration`
-- [ ] TASK-002: Gradle 版本坐标已确认，对应 NeoForge API 证据已采集落盘
-- [ ] TASK-003: BlockStateProvider 实现，runClientData 产出 blockstate + block model
-- [ ] TASK-004: ItemModelProvider 实现，runClientData 产出 item model
-- [ ] TASK-005: LootTableProvider 实现，runClientData 产出 loot_table，JSON 语法校验通过
-- [ ] TASK-006: TagsProvider 实现，runClientData 产出 tag
-- [ ] TASK-007: DataGenerators.java 统一注册 + sourceSets 策略已确认
-- [ ] TASK-008: generated vs golden baseline diff 报告已生成（含文件级差异 + JSON 内容 diff），差异已分类
-- [ ] TASK-009: runClient 资源错误归零（Missing model/blockstate/loot_table/tag = 0）；Missing texture 无非预期新增，对比 baseline 已解释和归档
-- [ ] TASK-010: 全阶段提交已推送至 `origin/feat/26.1.2-datagen-migration`，历史可追溯
-- [ ] TASK-011: LDLib2 已升级至 26.1.2.28，依赖解析 + compile 通过，runClient 验证容器 tooltip 恢复；**用户视觉确认通过**（标准名称 tooltip 恢复）；上游修复 commit 3744f67e 已引用；证据文件 `plans/.evidence/evidence_26_1_2_datagen_migration_003.md` 已落盘
-- [ ] TASK-012: 21 个目标 block item 自定义 tooltip 恢复；静态映射覆盖 21 项 + key resolver 调用测试通过；compileJava + runClient 验证通过；machine/engine/energy_cell/cable 各代表类型视觉抽查通过；Missing item model = 0 保持；FluidModel 10 条 WARN 仍独立
+- [x] TASK-001: baseline 报告已生成（含 `data/minecraft/tags/` 引用本 mod 的 tag + `Missing texture` baseline），基线已冻结并推送至 `origin/feat/26.1.2-datagen-migration`
+- [x] TASK-002: Gradle 版本坐标已确认，对应 NeoForge API 证据已采集落盘
+- [x] TASK-003: BlockStateProvider 实现，runClientData 产出 blockstate + block model
+- [x] TASK-004: ItemModelProvider 实现，runClientData 产出 item model
+- [x] TASK-005: LootTableProvider 实现，runClientData 产出 loot_table，JSON 语法校验通过
+- [x] TASK-006: TagsProvider 实现，runClientData 产出 tag
+- [x] TASK-007: DataGenerators.java 统一注册 + sourceSets 策略已确认
+- [x] TASK-008: generated vs golden baseline diff 报告已生成（含文件级差异 + JSON 内容 diff），差异已分类
+- [x] TASK-009: runClient 资源错误归零（Missing model/blockstate/loot_table/tag = 0）；Missing texture 无非预期新增，对比 baseline 已解释和归档
+- [x] TASK-010: 全阶段提交已推送至 `origin/feat/26.1.2-datagen-migration`，历史可追溯
+- [x] TASK-011: LDLib2 已升级至 26.1.2.28，依赖解析 + compile 通过，runClient 验证容器 tooltip 恢复；**用户视觉确认通过**（标准名称 tooltip 恢复）；上游修复 commit 3744f67e 已引用；证据文件 `plans/.evidence/evidence_26_1_2_datagen_migration_003.md` 已落盘
+- [x] TASK-012: 21 个目标 block item 自定义 tooltip 恢复；静态映射覆盖 21 项 + key resolver 调用测试通过；compileJava + runClient 验证通过；machine/engine/energy_cell/cable 各代表类型视觉抽查通过；name integrity + 0 exclusions + 0 lang gaps 验证通过；用户视觉确认自定义 tooltip 与名称均正常；裸 key 回归通过 useBlockDescriptionPrefix 修复；死代码已清理并复验；Missing item model = 0 保持；FluidModel 10 条 WARN 仍独立
+- [x] TASK-013: 三个 Python 脚本已配 `hasattr`+`try/except (ValueError, OSError)` 保护 reconfigure + subprocess `encoding='utf-8', errors='replace'`；`run_client.bat` 已设 `@echo off` + `chcp 65001 >nul` + UTF-8 无 BOM（Windows 10/11 + JDK25 基线，无 `JAVA_TOOL_OPTIONS`）— 用户选择「保持本地」（.gitignore 忽略，不作为仓库交付）；CI 12 个 workflows 无中文输出，无需修改；无 PowerShell 文件；BOM 字节验证 + 编码验证命令全部 PASS；第三方脚本无意外修改；不单独提交（validate_custom_block_tooltips.py 与 docs 同属 TASK-012，待视觉验收后一并提交）；TASK-012 未提交变更不受影响
 - [ ] 每阶段推送已完成，无累积未推送变更
 - [ ] 如遇 Provider 暂不可实现，已降级保留静态资源并记录技术债
 

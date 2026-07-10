@@ -1,9 +1,14 @@
 package com.modularmc.ten.common.data;
 
+import com.modularmc.ten.TEN;
 import com.modularmc.ten.common.block.machine.CableBased;
 import com.modularmc.ten.common.block.machine.DirectionalMachineBlock;
 import com.modularmc.ten.common.block.machine.HorizontalMachineBlock;
+import com.modularmc.ten.common.item.TENBaseBlockItem;
 
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
@@ -103,18 +108,18 @@ public class TENBlocks {
     // ═══════════════════════════════════════════════════
 
     public static final DeferredHolder<Block, CableBased> PIPE
-            = cable("pipe", "物品管道");
+            = pipe("pipe", "物品管道");
     public static final DeferredHolder<Block, CableBased> PIPE_WHITE
-            = cable("pipe_white", "限定物品管道");
+            = pipe("pipe_white", "限定物品管道");
     public static final DeferredHolder<Block, CableBased> PIPE_BLACK
-            = cable("pipe_black", "排除物品管道");
+            = pipe("pipe_black", "排除物品管道");
 
     // ═══════════════════════════════════════════════════
     // Cells
     // ═══════════════════════════════════════════════════
 
     public static final DeferredHolder<Block, HorizontalMachineBlock> CELL
-            = cell("energy_cell", "能量单元");
+            = tooltipCell("energy_cell", "能量单元");
     public static final DeferredHolder<Block, HorizontalMachineBlock> CREATIVE_CELL
             = cell("creative_energy_cell", "创造能量单元");
 
@@ -173,7 +178,7 @@ public class TENBlocks {
                 .strength(4.0f, 8.0f)
                 .requiresCorrectToolForDrops()
                 .sound(SoundType.METAL));
-        ITEMS.registerSimpleBlockItem(name, holder);
+        registerTENBaseBlockItem(name, holder);
         return holder;
     }
 
@@ -183,7 +188,7 @@ public class TENBlocks {
                 .strength(4.0f, 8.0f)
                 .requiresCorrectToolForDrops()
                 .sound(SoundType.METAL));
-        ITEMS.registerSimpleBlockItem(name, holder);
+        registerTENBaseBlockItem(name, holder);
         return holder;
     }
 
@@ -193,7 +198,28 @@ public class TENBlocks {
                 .strength(1.5f)
                 .noOcclusion()
                 .sound(SoundType.GLASS));
+        registerTENBaseBlockItem(name, holder);
+        return holder;
+    }
+
+    private static DeferredBlock<CableBased> pipe(String name, String cn) {
+        ZH_NAMES.put(name, cn);
+        var holder = BLOCKS.registerBlock(name, CableBased::new, props -> props
+                .strength(1.5f)
+                .noOcclusion()
+                .sound(SoundType.GLASS));
         ITEMS.registerSimpleBlockItem(name, holder);
+        return holder;
+    }
+
+    private static DeferredBlock<HorizontalMachineBlock> tooltipCell(String name, String cn) {
+        ZH_NAMES.put(name, cn);
+        var holder = BLOCKS.registerBlock(name, HorizontalMachineBlock::new, props -> props
+                .strength(5.0f, 10.0f)
+                .requiresCorrectToolForDrops()
+                .noOcclusion()
+                .sound(SoundType.METAL));
+        registerTENBaseBlockItem(name, holder);
         return holder;
     }
 
@@ -216,6 +242,16 @@ public class TENBlocks {
                 .sound(SoundType.METAL));
         ITEMS.registerSimpleBlockItem(name, holder);
         return holder;
+    }
+
+    /**
+     * Register a TENBaseBlockItem (with custom tooltip) for the given block.
+     * Follows the 26.1.2 pattern of explicitly setting the item's ResourceKey.
+     */
+    private static <T extends Block> void registerTENBaseBlockItem(String name, DeferredHolder<Block, T> holder) {
+        var key = ResourceKey.create(Registries.ITEM,
+                Identifier.fromNamespaceAndPath(TEN.MOD_ID, name));
+        ITEMS.register(name, () -> new TENBaseBlockItem(holder.get(), new Item.Properties().useBlockDescriptionPrefix().setId(key)));
     }
 
     /**

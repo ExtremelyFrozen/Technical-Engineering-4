@@ -280,3 +280,184 @@ Remaining warnings (all pre-existing, none blocking):
 - **SpriteLoader mip level (2):** Cosmetic, not actionable.
 
 **Item definition layer is complete and correct.**
+
+---
+
+## 8. TASK-012: TE4 Custom Block Item Tooltip Restoration (Round 1 + Round 2)
+
+**Date:** 2026-07-10 (Round 1) / 2026-07-10 (Round 2 — bare key fix)
+**Branch:** `feat/26.1.2-datagen-migration`
+**Base:** Commit 756ff21 (TASK-011 LDLib2 26.1.2.28 upgrade)
+
+### Root Cause (Original)
+
+21 block items with existing lang tooltip data (12 machines, 4 engines, energy_cell, 4 cables) were registered as plain `BlockItem` via `ITEMS.registerSimpleBlockItem()`. The existing `TENBaseBlockItem` class (which extends `BlockItem`) was not used. Additionally, `machine_pulverizer` tooltip lang keys were numbered `.0, .1, .2, .4` (gap at index 3), causing the iteration loop to terminate early after finding no `.3` key.
+
+### Root Cause (Round 2 — Bare Key Regression)
+
+After Round 1, all 21 target block items correctly used `TENBaseBlockItem` with custom tooltips. However, a visual regression was found: **all 21 items displayed their registry lang key as the item name** (e.g., `item.kenergyengineering.machine_smelter`) instead of the translated name (e.g., "Smelter" / "熔炼机").
+
+**Root cause:** `TENBlocks.registerTENBaseBlockItem()` was creating `Item.Properties` with only `.setId(key)`, missing the `.useBlockDescriptionPrefix()` call required by NeoForge 26.1.2 for `BlockItem` subclasses. Without this flag, the `BlockItem` uses `item.<modid>.<path>` as its description ID, but the lang files only define `block.<modid>.<path>` keys. Items registered via `registerSimpleBlockItem()` (ores, storage, pipes, channels, creative_energy_cell) were unaffected because NeoForge's implementation automatically adds `.useBlockDescriptionPrefix()`.
+
+**Before (Round 1 — WRONG):**
+```java
+ITEMS.register(name, () -> new TENBaseBlockItem(holder.get(), new Item.Properties().setId(key)));
+// Item description ID → "item.kenergyengineering.<id>" — NO matching lang key → bare key display
+```
+
+**After (Round 2 — CORRECT):**
+```java
+ITEMS.register(name, () -> new TENBaseBlockItem(holder.get(), new Item.Properties().useBlockDescriptionPrefix().setId(key)));
+// Item description ID → "block.kenergyengineering.<id>" — matches existing lang keys → translated name
+```
+
+### Changes Made
+
+| File | Change |
+|---|---|
+| `TENBaseBlockItem.java` | New `resolveKeyPrefix()` method: machine_x → `info.x.`, engine_x → `info.engine_x.`, energy_cell → `info.energy_cell.`, cable/cable_x → direct key `<id>.`, others → null (no tooltip) |
+| `TENBlocks.java` | **Round 1:** 21 targets switched to `registerTENBaseBlockItem()` helper → `TENBaseBlockItem`; pipes/channels/ores/storage/creative_energy_cell remain plain `BlockItem` |
+| `TENBlocks.java` | **Round 2:** Added `.useBlockDescriptionPrefix()` to `Item.Properties` chain in `registerTENBaseBlockItem()` — 1 line changed |
+| `TENLangHandler.java` | `info.pulverizer.4` → `.3` (authoritative datagen source) |
+| `en_us.json` | `info.pulverizer.4` → `.3` |
+| `zh_cn.json` (main + generated) | `info.pulverizer.4` → `.3` |
+| `en_ud.json` | `info.pulverizer.4` → `.3` |
+| `scripts/validate_custom_block_tooltips.py` | New static validation script (Round 1) + extended with checks 5/6 for bare key detection (Round 2) |
+
+### Static Validation Results (`validate_custom_block_tooltips.py`)
+
+| Check | Result |
+|---|---|
+| Registration: 21 targets use TENBaseBlockItem | ✅ 21/21 PASS |
+| Registration: exclusions not switched | ✅ 0 violations (ores/storage/pipes/channels/creative_energy_cell all plain BlockItem) |
+| Key resolver: machine_/engine_/cable/energy_cell coverage | ✅ All 4 categories covered |
+| Key resolver: null return for non-targets | ✅ Present |
+| Cable resolver: no `info.` prefix | ✅ Correct (direct key) |
+| Lang prefix sanity: all 21 targets resolve in en_us | ✅ 21/21 |
+| Lang prefix sanity: all 21 targets resolve in zh_cn | ✅ 21/21 |
+| Lang continuity: en_us keys continuous (0..N) | ✅ All continuous |
+| Lang continuity: zh_cn keys continuous (0..N) | ✅ All continuous |
+| Pulverizer gap fix (was .4, now .3) | ✅ Continuous 0..3 (4 keys) |
+| **BlockItem description prefix** (Round 2) | ✅ `.useBlockDescriptionPrefix()` present — 21/21 targets use block prefix |
+| **Name key integrity** (Round 2) | ✅ 21/21 block.<id> exist in en_us+zh_cn; 0 item.<id> for targets; 0 empty/bare values |
+| **Name key statistics** (Round 2) | `block.*`: 43 en + 43 zh; `item.*`: 123 en + 123 zh — counts match |
+
+### Compilation
+
+| Round | Command | Result |
+|---|---|---|
+| Round 1 | `.\gradlew.bat compileJava --no-daemon` | ✅ BUILD SUCCESSFUL (41s) |
+| Round 2 | `.\gradlew.bat compileJava --no-daemon` | ✅ BUILD SUCCESSFUL (38s) |
+
+### Runtime Log Analysis (runClient Jul 10 22:38–22:51)
+
+| Category | Count | Status |
+|---|---|---|
+| ERROR/FATAL (kenergyengineering) | **0** | ✅ |
+| Missing item model (kenergyengineering) | **0** | ✅ (preserved from TASK-011) |
+| Missing FluidModel | 10 | ⚠️ Pre-existing (5 fluids × still+flowing) |
+| ldlib2:test variant/model warnings | 7+1 | ℹ️ External dep, pre-existing |
+| Vanilla command ambiguity | 10 | ℹ️ Vanilla behavior |
+| SpriteLoader mip level | 2 | ℹ️ Cosmetic |
+
+### Round 2 Verification — Bare Key Fix
+
+**RED phase (before fix):**
+- Check 5/6 `useBlockDescriptionPrefix`: **MISSING** — all 21 targets [FAIL]
+- Check 6/6 name integrity: ✅ PASS (keys exist, just not being looked up)
+- Confirmed: `registerTENBaseBlockItem` had `new Item.Properties().setId(key)` without `.useBlockDescriptionPrefix()`
+
+**GREEN phase (after fix):**
+- Check 5/6 `useBlockDescriptionPrefix`: **present** — 21/21 [OK]
+- Check 6/6 name integrity: ✅ PASS — 21 block.<id> keys in both langs, no item.<id> for targets
+- Name statistics: 43 `block.*` keys (en=zh), 123 `item.*` keys (en=zh), no mismatches
+- `compileJava`: ✅ BUILD SUCCESSFUL
+
+**Key evidence:** The lang files already contained all 21 `block.kenergyengineering.<id>` translation keys. The only issue was that `Item.Properties` was missing `.useBlockDescriptionPrefix()`. With the fix, the BlockItem now correctly resolves to `block.kenergyengineering.<id>` and displays the translated name.
+
+### Visual Verification
+
+⏳ **Pending human confirmation (both rounds).** The following items should display:
+1. **Correct translated name** (via `block.kenergyengineering.<id>`) instead of bare key — fixed in Round 2
+2. **Custom tooltips** on hover in creative mode inventory / JEI / container screens — fixed in Round 1
+
+- **Machines (12):** smelter (3 lines), pulverizer (4 lines), compressor (2 lines), refiner (2 lines), induction_furnace (2 lines), psionicant (1 line), beacon_simulator (4 lines), mob_ripper (2 lines), quarry (3 lines), enchantment_flusher (3 lines), matter_condenser (3 lines), farm_manager (3 lines)
+- **Engines (4):** extraction (2 lines), metal (4 lines), biomass (2 lines), solar (2 lines)
+- **Energy cell:** 2 lines (identical to `info.cell.*` content)
+- **Cables (4):** cable ("Transfer: 1 kFE"), cable_azure ("Transfer: 100 kFE"), cable_quartz ("Transfer: 10 kFE"), cable_star ("Transfer: Infinite FE")
+
+**Command to reproduce:** Open creative inventory → Machines tab → Hover over each machine/engine/cell/cable. Verify:
+1. Item name is translated (not a bare key)
+2. Gold-colored tooltip text appears
+
+### Regression Risks
+
+| Risk | Mitigation |
+|---|---|
+| All block items showing tooltip (false positive) | Key resolver returns null for non-target prefixes — safe by design |
+| Cable showing `info.` prefix tooltip | Cable branch returns direct key without `info.` — verified by static check |
+| Non-target block items affected | All exclusions confirmed as `BlockItem` (not `TENBaseBlockItem`) |
+| Bare key regression in new BlockItem subclasses | Validation script check 5/6 now detects missing `.useBlockDescriptionPrefix()` — future regression caught at CI time |
+| FluidModel 10 WARN still present | Pre-existing, not in scope of TASK-012 |
+
+---
+
+## 9. TASK-013: Script UTF-8 Precautions (Preventative Encoding Standardization)
+
+**Date:** 2026-07-10
+**Branch:** `feat/26.1.2-datagen-migration`
+**Base:** TASK-012 uncommitted changes preserved
+
+### Changes Made
+
+| File | Change | Lines |
+|---|---|---|
+| `scripts/validate_item_definitions.py` | Added `_configure_stdio_utf8()` function + call in `main()` | +8 lines |
+| `scripts/validate_ldlib_tooltip_fix.py` | Added `_configure_stdio_utf8()` function + call in `main()`; fixed 2× `subprocess.run(..., text=True)` → added `encoding='utf-8', errors='replace'` | +12 lines |
+| `scripts/validate_custom_block_tooltips.py` | Added `_configure_stdio_utf8()` function + call in `main()` | +8 lines |
+| `run_client.bat` | Replaced `@gradlew runClient` with `@echo off` + `chcp 65001 >nul` + `call gradlew.bat runClient` — **本地开发入口，仅当前机器有效，不进入 commit** | 3 lines (UTF-8 no BOM) |
+
+**交付说明：** 三个 Python 脚本（`validate_item_definitions.py`、`validate_ldlib_tooltip_fix.py`、`validate_custom_block_tooltips.py`）作为仓库交付，纳入 commit；`run_client.bat` 为本地开发便利脚本，UTF-8 编码修正仅当前机器有效，不纳入版本控制。
+
+### Verification Results
+
+| Check | Status | Evidence |
+|---|---|---|
+| **UTF-8 decoding** — all 4 target files | ✅ All decodable | `first3=23 21 2F` (Python: `#!`) / `40 65 63` (bat: `@ec`) — all clean |
+| **BOM check** — Python files | ✅ No BOM | No `EF BB BF` prefix in any script |
+| **BOM check** — `run_client.bat` | ✅ No BOM (correct) | First 3 bytes = `40 65 63` (`@ec` from `@echo off`) |
+| **`validate_item_definitions.py`** | ✅ PASS (exit 0) | 161/161 items present, valid, model refs resolve (GREEN) |
+| **`validate_ldlib_tooltip_fix.py`** | ✅ PASS (exit 0) | ldlib2 26.1.2.28 — version match + isItemSlot confirmed in bytecode |
+| **`validate_custom_block_tooltips.py`** | ✅ PASS (exit 0) | 21/21 targets use TENBaseBlockItem, 0 lang continuity errors (GREEN) |
+| **Pipe test (reconfigure)** — `validate_item_definitions.py` | ✅ No crash | Output piped through `2>&1 | Select-Object -First 3`, first lines emitted correctly |
+| **Pipe test (reconfigure)** — `validate_ldlib_tooltip_fix.py` | ✅ No crash | Same — `reconfigure()` does not raise when piped |
+| **Pipe test (reconfigure)** — `validate_custom_block_tooltips.py` | ✅ No crash | Same — `reconfigure()` does not raise when piped |
+| **Static: `_configure_stdio_utf8` defined** | ✅ All 3 scripts | Function defined after imports, called at top of `main()` |
+| **Static: `_configure_stdio_utf8` calls `reconfigure(encoding='utf-8')`** | ✅ All 3 | Pattern: `hasattr(stream, 'reconfigure')` → `try/except (ValueError, OSError): pass` |
+| **Static: `subprocess.run` encoding** | ✅ Both calls fixed | 全部两处调用均添加 `encoding='utf-8', errors='replace'` |
+| **Static: `run_client.bat` content** | ✅ Correct | `@echo off` + `chcp 65001 >nul` + `call gradlew.bat runClient` |
+| **TASK-012 uncommitted changes** | ✅ Preserved | All 9 TASK-012 files still in `git diff --name-only` output |
+
+### CI / PowerShell Scan
+
+| Area | Status |
+|---|---|
+| `.github/workflows/` (12 files) | ✅ No Chinese output — contains only English labels and GitHub Actions expressions |
+| `.ps1` files | ✅ None exist in project |
+| Project .gitignore | `run_client.bat` listed — file is local dev artifact, changes recorded on disk only |
+
+### Static Code Compliance
+
+- `_configure_stdio_utf8()`: uses `hasattr(stream, 'reconfigure')` guard, catches only `(ValueError, OSError)`, does not swallow other exceptions ✅
+- All I/O boundaries in `validate_ldlib_tooltip_fix.py` already explicit: `open()` calls use `encoding="utf-8"`, zipfile operations are binary ✅
+- No business logic touched, no Chinese test text added ✅
+- No `JAVA_TOOL_OPTIONS` set in `run_client.bat` ✅
+
+### Residual Risk
+
+| Risk | Status |
+|---|---|
+| Python < 3.7 without `stream.reconfigure()` | ✅ `hasattr` guard handles gracefully — function is no-op |
+| `reconfigure()` fails on non-text streams (pipes, redirected output) | ✅ `ValueError` caught — no crash |
+| Future `text=True` subprocess added without explicit encoding | ⚠️ Low — code review / linting should catch |
+| `run_client.bat` gitignored — version-controlled copy not maintained | ⚠️ Low — file is local dev convenience, not part of CI/CD |

@@ -25,6 +25,17 @@ import tempfile
 import zipfile
 import shutil
 
+
+def _configure_stdio_utf8():
+    """Ensure stdout/stderr use UTF-8 encoding for consistent output."""
+    for stream in (sys.stdout, sys.stderr):
+        if stream is not None and hasattr(stream, 'reconfigure'):
+            try:
+                stream.reconfigure(encoding='utf-8')
+            except (ValueError, OSError):
+                pass
+
+
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 VERSIONS_TOML = os.path.join(PROJECT_ROOT, "gradle", "forge.versions.toml")
 
@@ -142,7 +153,8 @@ def extract_and_decompile_mixin(jar_path: str) -> dict:
             # Run javap -verbose to get annotations + bytecode
             javap_cmd = ["javap", "-verbose", "-p", extracted_class]
             javap_result = subprocess.run(
-                javap_cmd, capture_output=True, text=True, timeout=30
+                javap_cmd, capture_output=True, text=True, timeout=30,
+                encoding='utf-8', errors='replace',
             )
 
             if javap_result.returncode != 0:
@@ -233,7 +245,8 @@ def analyze_raw_bytecode(class_file: str) -> dict:
     # Run javap -c (bytecode only) to get clean method bytecode
     javap_cmd = ["javap", "-c", "-p", class_file]
     javap_result = subprocess.run(
-        javap_cmd, capture_output=True, text=True, timeout=30
+        javap_cmd, capture_output=True, text=True, timeout=30,
+        encoding='utf-8', errors='replace',
     )
 
     if javap_result.returncode != 0:
@@ -331,6 +344,7 @@ def validate_jar_bytecode(jar_path: str) -> dict:
 
 
 def main():
+    _configure_stdio_utf8()
     print("=" * 70)
     print("  LDLib2 Tooltip Fix Regression Check")
     print("=" * 70)

@@ -29,6 +29,17 @@ import json
 import os
 import sys
 
+
+def _configure_stdio_utf8():
+    """Ensure stdout/stderr use UTF-8 encoding for consistent output."""
+    for stream in (sys.stdout, sys.stderr):
+        if stream is not None and hasattr(stream, 'reconfigure'):
+            try:
+                stream.reconfigure(encoding='utf-8')
+            except (ValueError, OSError):
+                pass
+
+
 # ── Project paths ──────────────────────────────────────────────────────
 
 PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -209,6 +220,7 @@ def validate_items_dir(items_dir: str) -> tuple[list[str], list[str], list[str]]
 
 
 def main():
+    _configure_stdio_utf8()
     script_dir = os.path.dirname(os.path.abspath(__file__))
     project_dir = os.path.dirname(script_dir)
 
