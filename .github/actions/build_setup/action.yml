@@ -22,7 +22,7 @@ runs:
         REF: ${{ inputs.ref || github.ref }}
       with:
         distribution: temurin
-        java-version: 25
+        java-version: 21
 
     - name: Setup Gradle
       uses: gradle/actions/setup-gradle@v4

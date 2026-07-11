@@ -30,16 +30,15 @@ jobs:
           fetchViaCommits: true
           failOnError: true
 
-  publish-261:
-    name: 26.1.2
+  publish-21:
+    name: 1.21.1
     needs: [ meta ]
-    if: ${{ endsWith(github.ref_name, '-26.1.2') }}
+    if: ${{ contains(github.ref_name, '1.21') }}
     secrets: inherit
     uses: ./.github/workflows/publish.yml
     with:
       simulate: ${{ startsWith(github.event.release.name, 'simulate') || github.repository_owner != 'ExtremelyFrozen' }}
       tag-name: ${{ github.ref_name }}
-      # version is Git branch name for bump PR base (origin/1.21), not game version
       version: '1.21'
       release-body: ${{ github.event.release.body }}
       changelog-body: ${{ needs.meta.outputs.CHANGELOG }}

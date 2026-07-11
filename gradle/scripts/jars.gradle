@@ -21,7 +21,7 @@ sourcesJar {
 }
 
 base {
-    archivesName = "${mod_id}-${libs.versions.minecraft.get()}"
+    archivesName = "${project.name}-${libs.versions.minecraft.get()}"
 }
 
 afterEvaluate {

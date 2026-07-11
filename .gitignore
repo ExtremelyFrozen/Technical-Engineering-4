@@ -26,6 +26,3 @@ src/generated/resources/.cache/
 *.patch
 *.DS_Store
 run_client.bat
-
-# Diagnostic artifact from 26.1.2 migration audit - do not commit
-/registry_dump.json

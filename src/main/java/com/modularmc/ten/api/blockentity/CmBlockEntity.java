@@ -29,7 +29,7 @@ public abstract class CmBlockEntity extends BlockEntity implements ISyncPersistR
     }
 
     /**
-     * 2-arg constructor for Minecraft 26.1.2 BlockEntitySupplier compatibility.
+     * 2-arg constructor for Minecraft 1.21.1 BlockEntitySupplier compatibility.
      * This is called during BlockEntityType creation; the actual type is passed
      * by the block entity type registration framework.
      * <p>
