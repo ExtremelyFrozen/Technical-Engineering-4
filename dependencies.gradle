@@ -13,52 +13,18 @@ dependencies {
     // Configuration — 无 26.1.2 坐标，需迁移到 ModConfigSpec（Phase 1+，不改源码）
     // jarJar(api(forge.configuration.get()))
 
-    // Recipe Viewers
+    // Recipe Viewers — compileOnly unconditional
     compileOnly(forge.bundles.jei)
-    // Phase 4/5: compileOnly(forge.emi)
 
-    // Phase 4/5: WAILA-likes
-    // compileOnly(forge.jade)
-
-    // Phase 4/5: Rendering / Optimizations
-    // compileOnly(forge.sodium)
-    // compileOnly(forge.iris)
-    // compileOnly(forge.modernfix)
-
-    // Phase 4/5: Curios API (optional - for curio slot support)
-    // compileOnly("maven.modrinth:curios:9.5.0+1.21.1")
-    // localRuntime("maven.modrinth:curios:9.5.0+1.21.1")
-
-    // Standard runtime mods //
+    // Standard runtime mods
     localRuntime(libs.testframework)
 
-    // Phase 4/5: localRuntime(forge.jade)
-    // Phase 4/5: localRuntime(forge.spark)
-    // Phase 4/5: localRuntime(forge.modernfix)
-
-    // Runtime Recipe Viewers - only enable one at a time.
-    // GTM's approach is to let EMI own the runtime path and keep JEI integration compile-only
-    // unless we are explicitly testing JEI itself.
-    // Phase 4/5: localRuntime(forge.emi)
-//    localRuntime(forge.jei.neoforge.impl)
-
-    // Phase 4/5: Client-only runtime mods //
-    // clientLocalRuntime(forge.sodium)
-    // clientLocalRuntime(forge.iris)
-    // clientLocalRuntime(forge.modernui)
-    // clientLocalRuntime("maven.modrinth:itemzoomer:2.0.1-1.21.1")
-    renderNurseCfg(libs.renderNurse)
+    // Development-only client runtime mods
+    clientLocalRuntime(forge.jei.neoforge.impl)   // JEI runtime viewer
+    clientLocalRuntime(forge.jade)                 // Jade debug overlay
+    clientLocalRuntime(forge.modernfix)            // ModernFix: startup/loader optimizations
+    clientLocalRuntime(forge.ferritecore)          // FerriteCore: memory reduction
+    clientLocalRuntime(forge.modernui)             // ModernUI: UI library (Modrinth universal fat JAR)
 
     renderNurseCfg(libs.renderNurse)
-
-    //////////////////////////////////////////////////////
-    // Runtime mods for dev testing with unclean client //
-    //////////////////////////////////////////////////////
-
-    //////////////////////////
-    // Phase 4/5: External runtime mods — need 26.1.2 compatible versions, disabled for early Phase 4 testing
-    // localRuntime("maven.modrinth:powah:6.2.8-neoforge")
-    // localRuntime("maven.modrinth:guideme:21.1.15")
-    // localRuntime("dev.architectury:architectury-neoforge:13.0.8")
-    // localRuntime("me.shedaniel.cloth:cloth-config-neoforge:15.0.140")
 }
