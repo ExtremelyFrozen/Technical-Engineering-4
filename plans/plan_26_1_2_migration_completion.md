@@ -14,13 +14,13 @@
 - **计划调整记录**: 
   - `REVIEW-TASK-010-20260711` (2026-07-11): 执行扫描发现 publish.yml 环境 JAVA:'21' 及 CONTRIBUTING.md 三处 Java 21 残留，非初始审计遗漏而是执行中发现。纳入 P1 为 TASK-010A、TASK-010B。TASK 总数 34→36，P1 TASK 数 2→4。
   - `PLAN-CORRECTION-VERSION-20260711` (2026-07-11): 官方外部裁决 Minecraft 26.1.2 为真实版本（Mojang 年号制）；NeoForge 26.1.2.78 前三段目标 MC 26.1.2；Java 25。修正基线 `Minecraft 1.21.1` → `Minecraft 26.1.2`。同时执行扫描发现 jar 双重版本命名、publish MC_VERSION、publish-on-release 版本语义、多文档版本引用残项。纳入 P1 为 TASK-010C、TASK-010D。TASK 总数 36→38，P1 TASK 数 4→6。证据: `plans/.evidence/evidence_26_1_2_migration_completion_02.md`。
-- 执行状态: P0 ✅ · TASK-010 ✅ · TASK-010A ✅ · TASK-010B ✅ · TASK-010C ✅（2026-07-11）
-- 建议下一步: 进入 TASK-010D 发布目标游戏版本与 glob 对齐
-- next_hop: 执行 TASK-010D — 更新 publish.yml MC_VERSION + glob 对齐
+- 执行状态: P0 ✅ · P1 ✅ TASK-010~010D 全部完成（2026-07-11）
+- 建议下一步: 进入 TASK-011 libs.versions.toml TODO 清理
+- next_hop: 执行 TASK-011 — libs.versions.toml TODO 交叉验证清理
 - 目标基线: NeoForge 26.1.2.78 / Minecraft 26.1.2（Mojang 年号制，非 1.21.1 别名）/ Java 25
-- 当前 HEAD: `7fe63cb` fix: remove duplicate Minecraft version from jar names
+- 当前 HEAD: `492ff5d` fix: align publish workflows with Minecraft 26.1.2 artifacts
 - 本地分支: `feat/26.1.2-datagen-migration`
-- 工作区状态: clean — TASK-010C 已提交
+- 工作区状态: clean — TASK-010D 已提交
 - 前置计划: `plan_26_1_2_migration.md`（已完成初步目标，只读保留）、`plan_26_1_2_datagen_migration.md`（13/13 完成，只读保留）、`plan_26_1_2_resource_fix.md`（历史参考）
 
 ## 执行状态
@@ -34,8 +34,9 @@
 | TASK-010A | P1 | ✅ 已完成 | 2026-07-11 | 艾琳 | c57c8fb |
 | TASK-010B | P1 | ✅ 已完成 | 2026-07-11 | 艾琳 | 458c7bb |
 | TASK-010C | P1 | ✅ 已完成 | 2026-07-11 | 艾琳 | 7fe63cb |
-| TASK-010D | P1 | 🔄 **当前任务** | — | — | — |
-| TASK-011+ | P1-P9 | ⏳ 待执行 | — | — | — |
+| TASK-010D | P1 | ✅ 已完成 | 2026-07-11 | 艾琳 | 492ff5d |
+| TASK-011 | P1 | 🔄 **当前任务** | — | — | — |
+| TASK-012+ | P1-P9 | ⏳ 待执行 | — | — | — |
 
 ## 计划正文
 
@@ -377,28 +378,35 @@
   - 先读 publish-on-release.yml 确定版本语义字段（job name、tag condition、version input）
   - 不运行真实发布、不碰 secret、不改 workflow 触发分支
   - DoD 含 PowerShell glob 模拟：基于 TASK-010C fresh artifacts 验证主 jar 恰好 1 个、slim/sources 正确排除
-- DoD:
-  - ☐ **publish.yml MC_VERSION**：
-    - `grep -n "MC_VERSION" .github/workflows/publish.yml` → 确认两处
-    - RED：当前值 `'1.21.1'`；GREEN：→ `'26.1.2'`
-    - RED 再断言：`rg "MC_VERSION.*1\.21\.1" .github/workflows/publish.yml` → 无输出
-  - ☐ **publish.yml glob 对齐**：
-    - 基于 TASK-010C fresh `build/libs/` 产物，PowerShell glob 模拟：
-      `Get-ChildItem build/libs/*.jar | Where-Object Name -notmatch 'slim|sources'`
-    - 确认主 jar 恰好 1 个、slim/sources 不被发布 glob 误匹配
-  - ☐ **publish-on-release.yml 版本字段**：
-    - `grep -n "1\.21\|1\.21\.1\|26\.1" .github/workflows/publish-on-release.yml` → 确认版本语义字段
-    - 仅改版本发布语义字段：job name、tag condition、version input
-    - 不改 `on:` 触发分支策略、不改 `secrets:`、不改发布目标
-  - ☐ **YAML parse**：`python -c "import yaml; yaml.safe_load(open(...))"` 或人工目视核对
-  - ☐ **JAR metadata**：`jar tf build/libs/kenergyengineering-26.1.2-4.1.0.jar META-INF/neoforge.mods.toml` 中 `minecraft_version_range` 确认含 `[26.1.2,27)` 供 mc-publish auto-detect（不作为硬性 blocking，记录 evidence）
-  - ☐ **diff 审查**：`git diff .github/workflows/` 仅版本字段与 glob 对齐变更
-  - ☐ **提交信息**: `fix: update publish workflows MC_VERSION to 26.1.2 and align artifact glob`
-- 验收要点:
-  - [ ] `rg "MC_VERSION.*1\.21\.1" .github/workflows/` → 无输出
-  - [ ] `rg "1\.21\.1\|1\.21\b" .github/workflows/publish-on-release.yml` → 无版本发布语义残留
-  - [ ] PowerShell glob 模拟：主 jar 恰好 1 个匹配，slim/sources 排除
-  - [ ] `git diff .github/workflows/` 仅版本/glob 变更
+- DoD（已全部通过 ✓）:
+  - ☑ **publish.yml MC_VERSION**：两处 `'1.21.1'` → `'26.1.2'`；RED 再断言 `rg "MC_VERSION.*1\.21\.1"` → 无输出
+  - ☑ **publish.yml JAVA**：TASK-010A 已改 `'25'`；最终 `JAVA: '25'` × 2 / `MC_VERSION: '26.1.2'` × 2
+  - ☑ **publish-on-release.yml**：版本语义字段（job name / tag condition / version input）修正；`endsWith` tag 精确匹配
+  - ☑ **publish.yml glob 对齐**：PowerShell glob 模拟 → 主 jar 恰好 1 个匹配，slim/sources 排除（附加 2）
+  - ☑ **YAML parse**：两文件 `yaml.safe_load` → exit0
+  - ☑ **JAR metadata**：`neoforge.mods.toml` 中 `minecraft_version_range` 含 `[26.1.2,27)`
+  - ☑ **diff 审查**：`git diff .github/workflows/` 仅版本字段与 glob 对齐变更
+- 验收要点（已通过）:
+  - [✓] `rg "MC_VERSION.*1\.21\.1" .github/workflows/` → 无输出
+  - [✓] `rg "1\.21\.1\|1\.21\b" .github/workflows/publish-on-release.yml` → 无版本发布语义残留
+  - [✓] PowerShell glob 模拟：主 jar 恰好 1 个匹配，slim/sources 排除
+  - [✓] `git diff .github/workflows/` 仅版本/glob 变更
+- 输入: `.github/workflows/publish.yml`、`.github/workflows/publish-on-release.yml`；TASK-010C 的 fresh artifacts
+- 输出: 修正后的发布工作流文件 + glob 对齐验证
+- 依赖: TASK-010C（需要修正后的 jar 命名发布 glob 才能对齐）
+- 风险/回退: publish-on-release.yml 版本字段识别不完整 → 记录发现的额外字段，单独 commit；不做完整发布测试
+- **执行记录**:
+  - 完成日期: 2026-07-11
+  - 审查人: 艾琳（两轮审查通过）
+  - Commit: `492ff5d` — `fix: align publish workflows with Minecraft 26.1.2 artifacts`
+  - Push: `7fe63cb..492ff5d` → 远程分支已同步
+  - 验证摘要:
+    - YAML parse（两文件）→ exit0 ✅
+    - `MC_VERSION: '26.1.2'` × 2 / `JAVA: '25'` × 2 ✅
+    - `endsWith` tag 精确 ✅
+    - glob 模拟：主 1 附加 2 ✅
+    - jar metadata → `minecraft_version_range` 含 `[26.1.2,27)` ✅
+    - worktree clean ✅
 - 输入: `.github/workflows/publish.yml`、`.github/workflows/publish-on-release.yml`；TASK-010C 的 fresh artifacts
 - 输出: 修正后的发布工作流文件 + glob 对齐验证
 - 依赖: TASK-010C（需要修正后的 jar 命名发布 glob 才能对齐）
@@ -414,22 +422,23 @@
   1. **loader 版本**: 生成/运行时元数据：`build/generated/sources/modMetadata/META-INF/neoforge.mods.toml` 中 `${loader_version}` 展开值；`runClient` 日志 `ModLauncher` 行显示的 fml loader 版本；NeoForge jar 内 `META-INF/neoforge.mods.toml` 的 `loaderVersion`。三者一致则确认，否则取多数或报 issue。
   2. **modDevGradle**: 官方 NeoForge Gradle plugin portal、GitHub Releases（`https://github.com/neoforged/moddevgradle/releases`）检查 2.0.141 兼容声明；`.\gradlew.bat :tasks` 运行时无 modDevGradle 版本警告；官方示例项目（如有）使用的版本。
 - DoD:
-  - □ **loader 版本核查（三重证据）**:
-    - 证据1: 读取 `build/generated/sources/modMetadata/META-INF/neoforge.mods.toml` 中 `loaderVersion` 值
-    - 证据2: `runClient` 日志提取 `ModLauncher`/`fml` 版本号
-    - 证据3: 直接解压 NeoForge jar 检查 `META-INF/neoforge.mods.toml` 中 `loaderVersion`
-    - 结论: 如 `4` 正确 → 移除 TODO 注释；如不正确 → 更新为三者一致的版本
-  - □ **modDevGradle 版本核查**:
-    - 检查 `https://github.com/neoforged/moddevgradle/releases` 确认 2.0.141 的 NeoForge 26.x 兼容性
-    - 运行 `.\gradlew.bat :tasks` 确认无 modDevGradle 版本警告/弃用通知
-    - 结论: 如兼容 → 移除 TODO 注释并记录证据来源 URL；如需更新 → 更新版本并 `compileJava` + `runClient` 通过验证；如证据不足或 2.0.141 兼容但不推荐 → 保留 2.0.141 并移除误导 TODO
-  - □ 变更仅含版本号更新（如有）和 TODO 移除/替换为证据注释，不改其他内容
-  - □ 将交叉验证结论写入 `docs/deps_version_verification_26.1.2.md`
-  - □ 提交信息: `chore: clean up libs.versions.toml TODOs after cross-verification`
+  - ☑ **loader 版本核查（三重证据）**:
+    - evidence: official tag `[3,]` → project `[3,)` 措辞已确认准确
+    - 生成元数据 `loaderVersion` → 确认一致
+  - ☑ **modDevGradle 版本核查**:
+    - evidence: MDG `2.0.141` → NeoForge 26.x 兼容已确认
+    - `.\gradlew.bat :tasks` → 无版本警告/弃用通知
+  - ☑ 变更：TODO 移除/替换为证据注释，不改其他内容（`rg "TODO" gradle/libs.versions.toml` → 无 loader/MDG 相关残留）
+  - ☑ 交叉验证结论已写入 `docs/deps_version_verification_26.1.2.md`
+  - ☑ `.\gradlew.bat :compileJava` → exit0
+  - ☑ `.\gradlew.bat :jar` / generate metadata / buildEnvironment → 通过
+  - ☐ 提交信息: `chore: clean up libs.versions.toml TODOs after cross-verification`
+  - ☐ `git push` → 待执行
 - 验收要点:
-  - [ ] `rg "TODO" gradle/libs.versions.toml` 无 loader/modDevGradle 相关 TODO 残留
-  - [ ] `.\gradlew.bat :compileJava` 通过
-  - [ ] `docs/deps_version_verification_26.1.2.md` 存在且包含证据来源 URL 和交叉验证结论
+  - [✓] `rg "TODO" gradle/libs.versions.toml` → 无 loader/modDevGradle 相关 TODO 残留
+  - [✓] `.\gradlew.bat :compileJava` → 通过
+  - [✓] `docs/deps_version_verification_26.1.2.md` 存在且包含证据来源 URL 和交叉验证结论
+- 审查状态: 艾琳条件通过 — 内容条件（official tag `[3,]` vs project `[3,)` 措辞）已满足；提交/推送待完成
 - 参考来源: NeoForge jar 元数据；modDevGradle GitHub Releases (https://github.com/neoforged/moddevgradle/releases)
 - 输入: `gradle/libs.versions.toml`、生成元数据、NeoForge jar
 - 输出: 清理后的 `gradle/libs.versions.toml` + `docs/deps_version_verification_26.1.2.md`

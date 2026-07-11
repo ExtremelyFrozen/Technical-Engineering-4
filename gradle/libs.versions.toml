@@ -1,12 +1,12 @@
 [versions]
 minecraft = "26.1.2"
 neoForge = "26.1.2.78"
-loader = "4"          # TODO: 确认 26.1.2 线 loader 版本号
+loader = "3"          # NeoForge 26.1.2 tag: [3,]; FML 11.x; project template -> [3,)
 # parchment 无 26.1.2 兼容版本，使用 Mojang 参数名（Phase 0 禁用）
 # parchment = "2024.11.17"
 shadow = "8.3.5"
 spotless = "8.4.0"
-modDevGradle = "2.0.141" # TODO: NeoForge 26.x.x 可能需要更新 modDevGradle 版本
+modDevGradle = "2.0.141" # Plugin Portal latest (2026-03-22); NeoForge 26.1 official recommendation
 lombok = "9.5.0"
 jetbrains-annotations = "26.1.0"
 renderNurse = "0.0.14"
