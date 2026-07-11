@@ -8,17 +8,19 @@
 - 创建者: 猫娘规划师-缇娅
 - 触发原因: 审计发现16项未完成迁移残项，用户要求"逐个攻破"切换到任务模式；草稿第2版经增量审查通过
 - **审查结论**: 审查通过
-- **通过范围**: 草稿第2版全部34 TASK、P0-P9阶段结构、依赖链、DoD、验证矩阵（后经计划调整 +2 → 36 TASK）
+- **通过范围**: 草稿第2版全部34 TASK、P0-P9阶段结构、依赖链、DoD、验证矩阵（后经计划调整 +2 → 36，再 +2 → 38 TASK）
 - **残留风险（非阻断）**: ugrep/rg混用、风险矩阵R09/R10重复、TASK-092依赖精度、TASK-090未显式覆盖所有P8——均在本次正式转换中消除
+- **版本基线修正声明**: 初始草稿/旧计划中目标基线标注 `Minecraft 1.21.1` 属历史误判——Mojang 已采用年号制，`26.1.2` 是真实版本而非 `1.21.1` 别名。旧计划/草稿只读保留不作静默改写；当前 formal plan 及 evidence 为权威版本。
 - **计划调整记录**: 
   - `REVIEW-TASK-010-20260711` (2026-07-11): 执行扫描发现 publish.yml 环境 JAVA:'21' 及 CONTRIBUTING.md 三处 Java 21 残留，非初始审计遗漏而是执行中发现。纳入 P1 为 TASK-010A、TASK-010B。TASK 总数 34→36，P1 TASK 数 2→4。
-- 执行状态: P0 ✅ TASK-000 ~ TASK-002 全部完成（2026-07-11）
-- 建议下一步: 进入 TASK-010 CI JDK 版本修正 21→25
-- next_hop: 执行 TASK-010 — CI 工具链 JDK 版本统一
-- 目标基线: NeoForge 26.1.2 / Minecraft 1.21.1 / Java 25
-- 当前 HEAD: `e4de678` docs: record 26.1.2 compiler warning baseline
+  - `PLAN-CORRECTION-VERSION-20260711` (2026-07-11): 官方外部裁决 Minecraft 26.1.2 为真实版本（Mojang 年号制）；NeoForge 26.1.2.78 前三段目标 MC 26.1.2；Java 25。修正基线 `Minecraft 1.21.1` → `Minecraft 26.1.2`。同时执行扫描发现 jar 双重版本命名、publish MC_VERSION、publish-on-release 版本语义、多文档版本引用残项。纳入 P1 为 TASK-010C、TASK-010D。TASK 总数 36→38，P1 TASK 数 4→6。证据: `plans/.evidence/evidence_26_1_2_migration_completion_02.md`。
+- 执行状态: P0 ✅ · TASK-010 ✅（2026-07-11）
+- 建议下一步: 进入 TASK-010A 发布元数据 Java 21→25
+- next_hop: 执行 TASK-010A — 修正 publish.yml 环境 JAVA 版本
+- 目标基线: NeoForge 26.1.2.78 / Minecraft 26.1.2（Mojang 年号制，非 1.21.1 别名）/ Java 25
+- 当前 HEAD: `2358866` fix: align CI JDK and mise toolchain to JDK 25
 - 本地分支: `feat/26.1.2-datagen-migration`
-- 工作区状态: clean — 基线已提交
+- 工作区状态: dirty — TASK-010A publish.yml + formal plan/evidence 增量待提交
 - 前置计划: `plan_26_1_2_migration.md`（已完成初步目标，只读保留）、`plan_26_1_2_datagen_migration.md`（13/13 完成，只读保留）、`plan_26_1_2_resource_fix.md`（历史参考）
 
 ## 执行状态
@@ -28,9 +30,11 @@
 | TASK-000 | P0 | ✅ 已完成 | 2026-07-11 | 艾琳 | 8aafdc3, ce6f653 |
 | TASK-001 | P0 | ✅ 已完成 | 2026-07-11 | 艾琳 | 66f2ff5 |
 | TASK-002 | P0 | ✅ 已完成 | 2026-07-11 | 艾琳 | e4de678 |
-| TASK-010 | P1 | 🔄 **执行中（待提交）** | — | — | — |
-| TASK-010A | P1 | ⏳ 待执行 | — | — | — |
+| TASK-010 | P1 | ✅ 已完成 | 2026-07-11 | 艾琳 | 2358866 |
+| TASK-010A | P1 | 🔄 **当前任务** | — | — | — |
 | TASK-010B | P1 | ⏳ 待执行 | — | — | — |
+| TASK-010C | P1 | ⏳ 待执行 | — | — | — |
+| TASK-010D | P1 | ⏳ 待执行 | — | — | — |
 | TASK-011+ | P1-P9 | ⏳ 待执行 | — | — | — |
 
 ## 计划正文
@@ -61,7 +65,7 @@
 | 阶段 | 名称 | TASK数 | 关键依赖链 |
 |------|------|--------|-----------|
 | P0 | 工作区检查点 —— 安全收口 | 3 | 无（最先执行） |
-| P1 | 工具链修复 | 4 | P0 |
+| P1 | 工具链修复 | 6 | P0 |
 | P2 | Configuration 迁移 | 2 | P0 |
 | P3 | Transfer 边界恢复 | 5 | P0（含新 TASK-031A BE accessor） |
 | P4 | Transfer 内部迁移 | 6 | P3 |
@@ -71,7 +75,7 @@
 | P8 | 存根清理 & TODOs | 4 | 最小化：080A/080B 仅 P0，081/082 仅 P2 |
 | P9 | 全量验证 & 收官 | 6 | P8（含新 TASK-090A test sourceSet） |
 
-**总计**: **36 TASK**，按阶段顺序执行，P6/P7/P8(080A/080B) 可与 P3-P5 并行（依赖标记为独立时）。
+**总计**: **38 TASK**，按阶段顺序执行，P6/P7/P8(080A/080B) 可与 P3-P5 并行（依赖标记为独立时）。
 
 ## 任务清单
 
@@ -189,7 +193,7 @@
 
 ### Phase 1 — 工具链修复
 
-> 旧 plan 未覆盖的 CI/元数据/文档问题，修正 JDK 版本不一致和版本目录中的 TODO 标记。含执行扫描发现的两项新增残项（TASK-010A/010B）。
+> 旧 plan 未覆盖的 CI/元数据/文档/构建/发布问题，修正 JDK 版本、MC 版本基线及发布链残项。含执行扫描发现的新增残项（TASK-010A~010D）。
 
 #### TASK-010: CI JDK 版本修正 21→25
 
@@ -199,19 +203,30 @@
   - `.github/actions/build_setup/action.yml`（`java-version: 21` → `25`）
   - `mise.toml`（`java = "21"` → `"25"`）
 - 目标: 使 CI 构建环境和本地 mise 工具链与 JDK 25 一致；build toolchain 已为 25 且 `auto-download=false`，CI 必须匹配
-- DoD:
-  - □ `action.yml` 中 `java-version: 21` 已改为 `25`
-  - □ `mise.toml` 中 `java = "21"` 已改为 `"25"`
-  - □ 改后 `git diff` 仅含上述两处变更
-  - □ 提交信息: `fix: align CI JDK and mise toolchain to JDK 25`
-- 验收要点:
-  - [ ] `grep "java-version" .github/actions/build_setup/action.yml` 输出 `25`
-  - [ ] `grep 'java =' mise.toml` 输出 `java = "25"`
-  - [ ] 变更后 `.\gradlew.bat :compileJava` 仍通过（不退化）
+- DoD（已全部通过 ✓）:
+  - ☑ `action.yml` 中 `java-version: 21` → `25`
+  - ☑ `mise.toml` 中 `java = "21"` → `"25"`
+  - ☑ tomllib/YAML 结构验证通过；`git diff` 仅含上述两处变更 + formal plan 增量
+  - ☑ `.\gradlew.bat :compileJava` no-daemon rerun → exit0 1m5s（不退化）
+- 验收要点（已通过）:
+  - [✓] `grep "java-version" .github/actions/build_setup/action.yml` → `25`
+  - [✓] `grep 'java =' mise.toml` → `java = "25"`
+  - [✓] 变更后 `.\gradlew.bat :compileJava` exit0
 - 输入: `.github/actions/build_setup/action.yml`、`mise.toml`
 - 输出: 上述两文件的 JDK 版本修正
 - 依赖: P0
 - 风险/回退: CI 配置语法错误 → `git revert` 回退
+- **执行记录**:
+  - 完成日期: 2026-07-11
+  - 审查人: 艾琳（条件通过 + 计划任务审查通过）
+  - Commit: `2358866` — `fix: align CI JDK and mise toolchain to JDK 25`
+  - Push: `e4de678..2358866` → 远程分支已同步
+  - 验证摘要:
+    - `action.yml` java-version 25 ✅
+    - `mise.toml` java = "25" ✅
+    - tomllib/YAML 结构正确 ✅
+    - `compileJava` no-daemon rerun → exit0 1m5s ✅
+    - worktree clean ✅
 
 #### TASK-010A: 发布元数据 Java 21→25（publish.yml）
 
@@ -241,32 +256,112 @@
 - 依赖: TASK-010（build_setup 与 mise 先对齐，再修正发布元数据）
 - 风险/回退: YAML 缩进损坏 → `git checkout -- .github/workflows/publish.yml` 恢复
 
-#### TASK-010B: CONTRIBUTING.md Java 版本修正 21→25
+#### TASK-010B: 活跃开发文档与源码注释版本基线修正
 
 - task_id: `TASK-010B`
 - phase: P1
 - scope:
-  - `CONTRIBUTING.md`（第34、48、60行三处 Java/JDK 21 → 25）
-- 目标: 消除贡献者文档中的 Java 21 误导引用，与当前 JDK 25 构建环境一致
+  - `CONTRIBUTING.md`（7 处：Minecraft/NeoForge/Java/Registrate 旧版本引用）
+  - `docs/closure_verification.md`（1 处 MC 1.21.1）
+  - `docs/compile_warning_baseline_26.1.2.md`（1 处 MC 1.21.1）
+  - `src/main/java/com/modularmc/ten/common/blockentity/CmBlockEntity.java`（1 处过期注释）
+- 目标: 消除活跃开发文档与源码注释中所有指向 Minecraft 1.21.1 / NeoForge 26.1.2 错误语义的版本引用，与当前目标基线 `Minecraft 26.1.2 / NeoForge 26.1.2.78 / Java 25` 一致
 - **关键约束（审查裁决）**:
-  - 仅改显式 `Java 21` / `JDK 21` 版本号，保留历史上下文/计划/Mixin `JAVA_21` 不动
-  - 核对 `build.gradle` toolchain（已为 25）和 `major=69` 确认一致性
-  - 全文 `rg` 确保所有用户面向的 Java 版本引用已更新，非用户面向的技术引用（如 `JAVA_21`）跳过
+  - 仅改版本号与平台名，保留技术描述/API 调用签名/历史变更日志不动
+  - CONTRIBUTING.md 分类每处引用：Minecraft 版本 / NeoForge 版本 / Java 版本 / Registrate 引用，分别修正
+  - 旧 plans/drafts/evidence/deps/logs/README 兄弟目录排除
+  - 核对 `build.gradle` toolchain（JDK 25）、构件 major=69、NeoForge 26.1.2.78 jar 元数据
+  - `CmBlockEntity.java` 注释中的过期 MC 版本引用仅更新版本号，不改代码逻辑
 - DoD:
-  - ☐ **范围确定**：`rg -n "21" CONTRIBUTING.md` 分类标记每处为"需改"/"保留"
-  - ☐ **修改**：第34、48、60行 `Java 21` / `JDK 21` → `Java 25` / `JDK 25`
-  - ☐ **RED 验证**：`rg "Java 21\|JDK 21" CONTRIBUTING.md` → 无用户面向残留（仅保留 `JAVA_21` 等技术引用）
-  - ☐ **一致性**：确认 `build.gradle` `java.toolchain.languageVersion = JavaLanguageVersion.of(25)` 且构件 `major=69`
-  - ☐ **diff 审查**：`git diff CONTRIBUTING.md` 仅 version 数值变更
-  - ☐ **提交信息**: `docs: update CONTRIBUTING.md Java version from 21 to 25`
+  - ☐ **CONTRIBUTING.md**：`rg -n "1\.21\.1\|21\|1\.20\|1\.19" CONTRIBUTING.md` 分类标记需改性/保留性，逐处修正
+  - ☐ **docs/closure_verification.md**：`rg -n "1\.21\.1"` → 改 1 处为 `26.1.2`
+  - ☐ **docs/compile_warning_baseline_26.1.2.md**：`rg -n "1\.21\.1"` → 改 1 处为 `26.1.2`
+  - ☐ **CmBlockEntity.java**：定位过期注释，更新版本号，`rg "1\.21\.1\|TODO.*version"` 确认
+  - ☐ **RED 验证**：`rg "1\.21\.1" CONTRIBUTING.md docs/ src/main/java/ --include '*.java' --include '*.md'` → 仅保留历史/计划/旧 plans 引用的合法出现（确认分类通过）
+  - ☐ **一致性**：最终 `grep "minecraft.*1\.21"` 在 scope 文件内无输出
+  - ☐ **diff 审查**：`git diff` 仅版本号/平台名数值变更，不涉及代码逻辑改动
+  - ☐ **提交信息**: `docs: align version references to MC 26.1.2 / NeoForge 26.1.2.78 across active docs and source comments`
 - 验收要点:
-  - [ ] 贡献者首次阅读时不再看到 `Java 21` / `JDK 21` 要求
-  - [ ] `rg "Java 21\|JDK 21" CONTRIBUTING.md` 无输出（排除 `JAVA_21` 等非用户面向引用）
-  - [ ] `git diff` 仅 CONTRIBUTING.md 且仅 version 数值变更
-- 输入: `CONTRIBUTING.md`；`build.gradle` toolchain 配置
-- 输出: 更新后的 `CONTRIBUTING.md`
-- 依赖: TASK-010A（建议顺序：010 → 010A → 010B → 011）
-- 风险/回退: 文档文字错误 → `git checkout -- CONTRIBUTING.md` 恢复
+  - [ ] 贡献者文档 CONTRIBUTING.md 再无 `1.21.1` / `Java 21` 描述
+  - [ ] `rg "1\.21\.1" CONTRIBUTING.md docs/closure_verification.md docs/compile_warning_baseline_26.1.2.md` → 无输出
+  - [ ] `CmBlockEntity.java` 注释版本已更新
+  - [ ] `git diff` 仅 scope 内文件且仅版本信息变更
+- 输入: CONTRIBUTING.md、docs/closure_verification.md、docs/compile_warning_baseline_26.1.2.md、CmBlockEntity.java
+- 输出: 各文件版本引用已修正
+- 依赖: TASK-010A（顺序执行链：010 → 010A → 010B → 010C → 010D → 011）
+- 风险/回退: 文档文字错误 → `git checkout -- <文件>` 恢复
+
+#### TASK-010C: JAR 命名双重版本修正
+
+- task_id: `TASK-010C`
+- phase: P1
+- scope:
+  - `gradle/scripts/jars.gradle`（优先 —— 修正 `archivesName` 或 version 拼接逻辑）
+  - `build.gradle`（必要时核实 `version` / `archivesBaseName` 配置）
+- 目标: 消除当前构建产出 `kenergyengineering-26.1.2-26.1.2-4.1.0.jar` 中的重复 `26.1.2`，修正为 `kenergyengineering-26.1.2-4.1.0.jar`（主 jar）。slim/sources jar 命名规则自动继承修正。
+- **关键约束（审查裁决）**:
+  - 先 RED：`.\gradlew.bat clean :build` 产出 fresh jar，`ls build/libs/` 确认当前重复命名模式
+  - 目标：`archivesName = "${mod_id}-${libs.versions.minecraft.get()}"` 或等效，使主 jar 精确为 `${mod_id}-${mc_version}-${mod_version}.jar`
+  - 不改 `settings.gradle` 除非验证必须
+  - JAR 内容/manifest 不变（`jar { ... }` 配置不调整）
+  - slim/sources 前缀自动继承新命名规则
+- DoD:
+  - ☐ **RED 断言**：`.\gradlew.bat clean :build` → 确认 `build/libs/` 含 `kenergyengineering-26.1.2-26.1.2-4.1.0.jar`
+  - ☐ **根因定位**：`grep -rn "archivesName\|archivesBaseName\|version" gradle/scripts/jars.gradle build.gradle` 确定双重 `26.1.2` 来源
+  - ☐ **GREEN 修正**：在 `jars.gradle` 中设置 `archivesName = "${mod_id}-${libs.versions.minecraft.get()}"` 或等效最小方案
+  - ☐ **GREEN 验证**：`.\gradlew.bat clean :build` → `ls build/libs/` → `kenergyengineering-26.1.2-4.1.0.jar` 恰好一个主 jar（slim/sources 排除）
+  - ☐ **diff 审查**：`git diff` 仅 `jars.gradle` 且仅命名规则变更
+  - ☐ **提交信息**: `fix: correct jar naming to avoid duplicate MC version`
+- 验收要点:
+  - [ ] `.\gradlew.bat clean :build` → `ls build/libs/` → 主 jar `kenergyengineering-26.1.2-4.1.0.jar`（非重复）
+  - [ ] slim/sources jar 命名前缀一致且未损坏
+  - [ ] `jar tf build/libs/kenergyengineering-26.1.2-4.1.0.jar | head -5` → 内容与修正前一致（仅命名变）
+  - [ ] `git diff` 仅 jars.gradle 且仅命名变更
+- 输入: `gradle/scripts/jars.gradle`、`build.gradle`
+- 输出: 修正后的 jar 命名（fresh build 验证）
+- 依赖: TASK-010B（顺序链：010B → 010C）
+- 风险/回退: archivesName 变更导致 slim jar 未生成 → 恢复 jars.gradle，改用 `build.gradle` 中 `version` 拼接
+
+#### TASK-010D: 发布目标游戏版本与 glob 对齐
+
+- task_id: `TASK-010D`
+- phase: P1
+- scope:
+  - `.github/workflows/publish.yml`（两处 `MC_VERSION: '1.21.1'` → `'26.1.2'`；`files: '**/build/libs/*.jar'` 的实际 glob 模式确认匹配修正后命名）
+  - `.github/workflows/publish-on-release.yml`（版本发布语义的 job name / tag condition / version input — 先读取数据流确定具体字段；仅改版本数值，不改 workflow 触发分支策略/发布目标/secret）
+- 目标: 将发布工作流的游戏版本参数从 1.21.1 更新至 26.1.2，确保 TASK-010C 修正后的 jar 命名能命中发布 glob
+- **关键约束（审查裁决）**:
+  - TASK-010A 已处理 JAVA 版本，TASK-010D 仅处理游戏版本（MC_VERSION）和相关 glob
+  - 先读 publish.yml 确定 MC_VERSION 两处具体行 + files/name/version 实际引用模式
+  - 先读 publish-on-release.yml 确定版本语义字段（job name、tag condition、version input）
+  - 不运行真实发布、不碰 secret、不改 workflow 触发分支
+  - DoD 含 PowerShell glob 模拟：基于 TASK-010C fresh artifacts 验证主 jar 恰好 1 个、slim/sources 正确排除
+- DoD:
+  - ☐ **publish.yml MC_VERSION**：
+    - `grep -n "MC_VERSION" .github/workflows/publish.yml` → 确认两处
+    - RED：当前值 `'1.21.1'`；GREEN：→ `'26.1.2'`
+    - RED 再断言：`rg "MC_VERSION.*1\.21\.1" .github/workflows/publish.yml` → 无输出
+  - ☐ **publish.yml glob 对齐**：
+    - 基于 TASK-010C fresh `build/libs/` 产物，PowerShell glob 模拟：
+      `Get-ChildItem build/libs/*.jar | Where-Object Name -notmatch 'slim|sources'`
+    - 确认主 jar 恰好 1 个、slim/sources 不被发布 glob 误匹配
+  - ☐ **publish-on-release.yml 版本字段**：
+    - `grep -n "1\.21\|1\.21\.1\|26\.1" .github/workflows/publish-on-release.yml` → 确认版本语义字段
+    - 仅改版本发布语义字段：job name、tag condition、version input
+    - 不改 `on:` 触发分支策略、不改 `secrets:`、不改发布目标
+  - ☐ **YAML parse**：`python -c "import yaml; yaml.safe_load(open(...))"` 或人工目视核对
+  - ☐ **JAR metadata**：`jar tf build/libs/kenergyengineering-26.1.2-4.1.0.jar META-INF/neoforge.mods.toml` 中 `minecraft_version_range` 确认含 `[26.1.2,27)` 供 mc-publish auto-detect（不作为硬性 blocking，记录 evidence）
+  - ☐ **diff 审查**：`git diff .github/workflows/` 仅版本字段与 glob 对齐变更
+  - ☐ **提交信息**: `fix: update publish workflows MC_VERSION to 26.1.2 and align artifact glob`
+- 验收要点:
+  - [ ] `rg "MC_VERSION.*1\.21\.1" .github/workflows/` → 无输出
+  - [ ] `rg "1\.21\.1\|1\.21\b" .github/workflows/publish-on-release.yml` → 无版本发布语义残留
+  - [ ] PowerShell glob 模拟：主 jar 恰好 1 个匹配，slim/sources 排除
+  - [ ] `git diff .github/workflows/` 仅版本/glob 变更
+- 输入: `.github/workflows/publish.yml`、`.github/workflows/publish-on-release.yml`；TASK-010C 的 fresh artifacts
+- 输出: 修正后的发布工作流文件 + glob 对齐验证
+- 依赖: TASK-010C（需要修正后的 jar 命名发布 glob 才能对齐）
+- 风险/回退: publish-on-release.yml 版本字段识别不完整 → 记录发现的额外字段，单独 commit；不做完整发布测试
 
 #### TASK-011: libs.versions.toml TODO 清理（交叉验证）
 
@@ -297,7 +392,7 @@
 - 参考来源: NeoForge jar 元数据；modDevGradle GitHub Releases (https://github.com/neoforged/moddevgradle/releases)
 - 输入: `gradle/libs.versions.toml`、生成元数据、NeoForge jar
 - 输出: 清理后的 `gradle/libs.versions.toml` + `docs/deps_version_verification_26.1.2.md`
-- 依赖: TASK-010B（顺序执行链：010 → 010A → 010B → 011）
+- 依赖: TASK-010D（顺序执行链：010 → 010A → 010B → 010C → 010D → 011）
 - 风险/回退: 版本更新导致编译失败 → 恢复原版本号，保留 TODO 并记录结论
 
 ---
@@ -1127,7 +1222,9 @@
 | P0 warn baseline | 1 | `docs: record compile warning baseline for -Xlint:-removal` | 警告基线 |
 | P1 toolchain | 1 | `fix: align CI JDK and mise toolchain to JDK 25` | CI 工具链 |
 | P1 publish | 1 | `fix: align publish workflow JDK to 25` | 发布元数据 (010A) |
-| P1 contributing | 1 | `docs: update CONTRIBUTING.md Java version from 21 to 25` | 贡献者文档 (010B) |
+| P1 contributing | 1 | `docs: align version references to MC 26.1.2 / NeoForge 26.1.2.78` | 文档与注释基线 (010B) |
+| P1 jar naming | 1 | `fix: correct jar naming to avoid duplicate MC version` | jar 命名 (010C) |
+| P1 publish mc | 1 | `fix: update publish workflows MC_VERSION to 26.1.2 and align artifact glob` | 发布版本 (010D) |
 | P1 versions | 1 | `chore: clean up libs.versions.toml TODOs after cross-verification` | 版本目录 |
 | P2 config | 1 | `feat: migrate ConfigHolder to NeoForge ModConfigSpec` | 配置系统 |
 | P2 toml | 1 | `chore: remove stale configuration dependency references` | 模板清理 |
@@ -1154,7 +1251,7 @@
 | P9 game test | 1 | `test: add transfer/persistence/solar GameTests` | GameTest |
 | P9 closure | 1 | `migrate: complete 26.1.2 migration completion` | 收官 |
 
-**总预计提交**: ~30-32 次
+**总预计提交**: ~32-34 次
 
 ---
 
@@ -1166,7 +1263,10 @@
 | test 编译零错误 | 静态 | `.\gradlew.bat :compileTestJava` | TASK-090A |
 | JDK 版本统一 | 静态 | `grep "java-version" .github/actions/build_setup/action.yml` → `25` | TASK-010 |
 | 发布元数据 JAVA | 静态 | `grep "JAVA.*'25'" .github/workflows/publish.yml` → 2行 | TASK-010A |
-| 文档版本一致 | 静态 | `rg "Java 21\|JDK 21" CONTRIBUTING.md` → 无用户面向残留 | TASK-010B |
+| 文档版本一致 | 静态 | `rg "1\.21\.1" CONTRIBUTING.md docs/ src/main/java/` → 仅旧 plans 保留 | TASK-010B |
+| jar 命名无重复 | 构建 | `ls build/libs/kenergyengineering-*.jar` → 主 jar 精确 `kenergyengineering-26.1.2-4.1.0.jar` | TASK-010C |
+| 发布 MC_VERSION | 静态 | `rg "MC_VERSION.*1\.21\.1" .github/workflows/` → 无输出 | TASK-010D |
+| 发布 glob 对齐 | 构建 | PowerShell `Get-ChildItem build/libs/*.jar | Where Name -notmatch 'slim|sources'` → 1 item | TASK-010D |
 | 零 removal 警告 | 静态 | `.\gradlew.bat :compileJava -Xlint:removal *> compile_xlint.log; rg "removal" compile_xlint.log` | TASK-045 |
 | datagen 完整执行 | 生成 | `.\gradlew.bat :runClientData` | TASK-081,092 |
 | clean build | 构建 | `.\gradlew.bat clean :build` | TASK-090 |
