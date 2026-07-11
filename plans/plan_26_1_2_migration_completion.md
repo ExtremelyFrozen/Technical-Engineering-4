@@ -14,13 +14,13 @@
 - **计划调整记录**: 
   - `REVIEW-TASK-010-20260711` (2026-07-11): 执行扫描发现 publish.yml 环境 JAVA:'21' 及 CONTRIBUTING.md 三处 Java 21 残留，非初始审计遗漏而是执行中发现。纳入 P1 为 TASK-010A、TASK-010B。TASK 总数 34→36，P1 TASK 数 2→4。
   - `PLAN-CORRECTION-VERSION-20260711` (2026-07-11): 官方外部裁决 Minecraft 26.1.2 为真实版本（Mojang 年号制）；NeoForge 26.1.2.78 前三段目标 MC 26.1.2；Java 25。修正基线 `Minecraft 1.21.1` → `Minecraft 26.1.2`。同时执行扫描发现 jar 双重版本命名、publish MC_VERSION、publish-on-release 版本语义、多文档版本引用残项。纳入 P1 为 TASK-010C、TASK-010D。TASK 总数 36→38，P1 TASK 数 4→6。证据: `plans/.evidence/evidence_26_1_2_migration_completion_02.md`。
-- 执行状态: P0 ✅ · TASK-010 ✅ · TASK-010A ✅ · TASK-010B ✅（2026-07-11）
-- 建议下一步: 进入 TASK-010C JAR 命名双重版本修正
-- next_hop: 执行 TASK-010C — 消除 jar 命名中重复的 MC 版本
+- 执行状态: P0 ✅ · TASK-010 ✅ · TASK-010A ✅ · TASK-010B ✅ · TASK-010C ✅（2026-07-11）
+- 建议下一步: 进入 TASK-010D 发布目标游戏版本与 glob 对齐
+- next_hop: 执行 TASK-010D — 更新 publish.yml MC_VERSION + glob 对齐
 - 目标基线: NeoForge 26.1.2.78 / Minecraft 26.1.2（Mojang 年号制，非 1.21.1 别名）/ Java 25
-- 当前 HEAD: `458c7bb` docs: align active version references with Minecraft 26.1.2
+- 当前 HEAD: `7fe63cb` fix: remove duplicate Minecraft version from jar names
 - 本地分支: `feat/26.1.2-datagen-migration`
-- 工作区状态: clean — TASK-010B 已提交
+- 工作区状态: clean — TASK-010C 已提交
 - 前置计划: `plan_26_1_2_migration.md`（已完成初步目标，只读保留）、`plan_26_1_2_datagen_migration.md`（13/13 完成，只读保留）、`plan_26_1_2_resource_fix.md`（历史参考）
 
 ## 执行状态
@@ -33,8 +33,8 @@
 | TASK-010 | P1 | ✅ 已完成 | 2026-07-11 | 艾琳 | 2358866 |
 | TASK-010A | P1 | ✅ 已完成 | 2026-07-11 | 艾琳 | c57c8fb |
 | TASK-010B | P1 | ✅ 已完成 | 2026-07-11 | 艾琳 | 458c7bb |
-| TASK-010C | P1 | 🔄 **当前任务** | — | — | — |
-| TASK-010D | P1 | ⏳ 待执行 | — | — | — |
+| TASK-010C | P1 | ✅ 已完成 | 2026-07-11 | 艾琳 | 7fe63cb |
+| TASK-010D | P1 | 🔄 **当前任务** | — | — | — |
 | TASK-011+ | P1-P9 | ⏳ 待执行 | — | — | — |
 
 ## 计划正文
@@ -331,18 +331,33 @@
   - 不改 `settings.gradle` 除非验证必须
   - JAR 内容/manifest 不变（`jar { ... }` 配置不调整）
   - slim/sources 前缀自动继承新命名规则
-- DoD:
-  - ☐ **RED 断言**：`.\gradlew.bat clean :build` → 确认 `build/libs/` 含 `kenergyengineering-26.1.2-26.1.2-4.1.0.jar`
-  - ☐ **根因定位**：`grep -rn "archivesName\|archivesBaseName\|version" gradle/scripts/jars.gradle build.gradle` 确定双重 `26.1.2` 来源
-  - ☐ **GREEN 修正**：在 `jars.gradle` 中设置 `archivesName = "${mod_id}-${libs.versions.minecraft.get()}"` 或等效最小方案
-  - ☐ **GREEN 验证**：`.\gradlew.bat clean :build` → `ls build/libs/` → `kenergyengineering-26.1.2-4.1.0.jar` 恰好一个主 jar（slim/sources 排除）
-  - ☐ **diff 审查**：`git diff` 仅 `jars.gradle` 且仅命名规则变更
-  - ☐ **提交信息**: `fix: correct jar naming to avoid duplicate MC version`
-- 验收要点:
-  - [ ] `.\gradlew.bat clean :build` → `ls build/libs/` → 主 jar `kenergyengineering-26.1.2-4.1.0.jar`（非重复）
-  - [ ] slim/sources jar 命名前缀一致且未损坏
-  - [ ] `jar tf build/libs/kenergyengineering-26.1.2-4.1.0.jar | head -5` → 内容与修正前一致（仅命名变）
-  - [ ] `git diff` 仅 jars.gradle 且仅命名变更
+- DoD（已全部通过 ✓）:
+  - ☑ **RED 断言**：fresh build → 确认旧重复 `kenergyengineering-26.1.2-26.1.2-4.1.0.jar`
+  - ☑ **根因定位**：`jars.gradle` version 拼接逻辑含多余 MC 版本段
+  - ☑ **GREEN 修正**：`archivesName` 配置 → 主 jar `kenergyengineering-26.1.2-4.1.0.jar`
+  - ☑ **GREEN 验证**：fresh clean build → 主 jar + slim + sources 三文件正确，旧重复 0
+  - ☑ **metadata**：jar 内容/manifest 不变；LDLib2/devmod 隔离正常
+  - ☑ **diff 审查**：`git diff` 仅 `jars.gradle` 命名规则变更
+- 验收要点（已通过）:
+  - [✓] `.\gradlew.bat clean :build` → 主 jar `kenergyengineering-26.1.2-4.1.0.jar`（无重复）
+  - [✓] slim/sources jar 命名前缀一致且未损坏
+  - [✓] jar 内容与修正前一致（仅命名变）
+  - [✓] `git diff` 仅 jars.gradle 且仅命名变更
+- 输入: `gradle/scripts/jars.gradle`、`build.gradle`
+- 输出: 修正后的 jar 命名（fresh build 验证）
+- 依赖: TASK-010B（顺序链：010B → 010C）
+- 风险/回退: archivesName 变更导致 slim jar 未生成 → 恢复 jars.gradle，改用 `build.gradle` 中 `version` 拼接
+- **执行记录**:
+  - 完成日期: 2026-07-11
+  - 审查人: 艾琳（审查通过）
+  - Commit: `7fe63cb` — `fix: remove duplicate Minecraft version from jar names`
+  - Push: `458c7bb..7fe63cb` → 远程分支已同步
+  - 验证摘要:
+    - fresh clean build → exit0 ✅
+    - 主 jar + slim + sources 三文件正确 ✅
+    - 旧重复 `*-26.1.2-26.1.2-*` → 0 ✅
+    - metadata / LDLib2 / devmod 隔离正常 ✅
+    - worktree clean ✅
 - 输入: `gradle/scripts/jars.gradle`、`build.gradle`
 - 输出: 修正后的 jar 命名（fresh build 验证）
 - 依赖: TASK-010B（顺序链：010B → 010C）

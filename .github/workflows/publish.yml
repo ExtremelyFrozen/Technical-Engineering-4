@@ -11,7 +11,7 @@ on:
         required: true
         type: string
       version:
-        description: 'Version identifier; 1.21'
+        description: 'Git PR base branch name (e.g. 1.21; not the game version)'
         required: true
         type: string
       release-body:
@@ -94,7 +94,7 @@ jobs:
           name: build-artifacts-${{ inputs.tag-name }}
       - name: Publish Mod
         env:
-          MC_VERSION: '1.21.1'
+          MC_VERSION: '26.1.2'
           LOADER: 'neoforge'
           JAVA: '25'
           VERSION_TYPE: 'release'
@@ -127,7 +127,7 @@ jobs:
           name: build-artifacts-${{ inputs.tag-name }}
       - name: Publish Mod
         env:
-          MC_VERSION: '1.21.1'
+          MC_VERSION: '26.1.2'
           LOADER: 'neoforge'
           JAVA: '25'
           VERSION_TYPE: 'release'
