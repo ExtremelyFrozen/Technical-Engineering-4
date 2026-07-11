@@ -27,13 +27,13 @@
 
 ## 项目概览
 
-Technical-Engineering 4 是一个 **NeoForge 1.21.1** 科技模组，继承自 TE3 的玩法理念，使用现代化的注册和数据生成流程。
+Technical-Engineering 4 是一个 **NeoForge 26.1.2.78** 科技模组，继承自 TE3 的玩法理念，使用现代化的注册和数据生成流程。
 
 - **Mod ID**: `kenergyengineering`
 - **包根**: `com.modularmc.ten`
-- **语言**: Java 21（部分工具脚本使用 Kotlin）
+- **语言**: Java 25（部分工具脚本使用 Kotlin）
 - **构建系统**: Gradle + ModDevGradle
-- **注册框架**: Registrate（通过自定义 `TENRegistrate` 封装）
+- **注册框架**: NeoForge DeferredRegister（内置 API）
 - **代码简化**: Lombok
 - **代码格式化**: Spotless（Eclipse 格式化配置）
 
@@ -43,11 +43,11 @@ Technical-Engineering 4 是一个 **NeoForge 1.21.1** 科技模组，继承自 T
 
 | 组件 | 版本 / 说明 |
 |---|---|
-| Minecraft | 1.21.1 |
-| NeoForge | 21.1.219 |
-| Java | 21 |
+| Minecraft | 26.1.2 |
+| NeoForge | 26.1.2.78 |
+| Java | 25 |
 | Gradle | ModDevGradle 2.0.141 |
-| Registrate | MC1.21-1.3.0+67（通过 `TENRegistrate` 封装） |
+| NeoForge DeferredRegister | 26.1.2 内置注册 API |
 | Parchment | 2024.11.17（可选的映射层） |
 | Lombok | 1.18.38 |
 | Spotless | 8.4.0 |
@@ -57,7 +57,7 @@ Technical-Engineering 4 是一个 **NeoForge 1.21.1** 科技模组，继承自 T
 
 ## 环境准备
 
-1. **JDK 21** — 确保 `JAVA_HOME` 指向 JDK 21。
+1. **JDK 25** — 确保 `JAVA_HOME` 指向 JDK 25。
 2. **克隆仓库**：
    ```bash
    git clone https://github.com/ModularMCLib/Technical-Engineering-4.git

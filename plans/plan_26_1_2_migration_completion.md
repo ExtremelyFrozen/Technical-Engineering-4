@@ -14,13 +14,13 @@
 - **计划调整记录**: 
   - `REVIEW-TASK-010-20260711` (2026-07-11): 执行扫描发现 publish.yml 环境 JAVA:'21' 及 CONTRIBUTING.md 三处 Java 21 残留，非初始审计遗漏而是执行中发现。纳入 P1 为 TASK-010A、TASK-010B。TASK 总数 34→36，P1 TASK 数 2→4。
   - `PLAN-CORRECTION-VERSION-20260711` (2026-07-11): 官方外部裁决 Minecraft 26.1.2 为真实版本（Mojang 年号制）；NeoForge 26.1.2.78 前三段目标 MC 26.1.2；Java 25。修正基线 `Minecraft 1.21.1` → `Minecraft 26.1.2`。同时执行扫描发现 jar 双重版本命名、publish MC_VERSION、publish-on-release 版本语义、多文档版本引用残项。纳入 P1 为 TASK-010C、TASK-010D。TASK 总数 36→38，P1 TASK 数 4→6。证据: `plans/.evidence/evidence_26_1_2_migration_completion_02.md`。
-- 执行状态: P0 ✅ · TASK-010 ✅（2026-07-11）
-- 建议下一步: 进入 TASK-010A 发布元数据 Java 21→25
-- next_hop: 执行 TASK-010A — 修正 publish.yml 环境 JAVA 版本
+- 执行状态: P0 ✅ · TASK-010 ✅ · TASK-010A ✅（2026-07-11）
+- 建议下一步: 进入 TASK-010B 活跃文档与注释版本基线修正
+- next_hop: 执行 TASK-010B — 多文档/注释版本基线对齐
 - 目标基线: NeoForge 26.1.2.78 / Minecraft 26.1.2（Mojang 年号制，非 1.21.1 别名）/ Java 25
-- 当前 HEAD: `2358866` fix: align CI JDK and mise toolchain to JDK 25
+- 当前 HEAD: `c57c8fb` fix: align publish Java metadata with Minecraft 26.1.2
 - 本地分支: `feat/26.1.2-datagen-migration`
-- 工作区状态: dirty — TASK-010A publish.yml + formal plan/evidence 增量待提交
+- 工作区状态: clean — TASK-010A + plan/evidence 增量已提交
 - 前置计划: `plan_26_1_2_migration.md`（已完成初步目标，只读保留）、`plan_26_1_2_datagen_migration.md`（13/13 完成，只读保留）、`plan_26_1_2_resource_fix.md`（历史参考）
 
 ## 执行状态
@@ -31,8 +31,8 @@
 | TASK-001 | P0 | ✅ 已完成 | 2026-07-11 | 艾琳 | 66f2ff5 |
 | TASK-002 | P0 | ✅ 已完成 | 2026-07-11 | 艾琳 | e4de678 |
 | TASK-010 | P1 | ✅ 已完成 | 2026-07-11 | 艾琳 | 2358866 |
-| TASK-010A | P1 | 🔄 **当前任务** | — | — | — |
-| TASK-010B | P1 | ⏳ 待执行 | — | — | — |
+| TASK-010A | P1 | ✅ 已完成 | 2026-07-11 | 艾琳 | c57c8fb |
+| TASK-010B | P1 | 🔄 **当前任务** | — | — | — |
 | TASK-010C | P1 | ⏳ 待执行 | — | — | — |
 | TASK-010D | P1 | ⏳ 待执行 | — | — | — |
 | TASK-011+ | P1-P9 | ⏳ 待执行 | — | — | — |
@@ -240,17 +240,30 @@
   - Mixin `JAVA_21` 明确非残项不做
   - 先 RED 断言确认当前值含 `21`，再 GREEN 改为 `25`，再 RED 确认无残留 `'21'`
   - `rg` 全 workflow 文件核验无错误 21 残留
-- DoD:
-  - ☐ **RED 断言**：`grep "JAVA.*21" .github/workflows/publish.yml` → 匹配第99、132行
-  - ☐ **GREEN 修改**：两处 `JAVA: '21'` → `JAVA: '25'`
-  - ☐ **RED 再断言**：`rg "JAVA.*'21'" .github/workflows/publish.yml` → 无输出
-  - ☐ **YAML 语法**：`.\gradlew.bat` 不直接验证 YAML；可采用 `python -c "import yaml; yaml.safe_load(open(...))"` 或 `action-validator`（如有），至少人工目视核对缩进
-  - ☐ **diff 审查**：`git diff .github/workflows/publish.yml` 仅含两处版本号变更
-  - ☐ **提交信息**: `fix: align publish workflow JDK to 25`
-- 验收要点:
-  - [ ] `grep "JAVA.*'25'" .github/workflows/publish.yml` 输出两行（第99、132行）
-  - [ ] `rg "'21'" .github/workflows/publish.yml` 无输出（非 `JAVA` 的 `21` 如 version 可保留，确认评估）
-  - [ ] `git diff` 仅 publish.yml 且仅 version 数值变更
+- DoD（已全部通过 ✓）:
+  - ☑ **RED 断言**：`grep "JAVA.*21"` → 第99、132行匹配
+  - ☑ **GREEN 修改**：两处 `JAVA: '21'` → `JAVA: '25'`
+  - ☑ **RED 再断言**：`rg "JAVA.*'21'"` → 无输出；`rg "'21'"` → 仅 version 等非 JAVA 引用保留
+  - ☑ **YAML parse**：`python -c "import yaml; yaml.safe_load(open(...))"` → exit0
+  - ☑ **diff 审查**：`git diff` 仅 publish.yml + formal plan + evidence 02（scope 内仅版本变更）
+- 验收要点（已通过）:
+  - [✓] `grep "JAVA.*'25'" .github/workflows/publish.yml` → 两行（第99、132行）
+  - [✓] `rg "'21'" .github/workflows/publish.yml` → 无 JAVA 引用残留（非 JAVA 的 `21` 确认评估）
+  - [✓] `git diff` 仅 version 数值变更
+- 输入: `.github/workflows/publish.yml`
+- 输出: JDK 版本修正后的 publish.yml
+- 依赖: TASK-010（build_setup 与 mise 先对齐，再修正发布元数据）
+- 风险/回退: YAML 缩进损坏 → `git checkout -- .github/workflows/publish.yml` 恢复
+- **执行记录**:
+  - 完成日期: 2026-07-11
+  - 审查人: 艾琳（版本纠错增量审查通过）
+  - Commit: `c57c8fb` — `fix: align publish Java metadata with Minecraft 26.1.2`
+  - Push: `2358866..c57c8fb` → 远程分支已同步
+  - 验证摘要:
+    - publish.yml JAVA: '25' × 2 ✅
+    - `rg "JAVA.*'21'"` → 无输出 ✅
+    - YAML parse exit0 ✅
+    - worktree clean ✅
 - 输入: `.github/workflows/publish.yml`
 - 输出: JDK 版本修正后的 publish.yml
 - 依赖: TASK-010（build_setup 与 mise 先对齐，再修正发布元数据）

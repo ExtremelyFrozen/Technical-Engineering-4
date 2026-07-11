@@ -114,7 +114,7 @@
 | 依赖 | 版本 | 状态 |
 |------|------|------|
 | NeoForge | 26.1.2.78 | ✅ confirmed |
-| Minecraft | 1.21.1 | ✅ confirmed |
+| Minecraft | 26.1.2 | ✅ confirmed |
 | Parchment | — | ⚠️ disabled（无 26.1.2 兼容版本） |
 | modDevGradle | 2.0.141 | ✅ confirmed |
 | LDLib2 | 26.1.2.27 | ✅ confirmed |

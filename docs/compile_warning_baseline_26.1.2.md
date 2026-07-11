@@ -7,7 +7,7 @@
 | 创建日期 | 2026-07-11 |
 | 项目 HEAD | `66f2ff5` feat: establish 26.1.2 dev environment baseline |
 | 本地分支 | `feat/26.1.2-datagen-migration` |
-| 目标基线 | NeoForge 26.1.2 / Minecraft 1.21.1 / Java 25 |
+| 目标基线 | NeoForge 26.1.2 / Minecraft 26.1.2 / Java 25 |
 | 计划归属 | `plans/plan_26_1_2_migration_completion.md` — TASK-002 |
 | 下一站 | P4 TASK-045 移除 `-Xlint:-removal` 抑制 |
 
