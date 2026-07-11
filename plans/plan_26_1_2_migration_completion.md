@@ -14,13 +14,13 @@
 - **计划调整记录**: 
   - `REVIEW-TASK-010-20260711` (2026-07-11): 执行扫描发现 publish.yml 环境 JAVA:'21' 及 CONTRIBUTING.md 三处 Java 21 残留，非初始审计遗漏而是执行中发现。纳入 P1 为 TASK-010A、TASK-010B。TASK 总数 34→36，P1 TASK 数 2→4。
   - `PLAN-CORRECTION-VERSION-20260711` (2026-07-11): 官方外部裁决 Minecraft 26.1.2 为真实版本（Mojang 年号制）；NeoForge 26.1.2.78 前三段目标 MC 26.1.2；Java 25。修正基线 `Minecraft 1.21.1` → `Minecraft 26.1.2`。同时执行扫描发现 jar 双重版本命名、publish MC_VERSION、publish-on-release 版本语义、多文档版本引用残项。纳入 P1 为 TASK-010C、TASK-010D。TASK 总数 36→38，P1 TASK 数 4→6。证据: `plans/.evidence/evidence_26_1_2_migration_completion_02.md`。
-- 执行状态: P0 ✅ · TASK-010 ✅ · TASK-010A ✅（2026-07-11）
-- 建议下一步: 进入 TASK-010B 活跃文档与注释版本基线修正
-- next_hop: 执行 TASK-010B — 多文档/注释版本基线对齐
+- 执行状态: P0 ✅ · TASK-010 ✅ · TASK-010A ✅ · TASK-010B ✅（2026-07-11）
+- 建议下一步: 进入 TASK-010C JAR 命名双重版本修正
+- next_hop: 执行 TASK-010C — 消除 jar 命名中重复的 MC 版本
 - 目标基线: NeoForge 26.1.2.78 / Minecraft 26.1.2（Mojang 年号制，非 1.21.1 别名）/ Java 25
-- 当前 HEAD: `c57c8fb` fix: align publish Java metadata with Minecraft 26.1.2
+- 当前 HEAD: `458c7bb` docs: align active version references with Minecraft 26.1.2
 - 本地分支: `feat/26.1.2-datagen-migration`
-- 工作区状态: clean — TASK-010A + plan/evidence 增量已提交
+- 工作区状态: clean — TASK-010B 已提交
 - 前置计划: `plan_26_1_2_migration.md`（已完成初步目标，只读保留）、`plan_26_1_2_datagen_migration.md`（13/13 完成，只读保留）、`plan_26_1_2_resource_fix.md`（历史参考）
 
 ## 执行状态
@@ -32,8 +32,8 @@
 | TASK-002 | P0 | ✅ 已完成 | 2026-07-11 | 艾琳 | e4de678 |
 | TASK-010 | P1 | ✅ 已完成 | 2026-07-11 | 艾琳 | 2358866 |
 | TASK-010A | P1 | ✅ 已完成 | 2026-07-11 | 艾琳 | c57c8fb |
-| TASK-010B | P1 | 🔄 **当前任务** | — | — | — |
-| TASK-010C | P1 | ⏳ 待执行 | — | — | — |
+| TASK-010B | P1 | ✅ 已完成 | 2026-07-11 | 艾琳 | 458c7bb |
+| TASK-010C | P1 | 🔄 **当前任务** | — | — | — |
 | TASK-010D | P1 | ⏳ 待执行 | — | — | — |
 | TASK-011+ | P1-P9 | ⏳ 待执行 | — | — | — |
 
@@ -285,20 +285,33 @@
   - 旧 plans/drafts/evidence/deps/logs/README 兄弟目录排除
   - 核对 `build.gradle` toolchain（JDK 25）、构件 major=69、NeoForge 26.1.2.78 jar 元数据
   - `CmBlockEntity.java` 注释中的过期 MC 版本引用仅更新版本号，不改代码逻辑
-- DoD:
-  - ☐ **CONTRIBUTING.md**：`rg -n "1\.21\.1\|21\|1\.20\|1\.19" CONTRIBUTING.md` 分类标记需改性/保留性，逐处修正
-  - ☐ **docs/closure_verification.md**：`rg -n "1\.21\.1"` → 改 1 处为 `26.1.2`
-  - ☐ **docs/compile_warning_baseline_26.1.2.md**：`rg -n "1\.21\.1"` → 改 1 处为 `26.1.2`
-  - ☐ **CmBlockEntity.java**：定位过期注释，更新版本号，`rg "1\.21\.1\|TODO.*version"` 确认
-  - ☐ **RED 验证**：`rg "1\.21\.1" CONTRIBUTING.md docs/ src/main/java/ --include '*.java' --include '*.md'` → 仅保留历史/计划/旧 plans 引用的合法出现（确认分类通过）
-  - ☐ **一致性**：最终 `grep "minecraft.*1\.21"` 在 scope 文件内无输出
-  - ☐ **diff 审查**：`git diff` 仅版本号/平台名数值变更，不涉及代码逻辑改动
-  - ☐ **提交信息**: `docs: align version references to MC 26.1.2 / NeoForge 26.1.2.78 across active docs and source comments`
-- 验收要点:
-  - [ ] 贡献者文档 CONTRIBUTING.md 再无 `1.21.1` / `Java 21` 描述
-  - [ ] `rg "1\.21\.1" CONTRIBUTING.md docs/closure_verification.md docs/compile_warning_baseline_26.1.2.md` → 无输出
-  - [ ] `CmBlockEntity.java` 注释版本已更新
-  - [ ] `git diff` 仅 scope 内文件且仅版本信息变更
+- DoD（已全部通过 ✓）:
+  - ☑ **CONTRIBUTING.md**：7 处修正 — MC 26.1.2 / NeoForge 26.1.2.78 / Java 25 / DeferredRegister
+  - ☑ **docs/closure_verification.md**：`1.21.1` → `26.1.2`
+  - ☑ **docs/compile_warning_baseline_26.1.2.md**：`1.21.1` → `26.1.2`
+  - ☑ **CmBlockEntity.java**：过期注释版本已更新
+  - ☑ **RED 验证**：`rg "1\.21\.1" CONTRIBUTING.md docs/ src/main/java/ --include '*.java' --include '*.md'` → scope 内无残留（仅旧 plans 合法保留）
+  - ☑ **compileJava** no-daemon fresh → exit0 30s（不退化）
+  - ☑ **diff 审查**：`git diff` 仅版本号/平台名数值变更
+- 验收要点（已通过）:
+  - [✓] 贡献者文档 CONTRIBUTING.md 再无 `1.21.1` / `Java 21` 描述
+  - [✓] `rg "1\.21\.1" CONTRIBUTING.md docs/closure_verification.md docs/compile_warning_baseline_26.1.2.md` → 无输出
+  - [✓] `CmBlockEntity.java` 注释版本已更新
+  - [✓] `git diff` 仅 scope 内文件且仅版本信息变更
+- 输入: CONTRIBUTING.md、docs/closure_verification.md、docs/compile_warning_baseline_26.1.2.md、CmBlockEntity.java
+- 输出: 各文件版本引用已修正
+- 依赖: TASK-010A（顺序执行链：010 → 010A → 010B → 010C → 010D → 011）
+- 风险/回退: 文档文字错误 → `git checkout -- <文件>` 恢复
+- **执行记录**:
+  - 完成日期: 2026-07-11
+  - 审查人: 艾琳（审查通过）
+  - Commit: `458c7bb` — `docs: align active version references with Minecraft 26.1.2`（5 文件含 formal plan）
+  - Push: `c57c8fb..458c7bb` → 远程分支已同步
+  - 验证摘要:
+    - 四 scope 旧 `1.21.1` 等模式 → 0 残留 ✅
+    - CONTRIBUTING → NeoForge 26.1.2.78 / MC 26.1.2 / Java 25 / DeferredRegister ✅
+    - `compileJava` no-daemon fresh → exit0 30s ✅
+    - worktree clean ✅
 - 输入: CONTRIBUTING.md、docs/closure_verification.md、docs/compile_warning_baseline_26.1.2.md、CmBlockEntity.java
 - 输出: 各文件版本引用已修正
 - 依赖: TASK-010A（顺序执行链：010 → 010A → 010B → 010C → 010D → 011）
