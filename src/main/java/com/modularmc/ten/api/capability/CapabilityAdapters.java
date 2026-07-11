@@ -117,8 +117,7 @@ public final class CapabilityAdapters {
         return handler != null ? IFluidHandler.of(handler) : null;
     }
 
-    // TODO: For full IItemHandler → ResourceHandler<ItemResource> adapter (needed for registration),
-    //       implement ResourceHandler<ItemResource> delegating to IItemHandler when the registration
-    //       item/fluid capabilities are re-enabled.
-    // TODO: Same for IFluidHandler → ResourceHandler<FluidResource>.
+    // Reverse adapters (IItemHandler → ResourceHandler<ItemResource>, IFluidHandler → ResourceHandler<FluidResource>)
+    // are implemented in ItemHandlerResourceAdapter and FluidHandlerResourceAdapter respectively.
+    // Capability registration is in CommonProxy.registerCapabilities.
 }

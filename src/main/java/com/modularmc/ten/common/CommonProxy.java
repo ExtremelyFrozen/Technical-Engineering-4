@@ -1,6 +1,8 @@
 package com.modularmc.ten.common;
 
 import com.modularmc.ten.api.capability.CapabilityAdapters;
+import com.modularmc.ten.api.capability.FluidHandlerResourceAdapter;
+import com.modularmc.ten.api.capability.ItemHandlerResourceAdapter;
 import com.modularmc.ten.common.block.machine.BaseMachineBlock;
 import com.modularmc.ten.common.data.*;
 import com.modularmc.ten.common.item.EnergyUnitItem;
@@ -55,14 +57,25 @@ public class CommonProxy {
                     return null;
                 }, block);
 
-                // TODO: Re-enable Item/Fluid capability registration once full
-                // ResourceHandler<ItemResource/FluidResource> adapters are implemented.
-                // For now, item/fluid capabilities are disabled to reach compilation.
-                // Old API references:
-                //   event.registerBlock(Capabilities.ItemHandler.BLOCK, ...)
-                //   event.registerBlock(Capabilities.FluidHandler.BLOCK, ...)
-                // Replaced by: Capabilities.Item.BLOCK / Capabilities.Fluid.BLOCK
-                // with ResourceHandler<?> return types.
+                // Item capability — IItemHandler → ResourceHandler<ItemResource> adapter
+                event.registerBlock(Capabilities.Item.BLOCK, (level, pos, state, blockEntity, ctx) -> {
+                    Direction side = ctx instanceof Direction d ? d : null;
+                    if (blockEntity instanceof com.modularmc.ten.api.blockentity.CmMachineBlockEntity machine) {
+                        var itemHandler = machine.getItemHandler(side);
+                        return itemHandler != null ? new ItemHandlerResourceAdapter(itemHandler) : null;
+                    }
+                    return null;
+                }, block);
+
+                // Fluid capability — IFluidHandler → ResourceHandler<FluidResource> adapter
+                event.registerBlock(Capabilities.Fluid.BLOCK, (level, pos, state, blockEntity, ctx) -> {
+                    Direction side = ctx instanceof Direction d ? d : null;
+                    if (blockEntity instanceof com.modularmc.ten.api.blockentity.CmMachineBlockEntity machine) {
+                        var fluidHandler = machine.getFluidHandler(side);
+                        return fluidHandler != null ? new FluidHandlerResourceAdapter(fluidHandler) : null;
+                    }
+                    return null;
+                }, block);
             }
         }
 
