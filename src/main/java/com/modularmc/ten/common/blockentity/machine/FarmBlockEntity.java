@@ -266,13 +266,10 @@ public class FarmBlockEntity extends RadiusMachineBlockEntity {
     }
 
     private static boolean isBushCrop(BlockState state) {
-        var config = ConfigHolder.INSTANCE.farm;
-        if (config.bushCrops == null || config.bushCrops.length == 0) return false;
+        var bushCrops = ConfigHolder.bushCrops();
+        if (bushCrops.isEmpty()) return false;
         String blockId = BuiltInRegistries.BLOCK.getKey(state.getBlock()).toString();
-        for (String id : config.bushCrops) {
-            if (id.equals(blockId)) return true;
-        }
-        return false;
+        return bushCrops.contains(blockId);
     }
 
     private static IntegerProperty findAgeProperty(BlockState state) {

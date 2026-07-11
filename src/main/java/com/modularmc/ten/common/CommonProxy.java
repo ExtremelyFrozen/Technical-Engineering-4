@@ -5,7 +5,6 @@ import com.modularmc.ten.common.block.machine.BaseMachineBlock;
 import com.modularmc.ten.common.data.*;
 import com.modularmc.ten.common.item.EnergyUnitItem;
 import com.modularmc.ten.common.registry.Registration;
-import com.modularmc.ten.config.ConfigHolder;
 import com.modularmc.ten.data.TENDataGen;
 
 import net.minecraft.core.Direction;
@@ -21,7 +20,6 @@ public class CommonProxy {
     public static void init(final IEventBus modBus) {
         CommonProxy.modBus = modBus;
 
-        ConfigHolder.init();
         TENDataGen.init();
 
         // Register all DeferredRegisters (BLOCKS, ITEMS, FLUIDS, BLOCK_ENTITIES, CREATIVE_TABS)

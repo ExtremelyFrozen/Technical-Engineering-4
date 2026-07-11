@@ -1,13 +1,17 @@
 package com.modularmc.ten;
 
 import com.modularmc.ten.common.CommonProxy;
-import com.modularmc.ten.config.ConfigHolder;
+import com.modularmc.ten.config.ConfigValidator;
+import com.modularmc.ten.config.TENConfig;
 import com.modularmc.ten.network.ToggleEnergyUnitPayload;
 
 import net.minecraft.resources.Identifier;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModList;
 import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.config.ModConfig;
+import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
+import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.fml.javafmlmod.FMLModContainer;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
@@ -29,10 +33,27 @@ public class TEN {
     public TEN(IEventBus modBus, FMLModContainer container) {
         TEN.tenModBus = modBus;
 
-        ConfigHolder.init();
+        // Register COMMON and CLIENT config specs with TOML persistence.
+        // COMMON: te4-config.toml (machine, energyUnit, farm blocks)
+        // CLIENT: te4-client.toml (client block)
+        container.registerConfig(ModConfig.Type.COMMON, TENConfig.COMMON_SPEC, "te4-config.toml");
+        container.registerConfig(ModConfig.Type.CLIENT, TENConfig.CLIENT_SPEC, "te4-client.toml");
+
+        // Validate loaded config values at common setup
+        modBus.addListener(TEN::onCommonSetup);
+        modBus.addListener(TEN::onClientSetup);
+
         CommonProxy.init(modBus);
 
         modBus.addListener(TEN::registerPayloads);
+    }
+
+    private static void onCommonSetup(FMLCommonSetupEvent event) {
+        ConfigValidator.validate();
+    }
+
+    private static void onClientSetup(FMLClientSetupEvent event) {
+        // CLIENT config is auto-loaded by NeoForge; no additional setup needed.
     }
 
     private static void registerPayloads(RegisterPayloadHandlersEvent event) {
