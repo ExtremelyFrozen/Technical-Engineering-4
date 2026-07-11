@@ -1,5 +1,5 @@
 [tools]
-java = "21"
+java = "25"
 
 [tasks.build]
 description = "构建项目"

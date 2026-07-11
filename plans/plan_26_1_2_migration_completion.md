@@ -8,14 +8,30 @@
 - 创建者: 猫娘规划师-缇娅
 - 触发原因: 审计发现16项未完成迁移残项，用户要求"逐个攻破"切换到任务模式；草稿第2版经增量审查通过
 - **审查结论**: 审查通过
-- **通过范围**: 草稿第2版全部34 TASK、P0-P9阶段结构、依赖链、DoD、验证矩阵
+- **通过范围**: 草稿第2版全部34 TASK、P0-P9阶段结构、依赖链、DoD、验证矩阵（后经计划调整 +2 → 36 TASK）
 - **残留风险（非阻断）**: ugrep/rg混用、风险矩阵R09/R10重复、TASK-092依赖精度、TASK-090未显式覆盖所有P8——均在本次正式转换中消除
-- 建议下一步: `可直接执行`
-- next_hop: 进入执行
+- **计划调整记录**: 
+  - `REVIEW-TASK-010-20260711` (2026-07-11): 执行扫描发现 publish.yml 环境 JAVA:'21' 及 CONTRIBUTING.md 三处 Java 21 残留，非初始审计遗漏而是执行中发现。纳入 P1 为 TASK-010A、TASK-010B。TASK 总数 34→36，P1 TASK 数 2→4。
+- 执行状态: P0 ✅ TASK-000 ~ TASK-002 全部完成（2026-07-11）
+- 建议下一步: 进入 TASK-010 CI JDK 版本修正 21→25
+- next_hop: 执行 TASK-010 — CI 工具链 JDK 版本统一
 - 目标基线: NeoForge 26.1.2 / Minecraft 1.21.1 / Java 25
-- 当前 HEAD: `13bb9fc` fix: update brand and psionicant tooltips
+- 当前 HEAD: `e4de678` docs: record 26.1.2 compiler warning baseline
 - 本地分支: `feat/26.1.2-datagen-migration`
+- 工作区状态: clean — 基线已提交
 - 前置计划: `plan_26_1_2_migration.md`（已完成初步目标，只读保留）、`plan_26_1_2_datagen_migration.md`（13/13 完成，只读保留）、`plan_26_1_2_resource_fix.md`（历史参考）
+
+## 执行状态
+
+| TASK | 阶段 | 状态 | 完成日期 | 审查人 | 证据 |
+|------|------|------|---------|--------|------|
+| TASK-000 | P0 | ✅ 已完成 | 2026-07-11 | 艾琳 | 8aafdc3, ce6f653 |
+| TASK-001 | P0 | ✅ 已完成 | 2026-07-11 | 艾琳 | 66f2ff5 |
+| TASK-002 | P0 | ✅ 已完成 | 2026-07-11 | 艾琳 | e4de678 |
+| TASK-010 | P1 | 🔄 **执行中（待提交）** | — | — | — |
+| TASK-010A | P1 | ⏳ 待执行 | — | — | — |
+| TASK-010B | P1 | ⏳ 待执行 | — | — | — |
+| TASK-011+ | P1-P9 | ⏳ 待执行 | — | — | — |
 
 ## 计划正文
 
@@ -45,7 +61,7 @@
 | 阶段 | 名称 | TASK数 | 关键依赖链 |
 |------|------|--------|-----------|
 | P0 | 工作区检查点 —— 安全收口 | 3 | 无（最先执行） |
-| P1 | 工具链修复 | 2 | P0 |
+| P1 | 工具链修复 | 4 | P0 |
 | P2 | Configuration 迁移 | 2 | P0 |
 | P3 | Transfer 边界恢复 | 5 | P0（含新 TASK-031A BE accessor） |
 | P4 | Transfer 内部迁移 | 6 | P3 |
@@ -55,7 +71,7 @@
 | P8 | 存根清理 & TODOs | 4 | 最小化：080A/080B 仅 P0，081/082 仅 P2 |
 | P9 | 全量验证 & 收官 | 6 | P8（含新 TASK-090A test sourceSet） |
 
-**总计**: **34 TASK**，按阶段顺序执行，P6/P7/P8(080A/080B) 可与 P3-P5 并行（依赖标记为独立时）。
+**总计**: **36 TASK**，按阶段顺序执行，P6/P7/P8(080A/080B) 可与 P3-P5 并行（依赖标记为独立时）。
 
 ## 任务清单
 
@@ -78,22 +94,34 @@
   - `scripts/validate_runclient_mods.py`
 - **关键约束（审查裁决）**: registry_dump.json 为本轮审计生成诊断产物且不得提交。执行时先核查无引用（`rg registry_dump src/`），再精确 `.gitignore` 排除或手动删除。不批量删除未知用户文件。
 - 目标: 确保 registry_dump.json 不被提交；当前 dirty/untracked 开发环境文件准备就绪进入 checkpoint commit
-- DoD:
-  - □ **registry_dump.json 处理**:
-    - `rg "registry_dump" src/ --include '*.java' --include '*.json' --include '*.toml' --include '*.gradle'` 确认项目源码无引用依赖
-    - `.gitignore` 末尾追加 `registry_dump.json`（或手动删除文件 + 追加 gitignore）
-    - `git status` 确认 registry_dump.json 不再出现在 Untracked 列表中
-  - □ `dependencies.gradle`、`forge.versions.toml` 的修改内容已确认属于开发环境启动验证（五个 clientLocalRuntime 模组接入），功能正确
-  - □ 开发环境文档 `docs/runclient_development_environment.md` 已验证内容准确
-  - □ `scripts/validate_runclient_mods.py` 已验证可执行
-- 验收要点:
-  - [ ] `rg "registry_dump" src/` 无项目引用
-  - [ ] `git status`：registry_dump.json 不在 untracked 或 modified 列表
-  - [ ] `.gitignore` 末尾追加 `registry_dump.json` 一行
+- DoD（已全部通过 ✓）:
+  - ☑ **registry_dump.json 处理**:
+    - `rg "registry_dump" src/` → 无引用依赖（源码零匹配）
+    - `.gitignore` 末尾追加 `/registry_dump.json`（根目录精确规则）
+    - `git status` → registry_dump.json 不再出现在 Untracked 列表
+  - ☑ `dependencies.gradle`、`forge.versions.toml` 的修改内容已确认属于开发环境启动验证（五个 clientLocalRuntime 模组接入），功能正确
+  - ☑ 开发环境文档 `docs/runclient_development_environment.md` 已验证内容准确
+  - ☑ `scripts/validate_runclient_mods.py` 已验证可执行
+- 验收要点（已通过）:
+  - [✓] `rg "registry_dump" src/` 无项目引用
+  - [✓] `git status`：registry_dump.json 不在 untracked 或 modified 列表
+  - [✓] `.gitignore` 末尾追加 `/registry_dump.json` 一行
 - 输入: 当前工作区所有 dirty/untracked 文件
 - 输出: 干净的 staged 准备状态
 - 依赖: 无
 - 风险/回退: `.gitignore` 修改意外 → `git checkout -- .gitignore` 恢复
+- **执行记录**:
+  - 完成日期: 2026-07-11
+  - 审查人: 艾琳（审查通过）
+  - Commit A: `8aafdc3` — `docs: add 26.1.2 migration completion plan`（草案+正式计划）
+  - Commit B: `ce6f653` — `chore: ignore migration registry dump`（`.gitignore` 根规则 `/registry_dump.json`）
+  - Push: `13bb9fc..ce6f653` → 远程分支已同步
+  - 验证摘要:
+    - `rg "registry_dump" src/` → 无引用 ✅
+    - 根路径被 ignore（子目录不误匹配）✅
+    - 文件仍存在（未误删）✅
+    - 旧计划未修改 ✅
+    - 工作区已清理至仅剩 TASK-001 四文件 ✅
 
 #### TASK-001: Checkpoint commit — 开发环境基线
 
@@ -101,19 +129,32 @@
 - phase: P0
 - scope: 同 TASK-000 文件
 - 目标: 提交当前已验证的开发环境状态，建立后续迁移操作的干净基线
-- DoD:
-  - □ `git add` 包含：dependencies.gradle、gradle/forge.versions.toml、docs/runclient_development_environment.md、scripts/validate_runclient_mods.py、.gitignore
-  - □ 提交信息格式：`feat: establish 26.1.2 dev environment baseline`（或类似）
-  - □ `git push`（首次需 `-u`）到远程
-  - □ `git status` 显示 `nothing to commit, working tree clean`
-- 验收要点:
-  - [ ] `git log --oneline -1` 显示 checkpoint 提交
-  - [ ] `git diff HEAD` 空输出
-  - [ ] 推送后远程分支同步
+- DoD（已全部通过 ✓）:
+  - ☑ `git add` 包含：dependencies.gradle、gradle/forge.versions.toml、docs/runclient_development_environment.md、scripts/validate_runclient_mods.py、`.gitignore`
+  - ☑ 提交信息: `feat: establish 26.1.2 dev environment baseline`
+  - ☑ `git push` 到远程（`-u` 首次成功）
+  - ☑ `git status` → `nothing to commit, working tree clean`
+- 验收要点（已通过）:
+  - [✓] `git log --oneline -1` → `66f2ff5 feat: establish 26.1.2 dev environment baseline`
+  - [✓] `git diff HEAD` → 空输出
+  - [✓] 推送后远程分支同步（`ce6f653..66f2ff5`）
 - 输入: TASK-000 的 clean staging
 - 输出: checkpoint commit
 - 依赖: TASK-000
 - 风险/回退: 推送被拒 → `git pull --rebase` 后重推
+- **执行记录**:
+  - 完成日期: 2026-07-11
+  - 审查人: 艾琳（审查通过）
+  - Commit: `66f2ff5` — `feat: establish 26.1.2 dev environment baseline`
+  - Push: `ce6f653..66f2ff5` → 远程分支已同步
+  - 验证摘要:
+    - validator 9/9 exit0 ✅
+    - `compileJava`/`jar` 成功 ✅
+    - 五 dev mods 仅 clientRuntime，jar 无泄漏 ✅
+    - `runClient` 十 mod 到主菜单，TEN 0 ERROR/FATAL ✅
+    - Missing item model 0 / FluidModel 10 归入 TASK-070 ✅
+    - 用户确认 JEI/Jade/ModernUI 三项正常 ✅
+    - `git status` → clean ✅
 
 #### TASK-002: 编译器警告门禁基线确认
 
@@ -121,24 +162,34 @@
 - phase: P0
 - scope: `build.gradle`（`options.compilerArgs << "-Xlint:-removal"`）；`src/main/java` 全量
 - 目标: 记录当前编译输出基线（含 deprecation/removal 警告数量），为后续 P4 移除 `-Xlint:-removal` 提供对比
-- DoD:
-  - □ 运行 `.\gradlew.bat :compileJava *> compile_warn_baseline.log`；记录警告行数
-  - □ 运行 `.\gradlew.bat :compileTestJava *>> compile_warn_baseline.log`
-  - □ 对每条 deprecation/removal 警告分类：属旧传输 API / 属其他
-  - □ 写入 `docs/compile_warning_baseline_26.1.2.md` 作为基线证据
-- 验收要点:
-  - [ ] `compile_warn_baseline.log` 存在且包含分类统计
-  - [ ] 旧传输 API 相关警告计数明确标注
+- DoD（已全部通过 ✓）:
+  - ☑ 运行 `.\gradlew.bat :compileJava *> compile_warn_baseline.log` → exit0 BUILD SUCCESSFUL 23s
+  - ☑ 运行 `.\gradlew.bat :compileTestJava *>> compile_warn_baseline.log` → exit1（30 GameTest API errors，归入 TASK-090A）
+  - ☑ 静态旧 Transfer 约 20 生产文件 / 80 真实调用已分类标注
+  - ☑ `docs/compile_warning_baseline_26.1.2.md` 已写入并提交
+- 验收要点（已通过）:
+  - [✓] `compile_warn_baseline.log` 存在且包含分类统计
+  - [✓] 旧传输 API 相关警告计数已明确标注
 - 输入: 当前 build.gradle 编译配置
 - 输出: `docs/compile_warning_baseline_26.1.2.md`
 - 依赖: TASK-001
 - 风险/回退: 编译失败 → 先记录失败原因，待后续阶段修复
+- **执行记录**:
+  - 完成日期: 2026-07-11
+  - 审查人: 艾琳（两轮审查最终通过）
+  - Commit: `e4de678` — `docs: record 26.1.2 compiler warning baseline`
+  - Push: `66f2ff5..e4de678` → 远程分支已同步
+  - 验证摘要:
+    - `compileJava` rerun → exit0 BUILD SUCCESSFUL 23s ✅
+    - `compileTestJava` → exit1（30 GameTest API errors，已归入 TASK-090A）✅
+    - 静态旧 Transfer 约 20 生产文件 / 80 真实调用已分类 ✅
+    - `compile_warn_baseline.log` 与基线文档双文件已提交 ✅
 
 ---
 
 ### Phase 1 — 工具链修复
 
-> 旧 plan 未覆盖的 CI/元数据问题，修正 JDK 版本不一致和版本目录中的 TODO 标记。
+> 旧 plan 未覆盖的 CI/元数据/文档问题，修正 JDK 版本不一致和版本目录中的 TODO 标记。含执行扫描发现的两项新增残项（TASK-010A/010B）。
 
 #### TASK-010: CI JDK 版本修正 21→25
 
@@ -161,6 +212,61 @@
 - 输出: 上述两文件的 JDK 版本修正
 - 依赖: P0
 - 风险/回退: CI 配置语法错误 → `git revert` 回退
+
+#### TASK-010A: 发布元数据 Java 21→25（publish.yml）
+
+- task_id: `TASK-010A`
+- phase: P1
+- scope:
+  - `.github/workflows/publish.yml`（第99、132行环境 `JAVA: '21'` → `'25'`）
+- 目标: 将 mc-publish action 的 java 参数从 21 更正为 25，反映当前构件 major 69 / JDK 25，无 `--release` 降级
+- **关键约束（审查裁决）**:
+  - 仅改 `env.JAVA` 值（两处共享 env + 实际 input 引用），不改 workflow 分支/发布目标/secret
+  - Mixin `JAVA_21` 明确非残项不做
+  - 先 RED 断言确认当前值含 `21`，再 GREEN 改为 `25`，再 RED 确认无残留 `'21'`
+  - `rg` 全 workflow 文件核验无错误 21 残留
+- DoD:
+  - ☐ **RED 断言**：`grep "JAVA.*21" .github/workflows/publish.yml` → 匹配第99、132行
+  - ☐ **GREEN 修改**：两处 `JAVA: '21'` → `JAVA: '25'`
+  - ☐ **RED 再断言**：`rg "JAVA.*'21'" .github/workflows/publish.yml` → 无输出
+  - ☐ **YAML 语法**：`.\gradlew.bat` 不直接验证 YAML；可采用 `python -c "import yaml; yaml.safe_load(open(...))"` 或 `action-validator`（如有），至少人工目视核对缩进
+  - ☐ **diff 审查**：`git diff .github/workflows/publish.yml` 仅含两处版本号变更
+  - ☐ **提交信息**: `fix: align publish workflow JDK to 25`
+- 验收要点:
+  - [ ] `grep "JAVA.*'25'" .github/workflows/publish.yml` 输出两行（第99、132行）
+  - [ ] `rg "'21'" .github/workflows/publish.yml` 无输出（非 `JAVA` 的 `21` 如 version 可保留，确认评估）
+  - [ ] `git diff` 仅 publish.yml 且仅 version 数值变更
+- 输入: `.github/workflows/publish.yml`
+- 输出: JDK 版本修正后的 publish.yml
+- 依赖: TASK-010（build_setup 与 mise 先对齐，再修正发布元数据）
+- 风险/回退: YAML 缩进损坏 → `git checkout -- .github/workflows/publish.yml` 恢复
+
+#### TASK-010B: CONTRIBUTING.md Java 版本修正 21→25
+
+- task_id: `TASK-010B`
+- phase: P1
+- scope:
+  - `CONTRIBUTING.md`（第34、48、60行三处 Java/JDK 21 → 25）
+- 目标: 消除贡献者文档中的 Java 21 误导引用，与当前 JDK 25 构建环境一致
+- **关键约束（审查裁决）**:
+  - 仅改显式 `Java 21` / `JDK 21` 版本号，保留历史上下文/计划/Mixin `JAVA_21` 不动
+  - 核对 `build.gradle` toolchain（已为 25）和 `major=69` 确认一致性
+  - 全文 `rg` 确保所有用户面向的 Java 版本引用已更新，非用户面向的技术引用（如 `JAVA_21`）跳过
+- DoD:
+  - ☐ **范围确定**：`rg -n "21" CONTRIBUTING.md` 分类标记每处为"需改"/"保留"
+  - ☐ **修改**：第34、48、60行 `Java 21` / `JDK 21` → `Java 25` / `JDK 25`
+  - ☐ **RED 验证**：`rg "Java 21\|JDK 21" CONTRIBUTING.md` → 无用户面向残留（仅保留 `JAVA_21` 等技术引用）
+  - ☐ **一致性**：确认 `build.gradle` `java.toolchain.languageVersion = JavaLanguageVersion.of(25)` 且构件 `major=69`
+  - ☐ **diff 审查**：`git diff CONTRIBUTING.md` 仅 version 数值变更
+  - ☐ **提交信息**: `docs: update CONTRIBUTING.md Java version from 21 to 25`
+- 验收要点:
+  - [ ] 贡献者首次阅读时不再看到 `Java 21` / `JDK 21` 要求
+  - [ ] `rg "Java 21\|JDK 21" CONTRIBUTING.md` 无输出（排除 `JAVA_21` 等非用户面向引用）
+  - [ ] `git diff` 仅 CONTRIBUTING.md 且仅 version 数值变更
+- 输入: `CONTRIBUTING.md`；`build.gradle` toolchain 配置
+- 输出: 更新后的 `CONTRIBUTING.md`
+- 依赖: TASK-010A（建议顺序：010 → 010A → 010B → 011）
+- 风险/回退: 文档文字错误 → `git checkout -- CONTRIBUTING.md` 恢复
 
 #### TASK-011: libs.versions.toml TODO 清理（交叉验证）
 
@@ -191,7 +297,7 @@
 - 参考来源: NeoForge jar 元数据；modDevGradle GitHub Releases (https://github.com/neoforged/moddevgradle/releases)
 - 输入: `gradle/libs.versions.toml`、生成元数据、NeoForge jar
 - 输出: 清理后的 `gradle/libs.versions.toml` + `docs/deps_version_verification_26.1.2.md`
-- 依赖: P0
+- 依赖: TASK-010B（顺序执行链：010 → 010A → 010B → 011）
 - 风险/回退: 版本更新导致编译失败 → 恢复原版本号，保留 TODO 并记录结论
 
 ---
@@ -1020,6 +1126,8 @@
 | P0 checkpoint | 1 | `feat: establish 26.1.2 dev environment baseline` | 开发环境基线 |
 | P0 warn baseline | 1 | `docs: record compile warning baseline for -Xlint:-removal` | 警告基线 |
 | P1 toolchain | 1 | `fix: align CI JDK and mise toolchain to JDK 25` | CI 工具链 |
+| P1 publish | 1 | `fix: align publish workflow JDK to 25` | 发布元数据 (010A) |
+| P1 contributing | 1 | `docs: update CONTRIBUTING.md Java version from 21 to 25` | 贡献者文档 (010B) |
 | P1 versions | 1 | `chore: clean up libs.versions.toml TODOs after cross-verification` | 版本目录 |
 | P2 config | 1 | `feat: migrate ConfigHolder to NeoForge ModConfigSpec` | 配置系统 |
 | P2 toml | 1 | `chore: remove stale configuration dependency references` | 模板清理 |
@@ -1046,7 +1154,7 @@
 | P9 game test | 1 | `test: add transfer/persistence/solar GameTests` | GameTest |
 | P9 closure | 1 | `migrate: complete 26.1.2 migration completion` | 收官 |
 
-**总预计提交**: ~28-30 次
+**总预计提交**: ~30-32 次
 
 ---
 
@@ -1056,6 +1164,9 @@
 |--------|------|-----------|-----------|
 | 编译零错误 | 静态 | `.\gradlew.bat :compileJava` | 全体 |
 | test 编译零错误 | 静态 | `.\gradlew.bat :compileTestJava` | TASK-090A |
+| JDK 版本统一 | 静态 | `grep "java-version" .github/actions/build_setup/action.yml` → `25` | TASK-010 |
+| 发布元数据 JAVA | 静态 | `grep "JAVA.*'25'" .github/workflows/publish.yml` → 2行 | TASK-010A |
+| 文档版本一致 | 静态 | `rg "Java 21\|JDK 21" CONTRIBUTING.md` → 无用户面向残留 | TASK-010B |
 | 零 removal 警告 | 静态 | `.\gradlew.bat :compileJava -Xlint:removal *> compile_xlint.log; rg "removal" compile_xlint.log` | TASK-045 |
 | datagen 完整执行 | 生成 | `.\gradlew.bat :runClientData` | TASK-081,092 |
 | clean build | 构建 | `.\gradlew.bat clean :build` | TASK-090 |
