@@ -89,10 +89,9 @@ public class TENModelProvider implements DataProvider {
             cableBlockstate(cache, bsPath, futures, name);
         }
 
-        // 6. Channels (6-direction + active)
-        for (var name : CHANNEL_NAMES) {
-            directionalActiveBlockstate(cache, bsPath, futures, name);
-        }
+        // 6. Channels — blockstates now managed in main resources (not generated)
+        //    Channel models are hand-crafted and registered via main assets.
+        //    This loop is intentionally removed to avoid duplicate generation.
 
         // 7. Liquid blocks
         for (var name : LIQUID_NAMES) {
@@ -132,11 +131,9 @@ public class TENModelProvider implements DataProvider {
             parentModel(cache, blockModelPath, futures, name, modId + ":block/cable/cable_core");
         }
 
-        // Channels — simple parent to sub-model
-        for (var name : CHANNEL_NAMES) {
-            parentModel(cache, blockModelPath, futures, name, modId + ":block/channel/" + name);
-            parentModel(cache, blockModelPath, futures, name + "_active", modId + ":block/channel/" + name + "_active");
-        }
+        // Channels — block models now managed in main resources (not generated)
+        //    Channel sub-models are hand-crafted and registered via main assets.
+        //    This loop is intentionally removed to avoid duplicate generation.
 
         // Liquid blocks — particle-only model (no cube_all, fluid uses custom renderer)
         for (var name : LIQUID_NAMES) {
@@ -156,7 +153,8 @@ public class TENModelProvider implements DataProvider {
         blockNames.addAll(List.of(CABLE_NAMES));
         blockNames.addAll(List.of(PIPE_NAMES));
         blockNames.addAll(List.of(CELL_NAMES));
-        blockNames.addAll(List.of(CHANNEL_NAMES));
+        // Channels are excluded from blockNames — their item models and definitions
+        // are hand-crafted and reside in main resources (not generated).
         // Liquid blocks do not have BlockItems and have no item model in baseline
         // blockNames.addAll(List.of(LIQUID_NAMES));
 
@@ -169,6 +167,8 @@ public class TENModelProvider implements DataProvider {
         for (var entry : TENItems.ZH_NAMES.entrySet()) {
             var name = entry.getKey();
             if (blockNames.contains(name)) continue;
+            // Channel items are hand-crafted in main resources — skip generation
+            if (name.equals("channel_connector")) continue;
 
             if (name.startsWith("mould_")) {
                 // Mould items — baseline uses "mold" directory.
@@ -257,6 +257,8 @@ public class TENModelProvider implements DataProvider {
         for (var entry : TENItems.ZH_NAMES.entrySet()) {
             var name = entry.getKey();
             if (blockNames.contains(name)) continue;
+            // Channel items are hand-crafted in main resources — skip generation
+            if (name.equals("channel_connector")) continue;
             itemDefinition(cache, itemDefPath, futures, name, modId + ":item/" + name);
         }
 

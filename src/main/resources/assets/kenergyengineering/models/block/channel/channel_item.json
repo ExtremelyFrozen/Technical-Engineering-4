@@ -1,6 +1,6 @@
 {
 	"parent": "kenergyengineering:block/channel/channel",
 	"textures": {
-		"texture": "kenergyengineering:block/channel_item"
+		"front": "kenergyengineering:block/channel/channel_item"
 	}
 }

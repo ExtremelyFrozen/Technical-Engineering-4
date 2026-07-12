@@ -3,6 +3,7 @@ package com.modularmc.ten.common.data;
 import com.modularmc.ten.TEN;
 import com.modularmc.ten.common.block.machine.BaseMachineBlock;
 import com.modularmc.ten.common.block.machine.CableBased;
+import com.modularmc.ten.common.block.machine.ChannelBlock;
 import com.modularmc.ten.common.block.machine.DirectionalMachineBlock;
 import com.modularmc.ten.common.block.machine.EngineBlock;
 import com.modularmc.ten.common.block.machine.HorizontalMachineBlock;
@@ -129,11 +130,11 @@ public class TENBlocks {
     // Channels
     // ═══════════════════════════════════════════════════
 
-    public static final DeferredHolder<Block, DirectionalMachineBlock> CHANNEL_ENERGY
+    public static final DeferredHolder<Block, ChannelBlock> CHANNEL_ENERGY
             = channel("channel_energy", "能量频道");
-    public static final DeferredHolder<Block, DirectionalMachineBlock> CHANNEL_ITEM
+    public static final DeferredHolder<Block, ChannelBlock> CHANNEL_ITEM
             = channel("channel_item", "物品频道");
-    public static final DeferredHolder<Block, DirectionalMachineBlock> CHANNEL_FLUID
+    public static final DeferredHolder<Block, ChannelBlock> CHANNEL_FLUID
             = channel("channel_fluid", "流体频道");
 
     // ═══════════════════════════════════════════════════
@@ -239,11 +240,12 @@ public class TENBlocks {
         return holder;
     }
 
-    private static DeferredBlock<DirectionalMachineBlock> channel(String name, String cn) {
+    private static DeferredBlock<ChannelBlock> channel(String name, String cn) {
         ZH_NAMES.put(name, cn);
-        var holder = BLOCKS.registerBlock(name, DirectionalMachineBlock::new, props -> props
+        var holder = BLOCKS.registerBlock(name, ChannelBlock::new, props -> props
                 .strength(3.0f, 6.0f)
                 .requiresCorrectToolForDrops()
+                .noOcclusion()
                 .sound(SoundType.METAL));
         ITEMS.registerSimpleBlockItem(name, holder);
         return holder;
