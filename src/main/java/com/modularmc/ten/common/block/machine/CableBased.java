@@ -27,6 +27,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 import com.modularmc.ten.api.capability.CapabilityAdapters;
 
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReferenceArray;
 
 public class CableBased extends HorizontalMachineBlock implements SimpleWaterloggedBlock {
 
@@ -85,6 +86,20 @@ public class CableBased extends HorizontalMachineBlock implements SimpleWaterlog
         }
     }
 
+    /**
+     * Thread-safe shape cache shared across all Cable/Pipe block variants.
+     * <p>
+     * Key = base-3 encoding of the six connection property values (0..2 each),
+     * read in {@link Direction#values()} order: DOWN, UP, NORTH, SOUTH, WEST, EAST.
+     * Range [0, 728] covers all 3^6 = 729 connection combinations.
+     * <p>
+     * {@code ACTIVE}, {@code FACING}, and {@code WATERLOGGED} are deliberately
+     * excluded from the key because {@link #buildShape(BlockState)} only reads
+     * the six connection properties.  Including them would inflate the cache to
+     * 11,664 entries per block variant without any benefit.
+     */
+    private static final AtomicReferenceArray<VoxelShape> SHAPE_CACHE = new AtomicReferenceArray<>(729);
+
     public CableBased(Properties props) {
         super(props);
     }
@@ -116,8 +131,26 @@ public class CableBased extends HorizontalMachineBlock implements SimpleWaterlog
     }
 
     private static VoxelShape buildShape(BlockState state) {
+        // Cache key from the six connection properties only.
+        // ACTIVE, FACING, WATERLOGGED are NOT read by this method,
+        // so they are excluded — keeping the cache at 729 entries
+        // instead of 11,664 per block variant across 7 blocks.
+        Direction[] dirs = Direction.values(); // DOWN, UP, NORTH, SOUTH, WEST, EAST
+        int key = 0;
+        int mult = 1;
+        for (int i = 0; i < 6; i++) {
+            key += state.getValue(CONNECTION.get(dirs[i])) * mult;
+            mult *= 3;
+        }
+
+        // Fast path: already cached (lock-free O(1) read)
+        VoxelShape cached = SHAPE_CACHE.get(key);
+        if (cached != null) {
+            return cached;
+        }
+
+        // Compute shape via original Shapes.or() logic — unchanged semantics
         VoxelShape shape = CORE_SHAPE;
-        Direction[] dirs = Direction.values();
         for (int i = 0; i < 6; i++) {
             int conn = state.getValue(CONNECTION.get(dirs[i]));
             if (conn == 1) {
@@ -126,6 +159,13 @@ public class CableBased extends HorizontalMachineBlock implements SimpleWaterlog
                 shape = Shapes.or(shape, CONNECT_SHAPES[i]);
             }
         }
+
+        // Publish to cache atomically.
+        // If another thread computed first, use the already-cached value.
+        if (!SHAPE_CACHE.compareAndSet(key, null, shape)) {
+            shape = SHAPE_CACHE.get(key);
+        }
+
         return shape;
     }
 

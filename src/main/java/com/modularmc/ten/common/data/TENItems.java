@@ -12,7 +12,10 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.Item;
 import net.neoforged.neoforge.registries.DeferredHolder;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.function.Supplier;
 
 import static com.modularmc.ten.common.registry.Registration.ITEMS;
@@ -20,6 +23,15 @@ import static com.modularmc.ten.common.registry.Registration.ITEMS;
 public class TENItems {
 
     public static final LinkedHashMap<String, String> ZH_NAMES = new LinkedHashMap<>();
+
+    /**
+     * Ordered holder list for all material variant items registered via
+     * {@link #registerVariants(String, String, String, Mat...)}.
+     * Preserves category order (dust -> ingot -> nugget -> plate -> gear -> rod -> wire)
+     * and per-call material argument order.
+     * Populated during class initialization, exposed read-only via {@link #getMaterialVariantHolders()}.
+     */
+    private static final List<DeferredHolder<Item, Item>> MATERIAL_VARIANT_HOLDERS = new ArrayList<>(79);
 
     // ══════════════════════════════════════════════════════════════════
     // Bulk material variant registration (dusts, ingots, nuggets, etc.)
@@ -218,8 +230,19 @@ public class TENItems {
             mat.markRegistered(category);
             ZH_NAMES.put(name, mat.cn + categoryCn);
             var key = itemKey(name);
-            ITEMS.register(name, () -> new Item(new Item.Properties().setId(key)));
+            var holder = ITEMS.register(name, () -> new Item(new Item.Properties().setId(key)));
+            MATERIAL_VARIANT_HOLDERS.add(holder);
         }
+    }
+
+    /**
+     * Returns an unmodifiable view of all material variant holders,
+     * in the exact registration order (category then material argument order).
+     * <p>
+     * Used by {@link TENCreativeModeTabs} to populate the ITEM_TAB.
+     */
+    public static List<DeferredHolder<Item, Item>> getMaterialVariantHolders() {
+        return Collections.unmodifiableList(MATERIAL_VARIANT_HOLDERS);
     }
 
     /**

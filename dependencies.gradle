@@ -2,6 +2,7 @@ dependencies {
     compileOnly(libs.jetbrains.annotations)
 
     testImplementation(libs.testframework.get())
+    extraImplementation(libs.testframework.get())
 
     // LDLIB 2
     implementation(forge.ldlib2.get())
@@ -32,20 +33,22 @@ dependencies {
     // Standard runtime mods //
     localRuntime(libs.testframework)
 
-    // Phase 4/5: localRuntime(forge.jade)
+    // Optional dev runtime mods — dual-side
+    localRuntime(forge.modernfix)
+    localRuntime(forge.ferritecore)
     // Phase 4/5: localRuntime(forge.spark)
-    // Phase 4/5: localRuntime(forge.modernfix)
 
     // Runtime Recipe Viewers - only enable one at a time.
     // GTM's approach is to let EMI own the runtime path and keep JEI integration compile-only
     // unless we are explicitly testing JEI itself.
     // Phase 4/5: localRuntime(forge.emi)
-//    localRuntime(forge.jei.neoforge.impl)
 
-    // Phase 4/5: Client-only runtime mods //
+    // Optional client-only runtime mods //
+    clientLocalRuntime(forge.jei.neoforge.impl)
+    clientLocalRuntime(forge.jade)
+    clientLocalRuntime(forge.modernui)
     // clientLocalRuntime(forge.sodium)
     // clientLocalRuntime(forge.iris)
-    // clientLocalRuntime(forge.modernui)
     // clientLocalRuntime("maven.modrinth:itemzoomer:2.0.1-1.21.1")
     renderNurseCfg(libs.renderNurse)
 

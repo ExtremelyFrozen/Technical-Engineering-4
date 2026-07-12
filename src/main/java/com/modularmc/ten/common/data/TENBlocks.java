@@ -1,6 +1,7 @@
 package com.modularmc.ten.common.data;
 
 import com.modularmc.ten.TEN;
+import com.modularmc.ten.common.block.machine.BaseMachineBlock;
 import com.modularmc.ten.common.block.machine.CableBased;
 import com.modularmc.ten.common.block.machine.DirectionalMachineBlock;
 import com.modularmc.ten.common.block.machine.HorizontalMachineBlock;
@@ -184,10 +185,12 @@ public class TENBlocks {
 
     private static DeferredBlock<HorizontalMachineBlock> engine(String name, String cn) {
         ZH_NAMES.put(name, cn);
-        var holder = BLOCKS.registerBlock(name, HorizontalMachineBlock::new, props -> props
+        var holder = BLOCKS.<HorizontalMachineBlock>registerBlock(name, HorizontalMachineBlock::new, props -> props
+                .mapColor(MapColor.METAL)
                 .strength(4.0f, 8.0f)
                 .requiresCorrectToolForDrops()
-                .sound(SoundType.METAL));
+                .sound(SoundType.METAL)
+                .lightLevel(state -> state.getValue(BaseMachineBlock.ACTIVE) ? 6 : 0));
         registerTENBaseBlockItem(name, holder);
         return holder;
     }

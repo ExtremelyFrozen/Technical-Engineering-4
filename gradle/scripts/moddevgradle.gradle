@@ -73,6 +73,17 @@ neoForge {
             environment('TEST', 'true')
         }
 
+        // Adapter test server — uses extra source set for FluidHandlerResourceAdapter index test
+        adapterTestServer {
+            type = "gameTestServer"
+            sourceSet = sourceSets.extra
+            ideName = "Adapter Tests"
+
+            gameDirectory.set(file('run/gametest/adapter'))
+            systemProperty('neoforge.enabledGameTestNamespaces', project.mod_id)
+            environment('TEST', 'true')
+        }
+
         gameTestClient {
             client()
             sourceSet = sourceSets.test

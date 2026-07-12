@@ -105,9 +105,10 @@ public class TENCreativeModeTabs {
                         output.accept(TENFluids.LIQUID_HONEY_BUCKET.get());
                         output.accept(TENFluids.LIQUID_XP_BUCKET.get());
                         output.accept(TENFluids.LIQUID_BIZARRERIE_BUCKET.get());
-                        // TODO(26.1.2): Material variants (dusts/ingots/nuggets/plates/gears/rods/wires)
-                        // are registered dynamically via registerVariants() but not yet added to tabs.
-                        // Use JEI/EMI or /give to access them for now.
+                        // Material variants (dusts/ingots/nuggets/plates/gears/rods/wires)
+                        for (var holder : TENItems.getMaterialVariantHolders()) {
+                            output.accept(holder.get());
+                        }
                     })
                     .build());
 

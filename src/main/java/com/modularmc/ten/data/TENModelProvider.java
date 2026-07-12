@@ -74,32 +74,27 @@ public class TENModelProvider implements DataProvider {
             horizontalActiveBlockstate(cache, bsPath, futures, name);
         }
 
-        // 3. Engines (same pattern as machines)
-        for (var name : ENGINE_NAMES) {
-            horizontalActiveBlockstate(cache, bsPath, futures, name);
-        }
-
-        // 4. Energy cells (same pattern as machines but with empty/active models)
+        // 3. Energy cells (same pattern as machines but with empty/active models)
         for (var name : CELL_NAMES) {
             horizontalActiveBlockstate(cache, bsPath, futures, name, "_empty");
         }
 
-        // 5. Cables (multipart) — embedded template
+        // 4. Cables (multipart) — embedded template
         for (var name : CABLE_NAMES) {
             cableBlockstate(cache, bsPath, futures, name);
         }
 
-        // 6. Pipes (same as cables)
+        // 5. Pipes (same as cables)
         for (var name : PIPE_NAMES) {
             cableBlockstate(cache, bsPath, futures, name);
         }
 
-        // 7. Channels (6-direction + active)
+        // 6. Channels (6-direction + active)
         for (var name : CHANNEL_NAMES) {
             directionalActiveBlockstate(cache, bsPath, futures, name);
         }
 
-        // 8. Liquid blocks
+        // 7. Liquid blocks
         for (var name : LIQUID_NAMES) {
             simpleBlockstate(cache, bsPath, futures, name);
         }
@@ -117,11 +112,6 @@ public class TENModelProvider implements DataProvider {
             machineModel(cache, blockModelPath, futures, name, false);
             machineModel(cache, blockModelPath, futures, name, true);
         }
-        for (var name : ENGINE_NAMES) {
-            engineModel(cache, blockModelPath, futures, name, false);
-            engineModel(cache, blockModelPath, futures, name, true);
-        }
-
         // Energy cells — complex model, use embedded template
         for (var name : CELL_NAMES) {
             parentModel(cache, blockModelPath, futures, name, modId + ":block/" + name);
@@ -163,7 +153,6 @@ public class TENModelProvider implements DataProvider {
                 "raw_tin_block", "raw_nickel_block"
         ));
         blockNames.addAll(List.of(MACHINE_NAMES));
-        blockNames.addAll(List.of(ENGINE_NAMES));
         blockNames.addAll(List.of(CABLE_NAMES));
         blockNames.addAll(List.of(PIPE_NAMES));
         blockNames.addAll(List.of(CELL_NAMES));
@@ -298,10 +287,6 @@ public class TENModelProvider implements DataProvider {
             "machine_induction_furnace", "machine_psionicant", "machine_beacon_simulator",
             "machine_mob_ripper", "machine_quarry", "machine_enchantment_flusher",
             "machine_matter_condenser", "machine_farm_manager"
-    };
-
-    private static final String[] ENGINE_NAMES = {
-            "engine_extraction", "engine_metal", "engine_biomass", "engine_solar"
     };
 
     private static final String[] CELL_NAMES = {
@@ -501,28 +486,6 @@ public class TENModelProvider implements DataProvider {
         textures.addProperty("east", modId + ":block/machine_side_connection");
         textures.addProperty("west", modId + ":block/machine_side_connection_flipped");
         textures.addProperty("particle", modId + ":block/machine_side");
-        json.add("textures", textures);
-        writeJson(cache, dir.resolve(name + activeSuffix + ".json"), json, futures);
-    }
-
-    /**
-     * Generate an engine block model using {@code minecraft:block/cube_bottom_top} parent
-     * with engine-specific texture layout.
-     * <p>
-     * Baseline pattern: bottom/side/particle = {@code block/engine_<name>},
-     * top = {@code block/engine_<name>_bottom}. Active variant replaces the
-     * bottom/side texture but keeps the same top texture.
-     */
-    private void engineModel(CachedOutput cache, Path dir, List<CompletableFuture<?>> futures,
-                              String name, boolean active) {
-        var activeSuffix = active ? "_active" : "";
-        var json = new JsonObject();
-        json.addProperty("parent", "minecraft:block/cube_bottom_top");
-        var textures = new JsonObject();
-        textures.addProperty("bottom", modId + ":block/" + name + activeSuffix);
-        textures.addProperty("side", modId + ":block/" + name + activeSuffix);
-        textures.addProperty("top", modId + ":block/" + name + "_bottom");
-        textures.addProperty("particle", modId + ":block/" + name + activeSuffix);
         json.add("textures", textures);
         writeJson(cache, dir.resolve(name + activeSuffix + ".json"), json, futures);
     }

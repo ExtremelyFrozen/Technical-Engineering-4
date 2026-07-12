@@ -9,12 +9,13 @@ jei = "29.13.0.42"
 # EMI/Jade/Sodium/Iris/ModernFix/ModernUI/Spark 为可选 dep，Phase 4/5 恢复
 # emi = "1.1.22+1.21.1"
 
-## Phase 4/5: modrinth maven deps — 可选 runtime/客户端，暂禁用
-# jade = "15.10.0+neoforge"
+## Optional dev runtime mods — resolved via Modrinth Maven
+jade = "26.1.8+neoforge"
 # sodium = "mc1.21.1-0.6.13-neoforge"
 # iris = "1.8.8+1.21.1-neoforge"
-# modernfix = "4SPHwiDB" # 5.24.3+mc1.21.1
-# modernui = "3.12.0.2"
+modernfix = "5.27.18+mc26.1.2"
+modernui = "3.13.0.5"
+ferritecore = "9.0.0-neoforge"
 
 ## Phase 4/5: curseforge maven — 可选 runtime
 # spark = "6225208"
@@ -35,12 +36,13 @@ jei-neoforge-impl   = { module = "mezz.jei:jei-26.1.2-neoforge", version.ref = "
 # Phase 4/5: EMI 等可选依赖
 # emi                 = { module = "dev.emi:emi-neoforge", version.ref = "emi" }
 
-# Phase 4/5: Modrinth 可选 deps
-# jade                = { module = "maven.modrinth:jade", version.ref = "jade" }
+# Optional dev runtime mods — unlocked
+jade                = { module = "maven.modrinth:jade", version.ref = "jade" }
 # sodium              = { module = "maven.modrinth:sodium", version.ref = "sodium" }
 # iris                = { module = "maven.modrinth:iris", version.ref = "iris" }
-# modernui            = { module = "maven.modrinth:modern-ui", version.ref = "modernui" }
-# modernfix           = { module = "maven.modrinth:modernfix", version.ref = "modernfix" }
+modernui            = { module = "maven.modrinth:modern-ui", version.ref = "modernui" }
+modernfix           = { module = "maven.modrinth:modernfix", version.ref = "modernfix" }
+ferritecore         = { module = "maven.modrinth:ferrite-core", version.ref = "ferritecore" }
 
 # Phase 4/5: CurseForge 可选 deps
 # spark               = { module = "curse.maven:spark-361579", version.ref = "spark" }

@@ -1,9 +1,8 @@
 {
-  "parent": "minecraft:block/cube_bottom_top",
-  "textures": {
-    "bottom": "kenergyengineering:block/engine_biomass_active",
-    "particle": "kenergyengineering:block/engine_biomass_active",
-    "side": "kenergyengineering:block/engine_biomass_active",
-    "top": "kenergyengineering:block/engine_biomass_bottom"
-  }
+	"parent": "kenergyengineering:block/mac/engine",
+	"textures": {
+		"bot": "kenergyengineering:block/engine_biomass_bottom",
+		"particle": "kenergyengineering:block/engine_biomass_active",
+		"side": "kenergyengineering:block/engine_biomass_active"
+	}
 }
