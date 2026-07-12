@@ -1,5 +1,5 @@
 {
-	"parent": "kenergyengineering:block/mac/engine",
+	"parent": "kenergyengineering:block/engine/engine",
 	"textures": {
 		"bot": "kenergyengineering:block/engine_biomass_bottom",
 		"particle": "kenergyengineering:block/engine_biomass",

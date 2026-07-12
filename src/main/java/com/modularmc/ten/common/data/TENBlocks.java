@@ -4,6 +4,7 @@ import com.modularmc.ten.TEN;
 import com.modularmc.ten.common.block.machine.BaseMachineBlock;
 import com.modularmc.ten.common.block.machine.CableBased;
 import com.modularmc.ten.common.block.machine.DirectionalMachineBlock;
+import com.modularmc.ten.common.block.machine.EngineBlock;
 import com.modularmc.ten.common.block.machine.HorizontalMachineBlock;
 import com.modularmc.ten.common.item.TENBaseBlockItem;
 
@@ -82,13 +83,13 @@ public class TENBlocks {
     // Engines
     // ═══════════════════════════════════════════════════
 
-    public static final DeferredHolder<Block, HorizontalMachineBlock> ENGINE_EXTRACTION
+    public static final DeferredHolder<Block, EngineBlock> ENGINE_EXTRACTION
             = engine("engine_extraction", "萃取引擎");
-    public static final DeferredHolder<Block, HorizontalMachineBlock> ENGINE_METAL
+    public static final DeferredHolder<Block, EngineBlock> ENGINE_METAL
             = engine("engine_metal", "金属引擎");
-    public static final DeferredHolder<Block, HorizontalMachineBlock> ENGINE_BIOMASS
+    public static final DeferredHolder<Block, EngineBlock> ENGINE_BIOMASS
             = engine("engine_biomass", "生物质引擎");
-    public static final DeferredHolder<Block, HorizontalMachineBlock> ENGINE_SOLAR
+    public static final DeferredHolder<Block, EngineBlock> ENGINE_SOLAR
             = engine("engine_solar", "光合引擎");
 
     // ═══════════════════════════════════════════════════
@@ -183,12 +184,13 @@ public class TENBlocks {
         return holder;
     }
 
-    private static DeferredBlock<HorizontalMachineBlock> engine(String name, String cn) {
+    private static DeferredBlock<EngineBlock> engine(String name, String cn) {
         ZH_NAMES.put(name, cn);
-        var holder = BLOCKS.<HorizontalMachineBlock>registerBlock(name, HorizontalMachineBlock::new, props -> props
+        var holder = BLOCKS.<EngineBlock>registerBlock(name, EngineBlock::new, props -> props
                 .mapColor(MapColor.METAL)
                 .strength(4.0f, 8.0f)
                 .requiresCorrectToolForDrops()
+                .noOcclusion()
                 .sound(SoundType.METAL)
                 .lightLevel(state -> state.getValue(BaseMachineBlock.ACTIVE) ? 6 : 0));
         registerTENBaseBlockItem(name, holder);
