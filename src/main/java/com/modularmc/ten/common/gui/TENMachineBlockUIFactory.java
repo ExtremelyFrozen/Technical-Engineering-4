@@ -79,7 +79,8 @@ public final class TENMachineBlockUIFactory {
     }
 
     public static void addPlayerInventory(UIElement root) {
-        var inventory = absolute(new InventorySlots(), 8, 83, 162, 58);
+        var inventory = absolute(new InventorySlots(), 7, 83, 162, 58);
+        inventory.hotbar.getLayout().marginTop(4.0f);
         inventory.apply(slot -> {
             slot.style(style -> style.backgroundTexture(IGuiTexture.EMPTY));
             slot.slotStyle(style -> style.slotOverlay(IGuiTexture.EMPTY).showSlotOverlayOnlyEmpty(false));
