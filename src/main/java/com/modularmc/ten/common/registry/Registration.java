@@ -9,7 +9,9 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.material.Fluid;
 import net.neoforged.bus.api.IEventBus;
+import net.neoforged.neoforge.fluids.FluidType;
 import net.neoforged.neoforge.registries.DeferredRegister;
+import net.neoforged.neoforge.registries.NeoForgeRegistries;
 
 /**
  * Central registry hub for Technical Engineering 4 (26.1.2 migration).
@@ -30,6 +32,8 @@ public class Registration {
             DeferredRegister.create(Registries.BLOCK_ENTITY_TYPE, TEN.MOD_ID);
     public static final DeferredRegister<CreativeModeTab> CREATIVE_TABS =
             DeferredRegister.create(Registries.CREATIVE_MODE_TAB, TEN.MOD_ID);
+    public static final DeferredRegister<FluidType> FLUID_TYPES =
+            DeferredRegister.create(NeoForgeRegistries.FLUID_TYPES, TEN.MOD_ID);
 
     /**
      * Register all DeferredRegisters on the mod event bus.
@@ -39,6 +43,7 @@ public class Registration {
         BLOCKS.register(modBus);
         ITEMS.register(modBus);
         FLUIDS.register(modBus);
+        FLUID_TYPES.register(modBus);
         BLOCK_ENTITIES.register(modBus);
         CREATIVE_TABS.register(modBus);
     }

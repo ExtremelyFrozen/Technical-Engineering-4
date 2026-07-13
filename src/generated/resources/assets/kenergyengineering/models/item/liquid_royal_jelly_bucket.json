@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:item/generated",
   "textures": {
-    "layer0": "kenergyengineering:block/liquid_royal_jelly_bucket"
+    "layer0": "kenergyengineering:item/bucket/liquid_royal_jelly_bucket"
   }
 }

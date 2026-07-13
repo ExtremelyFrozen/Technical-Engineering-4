@@ -1,7 +1,7 @@
 {
   "variants": {
     "": {
-      "model": "kenergyengineering:block/liquid_xp"
+      "model": "kenergyengineering:block/fluid/liquid_xp"
     }
   }
 }

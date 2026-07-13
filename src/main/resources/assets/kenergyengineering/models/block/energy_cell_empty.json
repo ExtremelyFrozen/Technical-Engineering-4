@@ -447,7 +447,7 @@
 		}
 	],
 	"textures": {
-		"core": "kenergyengineering:block/liquid_redstone",
+		"core": "kenergyengineering:block/fluid/liquid_redstone",
 		"frame": "kenergyengineering:block/energy_cell_frame",
 		"meter": "kenergyengineering:block/energy_cell_meter",
 		"particle": "kenergyengineering:block/energy_cell_frame"

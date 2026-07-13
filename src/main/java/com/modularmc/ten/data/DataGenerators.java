@@ -109,12 +109,9 @@ public class DataGenerators {
 
                 add("kenergyengineering.energy_core", "能量核心");
                 add("item.kenergyengineering.liquid_bizarrerie_bucket", "奇异物质桶");
-                add("kenergyengineering.liquid_honey", "蜂蜜");
-                add("kenergyengineering.liquid_honey_bucket", "蜂蜜桶");
-                add("kenergyengineering.liquid_royal_jelly", "蜂王浆");
-                add("kenergyengineering.liquid_royal_jelly_bucket", "蜂王浆桶");
-                add("kenergyengineering.liquid_spicy_jelly", "香辣蜂王浆");
-                add("kenergyengineering.liquid_spicy_jelly_bucket", "香辣蜂王浆桶");
+                add("item.kenergyengineering.liquid_honey_bucket", "蜂蜜桶");
+                add("item.kenergyengineering.liquid_royal_jelly_bucket", "蜂王浆桶");
+                add("item.kenergyengineering.liquid_spicy_jelly_bucket", "香辣蜂王浆桶");
                 add("item.kenergyengineering.liquid_xp_bucket", "液态经验桶");
                 add("kenergyengineering.machine_frame", "机械框架");
                 add("kenergyengineering.world_bag", "世界袋");

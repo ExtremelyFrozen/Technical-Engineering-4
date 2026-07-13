@@ -12,24 +12,41 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.level.material.PushReaction;
 import net.neoforged.neoforge.fluids.BaseFlowingFluid;
 import net.neoforged.neoforge.fluids.FluidType;
 import net.neoforged.neoforge.registries.DeferredHolder;
 
 import java.util.LinkedHashMap;
-import java.util.function.Supplier;
 
 import static com.modularmc.ten.common.registry.Registration.FLUIDS;
 import static com.modularmc.ten.common.registry.Registration.BLOCKS;
 import static com.modularmc.ten.common.registry.Registration.ITEMS;
+import static com.modularmc.ten.common.registry.Registration.FLUID_TYPES;
 
 public class TENFluids {
 
     public static final LinkedHashMap<String, String> ZH_NAMES = new LinkedHashMap<>();
     public static final LinkedHashMap<String, String> ZH_FLUID_KEYS = new LinkedHashMap<>();
 
-    // Shared FluidType for all mod fluids
-    private static final Supplier<FluidType> DEFAULT_FLUID_TYPE = () -> new FluidType(FluidType.Properties.create());
+    // ══════════════════════════════════════════════════════════════════
+    // Per-fluid FluidType holders
+    // ══════════════════════════════════════════════════════════════════
+    public static final DeferredHolder<FluidType, FluidType> LIQUID_ROYAL_JELLY_FLUID_TYPE =
+            FLUID_TYPES.register("liquid_royal_jelly", () -> new FluidType(
+                    FluidType.Properties.create().descriptionId("fluid." + TEN.MOD_ID + ".liquid_royal_jelly")));
+    public static final DeferredHolder<FluidType, FluidType> LIQUID_SPICY_JELLY_FLUID_TYPE =
+            FLUID_TYPES.register("liquid_spicy_jelly", () -> new FluidType(
+                    FluidType.Properties.create().descriptionId("fluid." + TEN.MOD_ID + ".liquid_spicy_jelly")));
+    public static final DeferredHolder<FluidType, FluidType> LIQUID_HONEY_FLUID_TYPE =
+            FLUID_TYPES.register("liquid_honey", () -> new FluidType(
+                    FluidType.Properties.create().descriptionId("fluid." + TEN.MOD_ID + ".liquid_honey")));
+    public static final DeferredHolder<FluidType, FluidType> LIQUID_XP_FLUID_TYPE =
+            FLUID_TYPES.register("liquid_xp", () -> new FluidType(
+                    FluidType.Properties.create().descriptionId("fluid." + TEN.MOD_ID + ".liquid_xp")));
+    public static final DeferredHolder<FluidType, FluidType> LIQUID_BIZARRERIE_FLUID_TYPE =
+            FLUID_TYPES.register("liquid_bizarrerie", () -> new FluidType(
+                    FluidType.Properties.create().descriptionId("fluid." + TEN.MOD_ID + ".liquid_bizarrerie")));
 
     // ══════════════════════════════════════════════════════════════════
     // Liquid Royal Jelly
@@ -37,7 +54,9 @@ public class TENFluids {
     private static BaseFlowingFluid.Properties royalJellyProps;
     private static BaseFlowingFluid.Properties getRoyalJellyProps() {
         if (royalJellyProps == null) {
-            royalJellyProps = new BaseFlowingFluid.Properties(DEFAULT_FLUID_TYPE, LIQUID_ROYAL_JELLY_SOURCE, LIQUID_ROYAL_JELLY_FLOWING);
+            royalJellyProps = new BaseFlowingFluid.Properties(LIQUID_ROYAL_JELLY_FLUID_TYPE, LIQUID_ROYAL_JELLY_SOURCE, LIQUID_ROYAL_JELLY_FLOWING)
+                    .block(LIQUID_ROYAL_JELLY_BLOCK)
+                    .bucket(LIQUID_ROYAL_JELLY_BUCKET);
         }
         return royalJellyProps;
     }
@@ -46,7 +65,7 @@ public class TENFluids {
     public static final DeferredHolder<Fluid, BaseFlowingFluid.Flowing> LIQUID_ROYAL_JELLY_FLOWING =
             FLUIDS.register("liquid_royal_jelly_flowing", () -> new BaseFlowingFluid.Flowing(getRoyalJellyProps()));
     public static final DeferredHolder<Block, LiquidBlock> LIQUID_ROYAL_JELLY_BLOCK =
-            BLOCKS.register("liquid_royal_jelly", () -> new LiquidBlock(LIQUID_ROYAL_JELLY_FLOWING.get(),
+            BLOCKS.register("liquid_royal_jelly", () -> new LiquidBlock(LIQUID_ROYAL_JELLY_SOURCE.get(),
                     liquidBlockProps("liquid_royal_jelly", 100.0f, 4)));
     public static final DeferredHolder<Item, BucketItem> LIQUID_ROYAL_JELLY_BUCKET =
             ITEMS.register("liquid_royal_jelly_bucket", () -> new TENBucketItem(LIQUID_ROYAL_JELLY_SOURCE.get(),
@@ -59,7 +78,9 @@ public class TENFluids {
     private static BaseFlowingFluid.Properties spicyJellyProps;
     private static BaseFlowingFluid.Properties getSpicyJellyProps() {
         if (spicyJellyProps == null) {
-            spicyJellyProps = new BaseFlowingFluid.Properties(DEFAULT_FLUID_TYPE, LIQUID_SPICY_JELLY_SOURCE, LIQUID_SPICY_JELLY_FLOWING);
+            spicyJellyProps = new BaseFlowingFluid.Properties(LIQUID_SPICY_JELLY_FLUID_TYPE, LIQUID_SPICY_JELLY_SOURCE, LIQUID_SPICY_JELLY_FLOWING)
+                    .block(LIQUID_SPICY_JELLY_BLOCK)
+                    .bucket(LIQUID_SPICY_JELLY_BUCKET);
         }
         return spicyJellyProps;
     }
@@ -68,7 +89,7 @@ public class TENFluids {
     public static final DeferredHolder<Fluid, BaseFlowingFluid.Flowing> LIQUID_SPICY_JELLY_FLOWING =
             FLUIDS.register("liquid_spicy_jelly_flowing", () -> new BaseFlowingFluid.Flowing(getSpicyJellyProps()));
     public static final DeferredHolder<Block, LiquidBlock> LIQUID_SPICY_JELLY_BLOCK =
-            BLOCKS.register("liquid_spicy_jelly", () -> new LiquidBlock(LIQUID_SPICY_JELLY_FLOWING.get(),
+            BLOCKS.register("liquid_spicy_jelly", () -> new LiquidBlock(LIQUID_SPICY_JELLY_SOURCE.get(),
                     liquidBlockProps("liquid_spicy_jelly", 100.0f, 4)));
     public static final DeferredHolder<Item, BucketItem> LIQUID_SPICY_JELLY_BUCKET =
             ITEMS.register("liquid_spicy_jelly_bucket", () -> new TENBucketItem(LIQUID_SPICY_JELLY_SOURCE.get(),
@@ -81,7 +102,9 @@ public class TENFluids {
     private static BaseFlowingFluid.Properties honeyProps;
     private static BaseFlowingFluid.Properties getHoneyProps() {
         if (honeyProps == null) {
-            honeyProps = new BaseFlowingFluid.Properties(DEFAULT_FLUID_TYPE, LIQUID_HONEY_SOURCE, LIQUID_HONEY_FLOWING);
+            honeyProps = new BaseFlowingFluid.Properties(LIQUID_HONEY_FLUID_TYPE, LIQUID_HONEY_SOURCE, LIQUID_HONEY_FLOWING)
+                    .block(LIQUID_HONEY_BLOCK)
+                    .bucket(LIQUID_HONEY_BUCKET);
         }
         return honeyProps;
     }
@@ -90,7 +113,7 @@ public class TENFluids {
     public static final DeferredHolder<Fluid, BaseFlowingFluid.Flowing> LIQUID_HONEY_FLOWING =
             FLUIDS.register("liquid_honey_flowing", () -> new BaseFlowingFluid.Flowing(getHoneyProps()));
     public static final DeferredHolder<Block, LiquidBlock> LIQUID_HONEY_BLOCK =
-            BLOCKS.register("liquid_honey", () -> new LiquidBlock(LIQUID_HONEY_FLOWING.get(),
+            BLOCKS.register("liquid_honey", () -> new LiquidBlock(LIQUID_HONEY_SOURCE.get(),
                     liquidBlockProps("liquid_honey", 100.0f, 2)));
     public static final DeferredHolder<Item, BucketItem> LIQUID_HONEY_BUCKET =
             ITEMS.register("liquid_honey_bucket", () -> new TENBucketItem(LIQUID_HONEY_SOURCE.get(),
@@ -103,7 +126,9 @@ public class TENFluids {
     private static BaseFlowingFluid.Properties xpProps;
     private static BaseFlowingFluid.Properties getXpProps() {
         if (xpProps == null) {
-            xpProps = new BaseFlowingFluid.Properties(DEFAULT_FLUID_TYPE, LIQUID_XP_SOURCE, LIQUID_XP_FLOWING);
+            xpProps = new BaseFlowingFluid.Properties(LIQUID_XP_FLUID_TYPE, LIQUID_XP_SOURCE, LIQUID_XP_FLOWING)
+                    .block(LIQUID_XP_BLOCK)
+                    .bucket(LIQUID_XP_BUCKET);
         }
         return xpProps;
     }
@@ -112,7 +137,7 @@ public class TENFluids {
     public static final DeferredHolder<Fluid, BaseFlowingFluid.Flowing> LIQUID_XP_FLOWING =
             FLUIDS.register("liquid_xp_flowing", () -> new BaseFlowingFluid.Flowing(getXpProps()));
     public static final DeferredHolder<Block, LiquidBlock> LIQUID_XP_BLOCK =
-            BLOCKS.register("liquid_xp", () -> new LiquidBlock(LIQUID_XP_FLOWING.get(),
+            BLOCKS.register("liquid_xp", () -> new LiquidBlock(LIQUID_XP_SOURCE.get(),
                     liquidBlockProps("liquid_xp", 1000.0f, 6)));
     public static final DeferredHolder<Item, BucketItem> LIQUID_XP_BUCKET =
             ITEMS.register("liquid_xp_bucket", () -> new TENBucketItem(LIQUID_XP_SOURCE.get(),
@@ -125,7 +150,9 @@ public class TENFluids {
     private static BaseFlowingFluid.Properties bizarrerieProps;
     private static BaseFlowingFluid.Properties getBizarrerieProps() {
         if (bizarrerieProps == null) {
-            bizarrerieProps = new BaseFlowingFluid.Properties(DEFAULT_FLUID_TYPE, LIQUID_BIZARRERIE_SOURCE, LIQUID_BIZARRERIE_FLOWING);
+            bizarrerieProps = new BaseFlowingFluid.Properties(LIQUID_BIZARRERIE_FLUID_TYPE, LIQUID_BIZARRERIE_SOURCE, LIQUID_BIZARRERIE_FLOWING)
+                    .block(LIQUID_BIZARRERIE_BLOCK)
+                    .bucket(LIQUID_BIZARRERIE_BUCKET);
         }
         return bizarrerieProps;
     }
@@ -134,7 +161,7 @@ public class TENFluids {
     public static final DeferredHolder<Fluid, BaseFlowingFluid.Flowing> LIQUID_BIZARRERIE_FLOWING =
             FLUIDS.register("liquid_bizarrerie_flowing", () -> new BaseFlowingFluid.Flowing(getBizarrerieProps()));
     public static final DeferredHolder<Block, LiquidBlock> LIQUID_BIZARRERIE_BLOCK =
-            BLOCKS.register("liquid_bizarrerie", () -> new LiquidBlock(LIQUID_BIZARRERIE_FLOWING.get(),
+            BLOCKS.register("liquid_bizarrerie", () -> new LiquidBlock(LIQUID_BIZARRERIE_SOURCE.get(),
                     liquidBlockProps("liquid_bizarrerie", 5000.0f, 4)));
     public static final DeferredHolder<Item, BucketItem> LIQUID_BIZARRERIE_BUCKET =
             ITEMS.register("liquid_bizarrerie_bucket", () -> new TENBucketItem(LIQUID_BIZARRERIE_SOURCE.get(),
@@ -162,9 +189,12 @@ public class TENFluids {
                 Identifier.fromNamespaceAndPath(TEN.MOD_ID, name));
         return BlockBehaviour.Properties.of()
                 .setId(key)
+                .replaceable()
                 .noCollision()
+                .liquid()
                 .strength(explosionResistance)
                 .lightLevel(s -> lightLevel)
+                .pushReaction(PushReaction.DESTROY)
                 .noLootTable();
     }
 

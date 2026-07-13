@@ -93,9 +93,9 @@ public class TENModelProvider implements DataProvider {
         //    Channel models are hand-crafted and registered via main assets.
         //    This loop is intentionally removed to avoid duplicate generation.
 
-        // 7. Liquid blocks
+        // 7. Liquid blocks — model lives in models/block/fluid/
         for (var name : LIQUID_NAMES) {
-            simpleBlockstate(cache, bsPath, futures, name);
+            fluidBlockstate(cache, bsPath, futures, name);
         }
 
         // ── Block Models ──────────────────────────────────────────────
@@ -135,10 +135,9 @@ public class TENModelProvider implements DataProvider {
         //    Channel sub-models are hand-crafted and registered via main assets.
         //    This loop is intentionally removed to avoid duplicate generation.
 
-        // Liquid blocks — particle-only model (no cube_all, fluid uses custom renderer)
-        for (var name : LIQUID_NAMES) {
-            liquidModel(cache, blockModelPath, futures, name);
-        }
+        // Liquid blocks — particle-only model is a fact model in main resources (models/block/fluid/)
+        // No longer generated here to avoid duplicate root-level models. The fact model
+        // at block/fluid/<name>.json (with particle → block/fluid/<name>) is authoritative.
 
         // ── Item Models ───────────────────────────────────────────────
         var itemModelPath = output.getOutputFolder().resolve("assets/" + modId + "/models/item");
@@ -228,10 +227,11 @@ public class TENModelProvider implements DataProvider {
         }
 
         // Generate bucket item models for fluid buckets (registered in TENFluids, not TENItems)
+        // Texture lives at textures/item/bucket/<bucketName>.png → layer0 must reference item/bucket/
         for (var liquidName : LIQUID_NAMES) {
             var bucketName = liquidName + "_bucket";
             generatedItemModel(cache, itemModelPath, futures, bucketName,
-                    modId + ":block/" + bucketName);
+                    modId + ":item/bucket/" + bucketName);
         }
 
         // ── Item Definitions (26.1.2: assets/<namespace>/items/<id>.json) ──
@@ -314,6 +314,17 @@ public class TENModelProvider implements DataProvider {
     // ═══════════════════════════════════════════════════════════════════
     // Blockstate generation
     // ═══════════════════════════════════════════════════════════════════
+
+    /** Fluid blockstate: variant → block/fluid/<name> (for fact models in models/block/fluid/) */
+    private void fluidBlockstate(CachedOutput cache, Path dir, List<CompletableFuture<?>> futures, String name) {
+        var json = new JsonObject();
+        var variants = new JsonObject();
+        var model = new JsonObject();
+        model.addProperty("model", modId + ":block/fluid/" + name);
+        variants.add("", model);
+        json.add("variants", variants);
+        writeJson(cache, dir.resolve(name + ".json"), json, futures);
+    }
 
     /** Simple variant: {"": {"model": "modid:block/<name>"}} */
     private void simpleBlockstate(CachedOutput cache, Path dir, List<CompletableFuture<?>> futures, String name) {

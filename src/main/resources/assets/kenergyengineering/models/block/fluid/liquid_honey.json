@@ -1,5 +1,5 @@
 {
 	"textures": {
-		"particle": "kenergyengineering:block/liquid_honey"
+		"particle": "kenergyengineering:block/fluid/liquid_honey"
 	}
 }

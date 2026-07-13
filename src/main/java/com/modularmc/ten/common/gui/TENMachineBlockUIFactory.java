@@ -211,25 +211,25 @@ public final class TENMachineBlockUIFactory {
                 uiState::isControlOpen);
     }
 
-    public static ProgressBar energyGauge(CmMachineBlockEntity machine, int x, int y, int width, int height, int xOff, int yOff, boolean displayValue) {
+    public static RevealProgressBar energyGauge(CmMachineBlockEntity machine, int x, int y, int width, int height, int xOff, int yOff, boolean displayValue) {
         return verticalGauge(machine, x, y, width, height, xOff, yOff, TENMachineBlockUIFactory::energyPercent, energyGaugeTooltip(machine, displayValue), displayValue);
     }
 
-    public static ProgressBar fuelGauge(CmMachineBlockEntity machine, int x, int y, int width, int height, int xOff, int yOff, boolean displayValue) {
+    public static RevealProgressBar fuelGauge(CmMachineBlockEntity machine, int x, int y, int width, int height, int xOff, int yOff, boolean displayValue) {
         return verticalGauge(machine, x, y, width, height, xOff, yOff, TENMachineBlockUIFactory::fuelPercent, fuelTooltip(machine, displayValue), displayValue);
     }
 
-    private static ProgressBar verticalGauge(CmMachineBlockEntity machine,
-                                             int x, int y, int width, int height,
-                                             int xOff, int yOff,
-                                             java.util.function.ToDoubleFunction<CmMachineBlockEntity> percent,
-                                             Supplier<List<Component>> tooltipSupplier,
-                                             boolean displayValue) {
-        var progress = absolute(new ProgressBar(), x, y, width, height);
+    private static RevealProgressBar verticalGauge(CmMachineBlockEntity machine,
+                                                   int x, int y, int width, int height,
+                                                   int xOff, int yOff,
+                                                   java.util.function.ToDoubleFunction<CmMachineBlockEntity> percent,
+                                                   Supplier<List<Component>> tooltipSupplier,
+                                                   boolean displayValue) {
+        var filled = SpriteTexture.of(HANDLER).setSprite(xOff, yOff + height, width, height);
+        var progress = absolute(new RevealProgressBar(filled), x, y, width, height);
         progress.barContainer(container -> container.style(style -> style.backgroundTexture(sprite(HANDLER, xOff, yOff, width, height)))
                 .layout(layout -> layout.paddingAll(0)));
         progress.barBackground.style(style -> style.backgroundTexture(IGuiTexture.EMPTY));
-        progress.bar(bar -> bar.style(style -> style.backgroundTexture(sprite(HANDLER, xOff, yOff + height, width, height))));
         progress.label.setDisplay(false);
         progress.progressBarStyle(style -> style.fillDirection(FillDirection.DOWN_TO_UP).interpolate(false));
         progress.bindDataSource(SupplierDataSource.of(() -> (float) percent.applyAsDouble(machine)));
@@ -237,12 +237,12 @@ public final class TENMachineBlockUIFactory {
         return progress;
     }
 
-    public static ProgressBar progressGauge(CmMachineBlockEntity machine, int x, int y, int width, int height, int xOff, int yOff, boolean showPercent) {
-        var progress = absolute(new ProgressBar(), x, y, width, height);
+    public static RevealProgressBar progressGauge(CmMachineBlockEntity machine, int x, int y, int width, int height, int xOff, int yOff, boolean showPercent) {
+        var filled = SpriteTexture.of(HANDLER).setSprite(xOff, yOff + height, width, height);
+        var progress = absolute(new RevealProgressBar(filled), x, y, width, height);
         progress.barContainer(container -> container.style(style -> style.backgroundTexture(sprite(HANDLER, xOff, yOff, width, height)))
                 .layout(layout -> layout.paddingAll(0)));
         progress.barBackground.style(style -> style.backgroundTexture(IGuiTexture.EMPTY));
-        progress.bar(bar -> bar.style(style -> style.backgroundTexture(sprite(HANDLER, xOff, yOff + height, width, height))));
         progress.label.setDisplay(false);
         progress.progressBarStyle(style -> style.fillDirection(FillDirection.LEFT_TO_RIGHT).interpolate(false));
         progress.bindDataSource(SupplierDataSource.of(() -> (float) progressPercent(machine)));
