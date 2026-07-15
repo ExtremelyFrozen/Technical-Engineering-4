@@ -61,11 +61,30 @@ public class FormsCombinedIngredient {
 
     public List<ItemStack> itemStacks() {
         if (ALLOW_ALL) return List.of(ItemStack.EMPTY);
+        if ("tag".equals(type)) {
+            // Dynamic resolution from current registry tag — do NOT cache at creation time.
+            // Tags may not be populated when recipe is deserialized (before PendingTags.apply()).
+            var tagContents = BuiltInRegistries.ITEM.getTagOrEmpty(ifTagItem);
+            List<ItemStack> result = new ArrayList<>();
+            for (var holder : tagContents) {
+                result.add(new ItemStack(holder.value(), amountOrCount));
+            }
+            return result;
+        }
         return matchItems.stream().map(i -> new ItemStack(i, amountOrCount)).toList();
     }
 
     public List<FluidStack> fluidStacks() {
         if (ALLOW_ALL) return List.of(FluidStack.EMPTY);
+        if ("tag".equals(type)) {
+            // Dynamic resolution from current registry tag — do NOT cache at creation time.
+            var tagContents = BuiltInRegistries.FLUID.getTagOrEmpty(ifTagFluid);
+            List<FluidStack> result = new ArrayList<>();
+            for (var holder : tagContents) {
+                result.add(new FluidStack(holder.value(), amountOrCount));
+            }
+            return result;
+        }
         return matchFluids.stream().map(f -> new FluidStack(f, amountOrCount)).toList();
     }
 
@@ -114,12 +133,14 @@ public class FormsCombinedIngredient {
 
     public Ingredient toOriginStackIngredients() {
         if ("tag".equals(type)) {
-            // Use tag-based ingredient: get all items in the tag
+            // Create a proper tag-based Ingredient from the entire tag.
+            // In NeoForge 26.1.2, Ingredient.of(HolderSet<Item>) is available.
+            // getTagOrEmpty returns HolderSet.Named<Item> which extends HolderSet<Item>,
+            // but the compiler sees the erased return type as Iterable — cast explicitly.
+            if (ifTagItem == null) return Ingredient.of();
             var tagContents = BuiltInRegistries.ITEM.getTagOrEmpty(ifTagItem);
-            for (var holder : tagContents) {
-                return Ingredient.of(holder.value());
-            }
-            return Ingredient.of();
+            if (!tagContents.iterator().hasNext()) return Ingredient.of();
+            return Ingredient.of((HolderSet<Item>) tagContents);
         }
         return Ingredient.of(itemStacks().stream().map(ItemStack::getItem).toArray(n -> new Item[n]));
     }
@@ -141,15 +162,19 @@ public class FormsCombinedIngredient {
         var ing = new FormsCombinedIngredient();
         ing.form = form;
         ing.type = type;
-        ing.amountOrCount = limit;
+        // Fail-fast: leading '#' is not valid in Minecraft Identifier (valid chars: [a-z0-9/._-]).
+        // Identifier.parse will throw IllegalArgumentException; do NOT silently strip.
         ing.key = Identifier.parse(key);
+        ing.amountOrCount = limit;
         ing.chance = chance;
         switch (form) {
             case "item" -> {
                 switch (type) {
                     case "tag" -> {
                         ing.ifTagItem = TagHelper.keyItem(key);
-                        ing.matchItems = TagHelper.getItems(ing.ifTagItem);
+                        // Do NOT cache matchItems from TagHelper.getItems() here.
+                        // Tags may not be populated at recipe creation/deserialization time
+                        // (before PendingTags.apply()). Dynamic resolution happens in itemStacks().
                     }
                     case "static" -> ing.matchItems = List.of(parseItem(key));
                     case "item" -> ing.matchItems = List.of(parseItem(key));
@@ -159,7 +184,7 @@ public class FormsCombinedIngredient {
                 switch (type) {
                     case "tag" -> {
                         ing.ifTagFluid = TagHelper.keyFluid(key);
-                        ing.matchFluids = TagHelper.getFluids(ing.ifTagFluid);
+                        // Do NOT cache matchFluids — dynamic resolution in fluidStacks().
                     }
                     case "static" -> ing.matchFluids = List.of(parseFluid(key));
                     case "item" -> ing.matchFluids = List.of(parseFluid(key));

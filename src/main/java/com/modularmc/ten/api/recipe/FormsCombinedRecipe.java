@@ -93,8 +93,13 @@ public class FormsCombinedRecipe implements RandRecipe {
 
     public int inputLimit(ItemStack stack) {
         for (var ing : input) {
-            if (ing.matchItems.contains(stack.getItem())) return ing.amountOrCount;
-            if (ing.ifTagItem != null && TagHelper.containsItem(stack.getItem(), ing.ifTagItem)) return ing.amountOrCount;
+            // For tag-type ingredients: dynamic tag check directly (matchItems is intentionally empty).
+            // For static/direct-item: use the cached matchItems.
+            if (ing.ifTagItem != null) {
+                if (TagHelper.containsItem(stack.getItem(), ing.ifTagItem)) return ing.amountOrCount;
+            } else if (ing.matchItems.contains(stack.getItem())) {
+                return ing.amountOrCount;
+            }
         }
         return 0;
     }
@@ -102,8 +107,12 @@ public class FormsCombinedRecipe implements RandRecipe {
     @Override
     public int inputLimit(FluidStack stack) {
         for (var ing : input) {
-            if (ing.matchFluids.contains(stack.getFluid())) return ing.amountOrCount;
-            if (ing.ifTagFluid != null && TagHelper.containsFluid(stack.getFluid(), ing.ifTagFluid)) return ing.amountOrCount;
+            // Same pattern: prioritize dynamic tag check for tag-type ingredients.
+            if (ing.ifTagFluid != null) {
+                if (TagHelper.containsFluid(stack.getFluid(), ing.ifTagFluid)) return ing.amountOrCount;
+            } else if (ing.matchFluids.contains(stack.getFluid())) {
+                return ing.amountOrCount;
+            }
         }
         return 0;
     }

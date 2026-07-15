@@ -93,6 +93,23 @@ tasks.withType(Test).configureEach {
     failOnNoDiscoveredTests = false
 }
 
+// ── Tag ingredient unit test (JavaExec) ──────────────────────────
+// Runs the non-registry-dependent unit test that verifies the tag no-cache policy.
+// Does NOT require a game server. Wired into `test` so it participates in CI.
+tasks.register("runTagIngredientUnitTest", JavaExec) {
+    description = "Run FormsCombinedIngredient tag resolution unit test (no server required)"
+    group = "verification"
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = "com.modularmc.ten.api.recipe.FormsCombinedIngredientTagUnitTest"
+    // Ensure test classes are compiled before running
+    dependsOn compileTestJava
+}
+
+// Ensure `gradlew test` executes the unit test (even though JUnit discovers nothing)
+test {
+    dependsOn tasks.named("runTagIngredientUnitTest")
+}
+
 lombok {
     version = "1.18.38"
 }
