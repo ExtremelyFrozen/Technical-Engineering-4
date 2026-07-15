@@ -22,7 +22,10 @@ import net.neoforged.neoforge.registries.DeferredBlock;
 import net.minecraft.world.level.material.MapColor;
 import net.neoforged.neoforge.registries.DeferredHolder;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
 
 import static com.modularmc.ten.common.registry.Registration.BLOCKS;
 import static com.modularmc.ten.common.registry.Registration.ITEMS;
@@ -30,6 +33,76 @@ import static com.modularmc.ten.common.registry.Registration.ITEMS;
 public class TENBlocks {
 
     public static final LinkedHashMap<String, String> ZH_NAMES = new LinkedHashMap<>();
+
+    // ═════════════════════════════════════════════════════════════════════
+    // Semantic block collections — populated by helper methods for use by
+    // TENTagProvider, SpannerItem, and other consumers.
+    // Each collection preserves registration order.
+    // ═════════════════════════════════════════════════════════════════════
+
+    /** Ore blocks (tin_ore, nickel_ore, deep_tin_ore, deep_nickel_ore). */
+    private static final List<DeferredHolder<Block, Block>> ORES = new ArrayList<>(4);
+    /** Storage blocks (tin_block, nickel_block, powered_tin_block, chlorium_block). */
+    private static final List<DeferredHolder<Block, Block>> STORAGE_BLOCKS = new ArrayList<>(4);
+    /** Raw storage blocks (raw_tin_block, raw_nickel_block). */
+    private static final List<DeferredHolder<Block, Block>> RAW_STORAGE_BLOCKS = new ArrayList<>(2);
+    /** Machine blocks (all 12 machines). */
+    private static final List<DeferredHolder<Block, ?>> MACHINES = new ArrayList<>(12);
+    /** Engine blocks (all 4 engines). */
+    private static final List<DeferredHolder<Block, ?>> ENGINES = new ArrayList<>(4);
+    /** Cable blocks (all 4 cables). */
+    private static final List<DeferredHolder<Block, ?>> CABLES = new ArrayList<>(4);
+    /** Pipe blocks (all 3 pipes). */
+    private static final List<DeferredHolder<Block, ?>> PIPES = new ArrayList<>(3);
+    /** Cell blocks (energy_cell, creative_energy_cell). */
+    private static final List<DeferredHolder<Block, ?>> CELLS = new ArrayList<>(2);
+    /** Channel blocks (channel_energy, channel_item, channel_fluid). */
+    private static final List<DeferredHolder<Block, ?>> CHANNELS = new ArrayList<>(3);
+    /**
+     * All functional (machine tag) blocks: machines + engines + cables + pipes + cells + channels.
+     * Populated after each category helper via addAll.
+     */
+    private static final List<DeferredHolder<Block, ?>> ALL_FUNCTIONAL = new ArrayList<>(28);
+
+    // ── Read-only accessors ─────────────────────────────────────────────
+
+    public static List<DeferredHolder<Block, Block>> getOres() { return Collections.unmodifiableList(ORES); }
+    public static List<DeferredHolder<Block, Block>> getStorageBlocks() { return Collections.unmodifiableList(STORAGE_BLOCKS); }
+    public static List<DeferredHolder<Block, Block>> getRawStorageBlocks() { return Collections.unmodifiableList(RAW_STORAGE_BLOCKS); }
+    public static List<DeferredHolder<Block, ?>> getMachines() { return Collections.unmodifiableList(MACHINES); }
+    public static List<DeferredHolder<Block, ?>> getEngines() { return Collections.unmodifiableList(ENGINES); }
+    public static List<DeferredHolder<Block, ?>> getCables() { return Collections.unmodifiableList(CABLES); }
+    public static List<DeferredHolder<Block, ?>> getPipes() { return Collections.unmodifiableList(PIPES); }
+    public static List<DeferredHolder<Block, ?>> getCells() { return Collections.unmodifiableList(CELLS); }
+    public static List<DeferredHolder<Block, ?>> getChannels() { return Collections.unmodifiableList(CHANNELS); }
+    /**
+     * All blocks that should appear in the {@code kenergyengineering:machines} and
+     * {@code kenergyengineering:wrench_dismantleable} tags.
+     */
+    public static List<DeferredHolder<Block, ?>> getAllFunctional() { return Collections.unmodifiableList(ALL_FUNCTIONAL); }
+
+    /**
+     * All blocks that require correct tool for drops and need mineable/pickaxe tag:
+     * ores + storage blocks + raw storage blocks + all functional blocks.
+     */
+    public static List<DeferredHolder<Block, ?>> getAllMineablePickaxe() {
+        var result = new ArrayList<>(ALL_FUNCTIONAL);
+        result.addAll(0, ORES);
+        result.addAll(STORAGE_BLOCKS);
+        result.addAll(RAW_STORAGE_BLOCKS);
+        return Collections.unmodifiableList(result);
+    }
+
+    /**
+     * All blocks that require iron tier or better:
+     * ores + storage blocks + raw storage blocks (functional blocks keep vanilla stone tier).
+     */
+    public static List<DeferredHolder<Block, ?>> getAllNeedsIronTool() {
+        var result = new ArrayList<>(ORES);
+        result.addAll(STORAGE_BLOCKS);
+        result.addAll(RAW_STORAGE_BLOCKS);
+        return Collections.unmodifiableList(result);
+    }
 
     // ═══════════════════════════════════════════════════
     // Ores
@@ -150,6 +223,7 @@ public class TENBlocks {
                 .requiresCorrectToolForDrops()
                 .sound(isDeep ? SoundType.DEEPSLATE : SoundType.STONE));
         ITEMS.registerSimpleBlockItem(name, holder);
+        ORES.add(holder);
         return holder;
     }
 
@@ -161,6 +235,7 @@ public class TENBlocks {
                 .requiresCorrectToolForDrops()
                 .sound(SoundType.METAL));
         ITEMS.registerSimpleBlockItem(name, holder);
+        STORAGE_BLOCKS.add(holder);
         return holder;
     }
 
@@ -172,6 +247,7 @@ public class TENBlocks {
                 .requiresCorrectToolForDrops()
                 .sound(SoundType.STONE));
         ITEMS.registerSimpleBlockItem(name, holder);
+        RAW_STORAGE_BLOCKS.add(holder);
         return holder;
     }
 
@@ -182,6 +258,8 @@ public class TENBlocks {
                 .requiresCorrectToolForDrops()
                 .sound(SoundType.METAL));
         registerTENBaseBlockItem(name, holder);
+        MACHINES.add(holder);
+        ALL_FUNCTIONAL.add(holder);
         return holder;
     }
 
@@ -195,6 +273,8 @@ public class TENBlocks {
                 .sound(SoundType.METAL)
                 .lightLevel(state -> state.getValue(BaseMachineBlock.ACTIVE) ? 6 : 0));
         registerTENBaseBlockItem(name, holder);
+        ENGINES.add(holder);
+        ALL_FUNCTIONAL.add(holder);
         return holder;
     }
 
@@ -205,6 +285,8 @@ public class TENBlocks {
                 .noOcclusion()
                 .sound(SoundType.GLASS));
         registerTENBaseBlockItem(name, holder);
+        CABLES.add(holder);
+        ALL_FUNCTIONAL.add(holder);
         return holder;
     }
 
@@ -215,6 +297,8 @@ public class TENBlocks {
                 .noOcclusion()
                 .sound(SoundType.GLASS));
         ITEMS.registerSimpleBlockItem(name, holder);
+        PIPES.add(holder);
+        ALL_FUNCTIONAL.add(holder);
         return holder;
     }
 
@@ -226,6 +310,8 @@ public class TENBlocks {
                 .noOcclusion()
                 .sound(SoundType.METAL));
         registerTENBaseBlockItem(name, holder);
+        CELLS.add(holder);
+        ALL_FUNCTIONAL.add(holder);
         return holder;
     }
 
@@ -237,6 +323,8 @@ public class TENBlocks {
                 .noOcclusion()
                 .sound(SoundType.METAL));
         ITEMS.registerSimpleBlockItem(name, holder);
+        CELLS.add(holder);
+        ALL_FUNCTIONAL.add(holder);
         return holder;
     }
 
@@ -248,6 +336,8 @@ public class TENBlocks {
                 .noOcclusion()
                 .sound(SoundType.METAL));
         ITEMS.registerSimpleBlockItem(name, holder);
+        CHANNELS.add(holder);
+        ALL_FUNCTIONAL.add(holder);
         return holder;
     }
 

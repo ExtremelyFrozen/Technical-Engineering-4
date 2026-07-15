@@ -79,7 +79,7 @@ public class TENVanillaPackGen implements DataProvider {
         j.addProperty("type", TEN.MOD_ID + ":compressor");
         j.add("inputs", arr(
                 ingr("item", "static", inputId, inputCount, null),
-                ingr("item", "static", TEN.MOD_ID + ":" + mould, null, null)));
+                ingr("item", "static", TEN.MOD_ID + ":" + mould, null, 0.0)));
         j.add("outputs", arr(
                 ingr("item", "static", outputId, outputCount, null)));
         j.addProperty("time", 100);

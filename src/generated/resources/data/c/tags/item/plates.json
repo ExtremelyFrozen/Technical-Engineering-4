@@ -1,0 +1,20 @@
+{
+  "replace": false,
+  "values": [
+    "#c:plates/iron",
+    "#c:plates/gold",
+    "#c:plates/copper",
+    "#c:plates/tin",
+    "#c:plates/nickel",
+    "#c:plates/powered_tin",
+    "#c:plates/chlorium",
+    "#c:plates/mushrium",
+    "#c:plates/netherite",
+    "#c:plates/diamond",
+    "#c:plates/emerald",
+    "#c:plates/lapis",
+    "#c:plates/quartz",
+    "#c:plates/amethyst",
+    "#c:plates/redstone"
+  ]
+}

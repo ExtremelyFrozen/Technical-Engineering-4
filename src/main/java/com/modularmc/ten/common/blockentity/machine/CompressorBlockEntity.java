@@ -6,6 +6,7 @@ import com.modularmc.ten.api.option.IngredientType;
 import com.modularmc.ten.api.option.MachineType;
 import com.modularmc.ten.api.recipe.FormsCombinedRecipe;
 import com.modularmc.ten.common.data.TENRecipeTypes;
+import com.modularmc.ten.common.data.TENTags;
 import com.modularmc.ten.common.gui.TENMachineBlockUIFactory;
 
 import net.minecraft.core.BlockPos;
@@ -44,7 +45,7 @@ public class CompressorBlockEntity extends RecipeMachineBlockEntity {
 
     @Override
     public boolean valid(int slot, ItemStack stack) {
-        boolean mould = stack.is(com.modularmc.ten.common.data.TENItems.MOULD_GEAR.get()) || stack.is(com.modularmc.ten.common.data.TENItems.MOULD_PLATE.get()) || stack.is(com.modularmc.ten.common.data.TENItems.MOULD_ROD.get()) || stack.is(com.modularmc.ten.common.data.TENItems.MOULD_STRING.get());
+        boolean mould = stack.is(TENTags.MOULDS);
         if (slot == 0) {
             return !mould;
         }

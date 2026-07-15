@@ -1,0 +1,18 @@
+{
+  "replace": false,
+  "values": [
+    "#c:nuggets/iron",
+    "#c:nuggets/gold",
+    "#c:nuggets/copper",
+    "#c:nuggets/tin",
+    "#c:nuggets/nickel",
+    "#c:nuggets/powered_tin",
+    "#c:nuggets/chlorium",
+    "#c:nuggets/mushrium",
+    "#c:nuggets/netherite",
+    "#c:nuggets/diamond",
+    "#c:nuggets/emerald",
+    "#c:nuggets/lapis",
+    "#c:nuggets/quartz"
+  ]
+}

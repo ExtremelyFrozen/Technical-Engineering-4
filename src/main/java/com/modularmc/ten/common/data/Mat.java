@@ -38,6 +38,11 @@ public enum Mat {
     private final java.util.BitSet registeredForms = new java.util.BitSet();
     private static final String[] FORM_NAMES = { "dust", "ingot", "nugget", "plate", "gear", "rod", "wire" };
 
+    /** Public read-only accessor for validator and tag provider. */
+    public static String[] formNames() {
+        return FORM_NAMES.clone();
+    }
+
     /** Mark a form category as registered (called from {@code registerVariants}). */
     public void markRegistered(String category) {
         for (int i = 0; i < FORM_NAMES.length; i++) {
@@ -167,6 +172,9 @@ public enum Mat {
     /**
      * Whether this material has a given variant form registered.
      * Mirrors the actual {@code registerVariants()} calls in {@link TENItems}.
+     * <p>
+     * NOTE: Must be kept in sync with {@code TENItems.registerVariants()} —
+     * if a form is added/removed in registration, update this method accordingly.
      */
     public boolean hasForm(String category) {
         return switch (category) {
@@ -175,8 +183,8 @@ public enum Mat {
             case "nugget" -> hasNugget;
             case "plate" -> this != STARLIGHT;
             case "gear" -> this != STARLIGHT;
-            case "rod" -> this != STARLIGHT;
-            case "wire" -> this != STARLIGHT;
+            case "rod" -> hasIngot;
+            case "wire" -> hasIngot;
             default -> false;
         };
     }

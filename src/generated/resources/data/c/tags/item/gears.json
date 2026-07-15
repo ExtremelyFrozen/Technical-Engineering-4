@@ -1,0 +1,20 @@
+{
+  "replace": false,
+  "values": [
+    "#c:gears/iron",
+    "#c:gears/gold",
+    "#c:gears/copper",
+    "#c:gears/tin",
+    "#c:gears/nickel",
+    "#c:gears/powered_tin",
+    "#c:gears/chlorium",
+    "#c:gears/mushrium",
+    "#c:gears/netherite",
+    "#c:gears/diamond",
+    "#c:gears/emerald",
+    "#c:gears/lapis",
+    "#c:gears/quartz",
+    "#c:gears/amethyst",
+    "#c:gears/redstone"
+  ]
+}

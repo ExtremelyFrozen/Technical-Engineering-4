@@ -1,0 +1,14 @@
+{
+  "replace": false,
+  "values": [
+    "#c:wires/iron",
+    "#c:wires/gold",
+    "#c:wires/copper",
+    "#c:wires/tin",
+    "#c:wires/nickel",
+    "#c:wires/powered_tin",
+    "#c:wires/chlorium",
+    "#c:wires/mushrium",
+    "#c:wires/netherite"
+  ]
+}

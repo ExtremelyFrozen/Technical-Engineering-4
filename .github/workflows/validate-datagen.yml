@@ -1,0 +1,54 @@
+name: Validate Data Generation
+
+on:
+  push:
+    branches: ['1.21']
+    paths: ['src/**', '*.gradle', 'gradle.properties', 'gradlew*', 'gradle/**', 'scripts/**']
+  pull_request:
+    paths: ['src/**', '*.gradle', 'gradle.properties', 'gradlew*', 'gradle/**', 'scripts/**']
+
+concurrency:
+  group: validate-datagen-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    timeout-minutes: 45
+    steps:
+      - name: Setup Build
+        uses: ./.github/actions/build_setup
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Run Data Generation
+        # runClientData depends on compileJava + processResources implicitly
+        run: ./gradlew runClientData
+
+      - name: Process Resources (explicit, ensures build output is current)
+        run: ./gradlew processResources
+
+      - name: Check Generated Orphans/Stale via HashCache
+        run: python scripts/generated_orphan_check.py
+
+      - name: Verify Generated Resources are Committed
+        run: |
+          STATUS=$(git status --porcelain --untracked-files=all -- src/generated/resources)
+          if [ -n "$STATUS" ]; then
+            echo "FAIL: Uncommitted changes in src/generated/resources:"
+            echo "$STATUS"
+            exit 1
+          fi
+          echo "OK: All generated resources are committed"
+
+      - name: Matrix Registration Check (post-datagen)
+        # --build checks build-classpath validated resources for consistency
+        run: python scripts/datapack_registration_matrix_check.py --build build/resources/main

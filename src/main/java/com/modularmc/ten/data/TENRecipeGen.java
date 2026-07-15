@@ -208,8 +208,13 @@ public class TENRecipeGen implements DataProvider {
     private JsonObject buildPulv(Mat mat, PulvFmt r) {
         var j = new JsonObject();
         j.addProperty("type", TEN.MOD_ID + ":pulverizer");
-        String tagCat = mat.compressTagCategory();
-        if (tagCat == null) tagCat = r.tagCat;
+        // Default: use the per-recipe tag category (ores/raw_materials/ingots).
+        // Special case: gem materials (diamond, emerald, etc.) use "gems" tag
+        // instead of "ingots" for the ingot-pulverization recipe.
+        String tagCat = r.tagCat;
+        if ("ingots".equals(r.tagCat) && "gems".equals(mat.compressTagCategory())) {
+            tagCat = "gems";
+        }
         j.add("inputs", arr(ingr("item", "tag", mat.tag(tagCat), null, null)));
 
         var outs = new JsonArray();

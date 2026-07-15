@@ -2,7 +2,6 @@ package com.modularmc.ten.test.util;
 
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.Connection;
-import net.minecraft.network.PacketSendListener;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.PacketFlow;
 import net.minecraft.network.protocol.common.ClientboundKeepAlivePacket;
@@ -13,6 +12,7 @@ import net.neoforged.neoforge.network.registration.NetworkRegistry;
 import net.neoforged.testframework.gametest.GameTestPlayer;
 
 import com.mojang.authlib.GameProfile;
+import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.embedded.EmbeddedChannel;
 import org.jetbrains.annotations.Nullable;
 
@@ -39,7 +39,7 @@ public final class TENGameTestHelpers {
             }
 
             @Override
-            public void send(Packet<?> packet, @Nullable PacketSendListener listeners, boolean flush) {
+            public void send(Packet<?> packet, @Nullable ChannelFutureListener listeners, boolean flush) {
                 super.send(packet, listeners, flush);
                 if (packet instanceof ClientboundKeepAlivePacket ckp) {
                     serverplayer.connection.handleKeepAlive(new ServerboundKeepAlivePacket(ckp.getId()));

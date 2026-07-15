@@ -10,8 +10,6 @@ import com.modularmc.ten.common.data.TENBlocks;
 import com.modularmc.ten.common.data.TENItems;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.gametest.framework.GameTest;
-import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -23,17 +21,15 @@ import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.fluids.FluidStack;
-import net.neoforged.neoforge.gametest.GameTestHolder;
-import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 import net.neoforged.testframework.annotation.TestHolder;
+import net.neoforged.testframework.gametest.ExtendedGameTestHelper;
+import net.neoforged.testframework.gametest.GameTest;
 
-@GameTestHolder(TEN.MOD_ID)
+@TestHolder(value = TEN.MOD_ID + ":network_logic")
 public class NetworkLogicGameTest {
 
-    @TestHolder(value = TEN.MOD_ID + ":channel_connector_links_channels", enabledByDefault = true)
-    @GameTest(template = "empty_5x5")
-    @PrefixGameTestTemplate(false)
-    public static void channelConnectorLinksChannels(GameTestHelper helper) {
+    @GameTest(required = true)
+    public void channelConnectorLinksChannels(ExtendedGameTestHelper helper) {
         BlockPos sourcePos = new BlockPos(1, 1, 1);
         BlockPos targetPos = new BlockPos(3, 1, 1);
         helper.setBlock(sourcePos, TENBlocks.CHANNEL_ENERGY.get());
@@ -49,23 +45,21 @@ public class NetworkLogicGameTest {
                 new BlockHitResult(Vec3.atCenterOf(absoluteTarget), net.minecraft.core.Direction.UP, absoluteTarget, false)));
 
         helper.runAtTickTime(2, () -> {
-            ChannelEnergyBlockEntity source = helper.getBlockEntity(sourcePos);
+            ChannelEnergyBlockEntity source = helper.getBlockEntity(sourcePos, ChannelEnergyBlockEntity.class);
             helper.assertTrue(source.hasOutputLink(absoluteTarget), "expected connector to bind output link");
             helper.succeed();
         });
     }
 
-    @TestHolder(value = TEN.MOD_ID + ":channel_energy_transfers_wirelessly", enabledByDefault = true)
-    @GameTest(template = "empty_5x5")
-    @PrefixGameTestTemplate(false)
-    public static void channelEnergyTransfersWirelessly(GameTestHelper helper) {
+    @GameTest(required = true)
+    public void channelEnergyTransfersWirelessly(ExtendedGameTestHelper helper) {
         BlockPos sourcePos = new BlockPos(1, 1, 1);
         BlockPos targetPos = new BlockPos(3, 1, 1);
         helper.setBlock(sourcePos, TENBlocks.CHANNEL_ENERGY.get());
         helper.setBlock(targetPos, TENBlocks.CHANNEL_ENERGY.get());
 
-        ChannelEnergyBlockEntity source = helper.getBlockEntity(sourcePos);
-        ChannelEnergyBlockEntity target = helper.getBlockEntity(targetPos);
+        ChannelEnergyBlockEntity source = helper.getBlockEntity(sourcePos, ChannelEnergyBlockEntity.class);
+        ChannelEnergyBlockEntity target = helper.getBlockEntity(targetPos, ChannelEnergyBlockEntity.class);
         source.initMachine();
         target.initMachine();
         source.energyStorage.setEnergy(4000);
@@ -77,17 +71,15 @@ public class NetworkLogicGameTest {
         });
     }
 
-    @TestHolder(value = TEN.MOD_ID + ":channel_item_transfers_wirelessly", enabledByDefault = true)
-    @GameTest(template = "empty_5x5")
-    @PrefixGameTestTemplate(false)
-    public static void channelItemTransfersWirelessly(GameTestHelper helper) {
+    @GameTest(required = true)
+    public void channelItemTransfersWirelessly(ExtendedGameTestHelper helper) {
         BlockPos sourcePos = new BlockPos(1, 1, 1);
         BlockPos targetPos = new BlockPos(3, 1, 1);
         helper.setBlock(sourcePos, TENBlocks.CHANNEL_ITEM.get());
         helper.setBlock(targetPos, TENBlocks.CHANNEL_ITEM.get());
 
-        ChannelItemBlockEntity source = helper.getBlockEntity(sourcePos);
-        ChannelItemBlockEntity target = helper.getBlockEntity(targetPos);
+        ChannelItemBlockEntity source = helper.getBlockEntity(sourcePos, ChannelItemBlockEntity.class);
+        ChannelItemBlockEntity target = helper.getBlockEntity(targetPos, ChannelItemBlockEntity.class);
         source.initMachine();
         target.initMachine();
         source.itemHandler.setStackInSlot(0, new ItemStack(Items.IRON_INGOT, 1));
@@ -99,17 +91,15 @@ public class NetworkLogicGameTest {
         });
     }
 
-    @TestHolder(value = TEN.MOD_ID + ":channel_fluid_transfers_wirelessly", enabledByDefault = true)
-    @GameTest(template = "empty_5x5")
-    @PrefixGameTestTemplate(false)
-    public static void channelFluidTransfersWirelessly(GameTestHelper helper) {
+    @GameTest(required = true)
+    public void channelFluidTransfersWirelessly(ExtendedGameTestHelper helper) {
         BlockPos sourcePos = new BlockPos(1, 1, 1);
         BlockPos targetPos = new BlockPos(3, 1, 1);
         helper.setBlock(sourcePos, TENBlocks.CHANNEL_FLUID.get());
         helper.setBlock(targetPos, TENBlocks.CHANNEL_FLUID.get());
 
-        ChannelFluidBlockEntity source = helper.getBlockEntity(sourcePos);
-        ChannelFluidBlockEntity target = helper.getBlockEntity(targetPos);
+        ChannelFluidBlockEntity source = helper.getBlockEntity(sourcePos, ChannelFluidBlockEntity.class);
+        ChannelFluidBlockEntity target = helper.getBlockEntity(targetPos, ChannelFluidBlockEntity.class);
         source.initMachine();
         target.initMachine();
         source.tanks.get(0).fill(new FluidStack(Fluids.WATER, 1000), net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE);
@@ -121,10 +111,8 @@ public class NetworkLogicGameTest {
         });
     }
 
-    @TestHolder(value = TEN.MOD_ID + ":cable_moves_energy_between_cells", enabledByDefault = true)
-    @GameTest(template = "empty_5x5")
-    @PrefixGameTestTemplate(false)
-    public static void cableMovesEnergyBetweenCells(GameTestHelper helper) {
+    @GameTest(required = true)
+    public void cableMovesEnergyBetweenCells(ExtendedGameTestHelper helper) {
         BlockPos sourcePos = new BlockPos(0, 1, 1);
         BlockPos cablePos = new BlockPos(1, 1, 1);
         BlockPos targetPos = new BlockPos(2, 1, 1);
@@ -132,8 +120,8 @@ public class NetworkLogicGameTest {
         helper.setBlock(cablePos, TENBlocks.CABLE.get());
         helper.setBlock(targetPos, TENBlocks.CELL.get());
 
-        CellBlockEntity source = helper.getBlockEntity(sourcePos);
-        CellBlockEntity target = helper.getBlockEntity(targetPos);
+        CellBlockEntity source = helper.getBlockEntity(sourcePos, CellBlockEntity.class);
+        CellBlockEntity target = helper.getBlockEntity(targetPos, CellBlockEntity.class);
         source.initMachine();
         target.initMachine();
         source.energyStorage.setEnergy(4000);
@@ -145,10 +133,8 @@ public class NetworkLogicGameTest {
         });
     }
 
-    @TestHolder(value = TEN.MOD_ID + ":pipe_moves_items_between_containers", enabledByDefault = true)
-    @GameTest(template = "empty_5x5")
-    @PrefixGameTestTemplate(false)
-    public static void pipeMovesItemsBetweenContainers(GameTestHelper helper) {
+    @GameTest(required = true)
+    public void pipeMovesItemsBetweenContainers(ExtendedGameTestHelper helper) {
         BlockPos sourcePos = new BlockPos(0, 1, 1);
         BlockPos pipePos = new BlockPos(1, 1, 1);
         BlockPos targetPos = new BlockPos(2, 1, 1);
@@ -156,8 +142,8 @@ public class NetworkLogicGameTest {
         helper.setBlock(pipePos, TENBlocks.PIPE.get());
         helper.setBlock(targetPos, Blocks.CHEST);
 
-        ChestBlockEntity source = helper.getBlockEntity(sourcePos);
-        ChestBlockEntity target = helper.getBlockEntity(targetPos);
+        ChestBlockEntity source = helper.getBlockEntity(sourcePos, ChestBlockEntity.class);
+        ChestBlockEntity target = helper.getBlockEntity(targetPos, ChestBlockEntity.class);
         source.setItem(0, new ItemStack(Items.IRON_INGOT, 1));
 
         helper.runAtTickTime(25, () -> {
@@ -167,10 +153,8 @@ public class NetworkLogicGameTest {
         });
     }
 
-    @TestHolder(value = TEN.MOD_ID + ":pipe_whitelist_blocks_unlisted_items", enabledByDefault = true)
-    @GameTest(template = "empty_5x5")
-    @PrefixGameTestTemplate(false)
-    public static void pipeWhitelistBlocksUnlistedItems(GameTestHelper helper) {
+    @GameTest(required = true)
+    public void pipeWhitelistBlocksUnlistedItems(ExtendedGameTestHelper helper) {
         BlockPos sourcePos = new BlockPos(0, 1, 1);
         BlockPos pipePos = new BlockPos(1, 1, 1);
         BlockPos targetPos = new BlockPos(2, 1, 1);
@@ -178,9 +162,9 @@ public class NetworkLogicGameTest {
         helper.setBlock(pipePos, TENBlocks.PIPE_WHITE.get());
         helper.setBlock(targetPos, Blocks.CHEST);
 
-        ChestBlockEntity source = helper.getBlockEntity(sourcePos);
-        ChestBlockEntity target = helper.getBlockEntity(targetPos);
-        PipeBlockEntity pipe = helper.getBlockEntity(pipePos);
+        ChestBlockEntity source = helper.getBlockEntity(sourcePos, ChestBlockEntity.class);
+        ChestBlockEntity target = helper.getBlockEntity(targetPos, ChestBlockEntity.class);
+        PipeBlockEntity pipe = helper.getBlockEntity(pipePos, PipeBlockEntity.class);
         source.setItem(0, new ItemStack(Items.IRON_INGOT, 1));
         pipe.getFilterInventory().setStackInSlot(0, new ItemStack(Items.GOLD_INGOT));
 

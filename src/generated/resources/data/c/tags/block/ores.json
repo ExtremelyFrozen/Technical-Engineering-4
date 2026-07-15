@@ -1,0 +1,8 @@
+{
+  "replace": false,
+  "values": [
+    "#c:ores/tin",
+    "#c:ores/nickel",
+    "#c:ores/copper"
+  ]
+}

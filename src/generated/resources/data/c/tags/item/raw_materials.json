@@ -1,0 +1,10 @@
+{
+  "replace": false,
+  "values": [
+    "#c:raw_materials/tin",
+    "#c:raw_materials/nickel",
+    "#c:raw_materials/iron",
+    "#c:raw_materials/gold",
+    "#c:raw_materials/copper"
+  ]
+}

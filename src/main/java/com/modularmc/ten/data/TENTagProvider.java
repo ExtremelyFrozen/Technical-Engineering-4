@@ -7,6 +7,9 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
 import com.modularmc.ten.TEN;
+import com.modularmc.ten.common.data.Mat;
+import com.modularmc.ten.common.data.TENBlocks;
+import com.modularmc.ten.common.data.TENItems;
 
 import net.minecraft.data.CachedOutput;
 import net.minecraft.data.DataProvider;
@@ -14,23 +17,52 @@ import net.minecraft.data.PackOutput;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Consumer;
 
 /**
  * Generates all block, item, and fluid tags for the mod, including
- * minecraft-namespace tags (needs_iron_tool, mineable/pickaxe, fluid/water).
+ * minecraft-namespace tags (needs_iron_tool, mineable/pickaxe, fluid/water),
+ * mod-namespace tags (machines, wrench_dismantleable, moulds, etc.), and
+ * common (c:) tags.
  * <p>
- * Uses a custom {@link DataProvider} (mirror/baseline approach) because:
+ * <b>Source of truth:</b> Block and item tags that reflect the mod's own
+ * registrations are generated from the semantic collections in
+ * {@link TENBlocks} and {@link TENItems}, not from hardcoded ID lists.
+ * This ensures tag membership automatically stays in sync with registration.
+ * <p>
+ * <b>Ownership separation:</b>
  * <ul>
- *   <li>The standard {@code TagsProvider} API varies across NeoForge versions</li>
- *   <li>Writing to {@code minecraft} namespace is easier with direct JSON generation</li>
- *   <li>Consistent with existing {@link TENModelProvider} and {@link TENRecipeGen}</li>
+ *   <li><b>Generated owns:</b> All tags that directly mirror mod registrations:
+ *       kenergyengineering:machines, kenergyengineering: moulds (item),
+ *       kenergyengineering:wrench_dismantleable, mineable/pickaxe,
+ *       needs_iron_tool, c: item form tags (dusts, ingots, nuggets, plates,
+ *       gears, rods, wires), c:ores block+item, c:storage_blocks block+item,
+ *       c:raw_materials item, kenergyengineering:mats/* (business classification),
+ *       kenergyengineering:catalyst, kenergyengineering:common_ingots,
+ *       kenergyengineering:uncommon_ingots, kenergyengineering:valuable_ingots.
+ *   </li>
+ *   <li><b>Main owns:</b> Hand-written business tags that are not simple
+ *       registration mirrors: c:gems/*, c:mushrooms, c:obsidians, c:stones,
+ *       c:sands, c:gravels, c:netherracks, c:cobblestones, c:raw_materials/iron,
+ *       c:raw_materials/gold, c:raw_materials/copper, and the aggregate
+ *       c:ores/tin, c:ores/nickel (for vanilla copper we reference
+ *       {@code #minecraft:copper_ores} in main).</li>
+ *   <li><b>Intersection must be 0</b> — no tag file appears in both
+ *       main and generated.</li>
  * </ul>
  * <p>
- * TODO: Migrate to vanilla {@code BlockTagsProvider} / {@code ItemTagsProvider} /
- * {@code FluidTagsProvider} once the API is stable in NeoForge 26.x.
+ * All tags use {@code "replace": false} (additive) to avoid overwriting
+ * vanilla or other mods' tag contributions.
+ * <p>
+ * Uses a custom {@link DataProvider} because:
+ * <ul>
+ *   <li>The standard {@code TagsProvider} API varies across NeoForge versions</li>
+ *   <li>Writing to {@code minecraft} and {@code c} namespaces is easier with direct JSON generation</li>
+ *   <li>Consistent with existing {@link TENModelProvider} and {@link TENRecipeGen}</li>
+ * </ul>
  */
 public class TENTagProvider implements DataProvider {
 
@@ -51,10 +83,24 @@ public class TENTagProvider implements DataProvider {
 
         generateBlockTags(cache, futures);
         generateItemTags(cache, futures);
+        generateCTagItemTags(cache, futures);
+        // Block c: tags for ores and storage_blocks
+        generateCBlockTags(cache, futures);
+        // Item c: tags for ores, storage_blocks, and raw_materials (block items)
+        generateCBlockItemTags(cache, futures);
+        generateCRawMaterialsItemTags(cache, futures);
         generateFluidTags(cache, futures);
         generateMinecraftTags(cache, futures);
 
         return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // Helpers: convert DeferredHolder to registry ID string
+    // ═══════════════════════════════════════════════════════════════════
+
+    private static String blockId(net.neoforged.neoforge.registries.DeferredHolder<?, ?> holder) {
+        return holder.getId().toString();
     }
 
     // ═══════════════════════════════════════════════════════════════════
@@ -65,39 +111,21 @@ public class TENTagProvider implements DataProvider {
         var tagDir = output.getOutputFolder()
                 .resolve("data/" + TEN.MOD_ID + "/tags/block");
 
-        // machines tag — all machines, engines, cables, pipes, cells, channels
-        writeTag(cache, tagDir, futures, "machines.json", list(
-                "kenergyengineering:machine_smelter",
-                "kenergyengineering:machine_pulverizer",
-                "kenergyengineering:machine_compressor",
-                "kenergyengineering:machine_refiner",
-                "kenergyengineering:machine_induction_furnace",
-                "kenergyengineering:machine_psionicant",
-                "kenergyengineering:machine_beacon_simulator",
-                "kenergyengineering:machine_mob_ripper",
-                "kenergyengineering:machine_quarry",
-                "kenergyengineering:machine_enchantment_flusher",
-                "kenergyengineering:machine_matter_condenser",
-                "kenergyengineering:machine_farm_manager",
-                "kenergyengineering:engine_extraction",
-                "kenergyengineering:engine_metal",
-                "kenergyengineering:engine_biomass",
-                "kenergyengineering:engine_solar",
-                "kenergyengineering:cable",
-                "kenergyengineering:cable_quartz",
-                "kenergyengineering:cable_azure",
-                "kenergyengineering:cable_star",
-                "kenergyengineering:pipe",
-                "kenergyengineering:pipe_white",
-                "kenergyengineering:pipe_black",
-                "kenergyengineering:energy_cell",
-                "kenergyengineering:creative_energy_cell",
-                "kenergyengineering:channel_energy",
-                "kenergyengineering:channel_item",
-                "kenergyengineering:channel_fluid"
-        ));
+        // machines tag — all functional blocks from TENBlocks collections
+        writeTag(cache, tagDir, futures, "machines.json",
+                TENBlocks.getAllFunctional().stream()
+                        .map(TENTagProvider::blockId)
+                        .toList(),
+                false);
 
-        // quarry_valids — tag references to common tags
+        // wrench_dismantleable tag — same set as machines (independent list for future exclusion)
+        writeTag(cache, tagDir, futures, "wrench_dismantleable.json",
+                TENBlocks.getAllFunctional().stream()
+                        .map(TENTagProvider::blockId)
+                        .toList(),
+                false);
+
+        // quarry_valids — tag references to common tags (unchanged from hand-written)
         writeTag(cache, tagDir, futures, "quarry_valids.json", list(
                 "#c:ores",
                 "#c:stones",
@@ -116,6 +144,13 @@ public class TENTagProvider implements DataProvider {
     private void generateItemTags(CachedOutput cache, List<CompletableFuture<?>> futures) {
         var tagDir = output.getOutputFolder()
                 .resolve("data/" + TEN.MOD_ID + "/tags/item");
+
+        // moulds tag — generated from TENItems mould collection
+        writeTag(cache, tagDir, futures, "moulds.json",
+                TENItems.getMouldHolders().stream()
+                        .map(h -> h.getId().toString())
+                        .toList(),
+                false);
 
         // catalyst — pulverizer catalysts
         writeTag(cache, tagDir, futures, "catalyst.json", list(
@@ -151,30 +186,192 @@ public class TENTagProvider implements DataProvider {
                 "minecraft:netherite_ingot"
         ), false);
 
-        // moulds — basic moulds
-        writeTag(cache, tagDir, futures, "moulds.json", list(
-                "kenergyengineering:mould_gear",
-                "kenergyengineering:mould_plate",
-                "kenergyengineering:mould_rod",
-                "kenergyengineering:mould_string"
-        ), false);
-
         // Material sub-tags (mats/)
         Path matsDir = tagDir.resolve("mats");
-        // tin: #c:ingots/tin, #c:dusts/tin
         writeTag(cache, matsDir, futures, "tin.json", list("#c:ingots/tin", "#c:dusts/tin"), false);
-        // nickel: #c:ingots/nickel, #c:dusts/nickel
         writeTag(cache, matsDir, futures, "nickel.json", list("#c:ingots/nickel", "#c:dusts/nickel"), false);
-        // powered_tin: #c:ingots/powered_tin, #c:dusts/powered_tin
         writeTag(cache, matsDir, futures, "powered_tin.json", list("#c:ingots/powered_tin", "#c:dusts/powered_tin"), false);
-        // iron: #c:ingots/iron, #c:dusts/iron
         writeTag(cache, matsDir, futures, "iron.json", list("#c:ingots/iron", "#c:dusts/iron"), false);
-        // gold: #c:ingots/gold, #c:dusts/gold
         writeTag(cache, matsDir, futures, "gold.json", list("#c:ingots/gold", "#c:dusts/gold"), false);
-        // copper: #c:ingots/copper, #c:dusts/copper
         writeTag(cache, matsDir, futures, "copper.json", list("#c:ingots/copper", "#c:dusts/copper"), false);
-        // chlorium: #c:ingots/chlorium, #c:dusts/chlorium
         writeTag(cache, matsDir, futures, "chlorium.json", list("#c:ingots/chlorium", "#c:dusts/chlorium"), false);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // Common (c:) item tags — generated from Mat registered-forms matrix
+    // ═══════════════════════════════════════════════════════════════════
+
+    private static String pluralize(String category) {
+        return category + "s";
+    }
+
+    private void generateCTagItemTags(CachedOutput cache, List<CompletableFuture<?>> futures) {
+        Path cTagDir = output.getOutputFolder().resolve("data/c/tags/item");
+
+        for (String category : Mat.formNames()) {
+            Map<String, Mat> formMats = new LinkedHashMap<>();
+            for (Mat mat : Mat.values()) {
+                if (mat.hasForm(category) && (mat.isRegistered(category) || mat.itemId(category).startsWith("minecraft:"))) {
+                    formMats.put(mat.id, mat);
+                }
+            }
+
+            if (formMats.isEmpty()) {
+                continue;
+            }
+
+            String catPlural = pluralize(category);
+
+            Path subDir = cTagDir.resolve(catPlural);
+            var aggregateValues = new ArrayList<String>();
+
+            for (Map.Entry<String, Mat> entry : formMats.entrySet()) {
+                String matId = entry.getKey();
+                Mat mat = entry.getValue();
+                String itemId = mat.itemId(category);
+
+                writeTag(cache, subDir, futures, matId + ".json",
+                        list(itemId), false);
+
+                aggregateValues.add("#c:" + catPlural + "/" + matId);
+            }
+
+            writeTag(cache, cTagDir, futures, catPlural + ".json",
+                    aggregateValues, false);
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // Common (c:) block tags — ores and storage_blocks
+    // ═══════════════════════════════════════════════════════════════════
+
+    /**
+     * Generate {@code c:tags/block/ores/<mat>.json} and {@code c:tags/block/storage_blocks/<mat>.json}
+     * sub-tags with aggregate tags, based on {@link Mat} metadata.
+     * <p>
+     * Only materials with {@code hasOre} or {@code hasBlock} produce tags here.
+     * Vanilla copper ore/block is managed via {@code #minecraft:copper_ores} in main.
+     */
+    private void generateCBlockTags(CachedOutput cache, List<CompletableFuture<?>> futures) {
+        Path cBlockDir = output.getOutputFolder().resolve("data/c/tags/block");
+
+        // ── ores ───────────────────────────────────────────────────────
+        Path oresDir = cBlockDir.resolve("ores");
+        var oreAggregate = new ArrayList<String>();
+        for (Mat mat : Mat.values()) {
+            if (!mat.hasOre) continue;
+            String blockId = mat.itemId("ore"); // kenergyengineering:tin_ore
+            String deepId = mat.hasDeepOre ? mat.itemId("deep_ore") : null;
+            var values = new ArrayList<String>();
+            values.add(blockId);
+            if (deepId != null) values.add(deepId);
+            writeTag(cache, oresDir, futures, mat.id + ".json", values, false);
+            oreAggregate.add("#c:ores/" + mat.id);
+        }
+        if (!oreAggregate.isEmpty()) {
+            // Add copper ore reference (vanilla) for NeoForge convention
+            oreAggregate.add("#c:ores/copper");
+            writeTag(cache, cBlockDir, futures, "ores.json", oreAggregate, false);
+        }
+
+        // ── storage_blocks ─────────────────────────────────────────────
+        Path storageDir = cBlockDir.resolve("storage_blocks");
+        var storageAggregate = new ArrayList<String>();
+        var rawStorageAggregate = new ArrayList<String>();
+
+        for (Mat mat : Mat.values()) {
+            if (!mat.hasBlock) continue;
+            String blockId = mat.itemId("block"); // kenergyengineering:tin_block
+            writeTag(cache, storageDir, futures, mat.id + ".json", list(blockId), false);
+            storageAggregate.add("#c:storage_blocks/" + mat.id);
+
+            // Raw storage blocks (raw_tin_block, raw_nickel_block)
+            if (mat.hasRaw) {
+                String rawBlockId = mat.itemId("raw_block"); // kenergyengineering:raw_tin_block
+                writeTag(cache, storageDir, futures, "raw_" + mat.id + ".json", list(rawBlockId), false);
+                rawStorageAggregate.add("#c:storage_blocks/raw_" + mat.id);
+            }
+        }
+        if (!storageAggregate.isEmpty()) {
+            writeTag(cache, cBlockDir, futures, "storage_blocks.json", storageAggregate, false);
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // Common (c:) item tags — for ores and storage_blocks (block items)
+    // ═══════════════════════════════════════════════════════════════════
+
+    private void generateCBlockItemTags(CachedOutput cache, List<CompletableFuture<?>> futures) {
+        Path cItemDir = output.getOutputFolder().resolve("data/c/tags/item");
+
+        // ── ores (item) ────────────────────────────────────────────────
+        Path oresItemDir = cItemDir.resolve("ores");
+        var oreItemAggregate = new ArrayList<String>();
+        for (Mat mat : Mat.values()) {
+            if (!mat.hasOre) continue;
+            // Item form for ore block: same ID as the block item
+            String itemId = mat.itemId("ore"); // kenergyengineering:tin_ore
+            writeTag(cache, oresItemDir, futures, mat.id + ".json", list(itemId), false);
+            oreItemAggregate.add("#c:ores/" + mat.id);
+        }
+        if (!oreItemAggregate.isEmpty()) {
+            // Add copper ore item reference (vanilla block item) for NeoForge convention
+            writeTag(cache, oresItemDir, futures, "copper.json", list("minecraft:copper_ore"), false);
+            oreItemAggregate.add("#c:ores/copper");
+            writeTag(cache, cItemDir, futures, "ores.json", oreItemAggregate, false);
+        }
+
+        // ── storage_blocks (item) ──────────────────────────────────────
+        Path storageItemDir = cItemDir.resolve("storage_blocks");
+        var storageItemAggregate = new ArrayList<String>();
+        for (Mat mat : Mat.values()) {
+            if (!mat.hasBlock) continue;
+            String itemId = mat.itemId("block");
+            writeTag(cache, storageItemDir, futures, mat.id + ".json", list(itemId), false);
+            storageItemAggregate.add("#c:storage_blocks/" + mat.id);
+
+            if (mat.hasRaw) {
+                String rawItemId = mat.itemId("raw_block");
+                writeTag(cache, storageItemDir, futures, "raw_" + mat.id + ".json", list(rawItemId), false);
+                storageItemAggregate.add("#c:storage_blocks/raw_" + mat.id);
+            }
+        }
+        if (!storageItemAggregate.isEmpty()) {
+            writeTag(cache, cItemDir, futures, "storage_blocks.json", storageItemAggregate, false);
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // Common (c:) raw_materials item tags
+    // ═══════════════════════════════════════════════════════════════════
+
+    private void generateCRawMaterialsItemTags(CachedOutput cache, List<CompletableFuture<?>> futures) {
+        Path cItemDir = output.getOutputFolder().resolve("data/c/tags/item");
+        Path rawDir = cItemDir.resolve("raw_materials");
+        var rawAggregate = new ArrayList<String>();
+
+        for (Mat mat : Mat.values()) {
+            if (!mat.hasRaw) continue;
+            String itemId = mat.itemId("raw"); // kenergyengineering:raw_tin
+            writeTag(cache, rawDir, futures, mat.id + ".json", list(itemId), false);
+            rawAggregate.add("#c:raw_materials/" + mat.id);
+        }
+        if (!rawAggregate.isEmpty()) {
+            // Add vanilla raw materials (iron, gold, copper) for NeoForge convention
+            String[][] VANILLA_RAW_MATERIALS = {
+                    {"iron", "minecraft:raw_iron"},
+                    {"gold", "minecraft:raw_gold"},
+                    {"copper", "minecraft:raw_copper"},
+            };
+            for (String[] entry : VANILLA_RAW_MATERIALS) {
+                String matId = entry[0];
+                String itemId = entry[1];
+                writeTag(cache, rawDir, futures, matId + ".json", list(itemId), false);
+                rawAggregate.add("#c:raw_materials/" + matId);
+            }
+
+            writeTag(cache, cItemDir, futures, "raw_materials.json", rawAggregate, false);
+        }
     }
 
     // ═══════════════════════════════════════════════════════════════════
@@ -183,48 +380,32 @@ public class TENTagProvider implements DataProvider {
 
     private void generateFluidTags(CachedOutput cache, List<CompletableFuture<?>> futures) {
         // No kenergyengineering:tags/fluid/ entries in baseline.
-        // Fluid tags go to minecraft namespace (see generateMinecraftTags).
     }
 
     // ═══════════════════════════════════════════════════════════════════
-    // Minecraft namespace tags — baseline mirror
+    // Minecraft namespace tags — generated from TENBlocks collections
     // ═══════════════════════════════════════════════════════════════════
 
     private void generateMinecraftTags(CachedOutput cache, List<CompletableFuture<?>> futures) {
+        var mcBlockDir = output.getOutputFolder().resolve("data/minecraft/tags/block");
+
         // ── block/needs_iron_tool ─────────────────────────────────────
-        // All ores and storage blocks require iron tier or better.
-        writeTag(cache, output.getOutputFolder().resolve("data/minecraft/tags/block"),
-                futures, "needs_iron_tool.json", list(
-                        "kenergyengineering:tin_ore",
-                        "kenergyengineering:nickel_ore",
-                        "kenergyengineering:deep_tin_ore",
-                        "kenergyengineering:deep_nickel_ore",
-                        "kenergyengineering:tin_block",
-                        "kenergyengineering:nickel_block",
-                        "kenergyengineering:powered_tin_block",
-                        "kenergyengineering:chlorium_block",
-                        "kenergyengineering:raw_tin_block",
-                        "kenergyengineering:raw_nickel_block"
-                ));
+        // Ores + storage blocks + raw storage blocks (not functional blocks)
+        writeTag(cache, mcBlockDir, futures, "needs_iron_tool.json",
+                TENBlocks.getAllNeedsIronTool().stream()
+                        .map(TENTagProvider::blockId)
+                        .toList(),
+                false);
 
         // ── block/mineable/pickaxe ─────────────────────────────────────
-        // Same set of blocks is pickaxe-mineable.
-        writeTag(cache, output.getOutputFolder().resolve("data/minecraft/tags/block/mineable"),
-                futures, "pickaxe.json", list(
-                        "kenergyengineering:tin_ore",
-                        "kenergyengineering:nickel_ore",
-                        "kenergyengineering:deep_tin_ore",
-                        "kenergyengineering:deep_nickel_ore",
-                        "kenergyengineering:tin_block",
-                        "kenergyengineering:nickel_block",
-                        "kenergyengineering:powered_tin_block",
-                        "kenergyengineering:chlorium_block",
-                        "kenergyengineering:raw_tin_block",
-                        "kenergyengineering:raw_nickel_block"
-                ));
+        // Ores + storage + raw storage + all functional blocks
+        writeTag(cache, mcBlockDir.resolve("mineable"), futures, "pickaxe.json",
+                TENBlocks.getAllMineablePickaxe().stream()
+                        .map(TENTagProvider::blockId)
+                        .toList(),
+                false);
 
         // ── fluid/water ────────────────────────────────────────────────
-        // Liquid XP and Liquid Bizarrerie are tagged as water-like fluids.
         writeTag(cache, output.getOutputFolder().resolve("data/minecraft/tags/fluid"),
                 futures, "water.json", list(
                         "kenergyengineering:liquid_xp",
@@ -238,26 +419,16 @@ public class TENTagProvider implements DataProvider {
     // Utilities
     // ═══════════════════════════════════════════════════════════════════
 
-    /** Create a mutable list from elements. */
     @SafeVarargs
     private static <T> List<T> list(T... elements) {
         return new ArrayList<>(List.of(elements));
     }
 
-    /**
-     * Write a tag JSON file with {@code "replace": true} (default).
-     * Matches the vanilla convention for mod-owned tags.
-     */
     private void writeTag(CachedOutput cache, Path dir, List<CompletableFuture<?>> futures,
                           String fileName, List<String> values) {
-        writeTag(cache, dir, futures, fileName, values, true);
+        writeTag(cache, dir, futures, fileName, values, false);
     }
 
-    /**
-     * Write a tag JSON file with explicit {@code replace} value.
-     *
-     * @param replace whether to set {@code "replace": true}
-     */
     private void writeTag(CachedOutput cache, Path dir, List<CompletableFuture<?>> futures,
                           String fileName, List<String> values, boolean replace) {
         var json = new JsonObject();

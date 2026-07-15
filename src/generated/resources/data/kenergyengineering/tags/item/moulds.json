@@ -4,6 +4,11 @@
     "kenergyengineering:mould_gear",
     "kenergyengineering:mould_plate",
     "kenergyengineering:mould_rod",
-    "kenergyengineering:mould_string"
+    "kenergyengineering:mould_string",
+    "kenergyengineering:mould_compressed_small",
+    "kenergyengineering:mould_compressed_large",
+    "kenergyengineering:mould_split",
+    "kenergyengineering:mould_coin",
+    "kenergyengineering:mould_dense_plate"
   ]
 }

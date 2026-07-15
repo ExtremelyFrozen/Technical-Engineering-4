@@ -1,0 +1,20 @@
+{
+  "replace": false,
+  "values": [
+    "#c:dusts/iron",
+    "#c:dusts/gold",
+    "#c:dusts/copper",
+    "#c:dusts/tin",
+    "#c:dusts/nickel",
+    "#c:dusts/powered_tin",
+    "#c:dusts/chlorium",
+    "#c:dusts/mushrium",
+    "#c:dusts/starlight",
+    "#c:dusts/netherite",
+    "#c:dusts/diamond",
+    "#c:dusts/emerald",
+    "#c:dusts/lapis",
+    "#c:dusts/quartz",
+    "#c:dusts/amethyst"
+  ]
+}

@@ -25,6 +25,14 @@ public class TENItems {
     public static final LinkedHashMap<String, String> ZH_NAMES = new LinkedHashMap<>();
 
     /**
+     * Ordered holder list for all registered mould items, populated by
+     * the {@code mould()} helper. Read-only access via {@link #getMouldHolders()}.
+     * Used by {@link com.modularmc.ten.data.TENTagProvider} to generate the
+     * {@code kenergyengineering:moulds} tag.
+     */
+    private static final List<DeferredHolder<Item, Item>> MOULD_HOLDERS = new ArrayList<>(9);
+
+    /**
      * Ordered holder list for all material variant items registered via
      * {@link #registerVariants(String, String, String, Mat...)}.
      * Preserves category order (dust -> ingot -> nugget -> plate -> gear -> rod -> wire)
@@ -199,11 +207,13 @@ public class TENItems {
         return ITEMS.register(name, () -> new Item(new Item.Properties().setId(key)));
     }
 
-    /** Register a mould item (simple Item, textured). */
+    /** Register a mould item (simple Item, textured), adding to MOULD_HOLDERS. */
     private static DeferredHolder<Item, Item> mould(String name, String cn) {
         ZH_NAMES.put(name, cn);
         var key = itemKey(name);
-        return ITEMS.register(name, () -> new Item(new Item.Properties().setId(key)));
+        var holder = ITEMS.register(name, () -> new Item(new Item.Properties().setId(key)));
+        MOULD_HOLDERS.add(holder);
+        return holder;
     }
 
     /** Register a tool item with custom class. */
@@ -243,6 +253,17 @@ public class TENItems {
      */
     public static List<DeferredHolder<Item, Item>> getMaterialVariantHolders() {
         return Collections.unmodifiableList(MATERIAL_VARIANT_HOLDERS);
+    }
+
+    /**
+     * Returns an unmodifiable view of all mould item holders,
+     * in registration order.
+     * <p>
+     * Used by {@link com.modularmc.ten.data.TENTagProvider} to generate
+     * the {@code kenergyengineering:moulds} tag.
+     */
+    public static List<DeferredHolder<Item, Item>> getMouldHolders() {
+        return Collections.unmodifiableList(MOULD_HOLDERS);
     }
 
     /**
