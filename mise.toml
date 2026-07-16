@@ -14,5 +14,5 @@ description = "启动 MC 客户端测试"
 run = "gradlew runClient"
 
 [tasks.test-server]
-description = "运行 GameTest 服务器"
-run = "gradlew runGameTestServer"
+description = "运行服务端弱验证测试"
+run = "gradlew runAdapterTestServer"

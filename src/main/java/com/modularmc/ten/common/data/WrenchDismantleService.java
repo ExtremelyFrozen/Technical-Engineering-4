@@ -271,8 +271,11 @@ public final class WrenchDismantleService {
             drops.add(new ItemStack(block));
         }
 
-        // ── 9. Deliver drops to player ──────────────────────────────────
-        for (ItemStack stack : drops) {
+        // ── 9. Pre-consolidate drops before delivery ────────────────────
+        List<ItemStack> consolidated = consolidateDrops(drops);
+
+        // ── 10. Deliver consolidated drops to player ────────────────────
+        for (ItemStack stack : consolidated) {
             if (stack.isEmpty()) continue;
             if (!player.addItem(stack)) {
                 var drop = stack.copy();
@@ -283,6 +286,84 @@ public final class WrenchDismantleService {
         }
 
         return true;
+    }
+
+    /**
+     * Pre-consolidates dismantled item stacks into the fullest legal stacks
+     * before passing them to {@code player.addItem}.
+     * <p>
+     * Rules:
+     * <ul>
+     *   <li>Preserves first-occurrence order.</li>
+     *   <li>Ignores {@link ItemStack#EMPTY} entries.</li>
+     *   <li>Copies input stacks — originals are never mutated.</li>
+     *   <li>Only merges when {@link ItemStack#isSameItemSameComponents} returns
+     *       {@code true} AND both target and source are
+     *       {@link ItemStack#isStackable stackable}.</li>
+     *   <li>Each output count does not exceed {@link ItemStack#getMaxStackSize}.</li>
+     *   <li>Stacks with count &gt; maxStackSize are split into full stacks + remainder.</li>
+     *   <li>Different {@code BLOCK_ENTITY_DATA}, durability, enchantments, custom names,
+     *       or maxStackSize=1 items remain separate.</li>
+     *   <li>Total item count is conserved across each distinct (item+components) group.</li>
+     * </ul>
+     *
+     * @param drops the raw dismantle drops (not modified)
+     * @return a new list with stacks consolidated
+     */
+    private static List<ItemStack> consolidateDrops(List<ItemStack> drops) {
+        List<ItemStack> result = new ArrayList<>();
+
+        for (ItemStack stack : drops) {
+            if (stack.isEmpty()) continue;
+
+            ItemStack source = stack.copy();
+
+            // ── Non-stackable (maxStackSize == 1): keep individual ──────
+            if (!source.isStackable()) {
+                int count = source.getCount();
+                for (int i = 0; i < count; i++) {
+                    ItemStack single = source.copy();
+                    single.setCount(1);
+                    result.add(single);
+                }
+                continue;
+            }
+
+            // ── Stackable: merge into existing, then add remainder ─────
+            while (!source.isEmpty()) {
+                for (ItemStack existing : result) {
+                    if (existing.isEmpty()) continue;
+                    if (!ItemStack.isSameItemSameComponents(existing, source)) continue;
+
+                    int space = existing.getMaxStackSize() - existing.getCount();
+                    if (space <= 0) continue;
+
+                    int toTransfer = Math.min(space, source.getCount());
+                    existing.setCount(existing.getCount() + toTransfer);
+                    source.setCount(source.getCount() - toTransfer);
+
+                    if (source.isEmpty()) break;
+                    // Partially transferred — continue outer while to find next slot
+                    break;
+                }
+
+                if (source.isEmpty()) break;
+
+                // No existing slot could accept more — add as new entry
+                if (source.getCount() > source.getMaxStackSize()) {
+                    ItemStack fullStack = source.copy();
+                    fullStack.setCount(source.getMaxStackSize());
+                    result.add(fullStack);
+                    source.setCount(source.getCount() - source.getMaxStackSize());
+                    // Loop again to try merging or add remainder
+                } else {
+                    result.add(source);
+                    break;
+                }
+            }
+        }
+
+        return result;
     }
 
     private static void restoreMachine(CmMachineBlockEntity machine, MachineSnapshot snap, boolean wasExtracted) {

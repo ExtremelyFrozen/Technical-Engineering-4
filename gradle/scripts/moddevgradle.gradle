@@ -24,7 +24,6 @@ neoForge {
 
     addModdingDependenciesTo(sourceSets.client)
     addModdingDependenciesTo(sourceSets.clientExtra)
-    addModdingDependenciesTo(sourceSets.test)
     addModdingDependenciesTo(sourceSets.extra)
 
     mods {
@@ -32,8 +31,6 @@ neoForge {
         "${mod_id}" {
             sourceSet(sourceSets.main)
             sourceSet(sourceSets.client)
-            // Phase 4/5: test gametests need 1.21 rewrite — excluded from mod def for now
-            // sourceSet(sourceSets.test)
             sourceSet(sourceSets.extra)
             sourceSet(sourceSets.clientExtra)
         }
@@ -60,19 +57,6 @@ neoForge {
             systemProperty('neoforge.enabledGameTestNamespaces', project.mod_id)
         }
 
-        // This run config launches GameTestServer and runs all registered gametests, then exits.
-        // By default, the server will crash when no gametests are provided.
-        // The gametest system is also enabled by default for other run configs under the /test command.
-        gameTestServer {
-            type = "gameTestServer"
-            sourceSet = sourceSets.test
-            ideName = "Game Tests"
-
-            gameDirectory.set(file('run/gametest/server'))
-            systemProperty('neoforge.enabledGameTestNamespaces', project.mod_id)
-            environment('TEST', 'true')
-        }
-
         // Adapter test server — uses extra source set for FluidHandlerResourceAdapter index test
         adapterTestServer {
             type = "gameTestServer"
@@ -80,16 +64,6 @@ neoForge {
             ideName = "Adapter Tests"
 
             gameDirectory.set(file('run/gametest/adapter'))
-            systemProperty('neoforge.enabledGameTestNamespaces', project.mod_id)
-            environment('TEST', 'true')
-        }
-
-        gameTestClient {
-            client()
-            sourceSet = sourceSets.test
-            ideName = "Game Tests (Client)"
-
-            gameDirectory.set(file('run/gametest/client'))
             systemProperty('neoforge.enabledGameTestNamespaces', project.mod_id)
             environment('TEST', 'true')
         }

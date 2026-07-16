@@ -137,6 +137,8 @@ public final class TENLangHandler {
         add("info.mode.2", "Redstone", "红石");
         add("info.mode.3", "Binding", "绑定");
         add("info.mode.4", "Destroy", "拆除");
+        add("spanner.0", "Right-click a machine to rotate it", "右键机器旋转");
+        add("spanner.1", "Sneak + right-click a machine to dismantle it", "潜行+右键机器拆卸");
     }
 
     // ── Machine Info ────────────────────────────────────────────────

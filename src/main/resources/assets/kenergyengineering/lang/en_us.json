@@ -354,6 +354,8 @@
   "kenergyengineering.range_levelup.0": "Effect Machine: +50% range",
   "kenergyengineering.relic_levelup.0": "Machine: +3 upgrade slots\n      +75% throughput",
   "kenergyengineering.shift": "Press [SHIFT] to see more",
+  "kenergyengineering.spanner.0": "Right-click a machine to rotate it",
+  "kenergyengineering.spanner.1": "Sneak + right-click a machine to dismantle it",
   "kenergyengineering.smoke_levelup.0": "Smelter: Smoker recipes only\n      Processing speed x2",
   "kenergyengineering.stream_levelup.0": "Machine: Infinite FE transfer"
 }

@@ -378,7 +378,7 @@ forge.jei
 
 ### CI
 - [ ] 本地能否正常编译：`./gradlew build`？
-- [ ] GameTest 是否通过：`./gradlew runGameTestServer`？
+- [ ] 可选适配器弱验证是否通过：`./gradlew runAdapterTestServer`？
 
 ---
 

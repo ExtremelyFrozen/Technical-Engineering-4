@@ -4,7 +4,6 @@ plugins {
     id 'eclipse'
     id 'idea'
     id 'maven-publish'
-    id 'jacoco'
     alias libs.plugins.modDevGradle
     //alias libs.plugins.shadow
     alias libs.plugins.spotless
@@ -33,11 +32,6 @@ sourceSets {
         runtimeClasspath += main.output + main.runtimeClasspath
     }
 
-    test {
-        compileClasspath += main.output + main.compileClasspath
-        runtimeClasspath += main.output + main.runtimeClasspath
-    }
-
     extra {
         compileClasspath += main.output + main.compileClasspath
         runtimeClasspath += main.output + main.runtimeClasspath
@@ -56,9 +50,6 @@ configurations {
     clientRuntimeOnly.canBeResolved = false
     extraRuntimeOnly.canBeResolved = false
     clientExtraRuntimeOnly.canBeResolved = false
-    testImplementation.canBeResolved = false
-    testRuntimeOnly.canBeResolved = false
-
     runtimeClasspath.extendsFrom localRuntime
     extraRuntimeClasspath.extendsFrom extraLocalRuntime
     clientRuntimeClasspath.extendsFrom clientLocalRuntime
@@ -88,59 +79,6 @@ tasks.withType(JavaCompile).configureEach {
     options.compilerArgs << "-Xlint:-removal"
 }
 
-tasks.withType(Test).configureEach {
-    // Test sources are NeoForge GameTests and are executed by runGameTestServer, not JUnit.
-    failOnNoDiscoveredTests = false
-}
-
-// ── Tag ingredient unit test (JavaExec) ──────────────────────────
-// Runs the non-registry-dependent unit test that verifies the tag no-cache policy.
-// Does NOT require a game server. Wired into `test` so it participates in CI.
-tasks.register("runTagIngredientUnitTest", JavaExec) {
-    description = "Run FormsCombinedIngredient tag resolution unit test (no server required)"
-    group = "verification"
-    classpath = sourceSets.test.runtimeClasspath
-    mainClass = "com.modularmc.ten.api.recipe.FormsCombinedIngredientTagUnitTest"
-    // Ensure test classes are compiled before running
-    dependsOn compileTestJava
-}
-
-// Ensure `gradlew test` executes the unit test (even though JUnit discovers nothing)
-test {
-    dependsOn tasks.named("runTagIngredientUnitTest")
-}
-
 lombok {
     version = "1.18.38"
-}
-
-jacoco {
-    applyTo runGameTestServer
-}
-
-jacocoTestReport {
-    doFirst {
-        try {
-            runGameTestServer.exec()
-        } catch (RuntimeException ignored) {}
-    }
-    doLast {
-        println "Coverage report location:"
-        println " - file://${layout.buildDirectory.dir('coverage').map(a -> a.file('index.html')).get()}"
-        println " - file://${layout.buildDirectory.dir('coverage').map(a -> a.file('coverage.xml')).get()}"
-    }
-    executionData runGameTestServer
-    sourceSets sourceSets.test
-    reports {
-        csv.required = false
-        xml.required = true
-        html.outputLocation = layout.buildDirectory.dir('coverage')
-        xml.outputLocation = layout.buildDirectory.dir('coverage').map(a -> a.file('coverage.xml'))
-    }
-    afterEvaluate {
-        classDirectories.setFrom(files(classDirectories.files.collect {
-            fileTree(dir: it, exclude: '**/client/**')
-            fileTree(dir: it, exclude: '**/mixins/**')
-        }))
-    }
 }

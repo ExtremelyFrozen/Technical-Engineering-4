@@ -1,5 +1,6 @@
 package com.modularmc.ten.integration.jei;
 
+import com.modularmc.ten.TENConstants;
 import com.modularmc.ten.api.recipe.FormsCombinedRecipe;
 import com.modularmc.ten.integration.xei.TENRecipeWidget;
 
@@ -26,6 +27,7 @@ public class TENJeiCategory implements IRecipeCategory<FormsCombinedRecipe> {
     private final IDrawable icon;
     private final IDrawable inputSlot;
     private final IDrawable outputSlot;
+    private final IDrawable fluidSlot;
     private final TENRecipeWidget.Layout layout;
 
     public TENJeiCategory(IGuiHelper helper, Identifier categoryId, RecipeType<FormsCombinedRecipe> type, ItemStack iconStack) {
@@ -35,6 +37,7 @@ public class TENJeiCategory implements IRecipeCategory<FormsCombinedRecipe> {
         this.icon = helper.createDrawableItemStack(iconStack);
         this.inputSlot = helper.getSlotDrawable();
         this.outputSlot = helper.getOutputSlot();
+        this.fluidSlot = helper.createDrawable(TENConstants.GUI_HANDLER, 0, 92, 18, 50);
     }
 
     @Override
@@ -74,7 +77,7 @@ public class TENJeiCategory implements IRecipeCategory<FormsCombinedRecipe> {
                 if (itemStacks.isEmpty() || itemStacks.getFirst().isEmpty()) {
                     continue;
                 }
-                var jeiSlot = builder.addSlot(toJeiRole(slot.role()), slot.x() + 1, slot.y() + 1)
+                var jeiSlot = builder.addSlot(toJeiRole(slot.role()), slot.x() + 2, slot.y())
                         .addItemStacks(itemStacks)
                         .setBackground(slot.role() == TENRecipeWidget.SlotRole.OUTPUT ? outputSlot : inputSlot, 0, 0);
                 if (slot.role() == TENRecipeWidget.SlotRole.OUTPUT && ingredient.chance() < 1.0d) {
@@ -91,7 +94,7 @@ public class TENJeiCategory implements IRecipeCategory<FormsCombinedRecipe> {
                 var jeiSlot = builder.addSlot(toJeiRole(slot.role()), slot.x() + 1, slot.y() + 1)
                         .addIngredients(NeoForgeTypes.FLUID_STACK, fluidStacks)
                         .setFluidRenderer(Math.max(1, TENRecipeWidget.fluidCapacity(ingredient)), true, slot.width() - 2, slot.height() - 2)
-                        .setBackground(inputSlot, 0, 0);
+                        .setBackground(fluidSlot, 0, 0);
                 if (slot.role() == TENRecipeWidget.SlotRole.OUTPUT && ingredient.chance() < 1.0d) {
                     jeiSlot.addRichTooltipCallback((view, tooltip) -> tooltip.add(Component.literal(TENRecipeWidget.formatChance(ingredient.chance()))));
                 }
