@@ -15,4 +15,7 @@ run = "gradlew runClient"
 
 [tasks.test-server]
 description = "运行服务端弱验证测试"
-run = "gradlew runAdapterTestServer"
+run = "scripts/gradle-utf8.ps1 runAdapterTestServer"
+
+[env]
+PYTHONUTF8 = "1"

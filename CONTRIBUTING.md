@@ -378,7 +378,8 @@ forge.jei
 
 ### CI
 - [ ] 本地能否正常编译：`./gradlew build`？
-- [ ] 可选适配器弱验证是否通过：`./gradlew runAdapterTestServer`？
+- [ ] 可选适配器弱验证：`compileExtraJava` 仅编译 extra sourceSet 代码；
+  实际全量弱验证用 `scripts/gradle-utf8.ps1 runAdapterTestServer`（UTF-8 编码包装器，避免中文诊断乱码）。
 
 ---
 
