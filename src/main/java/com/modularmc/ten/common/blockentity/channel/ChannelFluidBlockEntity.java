@@ -52,8 +52,8 @@ public class ChannelFluidBlockEntity extends AbstractChannelBlockEntity {
     @Override
     public ModularUI createUI(BlockUIMenuType.BlockUIHolder holder) {
         return buildChannelUI(holder, TEN.id("textures/gui/channel.png"), root -> {}, root -> {
-            root.addChild(TENMachineBlockUIFactory.fluidGauge(this, 7, 17, 18, 50, 0, true));
-            root.addChild(TENMachineBlockUIFactory.fluidGauge(this, 25, 17, 18, 50, 1, true));
+            root.addChild(TENMachineBlockUIFactory.fluidGaugeWithBackground(this, 7, 17, 18, 50, 0, true));
+            root.addChild(TENMachineBlockUIFactory.fluidGaugeWithBackground(this, 25, 17, 18, 50, 1, true));
         });
     }
 

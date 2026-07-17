@@ -254,10 +254,21 @@ public final class TENMachineBlockUIFactory {
     }
 
     public static FluidSlot fluidGauge(CmMachineBlockEntity machine, int x, int y, int width, int height, int tankIndex, boolean showValue) {
+        return fluidGaugeBase(machine, x, y, width, height, tankIndex, showValue, IGuiTexture.EMPTY);
+    }
+
+    public static FluidSlot fluidGaugeWithBackground(CmMachineBlockEntity machine, int x, int y, int width, int height, int tankIndex, boolean showValue) {
+        var background = SpriteTexture.of(HANDLER).setSprite(0, 92, width, height);
+        background.transform(-2.0f, -2.0f);
+        return fluidGaugeBase(machine, x, y, width, height, tankIndex, showValue, background);
+    }
+
+    private static FluidSlot fluidGaugeBase(CmMachineBlockEntity machine, int x, int y, int width, int height, int tankIndex, boolean showValue, IGuiTexture background) {
         var slot = absolute(new FluidSlot(), x, y, width, height);
-        slot.style(style -> style.backgroundTexture(IGuiTexture.EMPTY));
+        slot.style(style -> style.backgroundTexture(background));
         slot.slotStyle(style -> style
-                .slotOverlay(sprite(HANDLER, 0, 92, width, height))
+                .slotOverlay(IGuiTexture.EMPTY)
+                .showSlotOverlayOnlyEmpty(false)
                 .fillDirection(FillDirection.DOWN_TO_UP)
                 .showFluidTooltips(false));
         slot.amountLabel.setDisplay(false);
