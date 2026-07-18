@@ -21,10 +21,10 @@ import mezz.jei.api.recipe.category.IRecipeCategory;
 /**
  * JEI category for engine fuel recipes (Extractor, Metalizer, Biomass).
  * <p>
- * Reuses existing {@link TENConstants#JEI_HANDLER_1} background and
- * {@link TENConstants#GUI_HANDLER} burn icon — no new textures.
+ * Uses dedicated {@link TENConstants#JEI_HANDLER_2} background and
+ * {@link TENConstants#GUI_HANDLER} burn icon.
  * <p>
- * Layout (150x50):
+ * Layout (170x54):
  * <ul>
  *   <li>Fuel input slot at (10, 17)</li>
  *   <li>Burn icon (GUI_HANDLER u=14, v=26, 13x13) at (37, 19)</li>
@@ -35,8 +35,8 @@ import mezz.jei.api.recipe.category.IRecipeCategory;
  */
 public class EngineFuelCategory implements IRecipeCategory<EngineFuelRecipe> {
 
-    private static final int WIDTH = 150;
-    private static final int HEIGHT = 50;
+    private static final int WIDTH = 170;
+    private static final int HEIGHT = 54;
 
     // Layout constants
     private static final int INPUT_SLOT_X = 10;
@@ -68,7 +68,7 @@ public class EngineFuelCategory implements IRecipeCategory<EngineFuelRecipe> {
         this.recipeType = type;
         this.title = title;
         this.icon = helper.createDrawableItemStack(iconStack);
-        this.background = helper.createDrawable(TENConstants.JEI_HANDLER_1, 0, 0, WIDTH, HEIGHT);
+        this.background = helper.createDrawable(TENConstants.JEI_HANDLER_2, 0, 106, WIDTH, HEIGHT);
         this.inputSlot = helper.getSlotDrawable();
         // Burn icon from GUI_HANDLER: engine burning icon at u=14, v=26 (13x13)
         this.burnIcon = helper.createDrawable(TENConstants.GUI_HANDLER, BURN_U, BURN_V, BURN_ICON_W, BURN_ICON_H);
@@ -117,7 +117,7 @@ public class EngineFuelCategory implements IRecipeCategory<EngineFuelRecipe> {
 
     @Override
     public void draw(EngineFuelRecipe recipe, IRecipeSlotsView slotsView, GuiGraphicsExtractor graphics, double mouseX, double mouseY) {
-        // Draw background (JEI_HANDLER_1)
+        // Draw background (JEI_HANDLER_2)
         background.draw(graphics);
 
         // Draw burn icon (GUI_HANDLER)
