@@ -332,7 +332,7 @@
   "kenergyengineering.info.too_much_upgrades": "This machine has too many upgrades!",
   "kenergyengineering.info.up": "Up",
   "kenergyengineering.info.upgrade_successfully": " installed successfully.",
-  "kenergyengineering.jei_addition_chance": "Additional Chance: ",
+  "kenergyengineering.jei_addition_chance": "Additional Chance: %s%%",
   "kenergyengineering.key.c": "Change Holding Item Mode",
   "kenergyengineering.key.categories.kenergyengineering": "Kenergy Engineering",
   "kenergyengineering.key.kenergyengineering.toggle_charge": "Toggle Energy Unit Charging",
@@ -357,5 +357,12 @@
   "kenergyengineering.spanner.0": "Right-click a machine to rotate it",
   "kenergyengineering.spanner.1": "Sneak + right-click a machine to dismantle it",
   "kenergyengineering.smoke_levelup.0": "Smelter: Smoker recipes only\n      Processing speed x2",
-  "kenergyengineering.stream_levelup.0": "Machine: Infinite FE transfer"
+  "kenergyengineering.stream_levelup.0": "Machine: Infinite FE transfer",
+  "kenergyengineering.jei.base_output": "Base Output: %s FE",
+  "kenergyengineering.jei.base_rate": "Base Rate: %s FE/t",
+  "kenergyengineering.jei.duration_ticks": "Duration: %s ticks",
+  "kenergyengineering.jei.total_energy": "Total Energy: %s FE",
+  "kenergyengineering.jei.base_rate_short": "%s FE/t",
+  "kenergyengineering.jei.duration_short": "%s ticks",
+  "kenergyengineering.jei.total_short": "%s FE"
 }

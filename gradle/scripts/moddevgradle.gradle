@@ -25,6 +25,7 @@ neoForge {
     addModdingDependenciesTo(sourceSets.client)
     addModdingDependenciesTo(sourceSets.clientExtra)
     addModdingDependenciesTo(sourceSets.extra)
+    addModdingDependenciesTo(sourceSets.test)
 
     mods {
         // define mod <-> source bindings

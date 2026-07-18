@@ -13,10 +13,13 @@ import net.neoforged.neoforge.fluids.FluidStack;
 
 public class ExtractorBlockEntity extends EngineBlockEntity {
 
+    /** Base FE/t generation rate for Extractor. Shared with JEI registration. */
+    public static final int BASE_GENERATION_RATE = 30;
+
     public ExtractorBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
         setCapacity(kFE(60));
-        setEfficiency(30);
+        setEfficiency(BASE_GENERATION_RATE);
     }
 
     @Override
@@ -36,7 +39,8 @@ public class ExtractorBlockEntity extends EngineBlockEntity {
 
     @Override
     public boolean valid(int slot, ItemStack stack) {
-        return MatchFuel.matchFuel(level, stack, true) > 0;
+        if (level == null) return false;
+        return MatchFuel.getExtractorFuelValue(level, stack) > 0;
     }
 
     @Override
@@ -51,6 +55,7 @@ public class ExtractorBlockEntity extends EngineBlockEntity {
 
     @Override
     public int matchFuel(ItemStack stack, boolean simulate) {
+        if (level == null) return 0;
         return MatchFuel.matchFuel(level, stack, simulate);
     }
 }

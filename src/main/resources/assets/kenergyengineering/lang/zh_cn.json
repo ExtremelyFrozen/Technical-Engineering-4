@@ -393,7 +393,7 @@
   "kenergyengineering.iron_plate": "铁板",
   "kenergyengineering.iron_rod": "铁杆",
   "kenergyengineering.iron_wire": "铁线",
-  "kenergyengineering.jei_addition_chance": "副产概率: ",
+  "kenergyengineering.jei_addition_chance": "副产概率: %s%%",
   "kenergyengineering.key.c": "Change Holding Item Mode",
   "kenergyengineering.key.categories.kenergyengineering": "Kenergy Engineering",
   "kenergyengineering.key.kenergyengineering.toggle_charge": "切换能量单元充能",
@@ -586,5 +586,12 @@
   "tag.kenergyengineering.mats.tin": "锡材料",
   "tag.kenergyengineering.moulds": "模具",
   "tag.kenergyengineering.uncommon_ingots": "稀有金属锭",
-  "tag.kenergyengineering.valuable_ingots": "贵重金属锭"
+  "tag.kenergyengineering.valuable_ingots": "贵重金属锭",
+  "kenergyengineering.jei.base_output": "基础产出: %s FE",
+  "kenergyengineering.jei.base_rate": "基础功率: %s FE/t",
+  "kenergyengineering.jei.duration_ticks": "持续时间: %s tick",
+  "kenergyengineering.jei.total_energy": "总能量: %s FE",
+  "kenergyengineering.jei.base_rate_short": "%s FE/t",
+  "kenergyengineering.jei.duration_short": "%s tick",
+  "kenergyengineering.jei.total_short": "%s FE"
 }

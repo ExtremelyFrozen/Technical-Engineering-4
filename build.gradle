@@ -36,12 +36,15 @@ sourceSets {
         compileClasspath += main.output + main.compileClasspath
         runtimeClasspath += main.output + main.runtimeClasspath
     }
-
     clientExtra {
         compileClasspath += client.output + extra.compileClasspath
         runtimeClasspath += client.output + client.runtimeClasspath + extra.runtimeClasspath
     }
 
+    test {
+        compileClasspath += main.output + main.compileClasspath
+        runtimeClasspath += main.output + main.runtimeClasspath
+    }
 
 }
 
@@ -81,6 +84,14 @@ tasks.withType(JavaCompile).configureEach {
 
 tasks.withType(JavaExec).configureEach {
     systemProperty 'file.encoding', 'UTF-8'
+}
+
+test {
+    useJUnitPlatform()
+    testLogging {
+        events "passed", "skipped", "failed"
+        showExceptions = true
+    }
 }
 
 lombok {

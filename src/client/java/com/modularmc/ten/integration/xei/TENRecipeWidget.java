@@ -206,8 +206,12 @@ public final class TENRecipeWidget {
                 .orElse(Math.max(1, ingredient.amountOrCount()));
     }
 
-    public static String formatChance(double chance) {
-        return String.format("%.0f%% chance", chance * 100.0d);
+    /**
+     * @param chance raw probability in [0,1] range
+     * @return percentage as integer (0-100), rounded
+     */
+    public static int chancePercent(double chance) {
+        return (int) Math.round(chance * 100.0d);
     }
 
     private static void drawProgressDecoration(GuiGraphicsExtractor graphics, DecorationSpec decoration, double percent) {

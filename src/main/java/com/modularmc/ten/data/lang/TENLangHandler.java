@@ -36,6 +36,7 @@ public final class TENLangHandler {
         addSpannerInfo();
         addMachineInfo();
         addAdvancements();
+        addJeiEngine();
         addEmi();
     }
 
@@ -66,7 +67,7 @@ public final class TENLangHandler {
         add("info.upgrade_successfully", " installed successfully.", " 安装成功。");
         add("key.c", "Change Holding Item Mode", "Change Holding Item Mode");
         add("locked_slot", "This slot has not been unlocked yet.", "未解锁槽位");
-        add("jei_addition_chance", "Additional Chance: ", "副产概率: ");
+        add("jei_addition_chance", "Additional Chance: %s%%", "副产概率: %s%%");
         add("energy_capacity.charging_on", "Charging enabled", "全身充能已开启");
         add("energy_capacity.charging_off", "Charging disabled", "全身充能已关闭");
         add("key.categories." + TEN.MOD_ID, "Kenergy Engineering", "Kenergy Engineering");
@@ -250,6 +251,17 @@ public final class TENLangHandler {
         add("adv.bizarrerie.0", "Create a Bizarrerie with the Psionicant.", "用灵能处理器制作一个奇异物质。");
         add("adv.psionic", "It Is Not Scientific", "这不科学");
         add("adv.psionic.0", "Craft a Psionicant.", "制作一个灵能处理器。");
+    }
+
+    // ── JEI Engine Fuel Tooltips ─────────────────────────────────────
+    private static void addJeiEngine() {
+        add("jei.base_output", "Base Output: %s FE", "基础产出: %s FE");
+        add("jei.base_rate", "Base Rate: %s FE/t", "基础功率: %s FE/t");
+        add("jei.duration_ticks", "Duration: %s ticks", "持续时间: %s tick");
+        add("jei.total_energy", "Total Energy: %s FE", "总能量: %s FE");
+        add("jei.base_rate_short", "%s FE/t", "%s FE/t");
+        add("jei.duration_short", "%s ticks", "%s tick");
+        add("jei.total_short", "%s FE", "%s FE");
     }
 
     // ── EMI ─────────────────────────────────────────────────────────

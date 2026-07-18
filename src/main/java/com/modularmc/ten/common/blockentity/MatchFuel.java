@@ -8,45 +8,153 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
 
-import org.jspecify.annotations.Nullable;
+import java.util.Objects;
 
+/**
+ * Fuel value query and consumption for the three engine types.
+ * <p>
+ * <b>Query API (pure, no side effects):</b>
+ * <ul>
+ *   <li>{@link #getExtractorFuelValue(Level, ItemStack)} — requires non-null Level</li>
+ *   <li>{@link #getMetalFuelValue(ItemStack)}</li>
+ *   <li>{@link #getBiomassFuelValue(ItemStack)}</li>
+ * </ul>
+ * <b>Consumer API (queries + conditionally shrinks stack):</b>
+ * <ul>
+ *   <li>{@link #matchFuel(Level, ItemStack, boolean)} — requires non-null Level</li>
+ *   <li>{@link #matchFuel(ItemStack, boolean)} — deprecated, null Level fallback</li>
+ *   <li>{@link #matchMetal(ItemStack, boolean)}</li>
+ *   <li>{@link #matchPlant(ItemStack, boolean)}</li>
+ * </ul>
+ */
 public class MatchFuel {
 
+    // ════════════════════════════════════════════════════════════════
+    //  Query API — pure, no side effects
+    // ════════════════════════════════════════════════════════════════
+
     /**
-     * Matches an item stack as furnace-equivalent fuel for the extraction engine.
+     * Returns the fuel budget for the Extractor engine from an item stack,
+     * without consuming it.
+     * <p>
+     * First queries {@link Level#fuelValues()} via {@link ItemStack#getBurnTime}
+     * for a complete fuel list including mod-added fuels. If that returns 0,
+     * falls back to a hardcoded compatibility map for items the engine treats
+     * as fuel beyond vanilla furnace rules.
      *
-     * @param level    the level (nullable — if null, falls back to a hardcoded map).
-     * @param stack    the fuel item stack.
-     * @param simulate if true, the stack is not consumed.
-     * @return burn time in game ticks (multiplied by 20 from vanilla furnace ticks).
+     * @param level the client/server level (must be non-null; use
+     *              {@link Objects#requireNonNull} at call sites).
+     * @param stack the fuel item stack (not modified).
+     * @return fuel budget in FE-equivalent units; 0 if not a valid fuel.
      */
-    public static int matchFuel(@Nullable Level level, ItemStack stack, boolean simulate) {
+    public static int getExtractorFuelValue(Level level, ItemStack stack) {
+        Objects.requireNonNull(level, "Level required for Extractor FuelValues lookup");
         if (stack.isEmpty()) return 0;
 
-        // Priority: use 26.1.2 FuelValues API when level is available.
-        if (level != null) {
-            int time = stack.getBurnTime(RecipeType.SMELTING, level.fuelValues());
-            if (time > 0) {
-                if (!simulate) stack.shrink(1);
-                return time * 20;
-            }
+        // Primary: use 26.1.2 FuelValues API for complete mod-aware fuel list.
+        int time = stack.getBurnTime(RecipeType.SMELTING, level.fuelValues());
+        if (time > 0) {
+            return time * 20;
         }
 
-        // Fallback: hardcoded common fuel values when level is not available.
-        // TODO(26.x): Remove this fallback once all callers provide a Level reference.
-        int time = hardcodedBurnTime(stack);
-        if (time > 0 && !simulate) stack.shrink(1);
+        // Compatibility supplement: hardcoded map for items recognised by this
+        // engine but not by vanilla furnace fuel rules.
+        return hardcodedBurnTime(stack) * 20;
+    }
+
+    /**
+     * Returns the fuel budget for the Metalizer engine from an item stack,
+     * without consuming it.
+     *
+     * @param stack the metal item stack (not modified).
+     * @return fuel budget in FE-equivalent units; 0 if not a valid metal fuel.
+     */
+    public static int getMetalFuelValue(ItemStack stack) {
+        if (stack.isEmpty()) return 0;
+        int time = 0;
+        boolean cn = TagHelper.containsItem(stack.getItem(), TagHelper.keyItem("kenergyengineering:common_ingots"));
+        boolean uc = TagHelper.containsItem(stack.getItem(), TagHelper.keyItem("kenergyengineering:uncommon_ingots"));
+        boolean vc = TagHelper.containsItem(stack.getItem(), TagHelper.keyItem("kenergyengineering:valuable_ingots"));
+        if (cn) time = 1000;
+        else if (uc) time = 1500;
+        else if (vc) time = 6400;
         return time * 20;
     }
 
     /**
+     * Returns the fuel budget for the Biomass engine from an item stack,
+     * without consuming it.
+     *
+     * @param stack the plant item stack (not modified).
+     * @return fuel budget in FE-equivalent units; 0 if not a valid biomass fuel.
+     */
+    public static int getBiomassFuelValue(ItemStack stack) {
+        if (stack.isEmpty()) return 0;
+        int time = 0;
+        if (TagHelper.containsItem(stack.getItem(), ItemTags.LEAVES)) time = 20;
+        else if (TagHelper.containsItem(stack.getItem(), ItemTags.LOGS)) time = 120;
+        else if (TagHelper.containsItem(stack.getItem(), ItemTags.FLOWERS)) time = 10;
+        else if (TagHelper.containsItem(stack.getItem(), ItemTags.SAPLINGS)) time = 15;
+        else if (TagHelper.containsItem(stack.getItem(), TagHelper.keyItem("minecraft:saplings"))) time = 15;
+        return time * 60;
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    //  Consumer API — delegates to query + conditionally shrinks stack
+    // ════════════════════════════════════════════════════════════════
+
+    /**
+     * Matches an item stack as furnace-equivalent fuel for the extraction engine.
+     * Requires a non-null Level for complete FuelValues lookup.
+     *
+     * @param level    the level (must be non-null).
+     * @param stack    the fuel item stack.
+     * @param simulate if true, the stack is not consumed.
+     * @return fuel budget in FE-equivalent units.
+     */
+    public static int matchFuel(Level level, ItemStack stack, boolean simulate) {
+        int value = getExtractorFuelValue(level, stack);
+        if (value > 0 && !simulate) stack.shrink(1);
+        return value;
+    }
+
+    /**
      * @deprecated Use {@link #matchFuel(Level, ItemStack, boolean)} instead.
-     *             This overload is kept for binary compatibility and falls back to
-     *             hardcoded values (no level-aware FuelValues lookup).
+     *             This overload passes a null Level, bypassing the FuelValues API.
+     *             It is kept only for binary compatibility and must NOT be called
+     *             from JEI registration or primary engine paths.
      */
     @Deprecated
     public static int matchFuel(ItemStack stack, boolean simulate) {
-        return matchFuel(null, stack, simulate);
+        int value = getExtractorFuelValueForDeprecated(stack);
+        if (value > 0 && !simulate) stack.shrink(1);
+        return value;
+    }
+
+    public static int matchPlant(ItemStack stack, boolean simulate) {
+        int value = getBiomassFuelValue(stack);
+        if (value > 0 && !simulate) stack.shrink(1);
+        return value;
+    }
+
+    public static int matchMetal(ItemStack stack, boolean simulate) {
+        int value = getMetalFuelValue(stack);
+        if (value > 0 && !simulate) stack.shrink(1);
+        return value;
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    //  Internal
+    // ════════════════════════════════════════════════════════════════
+
+    /**
+     * Hardcoded-only Extractor fuel query for the deprecated null-Level overload.
+     * This is intentionally separate so the main getExtractorFuelValue never
+     * takes a null Level.
+     */
+    private static int getExtractorFuelValueForDeprecated(ItemStack stack) {
+        if (stack.isEmpty()) return 0;
+        return hardcodedBurnTime(stack) * 20;
     }
 
     private static int hardcodedBurnTime(ItemStack stack) {
@@ -109,28 +217,5 @@ public class MatchFuel {
         return 0;
     }
 
-    public static int matchPlant(ItemStack stack, boolean simulate) {
-        if (stack.isEmpty()) return 0;
-        int time = 0;
-        if (TagHelper.containsItem(stack.getItem(), ItemTags.LEAVES)) time = 20;
-        else if (TagHelper.containsItem(stack.getItem(), ItemTags.LOGS)) time = 120;
-        else if (TagHelper.containsItem(stack.getItem(), ItemTags.FLOWERS)) time = 10;
-        else if (TagHelper.containsItem(stack.getItem(), ItemTags.SAPLINGS)) time = 15;
-        else if (TagHelper.containsItem(stack.getItem(), TagHelper.keyItem("minecraft:saplings"))) time = 15;
-        if (time > 0 && !simulate) stack.shrink(1);
-        return time * 60;
-    }
-
-    public static int matchMetal(ItemStack stack, boolean simulate) {
-        if (stack.isEmpty()) return 0;
-        int time = 0;
-        boolean cn = TagHelper.containsItem(stack.getItem(), TagHelper.keyItem("kenergyengineering:common_ingots"));
-        boolean uc = TagHelper.containsItem(stack.getItem(), TagHelper.keyItem("kenergyengineering:uncommon_ingots"));
-        boolean vc = TagHelper.containsItem(stack.getItem(), TagHelper.keyItem("kenergyengineering:valuable_ingots"));
-        if (cn) time = 1000;
-        else if (uc) time = 1500;
-        else if (vc) time = 6400;
-        if (time > 0 && !simulate) stack.shrink(1);
-        return time * 20;
-    }
+    private MatchFuel() {}
 }

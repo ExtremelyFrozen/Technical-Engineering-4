@@ -13,10 +13,13 @@ import net.neoforged.neoforge.fluids.FluidStack;
 
 public class BiomassBlockEntity extends EngineBlockEntity {
 
+    /** Base FE/t generation rate for Biomass. Shared with JEI registration. */
+    public static final int BASE_GENERATION_RATE = 80;
+
     public BiomassBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
         setCapacity(kFE(80));
-        setEfficiency(80);
+        setEfficiency(BASE_GENERATION_RATE);
     }
 
     @Override
