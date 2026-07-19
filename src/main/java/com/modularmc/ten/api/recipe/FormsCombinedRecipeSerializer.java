@@ -21,7 +21,7 @@ import java.util.function.Supplier;
 
 public class FormsCombinedRecipeSerializer<T extends FormsCombinedRecipe> {
 
-    private record IngredientData(String form, String type, Identifier key, int count, int amount, double chance) {}
+    private record IngredientData(String form, String type, Identifier key, int count, int amount, double chance, int rolls) {}
 
     private static final Codec<IngredientData> INGREDIENT_DATA_CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Codec.STRING.fieldOf("form").forGetter(IngredientData::form),
@@ -29,7 +29,8 @@ public class FormsCombinedRecipeSerializer<T extends FormsCombinedRecipe> {
             Identifier.CODEC.fieldOf("key").forGetter(IngredientData::key),
             Codec.INT.optionalFieldOf("count", 1).forGetter(IngredientData::count),
             Codec.INT.optionalFieldOf("amount", 0).forGetter(IngredientData::amount),
-            Codec.DOUBLE.optionalFieldOf("chance", 1.0d).forGetter(IngredientData::chance))
+            Codec.DOUBLE.optionalFieldOf("chance", 1.0d).forGetter(IngredientData::chance),
+            Codec.INT.optionalFieldOf("rolls", 1).forGetter(IngredientData::rolls))
             .apply(instance, IngredientData::new));
 
     private static final Codec<FormsCombinedIngredient> INGREDIENT_CODEC = INGREDIENT_DATA_CODEC.xmap(
@@ -38,14 +39,16 @@ public class FormsCombinedRecipeSerializer<T extends FormsCombinedRecipe> {
                     data.form(),
                     data.type(),
                     data.key().toString(),
-                    data.chance()),
+                    data.chance(),
+                    data.rolls()),
             ingredient -> new IngredientData(
                     ingredient.form(),
                     ingredient.type(),
                     ingredient.key(),
                     "fluid".equals(ingredient.form()) ? 1 : ingredient.amountOrCount(),
                     "fluid".equals(ingredient.form()) ? ingredient.amountOrCount() : 0,
-                    ingredient.chance()));
+                    ingredient.chance(),
+                    ingredient.rolls()));
 
     private final IFactoryCm<T> factory;
     private final Supplier<RecipeType<?>> recipeType;
@@ -103,9 +106,20 @@ public class FormsCombinedRecipeSerializer<T extends FormsCombinedRecipe> {
     private List<FormsCombinedIngredient> getInputs(JsonObject json) {
         List<FormsCombinedIngredient> list = new ArrayList<>();
         JsonArray arr = json.getAsJsonArray("inputs");
-        for (JsonElement e : arr) list.add(FormsCombinedIngredient.parseFrom(e.getAsJsonObject()));
+        for (JsonElement e : arr) {
+            FormsCombinedIngredient ing = FormsCombinedIngredient.parseFrom(e.getAsJsonObject());
+            validateInputRolls(ing);
+            list.add(ing);
+        }
         while (list.size() < sizeIn) list.add(EMPTY());
         return list;
+    }
+
+    private static void validateInputRolls(FormsCombinedIngredient ing) {
+        if (ing.rolls() > 1) {
+            throw new IllegalArgumentException(
+                    "Input/fluid ingredients must have rolls=1, but got rolls=" + ing.rolls() + " for key=" + ing.key());
+        }
     }
 
     private List<FormsCombinedIngredient> getOutputs(JsonObject json) {
@@ -117,7 +131,13 @@ public class FormsCombinedRecipeSerializer<T extends FormsCombinedRecipe> {
             String key = JsonParser.getString(o, "key");
             int count = "fluid".equals(form) ? JsonParser.getIntOr(o, "amount", 0) : JsonParser.getIntOr(o, "count", 1);
             double chance = JsonParser.getFloatOr(o, "chance", 1);
-            list.add(FormsCombinedIngredient.create(count, form, "static", key, chance));
+            int rolls = JsonParser.getIntOr(o, "rolls", 1);
+            // Fluid outputs must have rolls=1 (validated in create() but caught here for clear message)
+            if ("fluid".equals(form) && rolls > 1) {
+                throw new IllegalArgumentException(
+                        "Fluid output must have rolls=1, but got rolls=" + rolls + " for key=" + key);
+            }
+            list.add(FormsCombinedIngredient.create(count, form, "static", key, chance, rolls));
         }
         while (list.size() < sizeOut) list.add(EMPTY());
         return list;
@@ -131,6 +151,20 @@ public class FormsCombinedRecipeSerializer<T extends FormsCombinedRecipe> {
 
     private T createRecipe(Identifier regName, Identifier id, List<FormsCombinedIngredient> ip,
                            List<FormsCombinedIngredient> op, int time) {
+        // Validate that input ingredients do not have rolls>1
+        for (FormsCombinedIngredient ing : ip) {
+            if (!ing.ALLOW_ALL && ing.rolls() > 1) {
+                throw new IllegalArgumentException(
+                        "Input/fluid ingredients must have rolls=1, but got rolls=" + ing.rolls() + " for key=" + ing.key());
+            }
+        }
+        // Validate that fluid outputs do not have rolls>1
+        for (FormsCombinedIngredient ing : op) {
+            if (!ing.ALLOW_ALL && "fluid".equals(ing.form()) && ing.rolls() > 1) {
+                throw new IllegalArgumentException(
+                        "Fluid output must have rolls=1, but got rolls=" + ing.rolls() + " for key=" + ing.key());
+            }
+        }
         T recipe = factory.create(regName, id, ip, op, time);
         recipe.recipeType = (RecipeType<? extends Recipe<RecipeInput>>) (RecipeType<?>) recipeType.get();
         recipe.serializer = asSerializer();

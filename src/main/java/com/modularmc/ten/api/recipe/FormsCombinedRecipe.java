@@ -61,22 +61,69 @@ public class FormsCombinedRecipe implements RandRecipe {
         return true; // custom matching using machines
     }
 
+    /**
+     * Count 'item' form input ingredients that are real (non-ALLOW_ALL).
+     * ALLOW_ALL entries are serialization padding and must not inflate the required count.
+     */
+    private int countRequiredItemInputs() {
+        int count = 0;
+        for (var ing : input) {
+            if ("item".equals(ing.form) && !ing.ALLOW_ALL) count++;
+        }
+        return count;
+    }
+
+    /**
+     * Count occupied input slots in the item handler.
+     */
+    private int countOccupiedInputSlots(IItemHandler inv,
+                                        FormsCombinedIngredient.IngredientTypeGetter slotType) {
+        int occupied = 0;
+        for (int i = 0; i < inv.getSlots(); i++) {
+            if (slotType.get(i).canIn() && !inv.getStackInSlot(i).isEmpty()) {
+                occupied++;
+            }
+        }
+        return occupied;
+    }
+
+    /**
+     * General matches: allows underfilled serialization slots.
+     * Strategy: at least the number of real (non-ALLOW_ALL) item inputs must
+     * occupy input slots; extra occupied slots are permitted (machine-chosen).
+     * Strict exact matching is a separate method for machines that require it.
+     */
     public boolean matches(IItemHandler inv, List<? extends IFluidHandler> tanks,
                            FormsCombinedIngredient.IngredientTypeGetter slotType,
                            FormsCombinedIngredient.IngredientTypeGetter tankType) {
-        // Strict exact matching: occupied input slot count must equal required ingredient count
-        int occupiedSlots = 0;
-        for (int i = 0; i < inv.getSlots(); i++) {
-            if (slotType.get(i).canIn() && !inv.getStackInSlot(i).isEmpty()) {
-                occupiedSlots++;
-            }
-        }
-        int requiredIngredients = 0;
-        for (var ing : input) {
-            if ("item".equals(ing.form)) requiredIngredients++;
-        }
-        if (occupiedSlots != requiredIngredients) return false;
+        int occupied = countOccupiedInputSlots(inv, slotType);
+        int required = countRequiredItemInputs();
+        if (occupied < required) return false;
+        return ingredientsMatch(inv, tanks, slotType, tankType);
+    }
 
+    /**
+     * Strict matching: only when the exact number of occupied input slots
+     * matches the real item ingredient count. Used by induction furnace.
+     * Strategy: machine explicitly requires exact fill; extra items rejected.
+     */
+    public boolean matchesExactInputs(IItemHandler inv, List<? extends IFluidHandler> tanks,
+                                      FormsCombinedIngredient.IngredientTypeGetter slotType,
+                                      FormsCombinedIngredient.IngredientTypeGetter tankType) {
+        int occupied = countOccupiedInputSlots(inv, slotType);
+        int required = countRequiredItemInputs();
+        if (occupied != required) return false;
+        return ingredientsMatch(inv, tanks, slotType, tankType);
+    }
+
+    /**
+     * Shared ingredient check: runs every recipe ingredient against the
+     * current inventory/tank state. Callers verify occupied/required counts
+     * before invoking this.
+     */
+    private boolean ingredientsMatch(IItemHandler inv, List<? extends IFluidHandler> tanks,
+                                     FormsCombinedIngredient.IngredientTypeGetter slotType,
+                                     FormsCombinedIngredient.IngredientTypeGetter tankType) {
         for (var i : input) {
             if (!i.check(slotType, tankType, inv, tanks)) return false;
         }

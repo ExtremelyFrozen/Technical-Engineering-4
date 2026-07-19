@@ -77,7 +77,11 @@ public class TENJeiCategory implements IRecipeCategory<FormsCombinedRecipe> {
                         jeiSlot.addItemStacks(filteredItemStacks);
                     }
                     if (slot.role() == TENRecipeWidget.SlotRole.OUTPUT && ingredient.chance() < 1.0d) {
-                        jeiSlot.addRichTooltipCallback((view, tooltip) -> tooltip.add(Component.translatable("kenergyengineering.jei_addition_chance", TENRecipeWidget.chancePercent(ingredient.chance()))));
+                        if (ingredient.rolls() > 1) {
+                            jeiSlot.addRichTooltipCallback((view, tooltip) -> tooltip.add(Component.translatable("kenergyengineering.jei_addition_chance_rolls", TENRecipeWidget.chancePercent(ingredient.chance()), ingredient.rolls())));
+                        } else {
+                            jeiSlot.addRichTooltipCallback((view, tooltip) -> tooltip.add(Component.translatable("kenergyengineering.jei_addition_chance", TENRecipeWidget.chancePercent(ingredient.chance()))));
+                        }
                     }
                     if (slot.role() == TENRecipeWidget.SlotRole.INPUT && ingredient.chance() <= 0) {
                         jeiSlot.addRichTooltipCallback((view, tooltip) -> tooltip.add(Component.translatable("kenergyengineering.not_consumed")));
@@ -95,7 +99,11 @@ public class TENJeiCategory implements IRecipeCategory<FormsCombinedRecipe> {
                         jeiSlot.addIngredients(NeoForgeTypes.FLUID_STACK, filteredFluidStacks);
                     }
                     if (slot.role() == TENRecipeWidget.SlotRole.OUTPUT && ingredient.chance() < 1.0d) {
-                        jeiSlot.addRichTooltipCallback((view, tooltip) -> tooltip.add(Component.translatable("kenergyengineering.jei_addition_chance", TENRecipeWidget.chancePercent(ingredient.chance()))));
+                        if (ingredient.rolls() > 1) {
+                            jeiSlot.addRichTooltipCallback((view, tooltip) -> tooltip.add(Component.translatable("kenergyengineering.jei_addition_chance_rolls", TENRecipeWidget.chancePercent(ingredient.chance()), ingredient.rolls())));
+                        } else {
+                            jeiSlot.addRichTooltipCallback((view, tooltip) -> tooltip.add(Component.translatable("kenergyengineering.jei_addition_chance", TENRecipeWidget.chancePercent(ingredient.chance()))));
+                        }
                     }
                     if (slot.role() == TENRecipeWidget.SlotRole.INPUT && ingredient.chance() <= 0) {
                         jeiSlot.addRichTooltipCallback((view, tooltip) -> tooltip.add(Component.translatable("kenergyengineering.not_consumed")));

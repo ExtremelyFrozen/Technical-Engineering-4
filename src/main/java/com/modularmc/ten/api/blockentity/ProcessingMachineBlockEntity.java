@@ -43,15 +43,14 @@ public abstract class ProcessingMachineBlockEntity extends CmMachineBlockEntity 
                 setActive(false);
                 return;
             }
-            progress += energyConsumed;
-
             if (cooking()) {
                 setActive(false);
                 return;
             }
 
-            // Consume energy
+            // Consume energy and advance progress
             energyStorage.extractEnergy(energyConsumed, false);
+            progress += energyConsumed;
 
             if (progress > maxProgress) {
                 onCookFinish();

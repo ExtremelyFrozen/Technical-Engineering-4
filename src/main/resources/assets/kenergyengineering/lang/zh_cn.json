@@ -394,6 +394,7 @@
   "kenergyengineering.iron_rod": "铁杆",
   "kenergyengineering.iron_wire": "铁线",
   "kenergyengineering.jei_addition_chance": "副产概率: %s%%",
+  "kenergyengineering.jei_addition_chance_rolls": "副产概率: %s%% × %s次",
   "kenergyengineering.key.c": "Change Holding Item Mode",
   "kenergyengineering.key.categories.kenergyengineering": "Kenergy Engineering",
   "kenergyengineering.key.kenergyengineering.toggle_charge": "切换能量单元充能",
