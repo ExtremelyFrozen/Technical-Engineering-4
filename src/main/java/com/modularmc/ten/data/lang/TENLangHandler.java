@@ -12,8 +12,8 @@ import java.util.LinkedHashMap;
  * <p>
  * The two maps serve:
  * <ul>
- *   <li>{@link #ZH_ENTRIES} → Chinese translations (consumed by DataGenerators)</li>
- *   <li>{@link #EN_ENTRIES} → English translations (consumed by DataGenerators)</li>
+ * <li>{@link #ZH_ENTRIES} → Chinese translations (consumed by DataGenerators)</li>
+ * <li>{@link #EN_ENTRIES} → English translations (consumed by DataGenerators)</li>
  * </ul>
  */
 public final class TENLangHandler {
@@ -69,6 +69,7 @@ public final class TENLangHandler {
         add("locked_slot", "This slot has not been unlocked yet.", "未解锁槽位");
         add("upgrade_slot", "Upgrade Slot", "升级槽位");
         add("jei_addition_chance", "Additional Chance: %s%%", "副产概率: %s%%");
+        add("jei_addition_chance_rolls", "Additional Chance: %s%% × %s rolls", "副产概率: %s%% × %s次");
         add("energy_capacity.charging_on", "Charging enabled", "全身充能已开启");
         add("energy_capacity.charging_off", "Charging disabled", "全身充能已关闭");
         add("key.categories." + TEN.MOD_ID, "Kenergy Engineering", "Kenergy Engineering");

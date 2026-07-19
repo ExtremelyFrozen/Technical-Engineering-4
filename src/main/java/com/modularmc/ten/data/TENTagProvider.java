@@ -1,11 +1,5 @@
 package com.modularmc.ten.data;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-
 import com.modularmc.ten.TEN;
 import com.modularmc.ten.common.data.Mat;
 import com.modularmc.ten.common.data.TENBlocks;
@@ -14,6 +8,12 @@ import com.modularmc.ten.common.data.TENItems;
 import net.minecraft.data.CachedOutput;
 import net.minecraft.data.DataProvider;
 import net.minecraft.data.PackOutput;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -35,23 +35,23 @@ import java.util.concurrent.CompletableFuture;
  * <p>
  * <b>Ownership separation:</b>
  * <ul>
- *   <li><b>Generated owns:</b> All tags that directly mirror mod registrations:
- *       kenergyengineering:machines, kenergyengineering: moulds (item),
- *       kenergyengineering:wrench_dismantleable, mineable/pickaxe,
- *       needs_iron_tool, c: item form tags (dusts, ingots, nuggets, plates,
- *       gears, rods, wires), c:ores block+item, c:storage_blocks block+item,
- *       c:raw_materials item, kenergyengineering:mats/* (business classification),
- *       kenergyengineering:catalyst, kenergyengineering:common_ingots,
- *       kenergyengineering:uncommon_ingots, kenergyengineering:valuable_ingots.
- *   </li>
- *   <li><b>Main owns:</b> Hand-written business tags that are not simple
- *       registration mirrors: c:gems/*, c:mushrooms, c:obsidians, c:stones,
- *       c:sands, c:gravels, c:netherracks, c:cobblestones, c:raw_materials/iron,
- *       c:raw_materials/gold, c:raw_materials/copper, and the aggregate
- *       c:ores/tin, c:ores/nickel (for vanilla copper we reference
- *       {@code #minecraft:copper_ores} in main).</li>
- *   <li><b>Intersection must be 0</b> — no tag file appears in both
- *       main and generated.</li>
+ * <li><b>Generated owns:</b> All tags that directly mirror mod registrations:
+ * kenergyengineering:machines, kenergyengineering: moulds (item),
+ * kenergyengineering:wrench_dismantleable, mineable/pickaxe,
+ * needs_iron_tool, c: item form tags (dusts, ingots, nuggets, plates,
+ * gears, rods, wires), c:ores block+item, c:storage_blocks block+item,
+ * c:raw_materials item, kenergyengineering:mats/* (business classification),
+ * kenergyengineering:catalyst, kenergyengineering:common_ingots,
+ * kenergyengineering:uncommon_ingots, kenergyengineering:valuable_ingots.
+ * </li>
+ * <li><b>Main owns:</b> Hand-written business tags that are not simple
+ * registration mirrors: c:gems/*, c:mushrooms, c:obsidians, c:stones,
+ * c:sands, c:gravels, c:netherracks, c:cobblestones, c:raw_materials/iron,
+ * c:raw_materials/gold, c:raw_materials/copper, and the aggregate
+ * c:ores/tin, c:ores/nickel (for vanilla copper we reference
+ * {@code #minecraft:copper_ores} in main).</li>
+ * <li><b>Intersection must be 0</b> — no tag file appears in both
+ * main and generated.</li>
  * </ul>
  * <p>
  * All tags use {@code "replace": false} (additive) to avoid overwriting
@@ -59,9 +59,9 @@ import java.util.concurrent.CompletableFuture;
  * <p>
  * Uses a custom {@link DataProvider} because:
  * <ul>
- *   <li>The standard {@code TagsProvider} API varies across NeoForge versions</li>
- *   <li>Writing to {@code minecraft} and {@code c} namespaces is easier with direct JSON generation</li>
- *   <li>Consistent with existing {@link TENModelProvider} and {@link TENRecipeGen}</li>
+ * <li>The standard {@code TagsProvider} API varies across NeoForge versions</li>
+ * <li>Writing to {@code minecraft} and {@code c} namespaces is easier with direct JSON generation</li>
+ * <li>Consistent with existing {@link TENModelProvider} and {@link TENRecipeGen}</li>
  * </ul>
  */
 public class TENTagProvider implements DataProvider {
@@ -103,6 +103,13 @@ public class TENTagProvider implements DataProvider {
         return holder.getId().toString();
     }
 
+    // Vanilla raw storage blocks that need c:storage_blocks/raw_* tags
+    private static final String[][] VANILLA_RAW_BLOCKS = {
+            { "iron", "minecraft:raw_iron_block" },
+            { "gold", "minecraft:raw_gold_block" },
+            { "copper", "minecraft:raw_copper_block" },
+    };
+
     // ═══════════════════════════════════════════════════════════════════
     // Block tags — kenergyengineering namespace
     // ═══════════════════════════════════════════════════════════════════
@@ -133,8 +140,7 @@ public class TENTagProvider implements DataProvider {
                 "#c:gravels",
                 "#c:netherracks",
                 "#c:obsidians",
-                "#c:cobblestones"
-        ), false);
+                "#c:cobblestones"), false);
     }
 
     // ═══════════════════════════════════════════════════════════════════
@@ -163,8 +169,7 @@ public class TENTagProvider implements DataProvider {
                 "minecraft:blaze_powder",
                 "minecraft:redstone",
                 "minecraft:glowstone_dust",
-                "#c:mushrooms"
-        ), false);
+                "#c:mushrooms"), false);
 
         // common_ingots — common tier ingots
         writeTag(cache, tagDir, futures, "common_ingots.json", list(
@@ -172,29 +177,26 @@ public class TENTagProvider implements DataProvider {
                 "minecraft:gold_ingot",
                 "#c:ingots/tin",
                 "#c:ingots/copper",
-                "#c:ingots/nickel"
-        ), false);
+                "#c:ingots/nickel"), false);
 
         // uncommon_ingots — uncommon tier ingots
         writeTag(cache, tagDir, futures, "uncommon_ingots.json", list(
                 "#c:ingots/chlorium",
-                "#c:ingots/powered_tin"
-        ), false);
+                "#c:ingots/powered_tin"), false);
 
         // valuable_ingots — valuable tier ingots
         writeTag(cache, tagDir, futures, "valuable_ingots.json", list(
-                "minecraft:netherite_ingot"
-        ), false);
+                "minecraft:netherite_ingot"), false);
 
-        // Material sub-tags (mats/)
+        // Material sub-tags (mats/) — dynamically generated from Mat with both dust form and ingot.
+        // Covers the 9 materials: Iron, Gold, Copper, Tin, Nickel, Powered Tin, Chlorium, Mushrium, Netherite.
         Path matsDir = tagDir.resolve("mats");
-        writeTag(cache, matsDir, futures, "tin.json", list("#c:ingots/tin", "#c:dusts/tin"), false);
-        writeTag(cache, matsDir, futures, "nickel.json", list("#c:ingots/nickel", "#c:dusts/nickel"), false);
-        writeTag(cache, matsDir, futures, "powered_tin.json", list("#c:ingots/powered_tin", "#c:dusts/powered_tin"), false);
-        writeTag(cache, matsDir, futures, "iron.json", list("#c:ingots/iron", "#c:dusts/iron"), false);
-        writeTag(cache, matsDir, futures, "gold.json", list("#c:ingots/gold", "#c:dusts/gold"), false);
-        writeTag(cache, matsDir, futures, "copper.json", list("#c:ingots/copper", "#c:dusts/copper"), false);
-        writeTag(cache, matsDir, futures, "chlorium.json", list("#c:ingots/chlorium", "#c:dusts/chlorium"), false);
+        for (Mat mat : Mat.values()) {
+            if (mat.hasForm("dust") && mat.hasIngot) {
+                writeTag(cache, matsDir, futures, mat.id + ".json",
+                        list("#c:ingots/" + mat.id, "#c:dusts/" + mat.id), false);
+            }
+        }
     }
 
     // ═══════════════════════════════════════════════════════════════════
@@ -277,7 +279,6 @@ public class TENTagProvider implements DataProvider {
         // ── storage_blocks ─────────────────────────────────────────────
         Path storageDir = cBlockDir.resolve("storage_blocks");
         var storageAggregate = new ArrayList<String>();
-        var rawStorageAggregate = new ArrayList<String>();
 
         for (Mat mat : Mat.values()) {
             if (!mat.hasBlock) continue;
@@ -289,9 +290,18 @@ public class TENTagProvider implements DataProvider {
             if (mat.hasRaw) {
                 String rawBlockId = mat.itemId("raw_block"); // kenergyengineering:raw_tin_block
                 writeTag(cache, storageDir, futures, "raw_" + mat.id + ".json", list(rawBlockId), false);
-                rawStorageAggregate.add("#c:storage_blocks/raw_" + mat.id);
+                storageAggregate.add("#c:storage_blocks/raw_" + mat.id);
             }
         }
+
+        // Vanilla raw storage blocks (iron, gold, copper) — block tags
+        for (String[] entry : VANILLA_RAW_BLOCKS) {
+            String matId = entry[0];
+            String blockId = entry[1];
+            writeTag(cache, storageDir, futures, "raw_" + matId + ".json", list(blockId), false);
+            storageAggregate.add("#c:storage_blocks/raw_" + matId);
+        }
+
         if (!storageAggregate.isEmpty()) {
             writeTag(cache, cBlockDir, futures, "storage_blocks.json", storageAggregate, false);
         }
@@ -336,6 +346,15 @@ public class TENTagProvider implements DataProvider {
                 storageItemAggregate.add("#c:storage_blocks/raw_" + mat.id);
             }
         }
+
+        // Vanilla raw storage blocks (iron, gold, copper) — item tags
+        for (String[] entry : VANILLA_RAW_BLOCKS) {
+            String matId = entry[0];
+            String blockId = entry[1];
+            writeTag(cache, storageItemDir, futures, "raw_" + matId + ".json", list(blockId), false);
+            storageItemAggregate.add("#c:storage_blocks/raw_" + matId);
+        }
+
         if (!storageItemAggregate.isEmpty()) {
             writeTag(cache, cItemDir, futures, "storage_blocks.json", storageItemAggregate, false);
         }
@@ -359,9 +378,9 @@ public class TENTagProvider implements DataProvider {
         if (!rawAggregate.isEmpty()) {
             // Add vanilla raw materials (iron, gold, copper) for NeoForge convention
             String[][] VANILLA_RAW_MATERIALS = {
-                    {"iron", "minecraft:raw_iron"},
-                    {"gold", "minecraft:raw_gold"},
-                    {"copper", "minecraft:raw_copper"},
+                    { "iron", "minecraft:raw_iron" },
+                    { "gold", "minecraft:raw_gold" },
+                    { "copper", "minecraft:raw_copper" },
             };
             for (String[] entry : VANILLA_RAW_MATERIALS) {
                 String matId = entry[0];
@@ -411,8 +430,8 @@ public class TENTagProvider implements DataProvider {
                         "kenergyengineering:liquid_xp",
                         "kenergyengineering:liquid_xp_flowing",
                         "kenergyengineering:liquid_bizarrerie",
-                        "kenergyengineering:liquid_bizarrerie_flowing"
-                ), false);
+                        "kenergyengineering:liquid_bizarrerie_flowing"),
+                false);
     }
 
     // ═══════════════════════════════════════════════════════════════════

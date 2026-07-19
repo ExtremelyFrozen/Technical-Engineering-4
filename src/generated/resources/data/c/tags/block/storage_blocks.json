@@ -2,8 +2,13 @@
   "replace": false,
   "values": [
     "#c:storage_blocks/tin",
+    "#c:storage_blocks/raw_tin",
     "#c:storage_blocks/nickel",
+    "#c:storage_blocks/raw_nickel",
     "#c:storage_blocks/powered_tin",
-    "#c:storage_blocks/chlorium"
+    "#c:storage_blocks/chlorium",
+    "#c:storage_blocks/raw_iron",
+    "#c:storage_blocks/raw_gold",
+    "#c:storage_blocks/raw_copper"
   ]
 }

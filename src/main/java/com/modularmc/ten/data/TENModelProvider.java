@@ -1,29 +1,25 @@
 package com.modularmc.ten.data;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.modularmc.ten.TEN;
-import com.modularmc.ten.common.data.TENBlocks;
-import com.modularmc.ten.common.data.TENFluids;
 import com.modularmc.ten.common.data.TENItems;
 
 import net.minecraft.data.CachedOutput;
 import net.minecraft.data.DataProvider;
 import net.minecraft.data.PackOutput;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Consumer;
 
 /**
  * Model/blockstate generator for Technical Engineering 4.
@@ -90,8 +86,8 @@ public class TENModelProvider implements DataProvider {
         }
 
         // 6. Channels — blockstates now managed in main resources (not generated)
-        //    Channel models are hand-crafted and registered via main assets.
-        //    This loop is intentionally removed to avoid duplicate generation.
+        // Channel models are hand-crafted and registered via main assets.
+        // This loop is intentionally removed to avoid duplicate generation.
 
         // 7. Liquid blocks — model lives in models/block/fluid/
         for (var name : LIQUID_NAMES) {
@@ -132,8 +128,8 @@ public class TENModelProvider implements DataProvider {
         }
 
         // Channels — block models now managed in main resources (not generated)
-        //    Channel sub-models are hand-crafted and registered via main assets.
-        //    This loop is intentionally removed to avoid duplicate generation.
+        // Channel sub-models are hand-crafted and registered via main assets.
+        // This loop is intentionally removed to avoid duplicate generation.
 
         // Liquid blocks — particle-only model is a fact model in main resources (models/block/fluid/)
         // No longer generated here to avoid duplicate root-level models. The fact model
@@ -146,8 +142,7 @@ public class TENModelProvider implements DataProvider {
         var blockNames = new HashSet<>(List.of(
                 "tin_ore", "nickel_ore", "deep_tin_ore", "deep_nickel_ore",
                 "tin_block", "nickel_block", "powered_tin_block", "chlorium_block",
-                "raw_tin_block", "raw_nickel_block"
-        ));
+                "raw_tin_block", "raw_nickel_block"));
         blockNames.addAll(List.of(MACHINE_NAMES));
         blockNames.addAll(List.of(CABLE_NAMES));
         blockNames.addAll(List.of(PIPE_NAMES));
@@ -183,9 +178,7 @@ public class TENModelProvider implements DataProvider {
                 // Upgrade items
                 generatedItemModel(cache, itemModelPath, futures, name,
                         modId + ":item/upgrade/" + name);
-            } else if (name.contains("_dust") || name.contains("_ingot") || name.contains("_nugget")
-                    || name.contains("_plate") || name.contains("_gear") || name.contains("_rod")
-                    || name.contains("_wire")) {
+            } else if (name.contains("_dust") || name.contains("_ingot") || name.contains("_nugget") || name.contains("_plate") || name.contains("_gear") || name.contains("_rod") || name.contains("_wire")) {
                 // Material variant items: determine category
                 String category = null;
                 if (name.contains("_dust")) category = "dust";
@@ -203,8 +196,7 @@ public class TENModelProvider implements DataProvider {
                     generatedItemModel(cache, itemModelPath, futures, name,
                             modId + ":item/" + name);
                 }
-            } else if (name.equals("raw_tin") || name.equals("raw_nickel")
-                    || name.equals("royal_jelly") || name.equals("spicy_jelly")) {
+            } else if (name.equals("raw_tin") || name.equals("raw_nickel") || name.equals("royal_jelly") || name.equals("spicy_jelly")) {
                 // Raw materials and special items
                 generatedItemModel(cache, itemModelPath, futures, name,
                         modId + ":item/" + name);
@@ -214,8 +206,7 @@ public class TENModelProvider implements DataProvider {
                 var craftingComponents = Set.of(
                         "redstone_conductor", "redstone_converter", "redstone_storer",
                         "indigo", "azure_glass", "bizarrerie", "redstone_ai",
-                        "redstone_ai_advanced", "hydraulic_widget", "detector"
-                );
+                        "redstone_ai_advanced", "hydraulic_widget", "detector");
                 if (craftingComponents.contains(name)) {
                     generatedItemModel(cache, itemModelPath, futures, name,
                             modId + ":item/crafting/" + name);
@@ -238,7 +229,7 @@ public class TENModelProvider implements DataProvider {
         // NeoForge 26.1.2 / Minecraft 1.21.5 changed item model lookup:
         // instead of resolving models/item/<id>.json directly, the runtime now
         // requires an item definition at items/<id>.json with the format:
-        //   {"model": {"type": "minecraft:model", "model": "<model_location>"}}
+        // {"model": {"type": "minecraft:model", "model": "<model_location>"}}
         // See: https://minecraft.wiki/w/Model#Item_models
         var itemDefPath = output.getOutputFolder().resolve("assets/" + modId + "/items");
 
@@ -344,7 +335,7 @@ public class TENModelProvider implements DataProvider {
 
     /** Horizontal variant blockstate with active=true/false and custom active suffix. */
     private void horizontalActiveBlockstate(CachedOutput cache, Path dir, List<CompletableFuture<?>> futures,
-                                             String name, String activeSuffix) {
+                                            String name, String activeSuffix) {
         var json = new JsonObject();
         var variants = new JsonObject();
         var facingValues = List.of("north", "east", "south", "west");
@@ -370,12 +361,12 @@ public class TENModelProvider implements DataProvider {
         var json = new JsonObject();
         var variants = new JsonObject();
         var dirMap = new HashMap<String, int[]>();
-        dirMap.put("north", new int[]{0, 0});
-        dirMap.put("east", new int[]{0, 90});
-        dirMap.put("south", new int[]{0, 180});
-        dirMap.put("west", new int[]{0, 270});
-        dirMap.put("up", new int[]{270, 0});
-        dirMap.put("down", new int[]{90, 0});
+        dirMap.put("north", new int[] { 0, 0 });
+        dirMap.put("east", new int[] { 0, 90 });
+        dirMap.put("south", new int[] { 0, 180 });
+        dirMap.put("west", new int[] { 0, 270 });
+        dirMap.put("up", new int[] { 270, 0 });
+        dirMap.put("down", new int[] { 90, 0 });
 
         for (var active : List.of("false", "true")) {
             var modelName = active.equals("true") ? name + "_active" : name;
@@ -419,8 +410,7 @@ public class TENModelProvider implements DataProvider {
                 new Dir("north", 0, 0),
                 new Dir("south", 0, 180),
                 new Dir("west", 0, 270),
-                new Dir("east", 0, 90)
-        );
+                new Dir("east", 0, 90));
 
         for (var d : dirs) {
             // Part connections (value=1)
@@ -453,7 +443,7 @@ public class TENModelProvider implements DataProvider {
     }
 
     private JsonObject multipartEntryRotated(String model, String condKey, String condValue,
-                                              String dirProp, String dirValue, int x, int y) {
+                                             String dirProp, String dirValue, int x, int y) {
         var entry = new JsonObject();
         var apply = new JsonObject();
         apply.addProperty("model", model);
@@ -486,7 +476,7 @@ public class TENModelProvider implements DataProvider {
      * with standard machine face textures.
      */
     private void machineModel(CachedOutput cache, Path dir, List<CompletableFuture<?>> futures,
-                               String name, boolean active) {
+                              String name, boolean active) {
         var activeSuffix = active ? "_active" : "";
         var json = new JsonObject();
         json.addProperty("parent", "minecraft:block/cube");
@@ -514,7 +504,7 @@ public class TENModelProvider implements DataProvider {
 
     /** Simple parent-reference block model. */
     private void parentModel(CachedOutput cache, Path dir, List<CompletableFuture<?>> futures,
-                              String name, String parent) {
+                             String name, String parent) {
         var json = new JsonObject();
         json.addProperty("parent", parent);
         writeJson(cache, dir.resolve(name + ".json"), json, futures);
@@ -533,7 +523,7 @@ public class TENModelProvider implements DataProvider {
 
     /** Item model using {@code item/generated} with a single layer. */
     private void generatedItemModel(CachedOutput cache, Path dir, List<CompletableFuture<?>> futures,
-                                      String name, String texturePath) {
+                                    String name, String texturePath) {
         var json = new JsonObject();
         json.addProperty("parent", "minecraft:item/generated");
         var textures = new JsonObject();
@@ -558,6 +548,7 @@ public class TENModelProvider implements DataProvider {
      * then resolves the model location from it.
      * <p>
      * Format reference:
+     *
      * <pre>{@code
      * {
      *   "model": {
@@ -568,7 +559,7 @@ public class TENModelProvider implements DataProvider {
      * }</pre>
      */
     private void itemDefinition(CachedOutput cache, Path dir, List<CompletableFuture<?>> futures,
-                                 String name, String modelLocation) {
+                                String name, String modelLocation) {
         var outer = new JsonObject();
         var inner = new JsonObject();
         inner.addProperty("type", "minecraft:model");

@@ -212,4 +212,35 @@ public enum Mat {
         String cat = compressTagCategory();
         return cat != null ? tag(cat) : itemId("ingot");
     }
+
+    // ── Raw block pulverizer support ─────────────────────────────
+
+    /**
+     * Whether this material has a raw storage block suitable for pulverizer
+     * processing. Separate from {@link #hasRaw} (which controls item
+     * registration) — vanilla iron/gold/copper have minecraft-namespace
+     * raw blocks even though their raw items are not registered by this mod.
+     */
+    public boolean hasRawBlock() {
+        return this == IRON || this == GOLD || this == COPPER || this == TIN || this == NICKEL;
+    }
+
+    /**
+     * Resource location string for the raw storage block item/block.
+     * Vanilla materials use the minecraft namespace; mod materials use
+     * the mod namespace.
+     */
+    public String rawBlockId() {
+        if (this == IRON) return "minecraft:raw_iron_block";
+        if (this == GOLD) return "minecraft:raw_gold_block";
+        if (this == COPPER) return "minecraft:raw_copper_block";
+        return TEN.MOD_ID + ":raw_" + id + "_block";
+    }
+
+    /**
+     * Common tag path for the raw storage block, e.g. "c:storage_blocks/raw_iron".
+     */
+    public String rawBlockTag() {
+        return "c:storage_blocks/raw_" + id;
+    }
 }

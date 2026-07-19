@@ -1,16 +1,16 @@
 package com.modularmc.ten.data;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-
 import com.modularmc.ten.TEN;
 
 import net.minecraft.data.CachedOutput;
 import net.minecraft.data.DataProvider;
 import net.minecraft.data.PackOutput;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -112,6 +112,7 @@ public class TENLootTableProvider implements DataProvider {
      * Generate a self-drop loot table for a block (single item, survives explosion).
      * <p>
      * Matches the baseline pattern:
+     *
      * <pre>
      * {
      *   "type": "minecraft:block",

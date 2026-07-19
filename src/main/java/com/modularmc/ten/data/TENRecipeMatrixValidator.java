@@ -28,8 +28,7 @@ public class TENRecipeMatrixValidator implements DataProvider {
      */
     public static final Map<String, String> HISTORICAL_RECIPE_ALIASES = Map.ofEntries(
             Map.entry("aerolium_gear", "kenergyengineering:tin_gear"),
-            Map.entry("powered_aerolium_gear", "kenergyengineering:powered_tin_gear")
-    );
+            Map.entry("powered_aerolium_gear", "kenergyengineering:powered_tin_gear"));
 
     /** Items deliberately without recipes, with historical justification (map = item → reason). */
     public static final Map<String, String> NO_RECIPE_ALLOWLIST = Map.ofEntries(
@@ -39,17 +38,15 @@ public class TENRecipeMatrixValidator implements DataProvider {
                     "Historically required by compressor but no acquisition recipe; strict parity preserves this"),
             Map.entry("mould_split",
                     "Historically required by compressor but no acquisition recipe; strict parity preserves this"),
-            Map.entry("mould_coin",             "Coin mould — never had a recipe"),
-            Map.entry("mould_dense_plate",      "Dense plate mould — never had a recipe"),
-            Map.entry("spanner",                "Wrench tool — never had a recipe"),
-            Map.entry("energy_capacity",        "Energy unit item — never had a recipe"),
-            Map.entry("royal_jelly",            "Royal jelly drop — never had a recipe"),
-            Map.entry("spicy_jelly",            "Spicy jelly drop — never had a recipe"),
-            Map.entry("starlight_dust",         "Starlight dust — registered standalone, no recipe")
-    );
+            Map.entry("mould_coin", "Coin mould — never had a recipe"),
+            Map.entry("mould_dense_plate", "Dense plate mould — never had a recipe"),
+            Map.entry("spanner", "Wrench tool — never had a recipe"),
+            Map.entry("energy_capacity", "Energy unit item — never had a recipe"),
+            Map.entry("royal_jelly", "Royal jelly drop — never had a recipe"),
+            Map.entry("spicy_jelly", "Spicy jelly drop — never had a recipe"),
+            Map.entry("starlight_dust", "Starlight dust — registered standalone, no recipe"));
 
-    public TENRecipeMatrixValidator() {
-    }
+    public TENRecipeMatrixValidator() {}
 
     @Override
     public CompletableFuture<?> run(CachedOutput cache) {

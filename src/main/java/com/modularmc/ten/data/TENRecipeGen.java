@@ -63,6 +63,11 @@ public class TENRecipeGen implements DataProvider {
                 futures.add(saveJson(cache, recipeDir.resolve("vanilla/burning/" + mat.id + "_" + r.suffix + "_blast.json"), buildBlasting(inputId, mat.itemId(r.output), r.xp, 100)));
             }
 
+            // Raw block → dust pulverizer (5 materials)
+            if (mat.hasRawBlock()) {
+                futures.add(saveJson(cache, recipeDir.resolve("pulverizer/metal/" + mat.id + "_raw_block.json"), buildRawBlockPulv(mat)));
+            }
+
             for (var r : PACK) if (canPack(mat, r))
                 buildPack(cache, recipeDir, mat, r, futures);
             // Large compress (9→1) and split (1→9) for mod materials
@@ -303,6 +308,19 @@ public class TENRecipeGen implements DataProvider {
         return j;
     }
 
+    /** Raw block → 9 dust with 9×40% bonus dust. */
+    private JsonObject buildRawBlockPulv(Mat mat) {
+        var j = new JsonObject();
+        j.addProperty("type", TEN.MOD_ID + ":pulverizer");
+        j.add("inputs", arr(ingr("item", "tag", mat.rawBlockTag(), null, null)));
+        var outs = new JsonArray();
+        outs.add(ingr("item", "static", mat.itemId("dust"), 9, null));
+        outs.add(ingr("item", "static", mat.itemId("dust"), 1, 0.4, 9));
+        j.add("outputs", outs);
+        j.addProperty("time", 900);
+        return j;
+    }
+
     // ══════════════════════════════════════════════════════════════════
     // JSON helpers
     // ══════════════════════════════════════════════════════════════════
@@ -311,14 +329,20 @@ public class TENRecipeGen implements DataProvider {
         return obj(id.startsWith("c:") ? "tag" : "item", id);
     }
 
-    /** Machine recipe ingredient. */
+    /** Machine recipe ingredient. 5-param: form, type, key, count, chance. */
     private static JsonObject ingr(String form, String type, String key, Integer count, Double chance) {
+        return ingr(form, type, key, count, chance, null);
+    }
+
+    /** Machine recipe ingredient. 6-param: form, type, key, count, chance, rolls. */
+    private static JsonObject ingr(String form, String type, String key, Integer count, Double chance, Integer rolls) {
         var o = new JsonObject();
         o.addProperty("form", form);
         o.addProperty("type", type);
         o.addProperty("key", key);
         if (count != null) o.addProperty("count", count);
         if (chance != null) o.addProperty("chance", chance);
+        if (rolls != null) o.addProperty("rolls", rolls);
         return o;
     }
 
