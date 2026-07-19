@@ -10,15 +10,18 @@ import net.neoforged.neoforge.transfer.transaction.TransactionContext;
 /**
  * A reverse adapter that wraps a legacy {@link IItemHandler} as a {@link ResourceHandler<ItemResource>}.
  *
- * <p>This allows NeoForge 26.1.2 capability consumers (pipes, channels, etc.) to interact with
+ * <p>
+ * This allows NeoForge 26.1.2 capability consumers (pipes, channels, etc.) to interact with
  * machines that still use the old {@code IItemHandler} interface internally.
  *
- * <p><b>Transaction semantics:</b> The legacy {@code IItemHandler} API does not support rollback.
+ * <p>
+ * <b>Transaction semantics:</b> The legacy {@code IItemHandler} API does not support rollback.
  * Operations are executed immediately on the underlying handler, consistent with the existing
  * {@link CapabilityAdapters#asEnergyHandler} pattern. Callers requiring proper transaction
  * rollback should use a native {@code ResourceHandler} implementation on the BE.
  *
- * <p><b>Guards:</b> Empty resources and negative amounts are rejected via
+ * <p>
+ * <b>Guards:</b> Empty resources and negative amounts are rejected via
  * {@link TransferPreconditions}. Null handlers throw at construction.
  */
 public class ItemHandlerResourceAdapter implements ResourceHandler<ItemResource> {

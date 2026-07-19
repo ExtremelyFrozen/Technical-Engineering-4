@@ -13,5 +13,4 @@ public class TENBucketItem extends BucketItem {
     public TENBucketItem(Fluid fluid, Properties properties) {
         super(fluid, properties);
     }
-
 }

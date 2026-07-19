@@ -106,8 +106,7 @@ public class BaseMachineBlock extends Block implements EntityBlock, BlockUIMenuT
         BlockEntity be = level.getBlockEntity(pos);
 
         // ── Quick-install: shift-right-click with an UpgradeItem on an upgradable machine ──
-        if (player.isShiftKeyDown() && be instanceof CmMachineBlockEntity machine
-                && stack.getItem() instanceof UpgradeItem) {
+        if (player.isShiftKeyDown() && be instanceof CmMachineBlockEntity machine && stack.getItem() instanceof UpgradeItem) {
             // Machine must have upgrade UI slots; Cell/CreativeCell/Channel return false
             if (!machine.supportsUpgradeSlots()) {
                 return InteractionResult.FAIL;

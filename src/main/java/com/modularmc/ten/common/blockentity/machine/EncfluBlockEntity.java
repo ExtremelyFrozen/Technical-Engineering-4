@@ -111,8 +111,13 @@ public class EncfluBlockEntity extends ProcessingMachineBlockEntity {
 
     @Override
     public void onCookFinish() {
-        ItemStack tool = itemHandler.getStackInSlot(0);
-        ItemStack target = itemHandler.getStackInSlot(1);
+        // ════════════════════════════════════════════════════════════
+        // Phase 1: Read current state from handlers (copies)
+        // ════════════════════════════════════════════════════════════
+        ItemStack tool = itemHandler.getStackInSlot(0).copy();
+        ItemStack target = itemHandler.getStackInSlot(1).copy();
+        ItemStack currentOutput = itemHandler.getStackInSlot(2).copy();
+
         if (tool.isEmpty() || target.isEmpty()) {
             return;
         }
@@ -122,6 +127,17 @@ public class EncfluBlockEntity extends ProcessingMachineBlockEntity {
             return;
         }
 
+        // ════════════════════════════════════════════════════════════
+        // Phase 2: Re-validate output slot is empty
+        // ════════════════════════════════════════════════════════════
+        if (!currentOutput.isEmpty()) {
+            // Output slot occupied — nothing to do
+            return;
+        }
+
+        // ════════════════════════════════════════════════════════════
+        // Phase 3: Build outputs (side-effect-free planning)
+        // ════════════════════════════════════════════════════════════
         ItemStack output;
         if (target.is(Items.BOOK)) {
             output = Items.ENCHANTED_BOOK.getDefaultInstance();
@@ -129,17 +145,72 @@ public class EncfluBlockEntity extends ProcessingMachineBlockEntity {
             output = target.copyWithCount(1);
         }
         EnchantmentHelper.setEnchantments(output, enchantments);
-        itemHandler.setStackInSlot(2, output);
 
-        target.shrink(1);
-        tool.remove(DataComponents.ENCHANTMENTS);
-        tool.remove(DataComponents.STORED_ENCHANTMENTS);
+        int xpAmount = Math.max(1, enchantments.size() * 25);
+        FluidStack xpFluid = new FluidStack(TENFluids.LIQUID_XP_SOURCE.get(), xpAmount);
 
+        // Build stripped tool (enchantments removed, item stays)
+        ItemStack strippedTool = tool.copy();
+        strippedTool.remove(DataComponents.ENCHANTMENTS);
+        strippedTool.remove(DataComponents.STORED_ENCHANTMENTS);
+
+        // Build reduced target (shrunk by 1)
+        ItemStack targetAfter = target.copy();
+        targetAfter.shrink(1);
+
+        // ════════════════════════════════════════════════════════════
+        // Phase 4: Re-validate fluid tank has space (SIMULATE)
+        // ════════════════════════════════════════════════════════════
         if (!tanks.isEmpty()) {
-            int amount = Math.max(1, enchantments.size() * 25);
-            tanks.get(0).fill(
-                    new FluidStack(TENFluids.LIQUID_XP_SOURCE.get(), amount),
-                    IFluidHandler.FluidAction.EXECUTE);
+            int filled = tanks.get(0).fill(xpFluid, IFluidHandler.FluidAction.SIMULATE);
+            if (filled < xpAmount) {
+                // Tank cannot accept full XP amount — abort
+                return;
+            }
+        }
+
+        // ════════════════════════════════════════════════════════════
+        // Phase 5: Save snapshots for rollback
+        // ════════════════════════════════════════════════════════════
+        ItemStack slot0Snapshot = itemHandler.getStackInSlot(0).copy();
+        ItemStack slot1Snapshot = itemHandler.getStackInSlot(1).copy();
+        ItemStack slot2Snapshot = itemHandler.getStackInSlot(2).copy();
+        // Fluid tank snapshot: save current fluid stack
+        FluidStack tankSnapshot = tanks.isEmpty() ? FluidStack.EMPTY : tanks.get(0).getFluid().copy();
+
+        try {
+            // ════════════════════════════════════════════════════════
+            // Phase 6: Execute consumption FIRST (consume before output)
+            // ════════════════════════════════════════════════════════
+            // Submit stripped tool back to slot 0 (consumption: enchantments removed)
+            itemHandler.setStackInSlot(0, strippedTool);
+            // Submit reduced target back to slot 1 (consumption: shrink by 1)
+            itemHandler.setStackInSlot(1, targetAfter);
+
+            // ════════════════════════════════════════════════════════
+            // Phase 7: Execute output AFTER consumption
+            // ════════════════════════════════════════════════════════
+            // Place enchanted output in slot 2
+            itemHandler.setStackInSlot(2, output);
+
+            // Fill XP fluid tank
+            if (!tanks.isEmpty()) {
+                tanks.get(0).fill(xpFluid, IFluidHandler.FluidAction.EXECUTE);
+            }
+        } catch (Exception e) {
+            // ── Rollback on any unexpected failure ──
+            itemHandler.setStackInSlot(0, slot0Snapshot);
+            itemHandler.setStackInSlot(1, slot1Snapshot);
+            itemHandler.setStackInSlot(2, slot2Snapshot);
+            if (!tanks.isEmpty()) {
+                // Restore tank to snapshot: drain all, then fill back
+                tanks.get(0).drain(Integer.MAX_VALUE, IFluidHandler.FluidAction.EXECUTE);
+                if (!tankSnapshot.isEmpty()) {
+                    tanks.get(0).fill(tankSnapshot, IFluidHandler.FluidAction.EXECUTE);
+                }
+            }
+            // Fail-fast: log and rethrow
+            throw new RuntimeException("Encflu onCookFinish failed and rolled back", e);
         }
     }
 }

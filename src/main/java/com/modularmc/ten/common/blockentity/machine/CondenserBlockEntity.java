@@ -63,7 +63,7 @@ public class CondenserBlockEntity extends ProcessingMachineBlockEntity {
         }, root -> {
             root.addChild(TENMachineBlockUIFactory.energyGauge(this, 9, 18, 14, 46, 0, 0, true));
             root.addChild(TENMachineBlockUIFactory.progressGauge(this, 48, 57, 80, 5, 97, 0, true));
-            root.addChild(TENMachineBlockUIFactory.fluidGauge(this, 143, 17, 18, 50, 0, true));
+            root.addChild(TENMachineBlockUIFactory.fluidGauge(this, 143, 17, 18, 50, 0));
         });
     }
 

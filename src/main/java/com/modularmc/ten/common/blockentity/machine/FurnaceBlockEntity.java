@@ -86,7 +86,7 @@ public class FurnaceBlockEntity extends ProcessingMachineBlockEntity {
         ItemStack output = itemHandler.getStackInSlot(1);
 
         if (output.isEmpty()) return false;
-        if (!ItemStack.isSameItem(output, result)) return false;
+        if (!ItemStack.isSameItem(output, result)) return true;
         return output.getCount() + result.getCount() > output.getMaxStackSize();
     }
 
@@ -95,15 +95,32 @@ public class FurnaceBlockEntity extends ProcessingMachineBlockEntity {
         var recipeOpt = getCurrentRecipe();
         if (recipeOpt.isEmpty() || level == null) return;
 
-        ItemStack result = recipeOpt.get().value().assemble(new SingleRecipeInput(itemHandler.getStackInSlot(0)));
-        ItemStack output = itemHandler.getStackInSlot(1);
+        // 1. Capture and verify input is still available
+        ItemStack input = itemHandler.getStackInSlot(0);
+        if (input.isEmpty()) return;
 
-        if (output.isEmpty()) {
-            itemHandler.setStackInSlot(1, result.copy());
-        } else if (ItemStack.isSameItem(output, result)) {
-            output.grow(result.getCount());
+        // 2. Assemble result (needs input stack before consumption)
+        ItemStack result = recipeOpt.get().value().assemble(new SingleRecipeInput(input));
+
+        // 3. Check output space before consuming
+        ItemStack existingOutput = itemHandler.getStackInSlot(1);
+        if (!existingOutput.isEmpty()) {
+            if (!ItemStack.isSameItem(existingOutput, result)) return;
+            if (existingOutput.getCount() + result.getCount() > existingOutput.getMaxStackSize()) return;
         }
 
-        itemHandler.getStackInSlot(0).shrink(1);
+        // 4. Consume input first via handler API (triggers onContentsChanged → markDirty)
+        ItemStack consumed = itemHandler.extractItem(0, 1, false);
+        if (consumed.isEmpty() || consumed.getCount() < 1) {
+            // Should not happen since we checked above, but guard just in case
+            return;
+        }
+
+        // 5. Then place output
+        if (existingOutput.isEmpty()) {
+            itemHandler.setStackInSlot(1, result.copy());
+        } else {
+            existingOutput.grow(result.getCount());
+        }
     }
 }

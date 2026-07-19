@@ -8,20 +8,20 @@ import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.energy.IEnergyStorage;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import net.neoforged.neoforge.items.IItemHandler;
-import net.neoforged.neoforge.transfer.ItemAccessResourceHandler;
 import net.neoforged.neoforge.transfer.ResourceHandler;
-import net.neoforged.neoforge.transfer.access.ItemAccess;
 import net.neoforged.neoforge.transfer.energy.EnergyHandler;
 import net.neoforged.neoforge.transfer.fluid.FluidResource;
 import net.neoforged.neoforge.transfer.item.ItemResource;
 import net.neoforged.neoforge.transfer.transaction.TransactionContext;
+
 import org.jetbrains.annotations.Nullable;
 
 /**
  * Adapters bridging NeoForge 26.1.2 Resource/Transaction capability API
  * to the legacy IEnergyStorage/IItemHandler/IFluidHandler interfaces.
  *
- * <p>These adapters let BE code keep using the old interfaces internally
+ * <p>
+ * These adapters let BE code keep using the old interfaces internally
  * while the capability boundary speaks the new API.
  */
 public final class CapabilityAdapters {
@@ -36,6 +36,7 @@ public final class CapabilityAdapters {
     public static EnergyHandler asEnergyHandler(IEnergyStorage storage) {
         if (storage == null) return null;
         return new EnergyHandler() {
+
             @Override
             public long getAmountAsLong() {
                 return storage.getEnergyStored();

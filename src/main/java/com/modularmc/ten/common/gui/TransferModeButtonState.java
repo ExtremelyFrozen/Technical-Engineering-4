@@ -5,12 +5,14 @@ package com.modularmc.ten.common.gui;
  * Pure state computation for transfer mode buttons (energy/item/fluid).
  * <p>
  * Each button has 4 visual states in handler.png, arranged at v offsets:
+ *
  * <pre>
  *   state 0: v = 126  — unselected, not hovered
  *   state 1: v = 140  — unselected, hovered
  *   state 2: v = 154  — selected, not hovered
  *   state 3: v = 168  — selected, hovered
  * </pre>
+ *
  * Formula: {@code stateIndex = (selected ? 2 : 0) + (hovered ? 1 : 0)}.
  * <p>
  * Thread-safe and stateless. No dependencies on Minecraft / LDLib / client code.
@@ -54,7 +56,7 @@ public final class TransferModeButtonState {
     public static int textureV(int stateIndex) {
         if (stateIndex < 0 || stateIndex > 3) {
             throw new IllegalArgumentException(
-                "stateIndex must be 0..3, got " + stateIndex);
+                    "stateIndex must be 0..3, got " + stateIndex);
         }
         return BASE_V + stateIndex * STATE_SIZE;
     }
@@ -71,11 +73,11 @@ public final class TransferModeButtonState {
     public static int click(int currentMode, int clickedMode) {
         if (currentMode < 0 || currentMode > 2) {
             throw new IllegalArgumentException(
-                "currentMode must be 0..2, got " + currentMode);
+                    "currentMode must be 0..2, got " + currentMode);
         }
         if (clickedMode < 0 || clickedMode > 2) {
             throw new IllegalArgumentException(
-                "clickedMode must be 0..2, got " + clickedMode);
+                    "clickedMode must be 0..2, got " + clickedMode);
         }
         return clickedMode;
     }

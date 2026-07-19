@@ -1,6 +1,7 @@
 package com.modularmc.ten.common.block.machine;
 
 import com.modularmc.ten.api.blockentity.CmMachineBlockEntity;
+import com.modularmc.ten.api.capability.CapabilityAdapters;
 import com.modularmc.ten.common.blockentity.CableBlockEntity;
 import com.modularmc.ten.common.blockentity.PipeBlockEntity;
 
@@ -24,7 +25,6 @@ import net.minecraft.world.level.material.MapColor;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import com.modularmc.ten.api.capability.CapabilityAdapters;
 
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReferenceArray;
@@ -95,7 +95,7 @@ public class CableBased extends HorizontalMachineBlock implements SimpleWaterlog
      * <p>
      * {@code ACTIVE}, {@code FACING}, and {@code WATERLOGGED} are deliberately
      * excluded from the key because {@link #buildShape(BlockState)} only reads
-     * the six connection properties.  Including them would inflate the cache to
+     * the six connection properties. Including them would inflate the cache to
      * 11,664 entries per block variant without any benefit.
      */
     private static final AtomicReferenceArray<VoxelShape> SHAPE_CACHE = new AtomicReferenceArray<>(729);

@@ -4,7 +4,6 @@ import com.modularmc.ten.TEN;
 import com.modularmc.ten.common.block.machine.BaseMachineBlock;
 import com.modularmc.ten.common.block.machine.CableBased;
 import com.modularmc.ten.common.block.machine.ChannelBlock;
-import com.modularmc.ten.common.block.machine.DirectionalMachineBlock;
 import com.modularmc.ten.common.block.machine.EngineBlock;
 import com.modularmc.ten.common.block.machine.HorizontalMachineBlock;
 import com.modularmc.ten.common.item.TENBaseBlockItem;
@@ -12,14 +11,11 @@ import com.modularmc.ten.common.item.TENBaseBlockItem;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.tags.BlockTags;
-import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SoundType;
-import net.minecraft.world.level.block.state.BlockBehaviour;
-import net.neoforged.neoforge.registries.DeferredBlock;
 import net.minecraft.world.level.material.MapColor;
+import net.neoforged.neoforge.registries.DeferredBlock;
 import net.neoforged.neoforge.registries.DeferredHolder;
 
 import java.util.ArrayList;
@@ -66,20 +62,49 @@ public class TENBlocks {
 
     // ── Read-only accessors ─────────────────────────────────────────────
 
-    public static List<DeferredHolder<Block, Block>> getOres() { return Collections.unmodifiableList(ORES); }
-    public static List<DeferredHolder<Block, Block>> getStorageBlocks() { return Collections.unmodifiableList(STORAGE_BLOCKS); }
-    public static List<DeferredHolder<Block, Block>> getRawStorageBlocks() { return Collections.unmodifiableList(RAW_STORAGE_BLOCKS); }
-    public static List<DeferredHolder<Block, ?>> getMachines() { return Collections.unmodifiableList(MACHINES); }
-    public static List<DeferredHolder<Block, ?>> getEngines() { return Collections.unmodifiableList(ENGINES); }
-    public static List<DeferredHolder<Block, ?>> getCables() { return Collections.unmodifiableList(CABLES); }
-    public static List<DeferredHolder<Block, ?>> getPipes() { return Collections.unmodifiableList(PIPES); }
-    public static List<DeferredHolder<Block, ?>> getCells() { return Collections.unmodifiableList(CELLS); }
-    public static List<DeferredHolder<Block, ?>> getChannels() { return Collections.unmodifiableList(CHANNELS); }
+    public static List<DeferredHolder<Block, Block>> getOres() {
+        return Collections.unmodifiableList(ORES);
+    }
+
+    public static List<DeferredHolder<Block, Block>> getStorageBlocks() {
+        return Collections.unmodifiableList(STORAGE_BLOCKS);
+    }
+
+    public static List<DeferredHolder<Block, Block>> getRawStorageBlocks() {
+        return Collections.unmodifiableList(RAW_STORAGE_BLOCKS);
+    }
+
+    public static List<DeferredHolder<Block, ?>> getMachines() {
+        return Collections.unmodifiableList(MACHINES);
+    }
+
+    public static List<DeferredHolder<Block, ?>> getEngines() {
+        return Collections.unmodifiableList(ENGINES);
+    }
+
+    public static List<DeferredHolder<Block, ?>> getCables() {
+        return Collections.unmodifiableList(CABLES);
+    }
+
+    public static List<DeferredHolder<Block, ?>> getPipes() {
+        return Collections.unmodifiableList(PIPES);
+    }
+
+    public static List<DeferredHolder<Block, ?>> getCells() {
+        return Collections.unmodifiableList(CELLS);
+    }
+
+    public static List<DeferredHolder<Block, ?>> getChannels() {
+        return Collections.unmodifiableList(CHANNELS);
+    }
+
     /**
      * All blocks that should appear in the {@code kenergyengineering:machines} and
      * {@code kenergyengineering:wrench_dismantleable} tags.
      */
-    public static List<DeferredHolder<Block, ?>> getAllFunctional() { return Collections.unmodifiableList(ALL_FUNCTIONAL); }
+    public static List<DeferredHolder<Block, ?>> getAllFunctional() {
+        return Collections.unmodifiableList(ALL_FUNCTIONAL);
+    }
 
     /**
      * All blocks that require correct tool for drops and need mineable/pickaxe tag:
@@ -128,87 +153,59 @@ public class TENBlocks {
     // Machines
     // ═══════════════════════════════════════════════════
 
-    public static final DeferredHolder<Block, HorizontalMachineBlock> MACHINE_SMELTER
-            = machine("machine_smelter", "熔炼机");
-    public static final DeferredHolder<Block, HorizontalMachineBlock> MACHINE_PULVERIZER
-            = machine("machine_pulverizer", "粉碎机");
-    public static final DeferredHolder<Block, HorizontalMachineBlock> MACHINE_COMPRESSOR
-            = machine("machine_compressor", "压缩机");
-    public static final DeferredHolder<Block, HorizontalMachineBlock> MACHINE_REFINER
-            = machine("machine_refiner", "精炼机");
-    public static final DeferredHolder<Block, HorizontalMachineBlock> MACHINE_INDUCTION_FURNACE
-            = machine("machine_induction_furnace", "感应炉");
-    public static final DeferredHolder<Block, HorizontalMachineBlock> MACHINE_PSIONICANT
-            = machine("machine_psionicant", "灵能处理器");
-    public static final DeferredHolder<Block, HorizontalMachineBlock> MACHINE_BEACON
-            = machine("machine_beacon_simulator", "信标模拟机");
-    public static final DeferredHolder<Block, HorizontalMachineBlock> MACHINE_MOB_RIPPER
-            = machine("machine_mob_ripper", "生物啃噬者");
-    public static final DeferredHolder<Block, HorizontalMachineBlock> MACHINE_QUARRY
-            = machine("machine_quarry", "采矿场");
-    public static final DeferredHolder<Block, HorizontalMachineBlock> MACHINE_ENCHFLU
-            = machine("machine_enchantment_flusher", "祛魔机");
-    public static final DeferredHolder<Block, HorizontalMachineBlock> MACHINE_CONDENSER
-            = machine("machine_matter_condenser", "物质结晶器");
-    public static final DeferredHolder<Block, HorizontalMachineBlock> MACHINE_FARM
-            = machine("machine_farm_manager", "农场管理机");
+    public static final DeferredHolder<Block, HorizontalMachineBlock> MACHINE_SMELTER = machine("machine_smelter", "熔炼机");
+    public static final DeferredHolder<Block, HorizontalMachineBlock> MACHINE_PULVERIZER = machine("machine_pulverizer", "粉碎机");
+    public static final DeferredHolder<Block, HorizontalMachineBlock> MACHINE_COMPRESSOR = machine("machine_compressor", "压缩机");
+    public static final DeferredHolder<Block, HorizontalMachineBlock> MACHINE_REFINER = machine("machine_refiner", "精炼机");
+    public static final DeferredHolder<Block, HorizontalMachineBlock> MACHINE_INDUCTION_FURNACE = machine("machine_induction_furnace", "感应炉");
+    public static final DeferredHolder<Block, HorizontalMachineBlock> MACHINE_PSIONICANT = machine("machine_psionicant", "灵能处理器");
+    public static final DeferredHolder<Block, HorizontalMachineBlock> MACHINE_BEACON = machine("machine_beacon_simulator", "信标模拟机");
+    public static final DeferredHolder<Block, HorizontalMachineBlock> MACHINE_MOB_RIPPER = machine("machine_mob_ripper", "生物啃噬者");
+    public static final DeferredHolder<Block, HorizontalMachineBlock> MACHINE_QUARRY = machine("machine_quarry", "采矿场");
+    public static final DeferredHolder<Block, HorizontalMachineBlock> MACHINE_ENCHFLU = machine("machine_enchantment_flusher", "祛魔机");
+    public static final DeferredHolder<Block, HorizontalMachineBlock> MACHINE_CONDENSER = machine("machine_matter_condenser", "物质结晶器");
+    public static final DeferredHolder<Block, HorizontalMachineBlock> MACHINE_FARM = machine("machine_farm_manager", "农场管理机");
 
     // ═══════════════════════════════════════════════════
     // Engines
     // ═══════════════════════════════════════════════════
 
-    public static final DeferredHolder<Block, EngineBlock> ENGINE_EXTRACTION
-            = engine("engine_extraction", "萃取引擎");
-    public static final DeferredHolder<Block, EngineBlock> ENGINE_METAL
-            = engine("engine_metal", "金属引擎");
-    public static final DeferredHolder<Block, EngineBlock> ENGINE_BIOMASS
-            = engine("engine_biomass", "生物质引擎");
-    public static final DeferredHolder<Block, EngineBlock> ENGINE_SOLAR
-            = engine("engine_solar", "光合引擎");
+    public static final DeferredHolder<Block, EngineBlock> ENGINE_EXTRACTION = engine("engine_extraction", "萃取引擎");
+    public static final DeferredHolder<Block, EngineBlock> ENGINE_METAL = engine("engine_metal", "金属引擎");
+    public static final DeferredHolder<Block, EngineBlock> ENGINE_BIOMASS = engine("engine_biomass", "生物质引擎");
+    public static final DeferredHolder<Block, EngineBlock> ENGINE_SOLAR = engine("engine_solar", "光合引擎");
 
     // ═══════════════════════════════════════════════════
     // Cables
     // ═══════════════════════════════════════════════════
 
-    public static final DeferredHolder<Block, CableBased> CABLE
-            = cable("cable", "玻璃能量线缆");
-    public static final DeferredHolder<Block, CableBased> CABLE_QUARTZ
-            = cable("cable_quartz", "石英能量线缆");
-    public static final DeferredHolder<Block, CableBased> CABLE_AZURE
-            = cable("cable_azure", "蔚蓝能量线缆");
-    public static final DeferredHolder<Block, CableBased> CABLE_STAR
-            = cable("cable_star", "星辉能量线缆");
+    public static final DeferredHolder<Block, CableBased> CABLE = cable("cable", "玻璃能量线缆");
+    public static final DeferredHolder<Block, CableBased> CABLE_QUARTZ = cable("cable_quartz", "石英能量线缆");
+    public static final DeferredHolder<Block, CableBased> CABLE_AZURE = cable("cable_azure", "蔚蓝能量线缆");
+    public static final DeferredHolder<Block, CableBased> CABLE_STAR = cable("cable_star", "星辉能量线缆");
 
     // ═══════════════════════════════════════════════════
     // Pipes
     // ═══════════════════════════════════════════════════
 
-    public static final DeferredHolder<Block, CableBased> PIPE
-            = pipe("pipe", "物品管道");
-    public static final DeferredHolder<Block, CableBased> PIPE_WHITE
-            = pipe("pipe_white", "限定物品管道");
-    public static final DeferredHolder<Block, CableBased> PIPE_BLACK
-            = pipe("pipe_black", "排除物品管道");
+    public static final DeferredHolder<Block, CableBased> PIPE = pipe("pipe", "物品管道");
+    public static final DeferredHolder<Block, CableBased> PIPE_WHITE = pipe("pipe_white", "限定物品管道");
+    public static final DeferredHolder<Block, CableBased> PIPE_BLACK = pipe("pipe_black", "排除物品管道");
 
     // ═══════════════════════════════════════════════════
     // Cells
     // ═══════════════════════════════════════════════════
 
-    public static final DeferredHolder<Block, HorizontalMachineBlock> CELL
-            = tooltipCell("energy_cell", "能量单元");
-    public static final DeferredHolder<Block, HorizontalMachineBlock> CREATIVE_CELL
-            = cell("creative_energy_cell", "创造能量单元");
+    public static final DeferredHolder<Block, HorizontalMachineBlock> CELL = tooltipCell("energy_cell", "能量单元");
+    public static final DeferredHolder<Block, HorizontalMachineBlock> CREATIVE_CELL = cell("creative_energy_cell", "创造能量单元");
 
     // ═══════════════════════════════════════════════════
     // Channels
     // ═══════════════════════════════════════════════════
 
-    public static final DeferredHolder<Block, ChannelBlock> CHANNEL_ENERGY
-            = channel("channel_energy", "能量频道");
-    public static final DeferredHolder<Block, ChannelBlock> CHANNEL_ITEM
-            = channel("channel_item", "物品频道");
-    public static final DeferredHolder<Block, ChannelBlock> CHANNEL_FLUID
-            = channel("channel_fluid", "流体频道");
+    public static final DeferredHolder<Block, ChannelBlock> CHANNEL_ENERGY = channel("channel_energy", "能量频道");
+    public static final DeferredHolder<Block, ChannelBlock> CHANNEL_ITEM = channel("channel_item", "物品频道");
+    public static final DeferredHolder<Block, ChannelBlock> CHANNEL_FLUID = channel("channel_fluid", "流体频道");
 
     // ═══════════════════════════════════════════════════
     // Helpers — block registration & BlockItem

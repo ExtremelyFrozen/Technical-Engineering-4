@@ -5,7 +5,6 @@ import net.minecraft.core.Direction;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
@@ -25,38 +24,32 @@ public class ChannelBlock extends DirectionalMachineBlock {
         // NORTH: no rotation — elements as-is from model
         SHAPES.put(Direction.NORTH, Shapes.or(
                 Block.box(1, 1, 2, 15, 15, 3),
-                Block.box(2, 2, -1, 14, 14, 2)
-        ));
+                Block.box(2, 2, -1, 14, 14, 2)));
 
         // SOUTH: y=180 — x' = 16-x, z' = 16-z
         SHAPES.put(Direction.SOUTH, Shapes.or(
                 Block.box(1, 1, 13, 15, 15, 14),
-                Block.box(2, 2, 14, 14, 14, 17)
-        ));
+                Block.box(2, 2, 14, 14, 14, 17)));
 
         // EAST: y=90 — x' = 16-z, z' = x
         SHAPES.put(Direction.EAST, Shapes.or(
                 Block.box(13, 1, 1, 14, 15, 15),
-                Block.box(14, 2, 2, 17, 14, 14)
-        ));
+                Block.box(14, 2, 2, 17, 14, 14)));
 
         // WEST: y=270 — x' = z, z' = 16-x
         SHAPES.put(Direction.WEST, Shapes.or(
                 Block.box(2, 1, 1, 3, 15, 15),
-                Block.box(-1, 2, 2, 2, 14, 14)
-        ));
+                Block.box(-1, 2, 2, 2, 14, 14)));
 
         // UP: x=270 — y' = 16-z, z' = y (applied after Y=0)
         SHAPES.put(Direction.UP, Shapes.or(
                 Block.box(1, 13, 1, 15, 14, 15),
-                Block.box(2, 14, 2, 14, 17, 14)
-        ));
+                Block.box(2, 14, 2, 14, 17, 14)));
 
         // DOWN: x=90 — y' = z, z' = 16-y (applied after Y=0)
         SHAPES.put(Direction.DOWN, Shapes.or(
                 Block.box(1, 2, 1, 15, 3, 15),
-                Block.box(2, -1, 2, 14, 2, 14)
-        ));
+                Block.box(2, -1, 2, 14, 2, 14)));
     }
 
     public ChannelBlock(Properties properties) {

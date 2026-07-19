@@ -1,14 +1,13 @@
 package com.modularmc.ten.common.gui;
 
+import net.minecraft.util.Mth;
+
 import com.lowdragmc.lowdraglib2.gui.texture.SpriteTexture;
 import com.lowdragmc.lowdraglib2.gui.ui.data.FillDirection;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.ProgressBar;
-import com.lowdragmc.lowdraglib2.math.Position;
-import com.lowdragmc.lowdraglib2.math.Size;
-import dev.vfyjxf.taffy.style.FlexDirection;
-import dev.vfyjxf.taffy.style.AlignItems;
 import dev.vfyjxf.taffy.style.AlignContent;
-import net.minecraft.util.Mth;
+import dev.vfyjxf.taffy.style.AlignItems;
+import dev.vfyjxf.taffy.style.FlexDirection;
 
 /**
  * A ProgressBar variant that uses UV clipping (reveal) instead of flex-only
@@ -22,28 +21,30 @@ import net.minecraft.util.Mth;
  * Fix: instead of relying on flex-only shrinkage (which compresses a full-UV sprite
  * into a smaller area), this override:
  * <ol>
- *   <li>Sets the bar layout proportionally to progress (same bounds as super would)</li>
- *   <li>Modifies the source rectangle ({@link SpriteTexture#spritePosition} /
- *       {@link SpriteTexture#spriteSize}) to sample only the corresponding fraction
- *       of the source image</li>
+ * <li>Sets the bar layout proportionally to progress (same bounds as super would)</li>
+ * <li>Modifies the source rectangle ({@link SpriteTexture#spritePosition} /
+ * {@link SpriteTexture#spriteSize}) to sample only the corresponding fraction
+ * of the source image</li>
  * </ol>
  * Because both the element bounds and source UV shrink by the same factor, the drawn
  * texture maintains correct pixel density at every fill level — no distortion.
  * <p>
  * Supported directions:
  * <ul>
- *   <li>{@link FillDirection#LEFT_TO_RIGHT} — bar widthPercent = progress × 100;
- *       sample left progress fraction of source width</li>
- *   <li>{@link FillDirection#RIGHT_TO_LEFT} — bar widthPercent = progress × 100;
- *       sample right progress fraction</li>
- *   <li>{@link FillDirection#UP_TO_DOWN} — bar heightPercent = progress × 100;
- *       sample top progress fraction of source height</li>
- *   <li>{@link FillDirection#DOWN_TO_UP} — bar heightPercent = progress × 100;
- *       sample bottom progress fraction</li>
+ * <li>{@link FillDirection#LEFT_TO_RIGHT} — bar widthPercent = progress × 100;
+ * sample left progress fraction of source width</li>
+ * <li>{@link FillDirection#RIGHT_TO_LEFT} — bar widthPercent = progress × 100;
+ * sample right progress fraction</li>
+ * <li>{@link FillDirection#UP_TO_DOWN} — bar heightPercent = progress × 100;
+ * sample top progress fraction of source height</li>
+ * <li>{@link FillDirection#DOWN_TO_UP} — bar heightPercent = progress × 100;
+ * sample bottom progress fraction</li>
  * </ol>
  * <p>
  * Usage in {@code TENMachineBlockUIFactory}:
+ *
  * <pre>{@code
+ *
  * var filled = SpriteTexture.of(HANDLER).setSprite(xOff, yOff + height, width, height);
  * var progress = absolute(new RevealProgressBar(filled), x, y, width, height);
  * }</pre>
@@ -84,8 +85,8 @@ public class RevealProgressBar extends ProgressBar {
      * Unlike super (which only changes {@code widthPercent / heightPercent} and lets the
      * full-UV sprite stretch into the smaller area), this method does <b>both</b>:
      * <ol>
-     *   <li>Sets bar flex layout to the correct proportion (same as super)</li>
-     *   <li>Clips the {@link SpriteTexture} source UV to match the same proportion</li>
+     * <li>Sets bar flex layout to the correct proportion (same as super)</li>
+     * <li>Clips the {@link SpriteTexture} source UV to match the same proportion</li>
      * </ol>
      * Because element bounds and source UV shrink by the same factor, texture pixel
      * density is preserved at every fill level.
@@ -109,8 +110,8 @@ public class RevealProgressBar extends ProgressBar {
 
         // ---- Step 1a: Mirror parent ProgressBar barBackground direction/alignment ----
         // Parent bytecode sets flexDirection + alignItems on barBackground per FillDirection:
-        //   L2R → COLUMN + FLEX_START,  R2L → COLUMN + FLEX_END
-        //   U2D → ROW   + FLEX_START,   D2U → ROW   + FLEX_END
+        // L2R → COLUMN + FLEX_START, R2L → COLUMN + FLEX_END
+        // U2D → ROW + FLEX_START, D2U → ROW + FLEX_END
         barBackground.layout(bbLayout -> {
             switch (dir) {
                 case LEFT_TO_RIGHT -> {

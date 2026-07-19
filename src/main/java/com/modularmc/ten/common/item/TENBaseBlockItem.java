@@ -5,8 +5,8 @@ import com.modularmc.ten.utils.SafeOperationHelper;
 
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.BlockItem;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Item.TooltipContext;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.component.TooltipDisplay;
 import net.minecraft.world.level.block.Block;
@@ -50,11 +50,11 @@ public class TENBaseBlockItem extends BlockItem {
      * Resolve the lang key prefix for tooltip lookup based on block registry name.
      *
      * <ul>
-     *   <li>machine_x → kenergyengineering.info.x.&lt;n&gt;</li>
-     *   <li>engine_x → kenergyengineering.info.engine_x.&lt;n&gt;</li>
-     *   <li>energy_cell → kenergyengineering.info.energy_cell.&lt;n&gt;</li>
-     *   <li>cable / cable_* → kenergyengineering.&lt;id&gt;.&lt;n&gt; (direct, no info.)</li>
-     *   <li>Anything else → null (no tooltip)</li>
+     * <li>machine_x → kenergyengineering.info.x.&lt;n&gt;</li>
+     * <li>engine_x → kenergyengineering.info.engine_x.&lt;n&gt;</li>
+     * <li>energy_cell → kenergyengineering.info.energy_cell.&lt;n&gt;</li>
+     * <li>cable / cable_* → kenergyengineering.&lt;id&gt;.&lt;n&gt; (direct, no info.)</li>
+     * <li>Anything else → null (no tooltip)</li>
      * </ul>
      */
     private static String resolveKeyPrefix(String regPath) {

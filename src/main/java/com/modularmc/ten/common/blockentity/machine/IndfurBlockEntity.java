@@ -77,12 +77,19 @@ public class IndfurBlockEntity extends RecipeMachineBlockEntity {
         var recipes = level.getServer().getRecipeManager().recipeMap().byType(TENRecipeTypes.INDUCTION_FURNACE_T.get());
         for (var holder : recipes) {
             var recipe = holder.value();
-            if (recipe instanceof FormsCombinedRecipe r && r.matches(itemHandler, tanks, this::slotType, this::tankType)) {
+            if (recipe instanceof FormsCombinedRecipe r && r.matchesExactInputs(itemHandler, tanks, this::slotType, this::tankType)) {
                 r.recipeType = TENRecipeTypes.INDUCTION_FURNACE_T.get();
                 r.serializer = TENRecipeTypes.INDUCTION_FURNACE_S.get();
                 return r;
             }
         }
         return null;
+    }
+
+    @Override
+    protected boolean revalidateInputs() {
+        // Indfur uses strict exact-input matching — same as findRecipe
+        if (currentRecipe == null || itemHandler == null) return false;
+        return currentRecipe.matchesExactInputs(itemHandler, tanks, this::slotType, this::tankType);
     }
 }

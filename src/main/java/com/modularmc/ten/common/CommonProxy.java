@@ -1,7 +1,6 @@
 package com.modularmc.ten.common;
 
 import com.modularmc.ten.api.capability.CapabilityAdapters;
-import com.modularmc.ten.api.capability.FluidHandlerResourceAdapter;
 import com.modularmc.ten.api.capability.ItemHandlerResourceAdapter;
 import com.modularmc.ten.common.block.machine.BaseMachineBlock;
 import com.modularmc.ten.common.data.*;
@@ -67,12 +66,11 @@ public class CommonProxy {
                     return null;
                 }, block);
 
-                // Fluid capability — IFluidHandler → ResourceHandler<FluidResource> adapter
+                // Fluid capability — delegates to machine.getFluidResourceHandler (cached adapter)
                 event.registerBlock(Capabilities.Fluid.BLOCK, (level, pos, state, blockEntity, ctx) -> {
                     Direction side = ctx instanceof Direction d ? d : null;
                     if (blockEntity instanceof com.modularmc.ten.api.blockentity.CmMachineBlockEntity machine) {
-                        var fluidHandler = machine.getFluidHandler(side);
-                        return fluidHandler != null ? new FluidHandlerResourceAdapter(fluidHandler) : null;
+                        return machine.getFluidResourceHandler(side);
                     }
                     return null;
                 }, block);

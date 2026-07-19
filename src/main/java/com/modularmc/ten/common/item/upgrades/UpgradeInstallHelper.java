@@ -3,6 +3,7 @@ package com.modularmc.ten.common.item.upgrades;
 
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.items.IItemHandler;
+
 import org.jetbrains.annotations.Nullable;
 
 import java.util.function.BiPredicate;
@@ -39,15 +40,15 @@ public final class UpgradeInstallHelper {
      * <p>
      * Only performs the insertion if:
      * <ul>
-     *   <li>handler is not null</li>
-     *   <li>stack is not empty</li>
-     *   <li>the stack passes the validator at the target slot</li>
-     *   <li>there is an empty slot available</li>
-     *   <li>the full stack (count=1) can be inserted without remainder</li>
+     * <li>handler is not null</li>
+     * <li>stack is not empty</li>
+     * <li>the stack passes the validator at the target slot</li>
+     * <li>there is an empty slot available</li>
+     * <li>the full stack (count=1) can be inserted without remainder</li>
      * </ul>
      *
-     * @param handler the upgrade handler
-     * @param stack   the upgrade item stack (only 1 will be inserted)
+     * @param handler   the upgrade handler
+     * @param stack     the upgrade item stack (only 1 will be inserted)
      * @param validator slot+stack validator (e.g. machine.validUpgrade)
      * @return true if the item was fully inserted
      */

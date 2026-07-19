@@ -27,7 +27,6 @@ import com.lowdragmc.lowdraglib2.gui.ui.data.FillDirection;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.FluidSlot;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.ItemSlot;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.Label;
-import com.lowdragmc.lowdraglib2.gui.ui.elements.ProgressBar;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.inventory.InventorySlots;
 import com.lowdragmc.lowdraglib2.gui.ui.event.HoverTooltips;
 import com.lowdragmc.lowdraglib2.gui.ui.event.UIEvents;
@@ -185,10 +184,10 @@ public final class TENMachineBlockUIFactory {
      * <p>
      * <strong>Tooltip behavior:</strong>
      * <ul>
-     *   <li><em>Empty slot:</em> Shows the localized "Upgrade Slot" tooltip
-     *       ({@code kenergyengineering.upgrade_slot}).</li>
-     *   <li><em>Non-empty slot:</em> The HOVER_TOOLTIPS handler does NOT override
-     *       the event, preserving the native ItemStack tooltip from the ItemSlot.</li>
+     * <li><em>Empty slot:</em> Shows the localized "Upgrade Slot" tooltip
+     * ({@code kenergyengineering.upgrade_slot}).</li>
+     * <li><em>Non-empty slot:</em> The HOVER_TOOLTIPS handler does NOT override
+     * the event, preserving the native ItemStack tooltip from the ItemSlot.</li>
      * </ul>
      */
     private static ItemSlot upgradeSlot(CmMachineBlockEntity machine, int index, int x, int y) {
@@ -274,27 +273,30 @@ public final class TENMachineBlockUIFactory {
         return progress;
     }
 
-    public static FluidSlot fluidGauge(CmMachineBlockEntity machine, int x, int y, int width, int height, int tankIndex, boolean showValue) {
-        return fluidGaugeBase(machine, x, y, width, height, tankIndex, showValue, IGuiTexture.EMPTY);
+    public static FluidSlot fluidGauge(CmMachineBlockEntity machine, int x, int y, int width, int height, int tankIndex) {
+        return fluidGaugeBase(machine, x, y, width, height, tankIndex, IGuiTexture.EMPTY);
     }
 
-    public static FluidSlot fluidGaugeWithBackground(CmMachineBlockEntity machine, int x, int y, int width, int height, int tankIndex, boolean showValue) {
+    public static FluidSlot fluidGaugeWithBackground(CmMachineBlockEntity machine, int x, int y, int width, int height, int tankIndex) {
         var background = SpriteTexture.of(HANDLER).setSprite(0, 92, width, height);
         background.transform(-2.0f, -2.0f);
-        return fluidGaugeBase(machine, x, y, width, height, tankIndex, showValue, background);
+        return fluidGaugeBase(machine, x, y, width, height, tankIndex, background);
     }
 
-    private static FluidSlot fluidGaugeBase(CmMachineBlockEntity machine, int x, int y, int width, int height, int tankIndex, boolean showValue, IGuiTexture background) {
-        var slot = absolute(new FluidSlot(), x, y, width, height);
+    private static FluidSlot fluidGaugeBase(CmMachineBlockEntity machine, int x, int y, int width, int height, int tankIndex, IGuiTexture background) {
+        var slot = absolute(new TENFluidSlot(), x, y, width, height);
         slot.style(style -> style.backgroundTexture(background));
         slot.slotStyle(style -> style
                 .slotOverlay(IGuiTexture.EMPTY)
                 .showSlotOverlayOnlyEmpty(false)
                 .fillDirection(FillDirection.DOWN_TO_UP)
-                .showFluidTooltips(false));
+                .showFluidTooltips(true));
         slot.amountLabel.setDisplay(false);
-        slot.bind(machine.getFluidHandler(null), tankIndex);
-        slot.addEventListener(UIEvents.HOVER_TOOLTIPS, event -> event.hoverTooltips = HoverTooltips.create(fluidTooltip(machine, tankIndex, showValue).toArray()));
+        var handler = machine.getFluidResourceHandler(null);
+        if (handler == null) {
+            throw new IllegalStateException("fluidGauge on machine with no tanks: " + machine);
+        }
+        slot.bind(handler, tankIndex);
         return slot;
     }
 
@@ -367,7 +369,7 @@ public final class TENMachineBlockUIFactory {
             int stateIndex = TransferModeButtonState.stateIndex(selected, element.isHover());
             int v = TransferModeButtonState.textureV(stateIndex);
             element.style(style -> style.backgroundTexture(
-                sprite(HANDLER, textureU, v, TransferModeButtonState.SIZE, TransferModeButtonState.SIZE)));
+                    sprite(HANDLER, textureU, v, TransferModeButtonState.SIZE, TransferModeButtonState.SIZE)));
         };
         refresh.run();
         element.addEventListener(UIEvents.TICK, event -> refresh.run());
@@ -503,24 +505,6 @@ public final class TENMachineBlockUIFactory {
 
     private static Supplier<List<Component>> energyGaugeTooltip(CmMachineBlockEntity machine, boolean displayValue) {
         return () -> displayValue ? List.of(DisplayHelper.join(machine.energyStored, machine.maxEnergyStored)) : List.of(ComponentHelper.make((int) (energyPercent(machine) * 100) + "%"));
-    }
-
-    private static List<Component> fluidTooltip(CmMachineBlockEntity machine, int tankIndex, boolean showValue) {
-        if (tankIndex < 0 || tankIndex >= machine.tanks.size()) {
-            return List.of();
-        }
-        var tank = machine.tanks.get(tankIndex);
-        var list = new ArrayList<Component>();
-        if (!tank.getFluid().isEmpty()) {
-            list.add(tank.getFluid().getHoverName());
-        }
-        if (showValue) {
-            list.add(DisplayHelper.joinmB(tank.getFluidAmount(), tank.getCapacity()));
-        } else {
-            int percent = tank.getCapacity() > 0 ? (int) ((tank.getFluidAmount() * 100.0) / tank.getCapacity()) : 0;
-            list.add(ComponentHelper.make(percent + "%"));
-        }
-        return list;
     }
 
     private static List<Component> ideaTooltips(BlockUIMenuType.BlockUIHolder holder) {

@@ -70,8 +70,8 @@ public class RefinerBlockEntity extends RecipeMachineBlockEntity {
             root.addChild(TENMachineBlockUIFactory.energyGauge(this, 9, 18, 14, 46, 0, 0, true));
             root.addChild(TENMachineBlockUIFactory.energyGauge(this, 60, 56, 13, 13, 14, 0, false));
             root.addChild(TENMachineBlockUIFactory.progressGauge(this, 84, 35, 22, 16, 27, 159, false));
-            root.addChild(TENMachineBlockUIFactory.fluidGauge(this, 37, 17, 18, 50, 0, true));
-            root.addChild(TENMachineBlockUIFactory.fluidGauge(this, 143, 17, 18, 50, 1, true));
+            root.addChild(TENMachineBlockUIFactory.fluidGauge(this, 37, 17, 18, 50, 0));
+            root.addChild(TENMachineBlockUIFactory.fluidGauge(this, 143, 17, 18, 50, 1));
         });
     }
 

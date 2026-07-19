@@ -13,8 +13,7 @@ public class EngineBlock extends HorizontalMachineBlock {
     private static final VoxelShape SHAPE = Shapes.or(
             Block.box(0, 0, 0, 16, 9, 16),
             Block.box(0, 12, 0, 16, 16, 16),
-            Block.box(1, 9, 1, 15, 12, 15)
-    );
+            Block.box(1, 9, 1, 15, 12, 15));
 
     public EngineBlock(Properties props) {
         super(props);

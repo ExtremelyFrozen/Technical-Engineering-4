@@ -25,5 +25,4 @@ public class TENBaseBlock extends Block {
     public TENBaseBlock(Properties p) {
         super(p);
     }
-
 }

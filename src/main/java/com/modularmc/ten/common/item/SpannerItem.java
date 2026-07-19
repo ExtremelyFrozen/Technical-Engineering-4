@@ -81,8 +81,7 @@ public class SpannerItem extends TENBaseItem {
             return BlockStateProperties.HORIZONTAL_FACING;
         }
         for (var prop : state.getProperties()) {
-            if (prop instanceof EnumProperty<?> ep && ep.getName().equals("facing")
-                    && ep.getPossibleValues().stream().allMatch(v -> v instanceof Direction)) {
+            if (prop instanceof EnumProperty<?> ep && ep.getName().equals("facing") && ep.getPossibleValues().stream().allMatch(v -> v instanceof Direction)) {
                 @SuppressWarnings("unchecked")
                 EnumProperty<Direction> dp = (EnumProperty<Direction>) ep;
                 return dp;

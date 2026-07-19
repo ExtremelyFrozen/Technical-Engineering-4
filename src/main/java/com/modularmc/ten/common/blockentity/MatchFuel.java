@@ -15,22 +15,22 @@ import java.util.Objects;
  * <p>
  * <b>Query API (pure, no side effects):</b>
  * <ul>
- *   <li>{@link #getExtractorFuelValue(Level, ItemStack)} — requires non-null Level</li>
- *   <li>{@link #getMetalFuelValue(ItemStack)}</li>
- *   <li>{@link #getBiomassFuelValue(ItemStack)}</li>
+ * <li>{@link #getExtractorFuelValue(Level, ItemStack)} — requires non-null Level</li>
+ * <li>{@link #getMetalFuelValue(ItemStack)}</li>
+ * <li>{@link #getBiomassFuelValue(ItemStack)}</li>
  * </ul>
  * <b>Consumer API (queries + conditionally shrinks stack):</b>
  * <ul>
- *   <li>{@link #matchFuel(Level, ItemStack, boolean)} — requires non-null Level</li>
- *   <li>{@link #matchFuel(ItemStack, boolean)} — deprecated, null Level fallback</li>
- *   <li>{@link #matchMetal(ItemStack, boolean)}</li>
- *   <li>{@link #matchPlant(ItemStack, boolean)}</li>
+ * <li>{@link #matchFuel(Level, ItemStack, boolean)} — requires non-null Level</li>
+ * <li>{@link #matchFuel(ItemStack, boolean)} — deprecated, null Level fallback</li>
+ * <li>{@link #matchMetal(ItemStack, boolean)}</li>
+ * <li>{@link #matchPlant(ItemStack, boolean)}</li>
  * </ul>
  */
 public class MatchFuel {
 
     // ════════════════════════════════════════════════════════════════
-    //  Query API — pure, no side effects
+    // Query API — pure, no side effects
     // ════════════════════════════════════════════════════════════════
 
     /**
@@ -100,7 +100,7 @@ public class MatchFuel {
     }
 
     // ════════════════════════════════════════════════════════════════
-    //  Consumer API — delegates to query + conditionally shrinks stack
+    // Consumer API — delegates to query + conditionally shrinks stack
     // ════════════════════════════════════════════════════════════════
 
     /**
@@ -144,7 +144,7 @@ public class MatchFuel {
     }
 
     // ════════════════════════════════════════════════════════════════
-    //  Internal
+    // Internal
     // ════════════════════════════════════════════════════════════════
 
     /**

@@ -12,8 +12,8 @@ import com.modularmc.ten.utils.TagHelper;
 import com.modularmc.ten.utils.WorkingHelper;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.util.Mth;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.entity.BlockEntityType;

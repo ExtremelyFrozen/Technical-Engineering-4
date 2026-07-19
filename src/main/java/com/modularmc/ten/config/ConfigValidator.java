@@ -1,7 +1,8 @@
 package com.modularmc.ten.config;
 
-import com.mojang.logging.LogUtils;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
+
+import com.mojang.logging.LogUtils;
 import org.slf4j.Logger;
 
 /**
@@ -18,8 +19,7 @@ public final class ConfigValidator {
 
     private static final Logger LOGGER = LogUtils.getLogger();
 
-    private ConfigValidator() {
-    }
+    private ConfigValidator() {}
 
     /**
      * Validates all COMMON config values are within expected ranges.
@@ -53,8 +53,7 @@ public final class ConfigValidator {
         if (value < min || value > max) {
             LOGGER.warn(
                     "ConfigValidator: '{}' value {} is outside expected range [{}, {}]",
-                    key, value, min, max
-            );
+                    key, value, min, max);
         }
     }
 
@@ -62,8 +61,7 @@ public final class ConfigValidator {
         if (value < min || value > max) {
             LOGGER.warn(
                     "ConfigValidator: '{}' value {} is outside expected range [{}, {}]",
-                    key, value, min, max
-            );
+                    key, value, min, max);
         }
     }
 }

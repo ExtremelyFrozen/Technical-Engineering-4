@@ -1,5 +1,6 @@
 package com.modularmc.ten.api.blockentity;
 
+import com.modularmc.ten.api.capability.FluidHandlerResourceAdapter;
 import com.modularmc.ten.api.capability.MachineEnergyStorage;
 import com.modularmc.ten.api.capability.MachineFluidTank;
 import com.modularmc.ten.api.capability.MachineItemHandler;
@@ -13,7 +14,6 @@ import com.modularmc.ten.common.item.upgrades.UpgradeItem;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.Containers;
@@ -27,6 +27,8 @@ import net.neoforged.neoforge.energy.IEnergyStorage;
 import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import net.neoforged.neoforge.items.IItemHandler;
+import net.neoforged.neoforge.transfer.ResourceHandler;
+import net.neoforged.neoforge.transfer.fluid.FluidResource;
 
 import com.lowdragmc.lowdraglib2.gui.factory.BlockUIMenuType;
 import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
@@ -38,8 +40,6 @@ import com.lowdragmc.lowdraglib2.syncdata.annotation.RPCMethod;
 import com.lowdragmc.lowdraglib2.syncdata.rpc.RPCSender;
 import com.mojang.serialization.Codec;
 import dev.vfyjxf.taffy.style.TaffyPosition;
-import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
-import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -147,6 +147,11 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
 
     private boolean machineInitialised = false;
     private IFluidHandler combinedFluidHandler;
+
+    // Cached ResourceHandler adapters for the new capability boundary.
+    // Lazily constructed and invalidated on machine re-init.
+    private ResourceHandler<FluidResource> fluidResourceHandler;
+    private EnumMap<Direction, ResourceHandler<FluidResource>> sidedFluidResourceHandlers;
 
     public CmMachineBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
@@ -634,6 +639,52 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         };
     }
 
+    // ───── Fluid ResourceHandler (cached adapters for capability boundary) ─────
+
+    /**
+     * Returns a {@link ResourceHandler<FluidResource>} for the fluid capability boundary,
+     * backed by {@link FluidHandlerResourceAdapter} with side-based permissions.
+     *
+     * <p>
+     * Results are lazily cached: one unsided instance for {@code side == null},
+     * and one per {@link Direction} for sided access. The cache is stable for the
+     * lifetime of the block entity — the fields are never reset to null. All
+     * adapters share the same {@link #tanks} list (no data copy) and evaluate
+     * face mode and redstone signal dynamically through lambda suppliers, so
+     * permission changes take effect on the next call without cache invalidation.
+     *
+     * @param side the direction, or null for unsided access
+     * @return the cached ResourceHandler, or null if no tanks are available
+     */
+    public ResourceHandler<FluidResource> getFluidResourceHandler(@Nullable Direction side) {
+        if (tanks.isEmpty()) return null;
+        if (side == null) {
+            if (fluidResourceHandler == null) {
+                fluidResourceHandler = createFluidResourceHandler(null);
+            }
+            return fluidResourceHandler;
+        }
+        if (sidedFluidResourceHandlers == null) {
+            sidedFluidResourceHandlers = new EnumMap<>(Direction.class);
+        }
+        return sidedFluidResourceHandlers.computeIfAbsent(side, this::createFluidResourceHandler);
+    }
+
+    /**
+     * Creates a new {@link FluidHandlerResourceAdapter} for the given side.
+     * Permissions: side==null → allowed; otherwise → signalAllowRun + face config.
+     * Commit callback: {@link #markDirty()} (inherited from {@link CmBlockEntity}).
+     */
+    private FluidHandlerResourceAdapter createFluidResourceHandler(@Nullable Direction side) {
+        return new FluidHandlerResourceAdapter(
+                tanks,
+                this::tankType,
+                (index, stack) -> valid(index.intValue(), stack),
+                () -> side == null || (signalAllowRun() && canReceiveFluid(side)),
+                () -> side == null || (signalAllowRun() && canExtractFluid(side)),
+                this::markDirty);
+    }
+
     // ───── NBT ─────
     @Override
     protected void readTileData(ValueInput input) {
@@ -935,7 +986,7 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
      * backward compatibility with existing {@link UpgradeItem#effect} calls
      * that pass a slot increase value.
      *
-     * @param percent the throughput multiplier (0.2 = +20%, -0.1 = -10%)
+     * @param percent      the throughput multiplier (0.2 = +20%, -0.1 = -10%)
      * @param slotIncrease ignored; kept for API compatibility
      * @return true
      */
