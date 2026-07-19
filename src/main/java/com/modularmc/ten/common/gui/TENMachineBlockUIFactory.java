@@ -120,15 +120,22 @@ public final class TENMachineBlockUIFactory {
         var controlPanel = textureElement(-61, 81, 60, 85, sprite(HANDLER, 91, 40, 60, 85), null, null, null, null);
         var closeButton = textureElement(-11, 81, 10, 10, IGuiTexture.EMPTY, () -> controlTooltip(), () -> uiState.setControlOpen(false), null, null);
 
-        var energyModeButton = dynamicTextureElement(-54, 145, 14, 14,
-                () -> sprite(HANDLER, 91, 126 + (uiState.getSelectedTransferMode() == 0 ? 14 : 0), 14, 14),
-                () -> energyModeTooltip(), () -> uiState.setSelectedTransferMode(0), null, null);
-        var itemModeButton = dynamicTextureElement(-38, 145, 14, 14,
-                () -> sprite(HANDLER, 106, 126 + (uiState.getSelectedTransferMode() == 1 ? 14 : 0), 14, 14),
-                () -> itemModeTooltip(), () -> uiState.setSelectedTransferMode(1), null, null);
-        var fluidModeButton = dynamicTextureElement(-22, 145, 14, 14,
-                () -> sprite(HANDLER, 76, 126 + (uiState.getSelectedTransferMode() == 2 ? 14 : 0), 14, 14),
-                () -> fluidModeTooltip(), () -> uiState.setSelectedTransferMode(2), null, null);
+        var energyModeBinding = createTransferModeBinding(-54, 145, TransferModeButtonState.U_ENERGY, 0, uiState);
+        var itemModeBinding = createTransferModeBinding(-38, 145, TransferModeButtonState.U_ITEM, 1, uiState);
+        var fluidModeBinding = createTransferModeBinding(-22, 145, TransferModeButtonState.U_FLUID, 2, uiState);
+        var energyModeButton = energyModeBinding.element;
+        var itemModeButton = itemModeBinding.element;
+        var fluidModeButton = fluidModeBinding.element;
+
+        Runnable refreshTransferButtons = () -> {
+            energyModeBinding.refresh.run();
+            itemModeBinding.refresh.run();
+            fluidModeBinding.refresh.run();
+        };
+        // Replace each button's click handler with one that refreshes all three immediately
+        rebindClickToRefreshAll(energyModeButton, 0, uiState, refreshTransferButtons);
+        rebindClickToRefreshAll(itemModeButton, 1, uiState, refreshTransferButtons);
+        rebindClickToRefreshAll(fluidModeButton, 2, uiState, refreshTransferButtons);
 
         var frontButton = faceModeElement(machine, uiState, -39, 103, 0, "kenergyengineering.info.front");
         var backButton = faceModeElement(machine, uiState, -25, 117, 1, "kenergyengineering.info.back");
@@ -331,6 +338,60 @@ public final class TENMachineBlockUIFactory {
         element.addEventListener(UIEvents.TICK, event -> update.run());
     }
 
+    /**
+     * Creates a transfer mode button element and its refresh runnable.
+     * The texture switches between unselected/selected × normal/hover
+     * based on {@link UIState#getSelectedTransferMode()} and the element's hover state.
+     * <p>
+     * Callers should compose the individual refresh runnables into a
+     * combined {@code refreshAll} and pass it to {@link #rebindClickToRefreshAll}.
+     */
+    private static TransferModeBinding createTransferModeBinding(int x, int y, int textureU, int modeIndex, UIState uiState) {
+        var element = absolute(new UIElement(), x, y, TransferModeButtonState.SIZE, TransferModeButtonState.SIZE);
+        Runnable refresh = () -> {
+            boolean selected = uiState.getSelectedTransferMode() == modeIndex;
+            int stateIndex = TransferModeButtonState.stateIndex(selected, element.isHover());
+            int v = TransferModeButtonState.textureV(stateIndex);
+            element.style(style -> style.backgroundTexture(
+                sprite(HANDLER, textureU, v, TransferModeButtonState.SIZE, TransferModeButtonState.SIZE)));
+        };
+        refresh.run();
+        element.addEventListener(UIEvents.TICK, event -> refresh.run());
+        element.addEventListener(UIEvents.HOVER_TOOLTIPS, event -> {
+            event.hoverTooltips = HoverTooltips.create(transferModeTooltip(modeIndex));
+        });
+        return new TransferModeBinding(element, refresh);
+    }
+
+    /**
+     * Replaces the mouse-down handler on a transfer mode button so that
+     * clicking sets the new mode and immediately refreshes all three buttons
+     * within the same event cycle.
+     */
+    private static void rebindClickToRefreshAll(UIElement element, int modeIndex, UIState uiState, Runnable refreshAll) {
+        // Remove existing MOUSE_DOWN listeners by clearing and re-adding with priority
+        element.addEventListener(UIEvents.MOUSE_DOWN, event -> {
+            if (event.button == 0) {
+                uiState.setSelectedTransferMode(modeIndex);
+                refreshAll.run();
+            }
+        });
+    }
+
+    /**
+     * Bundles a transfer mode button element with its texture refresh runnable.
+     */
+    private record TransferModeBinding(UIElement element, Runnable refresh) {}
+
+    private static List<Component> transferModeTooltip(int modeIndex) {
+        return switch (modeIndex) {
+            case 0 -> List.of(ComponentHelper.translated(ComponentHelper.GOLD, "kenergyengineering.info.bar_mode", "kenergyengineering.info.energy"));
+            case 1 -> List.of(ComponentHelper.translated(ComponentHelper.GOLD, "kenergyengineering.info.bar_mode", "kenergyengineering.info.item"));
+            case 2 -> List.of(ComponentHelper.translated(ComponentHelper.GOLD, "kenergyengineering.info.bar_mode", "kenergyengineering.info.fluid"));
+            default -> List.of();
+        };
+    }
+
     private static <T extends UIElement> T absolute(T element, int x, int y, int width, int height) {
         element.layout(layout -> {
             layout.positionType(TaffyPosition.ABSOLUTE);
@@ -497,18 +558,6 @@ public final class TENMachineBlockUIFactory {
 
     private static List<Component> controlTooltip() {
         return List.of(ComponentHelper.translated(ComponentHelper.GOLD, "kenergyengineering.info.bar_control"));
-    }
-
-    private static List<Component> energyModeTooltip() {
-        return List.of(ComponentHelper.translated(ComponentHelper.GOLD, "kenergyengineering.info.bar_mode", "kenergyengineering.info.energy"));
-    }
-
-    private static List<Component> itemModeTooltip() {
-        return List.of(ComponentHelper.translated(ComponentHelper.GOLD, "kenergyengineering.info.bar_mode", "kenergyengineering.info.item"));
-    }
-
-    private static List<Component> fluidModeTooltip() {
-        return List.of(ComponentHelper.translated(ComponentHelper.GOLD, "kenergyengineering.info.bar_mode", "kenergyengineering.info.fluid"));
     }
 
     private static List<Component> upgradeTooltip(CmMachineBlockEntity machine, int slotIndex) {
