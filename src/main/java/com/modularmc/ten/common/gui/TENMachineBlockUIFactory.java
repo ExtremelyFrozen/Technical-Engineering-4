@@ -372,7 +372,7 @@ public final class TENMachineBlockUIFactory {
         refresh.run();
         element.addEventListener(UIEvents.TICK, event -> refresh.run());
         element.addEventListener(UIEvents.HOVER_TOOLTIPS, event -> {
-            event.hoverTooltips = HoverTooltips.create(transferModeTooltip(modeIndex));
+            event.hoverTooltips = HoverTooltips.create(transferModeTooltip(modeIndex).toArray());
         });
         return new TransferModeBinding(element, refresh);
     }
