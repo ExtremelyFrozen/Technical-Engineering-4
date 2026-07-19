@@ -333,6 +333,7 @@
   "kenergyengineering.info.up": "Up",
   "kenergyengineering.info.upgrade_successfully": " installed successfully.",
   "kenergyengineering.jei_addition_chance": "Additional Chance: %s%%",
+  "kenergyengineering.jei_addition_chance_rolls": "Additional Chance: %s%% × %s rolls",
   "kenergyengineering.key.c": "Change Holding Item Mode",
   "kenergyengineering.key.categories.kenergyengineering": "Kenergy Engineering",
   "kenergyengineering.key.kenergyengineering.toggle_charge": "Toggle Energy Unit Charging",
