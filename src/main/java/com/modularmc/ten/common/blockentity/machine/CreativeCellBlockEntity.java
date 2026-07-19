@@ -60,6 +60,11 @@ public class CreativeCellBlockEntity extends CmMachineBlockEntity {
     }
 
     @Override
+    public boolean supportsUpgradeSlots() {
+        return false;
+    }
+
+    @Override
     public ModularUI createUI(BlockUIMenuType.BlockUIHolder holder) {
         return buildMachineUI(holder, TENMachineBlockUIFactory.backgroundFor(machineType()), root -> {
             root.addChild(TENMachineBlockUIFactory.machineSlot(this, 0, 42, 32));

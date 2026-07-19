@@ -5,6 +5,8 @@ import com.modularmc.ten.api.blockentity.CmMachineBlockEntity;
 import com.modularmc.ten.common.blockentity.CableBlockEntity;
 import com.modularmc.ten.common.blockentity.PipeBlockEntity;
 import com.modularmc.ten.common.gui.TENMachineBlockUIFactory;
+import com.modularmc.ten.common.item.upgrades.UpgradeInstallHelper;
+import com.modularmc.ten.common.item.upgrades.UpgradeItem;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -102,6 +104,34 @@ public class BaseMachineBlock extends Block implements EntityBlock, BlockUIMenuT
     @Override
     protected InteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         BlockEntity be = level.getBlockEntity(pos);
+
+        // ── Quick-install: shift-right-click with an UpgradeItem on an upgradable machine ──
+        if (player.isShiftKeyDown() && be instanceof CmMachineBlockEntity machine
+                && stack.getItem() instanceof UpgradeItem) {
+            // Machine must have upgrade UI slots; Cell/CreativeCell/Channel return false
+            if (!machine.supportsUpgradeSlots()) {
+                return InteractionResult.FAIL;
+            }
+            if (level.isClientSide()) {
+                return InteractionResult.SUCCESS;
+            }
+            // Server-side installation
+            machine.initMachine();
+            boolean installed = UpgradeInstallHelper.tryInstall(
+                    machine.upgradeHandler, stack,
+                    machine::validUpgrade);
+            if (installed) {
+                if (!player.hasInfiniteMaterials()) {
+                    stack.shrink(1);
+                }
+                machine.setChanged();
+                return InteractionResult.CONSUME;
+            }
+            // Installation failed (full handler or incompatible upgrade)
+            return InteractionResult.FAIL;
+        }
+
+        // ── Fluid interaction (non-shift) ──
         if (be instanceof CmMachineBlockEntity machine && !player.isShiftKeyDown() && !machine.tanks.isEmpty()) {
             if (FluidUtil.interactWithFluidHandler(player, hand, machine.getFluidHandler(hit.getDirection()))) {
                 return InteractionResult.SUCCESS;

@@ -11,7 +11,12 @@ public class LevelupSmoke extends UpgradeItem {
     }
 
     @Override
-    public boolean effect(IUpgradableMachine machine) {
+    public boolean canApply(IUpgradableMachine machine) {
         return machine.isType("FURNACE");
+    }
+
+    @Override
+    public boolean effect(IUpgradableMachine machine) {
+        return true;
     }
 }

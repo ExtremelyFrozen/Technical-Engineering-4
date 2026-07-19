@@ -345,6 +345,7 @@
   "kenergyengineering.level.5": " (Strong)",
   "kenergyengineering.level.6": " (Top)",
   "kenergyengineering.locked_slot": "This slot has not been unlocked yet.",
+  "kenergyengineering.upgrade_slot": "Upgrade Slot",
   "kenergyengineering.magma_levelup.0": "Quarry: Magma production mode\n      Produces magma blocks & cream",
   "kenergyengineering.mineral_levelup.0": "Quarry: Ore-only mining mode\n      Only mines c:ores blocks",
   "kenergyengineering.not_consumed": "Not consumed",

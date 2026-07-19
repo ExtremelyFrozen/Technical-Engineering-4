@@ -92,7 +92,7 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
     public int eff = 0;             // EFF
     @Persisted
     @DescSynced
-    public int upgSize = 1;         // UPGSIZE
+    public int upgSize = MAX_UPGRADE_SLOTS; // UPGSIZE — always 6, all slots permanently unlocked
     @Persisted
     @DescSynced
     public int facingVal = 2;       // FACE (Direction.NORTH)
@@ -131,8 +131,8 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
     public int initialItemReceive;
     public int maxExtractItem;
     public int initialItemExtract;
-    public int upgradeSize = 1;
-    public int initialUpgradeSize = 1;
+    public int upgradeSize = MAX_UPGRADE_SLOTS;
+    public int initialUpgradeSize = MAX_UPGRADE_SLOTS;
     public static final int MAX_UPGRADE_SLOTS = 6;
 
     public List<MachineFluidTank> tanks = new ArrayList<>();
@@ -234,8 +234,24 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         super.loadAdditional(input);
     }
 
-    public boolean hasUpgrade() {
+    /**
+     * Whether this machine has upgrade slots at all (fixed capability).
+     * Controls whether {@link #buildMachineUI} adds the 6 upgrade slot UI.
+     * <p>
+     * Override to {@code false} for machines that cannot accept upgrades
+     * (e.g. Cell, CreativeCell, AbstractChannel). Normal machines and engines
+     * inherit the default {@code true} — their 6 slots are always shown.
+     */
+    public boolean supportsUpgradeSlots() {
         return true;
+    }
+
+    public boolean hasUpgrade() {
+        if (upgradeHandler == null) return false;
+        for (int i = 0; i < upgradeHandler.getSlots(); i++) {
+            if (!upgradeHandler.getStackInSlot(i).isEmpty()) return true;
+        }
+        return false;
     }
 
     public boolean hasUpgrade(Class<? extends UpgradeItem> upgradeClass) {
@@ -387,15 +403,7 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         initMachine();
         if (energyStorage == null) return;
         resetUpgradeEffects();
-        applyUpgradeEffects();
-        maxStorageEnergy = initialEnergyStorage;
-        maxReceiveEnergy = initialEnergyReceive;
-        maxExtractEnergy = initialEnergyExtract;
-        maxReceiveItem = initialItemReceive;
-        maxExtractItem = initialItemExtract;
-        maxReceiveFluid = initialFluidReceive;
-        maxExtractFluid = initialFluidExtract;
-
+        // ── Single apply: reset then apply exactly once per doBaseData cycle ──
         applyUpgradeEffects();
 
         energyStorage.setMaxReceive(maxReceiveEnergy);
@@ -412,7 +420,7 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         itemExt = maxExtractItem;
         fluidRec = maxReceiveFluid;
         fluidExt = maxExtractFluid;
-        upgSize = upgradeSize;
+        upgSize = MAX_UPGRADE_SLOTS;
 
         if (energyStorage.getEnergyStored() > maxStorageEnergy) {
             energyStorage.setEnergy(maxStorageEnergy);
@@ -441,7 +449,11 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
     }
 
     public boolean validUpgrade(int slot, ItemStack stack) {
-        return stack.getItem() instanceof UpgradeItem && slot < Math.max(1, Math.min(upgradeSize, MAX_UPGRADE_SLOTS));
+        // Slots 0..MAX_UPGRADE_SLOTS-1 (0..5) are always valid for compatible upgrades
+        if (!supportsUpgradeSlots()) return false;
+        if (slot < 0 || slot >= MAX_UPGRADE_SLOTS) return false;
+        if (!(stack.getItem() instanceof UpgradeItem upgradeItem)) return false;
+        return upgradeItem.canApply(this);
     }
 
     public IngredientType tankType(int tank) {
@@ -461,24 +473,37 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         maxExtractItem = initialItemExtract;
         maxReceiveFluid = initialFluidReceive;
         maxExtractFluid = initialFluidExtract;
-        upgradeSize = Math.max(1, Math.min(initialUpgradeSize, MAX_UPGRADE_SLOTS));
+        upgradeSize = MAX_UPGRADE_SLOTS;
     }
 
+    /**
+     * Apply effects from all installed upgrades in all 6 slots.
+     * <p>
+     * Incompatible upgrades (e.g. from old saves where machine type has changed,
+     * or upgrades that fail {@link UpgradeItem#canApply}) are silently skipped.
+     * Upgrades that don't pass canApply still have their effect() skipped to
+     * prevent unintended stat modifications, but the item remains in the slot
+     * so the player can retrieve it.
+     */
     protected void applyUpgradeEffects() {
-        if (!hasUpgrade() || upgradeHandler == null) return;
-        int index = 0;
-        while (index < upgradeSize && index < upgradeHandler.getSlots()) {
-            ItemStack stack = upgradeHandler.getStackInSlot(index);
+        if (upgradeHandler == null) return;
+        for (int i = 0; i < upgradeHandler.getSlots(); i++) {
+            ItemStack stack = upgradeHandler.getStackInSlot(i);
             if (stack.getItem() instanceof UpgradeItem upgradeItem) {
+                // Skip incompatible upgrades: canApply must pass first
+                if (!upgradeItem.canApply(this)) continue;
                 upgradeItem.effect(this);
             }
-            index++;
         }
-        upgradeSize = Math.max(1, Math.min(upgradeSize, MAX_UPGRADE_SLOTS));
+        upgradeSize = MAX_UPGRADE_SLOTS;
     }
 
+    /**
+     * All 6 upgrade slots are permanently unlocked.
+     * The old slot-unlock system has been removed.
+     */
     public int getUnlockedUpgradeSlots() {
-        return Math.max(1, Math.min(upgradeSize, MAX_UPGRADE_SLOTS));
+        return MAX_UPGRADE_SLOTS;
     }
 
     // Capability access
@@ -627,7 +652,9 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
                 }
             });
         }
-        upgradeSize = input.getInt("upgrade_size").orElse(initialUpgradeSize);
+        upgradeSize = MAX_UPGRADE_SLOTS; // Always 6; old upgrade_size NBT is ignored
+        // Read old upgrade_size for forward compat (value discarded, always 6)
+        input.getInt("upgrade_size").ifPresent(oldSize -> { /* ignored — all 6 slots always unlocked */ });
         for (Direction direction : Direction.values()) {
             int idx = direction.get3DDataValue();
             energyFaceMode.put(direction, input.getInt("direEnergy" + idx).orElse(initialFaceModeEnergy()));
@@ -654,7 +681,7 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
             }
             output.store("upgrades", Codec.list(ItemStack.OPTIONAL_CODEC), stacks);
         }
-        output.store("upgrade_size", Codec.INT, upgradeSize);
+        output.store("upgrade_size", Codec.INT, MAX_UPGRADE_SLOTS);
         for (Direction direction : Direction.values()) {
             int idx = direction.get3DDataValue();
             output.store("direEnergy" + idx, Codec.INT, energyFaceMode.getOrDefault(direction, initialFaceModeEnergy()));
@@ -743,7 +770,7 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
                     layout.height(10);
                 }));
         inventoryBuilder.accept(root);
-        if (hasUpgrade()) {
+        if (supportsUpgradeSlots()) {
             TENMachineBlockUIFactory.addUpgradeSlots(root, this);
         }
         TENMachineBlockUIFactory.addPlayerInventory(root);
@@ -900,6 +927,18 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         }
     }
 
+    /**
+     * Apply a percent-based throughput/storage bonus to the machine.
+     * <p>
+     * The slotIncrease parameter is deprecated/ignored — all 6 upgrade slots
+     * are permanently unlocked. This parameter is kept in the signature for
+     * backward compatibility with existing {@link UpgradeItem#effect} calls
+     * that pass a slot increase value.
+     *
+     * @param percent the throughput multiplier (0.2 = +20%, -0.1 = -10%)
+     * @param slotIncrease ignored; kept for API compatibility
+     * @return true
+     */
     @Override
     public boolean onUpgradeApply(double percent, int slotIncrease) {
         efficientIn = (int) (efficientIn + initialEfficientIn * percent);
@@ -910,7 +949,8 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         maxExtractItem = (int) (maxExtractItem + initialItemExtract * percent);
         maxReceiveFluid = (int) (maxReceiveFluid + initialFluidReceive * percent);
         maxExtractFluid = (int) (maxExtractFluid + initialFluidExtract * percent);
-        upgradeSize = Math.max(1, Math.min(upgradeSize + slotIncrease, MAX_UPGRADE_SLOTS));
+        // slotIncrease is ignored: all 6 slots are permanently unlocked
+        upgradeSize = MAX_UPGRADE_SLOTS;
         return true;
     }
 

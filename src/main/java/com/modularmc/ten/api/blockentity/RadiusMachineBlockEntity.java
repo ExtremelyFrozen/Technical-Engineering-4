@@ -43,4 +43,18 @@ public abstract class RadiusMachineBlockEntity extends EffectMachineBlockEntity 
     public int getInitialRadius() {
         return initialRadius;
     }
+
+    /**
+     * Reset radius to initialRadius before each upgrade apply cycle,
+     * preventing {@link com.modularmc.ten.common.item.upgrades.LevelupRg#effect}
+     * from accumulating radius across ticks.
+     * <p>
+     * Called by {@link CmMachineBlockEntity#doBaseData()} before the single
+     * {@link CmMachineBlockEntity#applyUpgradeEffects()} call.
+     */
+    @Override
+    protected void resetUpgradeEffects() {
+        super.resetUpgradeEffects();
+        this.radius = this.initialRadius;
+    }
 }

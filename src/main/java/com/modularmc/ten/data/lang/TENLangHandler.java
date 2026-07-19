@@ -67,6 +67,7 @@ public final class TENLangHandler {
         add("info.upgrade_successfully", " installed successfully.", " 安装成功。");
         add("key.c", "Change Holding Item Mode", "Change Holding Item Mode");
         add("locked_slot", "This slot has not been unlocked yet.", "未解锁槽位");
+        add("upgrade_slot", "Upgrade Slot", "升级槽位");
         add("jei_addition_chance", "Additional Chance: %s%%", "副产概率: %s%%");
         add("energy_capacity.charging_on", "Charging enabled", "全身充能已开启");
         add("energy_capacity.charging_off", "Charging disabled", "全身充能已关闭");

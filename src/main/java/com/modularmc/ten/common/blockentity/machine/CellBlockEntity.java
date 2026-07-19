@@ -97,4 +97,9 @@ public class CellBlockEntity extends CmMachineBlockEntity {
     public boolean hasUpgrade() {
         return false;
     }
+
+    @Override
+    public boolean supportsUpgradeSlots() {
+        return false;
+    }
 }

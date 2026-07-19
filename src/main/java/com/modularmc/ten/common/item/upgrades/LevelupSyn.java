@@ -11,11 +11,13 @@ public class LevelupSyn extends UpgradeItem {
     }
 
     @Override
+    public boolean canApply(IUpgradableMachine machine) {
+        return machine.isType("MACHINE_PROCESS") || machine.isType("MACHINE_EFFECT");
+    }
+
+    @Override
     public boolean effect(IUpgradableMachine machine) {
-        if (machine.isType("MACHINE_PROCESS") || machine.isType("MACHINE_EFFECT")) {
-            machine.onUpgradeApply(-0.1, 1);
-            return true;
-        }
-        return false;
+        machine.onUpgradeApply(-0.1, 1);
+        return true;
     }
 }

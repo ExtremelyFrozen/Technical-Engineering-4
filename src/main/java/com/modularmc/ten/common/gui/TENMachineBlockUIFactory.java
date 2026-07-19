@@ -92,15 +92,7 @@ public final class TENMachineBlockUIFactory {
         root.addChild(textureElement(23, -37, 131, 36, sprite(HANDLER, 0, 211, 131, 36), null, null, null, null));
         int[] xs = { 32, 51, 70, 89, 108, 127 };
         for (int i = 0; i < xs.length; i++) {
-            final int slotIndex = i;
             root.addChild(upgradeSlot(machine, i, xs[i], -28));
-            root.addChild(textureElement(
-                    xs[slotIndex], -28, 18, 18,
-                    sprite(HANDLER, 227, 0, 18, 18),
-                    () -> upgradeTooltip(machine, slotIndex),
-                    null,
-                    null,
-                    null));
         }
     }
 
@@ -188,8 +180,30 @@ public final class TENMachineBlockUIFactory {
         return itemSlot(slot, x, y, false);
     }
 
+    /**
+     * Creates an upgrade slot with the standard item-slot background (HANDLER 227,0,18,18).
+     * <p>
+     * <strong>Tooltip behavior:</strong>
+     * <ul>
+     *   <li><em>Empty slot:</em> Shows the localized "Upgrade Slot" tooltip
+     *       ({@code kenergyengineering.upgrade_slot}).</li>
+     *   <li><em>Non-empty slot:</em> The HOVER_TOOLTIPS handler does NOT override
+     *       the event, preserving the native ItemStack tooltip from the ItemSlot.</li>
+     * </ul>
+     */
     private static ItemSlot upgradeSlot(CmMachineBlockEntity machine, int index, int x, int y) {
-        return itemSlot(new SlotItemHandler(machine.upgradeHandler, index, 0, 0), x, y, false);
+        SlotItemHandler slot = new SlotItemHandler(machine.upgradeHandler, index, 0, 0);
+        var itemSlot = itemSlot(slot, x, y, false);
+        // Use the standard item-slot background sprite so the slot is visible
+        itemSlot.style(style -> style.backgroundTexture(sprite(HANDLER, 227, 0, 18, 18)));
+        // Register tooltip: only for empty slots; non-empty preserves native ItemStack tooltip
+        itemSlot.addEventListener(UIEvents.HOVER_TOOLTIPS, event -> {
+            if (slot.getItem().isEmpty()) {
+                event.hoverTooltips = HoverTooltips.create(emptyUpgradeSlotTooltip());
+            }
+            // Non-empty: do NOT set event.hoverTooltips → native ItemStack tooltip is preserved
+        });
+        return itemSlot;
     }
 
     private static ItemSlot itemSlot(Slot slot, int x, int y, boolean isPlayerSlot) {
@@ -560,8 +574,13 @@ public final class TENMachineBlockUIFactory {
         return List.of(ComponentHelper.translated(ComponentHelper.GOLD, "kenergyengineering.info.bar_control"));
     }
 
-    private static List<Component> upgradeTooltip(CmMachineBlockEntity machine, int slotIndex) {
-        return slotIndex >= machine.upgSize ? List.of(ComponentHelper.translated(ComponentHelper.RED, "kenergyengineering.locked_slot")) : List.of();
+    /**
+     * Returns the localized component for an empty upgrade slot tooltip.
+     * Used by {@link #upgradeSlot(CmMachineBlockEntity, int, int, int)}
+     * when the slot contains no item.
+     */
+    private static Component emptyUpgradeSlotTooltip() {
+        return ComponentHelper.translated("kenergyengineering.upgrade_slot");
     }
 
     public static final class UIState {

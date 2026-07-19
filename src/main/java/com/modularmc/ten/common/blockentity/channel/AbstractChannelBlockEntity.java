@@ -48,6 +48,11 @@ public abstract class AbstractChannelBlockEntity extends CmMachineBlockEntity {
     }
 
     @Override
+    public boolean supportsUpgradeSlots() {
+        return false;
+    }
+
+    @Override
     public boolean hasSideBar() {
         return true;
     }

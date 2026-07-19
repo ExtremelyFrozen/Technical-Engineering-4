@@ -11,7 +11,12 @@ public class LevelupPotion extends UpgradeItem {
     }
 
     @Override
-    public boolean effect(IUpgradableMachine machine) {
+    public boolean canApply(IUpgradableMachine machine) {
         return machine.isType("BEACON");
+    }
+
+    @Override
+    public boolean effect(IUpgradableMachine machine) {
+        return true;
     }
 }
