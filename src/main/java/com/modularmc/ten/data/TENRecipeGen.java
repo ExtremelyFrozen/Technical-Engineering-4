@@ -89,6 +89,15 @@ public class TENRecipeGen implements DataProvider {
         for (var m : MOULDS)
             futures.add(saveJson(cache, recipeDir.resolve("vanilla/" + m.id + ".json"), buildMould(m)));
 
+        // Cross-material shapeless recipes (from Mat matrix metadata)
+        for (var mat : Mat.values()) {
+            for (var recipe : mat.shapelessRecipes()) {
+                futures.add(saveJson(cache,
+                        recipeDir.resolve("vanilla/" + mat.id + "_dust.json"),
+                        buildShapeless(recipe)));
+            }
+        }
+
         return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
     }
 
@@ -321,12 +330,43 @@ public class TENRecipeGen implements DataProvider {
         return j;
     }
 
+    /**
+     * Builds a {@code minecraft:crafting_shapeless} recipe JSON from Mat matrix
+     * metadata. Ingredients are converted via {@link #ref(String)} to produce
+     * 26.1-compatible bare strings ({@code "#c:..."} for tags, {@code "ns:id"}
+     * for items).
+     */
+    private static JsonObject buildShapeless(Mat.ShapelessRecipe recipe) {
+        var j = new JsonObject();
+        j.addProperty("type", "minecraft:crafting_shapeless");
+        var ingredients = new JsonArray();
+        for (var ing : recipe.ingredients()) {
+            ingredients.add(ref(ing));
+        }
+        j.add("ingredients", ingredients);
+        var result = new JsonObject();
+        result.addProperty("id", recipe.resultItem());
+        result.addProperty("count", recipe.resultCount());
+        j.add("result", result);
+        return j;
+    }
+
     // ══════════════════════════════════════════════════════════════════
     // JSON helpers
     // ══════════════════════════════════════════════════════════════════
 
-    private static JsonObject ref(String id) {
-        return obj(id.startsWith("c:") ? "tag" : "item", id);
+    /**
+     * Creates a 26.1-compatible ingredient reference.
+     * <p>
+     * Minecraft 26.1 ingredient codec requires bare strings —
+     * {@code "namespace:id"} for items, {@code "#namespace:id"} for tags —
+     * instead of the old {@code {"item": "id"}} / {@code {"tag": "id"}} objects.
+     */
+    private static JsonElement ref(String id) {
+        if (id.startsWith("c:")) {
+            return new com.google.gson.JsonPrimitive("#" + id);
+        }
+        return new com.google.gson.JsonPrimitive(id);
     }
 
     /** Machine recipe ingredient. 5-param: form, type, key, count, chance. */

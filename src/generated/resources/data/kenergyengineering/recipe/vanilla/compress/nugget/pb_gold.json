@@ -1,9 +1,7 @@
 {
   "type": "minecraft:crafting_shaped",
   "key": {
-    "C": {
-      "item": "minecraft:gold_nugget"
-    }
+    "C": "minecraft:gold_nugget"
   },
   "pattern": [
     "CCC",

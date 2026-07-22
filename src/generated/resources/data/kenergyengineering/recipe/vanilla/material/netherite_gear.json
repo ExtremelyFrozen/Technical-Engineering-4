@@ -1,9 +1,7 @@
 {
   "type": "minecraft:crafting_shaped",
   "key": {
-    "C": {
-      "item": "minecraft:netherite_ingot"
-    }
+    "C": "minecraft:netherite_ingot"
   },
   "pattern": [
     " C ",

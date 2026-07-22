@@ -1,6 +1,7 @@
 package com.modularmc.ten.integration.jei;
 
 import com.modularmc.ten.TENConstants;
+import com.modularmc.ten.api.recipe.FormsCombinedIngredient;
 import com.modularmc.ten.api.recipe.FormsCombinedRecipe;
 import com.modularmc.ten.integration.xei.TENRecipeWidget;
 
@@ -10,7 +11,6 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
 
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
-import mezz.jei.api.gui.builder.ITooltipBuilder;
 import mezz.jei.api.gui.drawable.IDrawable;
 import mezz.jei.api.gui.ingredient.IRecipeSlotsView;
 import mezz.jei.api.helpers.IGuiHelper;
@@ -76,16 +76,8 @@ public class TENJeiCategory implements IRecipeCategory<FormsCombinedRecipe> {
                     if (!filteredItemStacks.isEmpty()) {
                         jeiSlot.addItemStacks(filteredItemStacks);
                     }
-                    if (slot.role() == TENRecipeWidget.SlotRole.OUTPUT && ingredient.chance() < 1.0d) {
-                        if (ingredient.rolls() > 1) {
-                            jeiSlot.addRichTooltipCallback((view, tooltip) -> tooltip.add(Component.translatable("kenergyengineering.jei_addition_chance_rolls", TENRecipeWidget.chancePercent(ingredient.chance()), ingredient.rolls())));
-                        } else {
-                            jeiSlot.addRichTooltipCallback((view, tooltip) -> tooltip.add(Component.translatable("kenergyengineering.jei_addition_chance", TENRecipeWidget.chancePercent(ingredient.chance()))));
-                        }
-                    }
-                    if (slot.role() == TENRecipeWidget.SlotRole.INPUT && ingredient.chance() <= 0) {
-                        jeiSlot.addRichTooltipCallback((view, tooltip) -> tooltip.add(Component.translatable("kenergyengineering.not_consumed")));
-                    }
+                    registerSlotTooltips(jeiSlot, slot, ingredient);
+                    attachSlotOverlay(jeiSlot, slot, ingredient);
                 }
             } else if (slot.kind() == TENRecipeWidget.SlotKind.FLUID) {
                 var jeiSlot = builder.addSlot(toJeiRole(slot.role()), slot.x() + 1, slot.y() + 1)
@@ -98,16 +90,7 @@ public class TENJeiCategory implements IRecipeCategory<FormsCombinedRecipe> {
                     if (!filteredFluidStacks.isEmpty()) {
                         jeiSlot.addIngredients(NeoForgeTypes.FLUID_STACK, filteredFluidStacks);
                     }
-                    if (slot.role() == TENRecipeWidget.SlotRole.OUTPUT && ingredient.chance() < 1.0d) {
-                        if (ingredient.rolls() > 1) {
-                            jeiSlot.addRichTooltipCallback((view, tooltip) -> tooltip.add(Component.translatable("kenergyengineering.jei_addition_chance_rolls", TENRecipeWidget.chancePercent(ingredient.chance()), ingredient.rolls())));
-                        } else {
-                            jeiSlot.addRichTooltipCallback((view, tooltip) -> tooltip.add(Component.translatable("kenergyengineering.jei_addition_chance", TENRecipeWidget.chancePercent(ingredient.chance()))));
-                        }
-                    }
-                    if (slot.role() == TENRecipeWidget.SlotRole.INPUT && ingredient.chance() <= 0) {
-                        jeiSlot.addRichTooltipCallback((view, tooltip) -> tooltip.add(Component.translatable("kenergyengineering.not_consumed")));
-                    }
+                    registerSlotTooltips(jeiSlot, slot, ingredient);
                 }
             } else {
                 // unsupported kind: no slot registered
@@ -115,9 +98,73 @@ public class TENJeiCategory implements IRecipeCategory<FormsCombinedRecipe> {
         }
     }
 
+    /**
+     * Attaches a {@link TENJeiSlotOverlay} to the slot builder if the slot
+     * qualifies (ITEM + OUTPUT + chance < 1 or rolls > 1).
+     * <p>
+     * The overlay is drawn by JEI's slot rendering pipeline — after the
+     * item stack — guaranteeing proper z-order.
+     * <p>
+     * Offsets are chosen so the text appears at the same screen position
+     * as the old {@code drawSlotOverlays} method but with correct layering:
+     * <ul>
+     *   <li>Top-left: chance percentage ({@code -1, (Y_OFFSET)} relative to slot origin)</li>
+     *   <li>Bottom-left: rolls text ({@code -1, (Y_OFFSET + 9)})</li>
+     * </ul>
+     * Both text lines are shifted together by changing
+     * {@link TENJeiSlotOverlay#Y_OFFSET}.
+     * The bottom-right ItemStack count rendered by JEI is not modified.
+     */
+    private static void attachSlotOverlay(
+            mezz.jei.api.gui.builder.IRecipeSlotBuilder jeiSlot,
+            TENRecipeWidget.SlotSpec slot,
+            FormsCombinedIngredient ingredient
+    ) {
+        if (!TENJeiSlotOverlay.shouldHaveOverlay(true, slot.role() == TENRecipeWidget.SlotRole.OUTPUT, ingredient)) {
+            return;
+        }
+        var overlay = TENJeiSlotOverlay.create(ingredient);
+        if (overlay != null) {
+            // Offsets: text relative to slot origin (slot.x+2, slot.y)
+            jeiSlot.setOverlay(overlay, TENJeiSlotOverlay.X_OFFSET, TENJeiSlotOverlay.Y_OFFSET);
+        }
+    }
+
+    /**
+     * Registers rich tooltip callbacks for chance/rolls/not-consumed on a
+     * single slot. Delegates classification to
+     * {@link FormsCombinedIngredient#tooltipKind(boolean)} so the decision
+     * logic is testable without JEI runtime.
+     */
+    private static void registerSlotTooltips(
+            mezz.jei.api.gui.builder.IRecipeSlotBuilder jeiSlot,
+            TENRecipeWidget.SlotSpec slot,
+            FormsCombinedIngredient ingredient
+    ) {
+        boolean isOutput = slot.role() == TENRecipeWidget.SlotRole.OUTPUT;
+        switch (ingredient.tooltipKind(isOutput)) {
+            case CHANCE_ONLY -> jeiSlot.addRichTooltipCallback(
+                    (view, tooltip) -> tooltip.add(Component.translatable(
+                            "kenergyengineering.jei_addition_chance",
+                            TENRecipeWidget.chancePercent(ingredient.chance()))));
+            case CHANCE_WITH_ROLLS -> jeiSlot.addRichTooltipCallback(
+                    (view, tooltip) -> tooltip.add(Component.translatable(
+                            "kenergyengineering.jei_addition_chance_rolls",
+                            TENRecipeWidget.chancePercent(ingredient.chance()),
+                            ingredient.rolls())));
+            case NOT_CONSUMED -> jeiSlot.addRichTooltipCallback(
+                    (view, tooltip) -> tooltip.add(Component.translatable(
+                            "kenergyengineering.not_consumed")));
+            case NONE -> { /* no callback */ }
+        }
+    }
+
     @Override
     public void draw(FormsCombinedRecipe recipe, IRecipeSlotsView slotsView, GuiGraphicsExtractor graphics, double mouseX, double mouseY) {
         TENRecipeWidget.drawJei(recipe, graphics, layout);
+        // Slot overlays (chance/rolls text) are now attached via
+        // IRecipeSlotBuilder.setOverlay() in setRecipe() — drawn by JEI
+        // after slot items for correct z-order.
     }
 
     private static RecipeIngredientRole toJeiRole(TENRecipeWidget.SlotRole role) {

@@ -2,9 +2,7 @@
   "type": "minecraft:smelting",
   "cookingtime": 200,
   "experience": 0.0,
-  "ingredient": {
-    "item": "kenergyengineering:mushrium_dust"
-  },
+  "ingredient": "kenergyengineering:mushrium_dust",
   "result": {
     "id": "kenergyengineering:mushrium_ingot"
   }

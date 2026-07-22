@@ -1,9 +1,7 @@
 {
   "type": "minecraft:crafting_shaped",
   "key": {
-    "C": {
-      "item": "minecraft:redstone"
-    }
+    "C": "minecraft:redstone"
   },
   "pattern": [
     " C ",

@@ -2,9 +2,7 @@
   "type": "minecraft:blasting",
   "cookingtime": 100,
   "experience": 0.0,
-  "ingredient": {
-    "item": "kenergyengineering:tin_dust"
-  },
+  "ingredient": "kenergyengineering:tin_dust",
   "result": {
     "id": "kenergyengineering:tin_ingot"
   }

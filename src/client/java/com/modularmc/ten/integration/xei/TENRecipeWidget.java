@@ -17,6 +17,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.jetbrains.annotations.Nullable;
+
 public final class TENRecipeWidget {
 
     public enum SlotKind {
@@ -212,6 +214,53 @@ public final class TENRecipeWidget {
      */
     public static int chancePercent(double chance) {
         return (int) Math.round(chance * 100.0d);
+    }
+
+    /**
+     * Draw slot overlay text (chance percentage and rolls) for JEI item output
+     * slots. Only affects ITEM + OUTPUT slots; chance >= 1.0 and rolls <= 1
+     * produce no overlay. Text is rendered in the white with a dark shadow for
+     * readability over item icons.
+     * <ul>
+     *   <li>Top-left: chance percentage like {@code "40%"} (when chance &lt; 1)</li>
+     *   <li>Bottom-left: rolls like {@code "R9"} (when rolls &gt; 1)</li>
+     * </ul>
+     * The right-bottom ItemStack count rendered by JEI is not modified.
+     */
+    public static void drawSlotOverlays(FormsCombinedRecipe recipe, GuiGraphicsExtractor graphics, Layout layout) {
+        Font font = Minecraft.getInstance().font;
+        for (var slot : layout.slots()) {
+            if (slot.kind() != SlotKind.ITEM || slot.role() != SlotRole.OUTPUT) continue;
+            var ingredient = ingredientFor(recipe, slot);
+            if (ingredient == null) continue;
+
+            String chanceText = ingredient.chanceOverlayText();
+            String rollsText = ingredient.rollsOverlayText();
+
+            // Top-left: chance percentage (e.g., "40%")
+            if (chanceText != null) {
+                graphics.text(font, chanceText, slot.x() + 1, slot.y() + 1, 0xFFFFFFFF, true);
+            }
+            // Bottom-left: rolls (e.g., "R9")
+            if (rollsText != null) {
+                graphics.text(font, rollsText, slot.x() + 1, slot.y() + 10, 0xFFFFFFFF, true);
+            }
+        }
+    }
+
+    /** @deprecated Use {@link #drawSlotOverlays(FormsCombinedRecipe, GuiGraphicsExtractor, Layout)} */
+    @Deprecated(forRemoval = false)
+    public static void drawSlotOverlay(GuiGraphicsExtractor graphics, int x, int y, @Nullable FormsCombinedIngredient ingredient) {
+        if (ingredient == null) return;
+        Font font = Minecraft.getInstance().font;
+        String chanceText = ingredient.chanceOverlayText();
+        String rollsText = ingredient.rollsOverlayText();
+        if (chanceText != null) {
+            graphics.text(font, chanceText, x + 1, y + 1, 0xFFFFFFFF, true);
+        }
+        if (rollsText != null) {
+            graphics.text(font, rollsText, x + 1, y + 10, 0xFFFFFFFF, true);
+        }
     }
 
     private static void drawProgressDecoration(GuiGraphicsExtractor graphics, DecorationSpec decoration, double percent) {

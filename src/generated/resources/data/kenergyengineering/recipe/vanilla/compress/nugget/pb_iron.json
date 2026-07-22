@@ -1,9 +1,7 @@
 {
   "type": "minecraft:crafting_shaped",
   "key": {
-    "C": {
-      "item": "minecraft:iron_nugget"
-    }
+    "C": "minecraft:iron_nugget"
   },
   "pattern": [
     "CCC",

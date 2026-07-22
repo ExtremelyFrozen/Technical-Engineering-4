@@ -4,6 +4,8 @@ import com.modularmc.ten.TEN;
 
 import net.minecraft.resources.Identifier;
 
+import java.util.List;
+
 /**
  * Material variant definition shared by:
  * <ul>
@@ -242,5 +244,41 @@ public enum Mat {
      */
     public String rawBlockTag() {
         return "c:storage_blocks/raw_" + id;
+    }
+
+    // ── Shapeless recipe metadata ──────────────────────────────
+
+    /**
+     * A cross-material shapeless (crafting table) recipe definition.
+     * Ingredients are stored as logical IDs ({@code "c:dusts/tin"},
+     * {@code "minecraft:redstone"}) and converted to 26.1 bare-string
+     * format by {@code ref()} at build time.
+     *
+     * @param ingredients Ingredient IDs ({@code c:...} for tags, {@code ns:path} for items — no {@code #})
+     * @param resultItem  Output item ID
+     * @param resultCount Output stack count
+     */
+    public record ShapelessRecipe(List<String> ingredients, String resultItem, int resultCount) {}
+
+    /**
+     * Cross-material shapeless recipes specific to this material.
+     * Returns an empty list for materials without special recipes.
+     * <p>
+     * Duplicate entries in {@code ingredients} are intentional and must be
+     * preserved — they represent multiple copies of the same ingredient.
+     */
+    public List<ShapelessRecipe> shapelessRecipes() {
+        return switch (this) {
+            case POWERED_TIN -> List.of(new ShapelessRecipe(
+                    List.of("c:dusts/tin", "c:dusts/copper",
+                            "minecraft:redstone", "minecraft:redstone"),
+                    "kenergyengineering:powered_tin_dust", 2));
+            case CHLORIUM -> List.of(new ShapelessRecipe(
+                    List.of("c:dusts/powered_tin", "c:dusts/powered_tin",
+                            "minecraft:glowstone_dust", "minecraft:glowstone_dust",
+                            "c:dusts/nickel"),
+                    "kenergyengineering:chlorium_dust", 2));
+            default -> List.of();
+        };
     }
 }

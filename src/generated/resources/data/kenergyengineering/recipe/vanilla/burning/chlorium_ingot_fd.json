@@ -2,9 +2,7 @@
   "type": "minecraft:smelting",
   "cookingtime": 200,
   "experience": 0.0,
-  "ingredient": {
-    "item": "kenergyengineering:chlorium_dust"
-  },
+  "ingredient": "kenergyengineering:chlorium_dust",
   "result": {
     "id": "kenergyengineering:chlorium_ingot"
   }
