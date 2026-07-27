@@ -27,6 +27,18 @@ public class MachineEnergyStorage extends EnergyStorage {
         this.maxExtract = max;
     }
 
+    /**
+     * Sets the capacity of this energy storage.
+     * If the current stored energy exceeds the new capacity, it is truncated.
+     */
+    public void setCapacity(int capacity) {
+        this.capacity = Math.max(0, capacity);
+        if (this.energy > this.capacity) {
+            this.energy = this.capacity;
+        }
+        changeListener.run();
+    }
+
     @Override
     public int receiveEnergy(int maxReceive, boolean simulate) {
         int received = super.receiveEnergy(maxReceive, simulate);

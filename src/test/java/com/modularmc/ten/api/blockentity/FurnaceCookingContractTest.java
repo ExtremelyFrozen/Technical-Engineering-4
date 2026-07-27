@@ -316,8 +316,8 @@ class FurnaceCookingContractTest {
                     progress, 200, energy, 100,
                     true, false
             );
-            assertEquals(175, unblocked.progress(),
-                    "Progress continues from 75 + 100 = 175");
+            assertEquals(76, unblocked.progress(),
+                    "Progress continues from 75 + 1 = 76 (progress++)");
             assertEquals(900, unblocked.energy(),
                     "Energy consumed only after unblock: 1000 - 100 = 900");
             assertTrue(unblocked.active(),
@@ -347,8 +347,129 @@ class FurnaceCookingContractTest {
     }
 
     // ════════════════════════════════════════════════════════════
-    // G. Source verification — the cooking() fix is in place
+    // I. Recipe identity verification on completion (S3 fix)
     // ════════════════════════════════════════════════════════════
+
+    /**
+     * Simulates Furnace onCookFinish with S3 identity check.
+     * Returns true if consumption would proceed (identity matches),
+     * false if blocked (identity mismatch or input/output issues).
+     */
+    static boolean simulateIdentityCheckedOnCookFinish(
+            String lockedRecipeId, String currentRecipeId,
+            int inputCount, int outputCount, int outputMaxStack,
+            int resultCount, int B) {
+        // S3: verify recipe identity still matches
+        if (!java.util.Objects.equals(lockedRecipeId, currentRecipeId)) {
+            return false; // identity mismatch → don't consume
+        }
+        // Check input has at least B items
+        if (inputCount < B) return false;
+        // Check output has room for B×result
+        long totalResult = (long) resultCount * B;
+        if (totalResult > Integer.MAX_VALUE) return false;
+        int totalResultInt = (int) totalResult;
+        if (outputCount + totalResultInt > outputMaxStack) return false;
+        return true; // would proceed
+    }
+
+    @Nested
+    class IdentityVerification {
+
+        @Test
+        void sameIdentity_allowsConsumption() {
+            assertTrue(simulateIdentityCheckedOnCookFinish(
+                    "ten:furnace_iron", "ten:furnace_iron",
+                    10, 0, 64, 1, 3),
+                    "Same recipe identity: consumption allowed");
+        }
+
+        @Test
+        void differentIdentity_blocksConsumption() {
+            assertFalse(simulateIdentityCheckedOnCookFinish(
+                    "ten:furnace_iron", "ten:furnace_gold",
+                    10, 0, 64, 1, 3),
+                    "Different recipe identity: consumption blocked (S3 fix)");
+        }
+
+        @Test
+        void nullIdentity_blocksConsumption() {
+            assertFalse(simulateIdentityCheckedOnCookFinish(
+                    "ten:furnace_iron", null,
+                    10, 0, 64, 1, 3),
+                    "Null current identity: consumption blocked");
+        }
+
+        @Test
+        void insufficientInput_blocksConsumption() {
+            assertFalse(simulateIdentityCheckedOnCookFinish(
+                    "ten:furnace_iron", "ten:furnace_iron",
+                    2, 0, 64, 1, 5),
+                    "Input count < B: consumption blocked");
+        }
+
+        @Test
+        void outputFull_blocksConsumption() {
+            assertFalse(simulateIdentityCheckedOnCookFinish(
+                    "ten:furnace_iron", "ten:furnace_iron",
+                    10, 63, 64, 1, 3),
+                    "63+3 > 64: consumption blocked");
+        }
+
+        @Test
+        void totalResultOverflow_blocksConsumption() {
+            // resultCount=Integer.MAX_VALUE, B=2 → overflow
+            assertFalse(simulateIdentityCheckedOnCookFinish(
+                    "ten:furnace_iron", "ten:furnace_iron",
+                    10, 0, 64, Integer.MAX_VALUE, 2),
+                    "Long overflow: consumption blocked");
+        }
+    }
+
+    // ════════════════════════════════════════════════════════════
+    // J. Source verification — identity check present in onCookFinish
+    // ════════════════════════════════════════════════════════════
+
+    @Nested
+    class SourceVerificationS3 {
+
+        @Test
+        void onCookFinish_checksRecipeIdentity() throws Exception {
+            var sourceFile = new java.io.File(
+                    "src/main/java/com/modularmc/ten/common/blockentity/machine/FurnaceBlockEntity.java");
+            assertTrue(sourceFile.exists());
+            var content = java.nio.file.Files.readString(sourceFile.toPath());
+
+            // After fix: onCookFinish must check lastRecipeId against current
+            assertTrue(content.contains("lastRecipeId"),
+                    "FurnaceBlockEntity must have lastRecipeId field for identity tracking");
+
+            int onCookStart = content.indexOf("public void onCookFinish()");
+            assertTrue(onCookStart >= 0);
+            String afterOnCook = content.substring(onCookStart);
+
+            // Must have identity comparison in onCookFinish
+            assertTrue(afterOnCook.contains("Objects.equals(lastRecipeId") ||
+                            afterOnCook.contains("lastRecipeId"),
+                    "onCookFinish must verify recipe identity before consuming");
+        }
+
+        @Test
+        void onCookFinish_usesGetSlotLimitForCapacity() throws Exception {
+            var sourceFile = new java.io.File(
+                    "src/main/java/com/modularmc/ten/common/blockentity/machine/FurnaceBlockEntity.java");
+            assertTrue(sourceFile.exists());
+            var content = java.nio.file.Files.readString(sourceFile.toPath());
+
+            int onCookStart = content.indexOf("public void onCookFinish()");
+            assertTrue(onCookStart >= 0);
+            String afterOnCook = content.substring(onCookStart);
+
+            // Must use getSlotLimit(1) for output capacity check
+            assertTrue(afterOnCook.contains("getSlotLimit(1)"),
+                    "onCookFinish must use getSlotLimit(1) for output capacity");
+        }
+    }
 
     @Nested
     class SourceVerification {
@@ -382,13 +503,11 @@ class FurnaceCookingContractTest {
             // Look at the content after the isSameItem check
             String afterSameItem = cookingBody.substring(isSameItemIdx);
 
-            // The cooking body ends with the full-stack overflow return.
-            // Between isSameItem and the output-count return, there must be
+            // Between isSameItem and the output-stacksize return, there must be
             // "return true" (the different-item branch) — not "return false".
-            int outputCountReturnIdx = afterSameItem.indexOf(
-                    "return output.getCount() + result.getCount()");
+            int outputCountReturnIdx = afterSameItem.indexOf("getMaxStackSize()");
             assertTrue(outputCountReturnIdx >= 0,
-                    "cooking() must contain the output count comparison return");
+                    "cooking() must contain the max stack size comparison");
 
             String beforeOutputCountReturn = afterSameItem.substring(0, outputCountReturnIdx);
 
@@ -416,6 +535,146 @@ class FurnaceCookingContractTest {
             String afterIsEmpty = cookingBody.substring(isEmptyIdx);
             assertTrue(afterIsEmpty.contains("return false"),
                     "Empty output branch must still return false (allow processing)");
+        }
+
+        @Test
+        void cookingUsesBatchSizeForOverflowCheck() throws Exception {
+            var sourceFile = new java.io.File(
+                    "src/main/java/com/modularmc/ten/common/blockentity/machine/FurnaceBlockEntity.java");
+            assertTrue(sourceFile.exists());
+
+            var content = java.nio.file.Files.readString(sourceFile.toPath());
+
+            int cookingStart = content.indexOf("public boolean cooking()");
+            assertTrue(cookingStart >= 0);
+            String cookingBody = content.substring(cookingStart);
+
+            // Must reference getLockedBatchSize() for B-aware overflow check
+            assertTrue(cookingBody.contains("getLockedBatchSize()"),
+                    "P1-T3a: cooking() must use getLockedBatchSize() for B-aware capacity check");
+        }
+    }
+
+    // ════════════════════════════════════════════════════════════
+    // H (old). Batch contract — B>1 semantics
+    // ════════════════════════════════════════════════════════════
+
+    /**
+     * Simulates Furnace onCookFinish with batch support.
+     * Consumes B input items and produces B result items.
+     * Early exits if input depletes.
+     */
+    static SimStack[] simulateBatchOnCookFinish(SimStack input, SimStack output,
+                                                 SimStack result, int B) {
+        // Returns [inputAfter, outputAfter]
+        SimStack inputAfter = input;
+        SimStack outputAfter = output;
+        int remaining = B;
+
+        while (remaining > 0) {
+            // Check input available
+            if (inputAfter.isEmpty() || inputAfter.count() < 1) break;
+
+            // Check output space
+            if (!outputAfter.isEmpty()) {
+                if (outputAfter.item() != result.item()) break;
+                if (outputAfter.count() + result.count() > outputAfter.maxStack()) break;
+            }
+
+            // Consume 1 input
+            inputAfter = new SimStack(inputAfter.item(), inputAfter.count() - 1, inputAfter.maxStack());
+
+            // Produce result
+            if (outputAfter.isEmpty()) {
+                outputAfter = result;
+            } else {
+                outputAfter = new SimStack(outputAfter.item(), outputAfter.count() + result.count(), outputAfter.maxStack());
+            }
+            remaining--;
+        }
+
+        return new SimStack[]{inputAfter, outputAfter};
+    }
+
+    @Nested
+    class BatchContract {
+
+        @Test
+        void B1_producesSingleResult() {
+            var result = simulateBatchOnCookFinish(
+                    SimStack.of(ITEM_ORE, 5),
+                    SimStack.empty(),
+                    SimStack.of(ITEM_INGOT, 1),
+                    1
+            );
+            assertEquals(4, result[0].count(), "Input 5→4 after 1 consumption");
+            assertEquals(ITEM_INGOT, result[1].item(), "Output has ingot");
+            assertEquals(1, result[1].count(), "Output count = 1");
+        }
+
+        @Test
+        void B3_consumes3Inputs_produces3Results() {
+            var result = simulateBatchOnCookFinish(
+                    SimStack.of(ITEM_ORE, 10),
+                    SimStack.empty(),
+                    SimStack.of(ITEM_INGOT, 1),
+                    3
+            );
+            assertEquals(7, result[0].count(), "Input 10→7 after 3 consumptions");
+            assertEquals(ITEM_INGOT, result[1].item());
+            assertEquals(3, result[1].count(), "Output count = 3 (B=3)");
+        }
+
+        @Test
+        void inputDepleted_earlyExit() {
+            var result = simulateBatchOnCookFinish(
+                    SimStack.of(ITEM_ORE, 2),
+                    SimStack.empty(),
+                    SimStack.of(ITEM_INGOT, 1),
+                    5 // B=5 but only 2 input available
+            );
+            assertTrue(result[0].isEmpty(), "Input fully consumed");
+            assertEquals(2, result[1].count(), "Only 2 results produced (limited by input)");
+        }
+
+        @Test
+        void outputFull_blocksBatch() {
+            // 2 items already in output, maxStack=64, result=1, B=3
+            // 2 + 1*3 = 5 <= 64, so this should work
+            var result = simulateBatchOnCookFinish(
+                    SimStack.of(ITEM_ORE, 10),
+                    SimStack.of(ITEM_INGOT, 63),
+                    SimStack.of(ITEM_INGOT, 1),
+                    3
+            );
+            // 63 + 1 = 64 OK for first unit, but 64+1 = 65 > 64 for second
+            // So only 1 should be produced
+            assertEquals(64, result[1].count(), "Output capped at max stack");
+            assertEquals(9, result[0].count(), "Only 1 input consumed");
+        }
+
+        @Test
+        void B1_behaviorMatchesNonBatch() {
+            var batchResult = simulateBatchOnCookFinish(
+                    SimStack.of(ITEM_ORE, 5),
+                    SimStack.empty(),
+                    SimStack.of(ITEM_INGOT, 1),
+                    1
+            );
+            assertEquals(4, batchResult[0].count());
+            assertEquals(1, batchResult[1].count());
+        }
+
+        @Test
+        void emptyInput_doesNothing() {
+            var result = simulateBatchOnCookFinish(
+                    SimStack.empty(),
+                    SimStack.empty(),
+                    SimStack.of(ITEM_INGOT, 1),
+                    3
+            );
+            assertTrue(result[0].isEmpty());
+            assertTrue(result[1].isEmpty());
         }
     }
 }

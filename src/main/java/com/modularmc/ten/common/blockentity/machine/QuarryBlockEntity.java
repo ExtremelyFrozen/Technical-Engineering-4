@@ -24,6 +24,7 @@ import com.lowdragmc.lowdraglib2.gui.factory.BlockUIMenuType;
 import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
 
 import java.util.List;
+import java.util.function.ToIntBiFunction;
 
 public class QuarryBlockEntity extends RadiusMachineBlockEntity {
 
@@ -125,19 +126,55 @@ public class QuarryBlockEntity extends RadiusMachineBlockEntity {
         if (level == null || itemHandler == null) {
             return;
         }
-        switch (mode) {
+        // P3-T1c: Install dynamic output slot limit based on locked batch size
+        installDynamicOutputLimit();
+        // conditionStart is already checked in outer process() — no need to repeat.
+        // Only truly fatal conditions (tool broken) break the loop.
+        int B = getLockedBatchSize();
+        for (int i = 0; i < B; i++) {
+            if (itemHandler.getStackInSlot(0).isEmpty()) break; // Tool broken/empty → fatal → break
+            // Per-operation miss (no drops, can't break, capacity full) → continue
+            executeSingleOperation();
+        }
+    }
+
+    /**
+     * Install dynamic slot limit on output slots (1..12) based on lockedB.
+     * Limit = min(lockedB + 63, 99) per slot, preserving existing overstack.
+     */
+    private void installDynamicOutputLimit() {
+        if (itemHandler == null) return;
+        int B = getLockedBatchSize();
+        itemHandler.setDynamicSlotLimit((slot, candidate) -> {
+            if (slot < 1 || slot >= inventorySize()) return 64; // Not output
+            int limit = Math.min(B + 63, 99);
+            // Never go below existing count
+            ItemStack existing = itemHandler.getStackInSlot(slot);
+            if (!existing.isEmpty()) {
+                limit = Math.max(limit, existing.getCount());
+            }
+            return limit;
+        });
+    }
+
+    /**
+     * Execute one unit of the current mode's operation.
+     * @return true if operation was executed, false if cannot continue
+     */
+    private boolean executeSingleOperation() {
+        return switch (mode) {
             case 0, 3 -> mineRandomBlock();
             case 1 -> giveGeneratedLoot(
                     Math.random() < 0.75 ? Items.ICE.getDefaultInstance() : Math.random() < 0.75 ? Items.PACKED_ICE.getDefaultInstance() : Items.BLUE_ICE.getDefaultInstance());
             case 2 -> giveGeneratedLoot(
                     Math.random() < 0.75 ? Items.MAGMA_BLOCK.getDefaultInstance() : Items.MAGMA_CREAM.getDefaultInstance());
-            default -> {}
-        }
+            default -> false;
+        };
     }
 
-    private void mineRandomBlock() {
+    private boolean mineRandomBlock() {
         if (level == null || itemHandler == null) {
-            return;
+            return false;
         }
         int dx = Mth.nextInt(level.getRandom(), -radius + 1, radius - 1);
         int dz = Mth.nextInt(level.getRandom(), -radius + 1, radius - 1);
@@ -145,15 +182,20 @@ public class QuarryBlockEntity extends RadiusMachineBlockEntity {
         target = target.atY(Mth.randomBetweenInclusive(level.getRandom(), level.getMinY(), worldPosition.getY() - 1));
         BlockState state = level.getBlockState(target);
         if (!canBreak(state)) {
-            return;
+            return false;
         }
         List<ItemStack> drops = state.getDrops(WorkingHelper.getLootBuilder(level, target, itemHandler.getStackInSlot(0)));
+        // P3-T1c: Empty drops → return false, do NOT destroy block or waste durability
+        if (drops.isEmpty()) {
+            return false;
+        }
         if (!canFitAll(drops)) {
-            return;
+            return false;
         }
         fitAll(drops);
         level.destroyBlock(target, false);
         ItemNBTHelper.damage(itemHandler.getStackInSlot(0), level, 1);
+        return true;
     }
 
     private boolean canBreak(BlockState state) {
@@ -170,10 +212,12 @@ public class QuarryBlockEntity extends RadiusMachineBlockEntity {
         return false;
     }
 
-    private void giveGeneratedLoot(ItemStack stack) {
+    private boolean giveGeneratedLoot(ItemStack stack) {
         if (canFit(stack)) {
             insertFirstFit(stack.copy());
+            return true;
         }
+        return false;
     }
 
     private boolean canFit(ItemStack stack) {
@@ -182,37 +226,137 @@ public class QuarryBlockEntity extends RadiusMachineBlockEntity {
             if (existing.isEmpty()) {
                 return true;
             }
-            if (ItemStack.isSameItem(existing, stack) && existing.getCount() + stack.getCount() <= existing.getMaxStackSize()) {
+            // Use dynamic slot limit instead of hard-coded maxStackSize
+            int slotLimit = itemHandler.getSlotLimit(i);
+            if (ItemStack.isSameItem(existing, stack) && existing.getCount() + stack.getCount() <= slotLimit) {
                 return true;
             }
         }
         return false;
     }
 
+    /**
+     * P3-T1c: Check if all drops can fit in output slots using simulated
+     * accumulation into a local snapshot copy. This matches the exact same
+     * logic as fitAll's commit, ensuring multiple different drops don't
+     * compete for the same empty slot (unlike the per-item canFit approach).
+     */
     private boolean canFitAll(List<ItemStack> stacks) {
+        int outputStart = 1;
+        int slotCount = itemHandler.getSlots() - outputStart;
+        ItemStack[] simulated = copyOutputSlots(outputStart, slotCount);
         for (ItemStack stack : stacks) {
-            if (!canFit(stack)) {
+            ItemStack remaining = simulateInsert(simulated, stack.copy(), outputStart);
+            if (!remaining.isEmpty()) {
                 return false;
             }
         }
         return true;
     }
 
+    /**
+     * Snapshot output slots into a new ItemStack[] array (deep copy).
+     */
+    private ItemStack[] copyOutputSlots(int start, int count) {
+        ItemStack[] copy = new ItemStack[count];
+        for (int i = 0; i < count; i++) {
+            ItemStack s = itemHandler.getStackInSlot(start + i);
+            copy[i] = s.isEmpty() ? ItemStack.EMPTY : s.copy();
+        }
+        return copy;
+    }
+
+    /**
+     * Simulate inserting a single stack into the slot array, updating it in-place.
+     * Returns the remaining stack (empty if fully inserted).
+     * Logic matches the commit-phase insert exactly: respects slot limits,
+     * handles same-item merge, and spills across slots.
+     */
+    private ItemStack simulateInsert(ItemStack[] slots, ItemStack stack, int outputStart) {
+        for (int j = 0; j < slots.length && !stack.isEmpty(); j++) {
+            if (slots[j].isEmpty()) {
+                int slotLimit = itemHandler.getSlotLimit(outputStart + j);
+                if (stack.getCount() <= slotLimit) {
+                    slots[j] = stack;
+                    stack = ItemStack.EMPTY;
+                } else {
+                    ItemStack fill = stack.copy();
+                    fill.setCount(slotLimit);
+                    slots[j] = fill;
+                    stack.shrink(slotLimit);
+                }
+            } else if (ItemStack.isSameItem(slots[j], stack)) {
+                int slotLimit = itemHandler.getSlotLimit(outputStart + j);
+                int room = slotLimit - slots[j].getCount();
+                int moved = Math.min(room, stack.getCount());
+                if (moved > 0) {
+                    slots[j].grow(moved);
+                    stack.shrink(moved);
+                }
+            }
+        }
+        return stack;
+    }
+
+    /**
+     * P3-T1c: Fit all drops using snapshot+simulate+commit pattern.
+     * <ol>
+     *   <li>Snapshot output slots into local array</li>
+     *   <li>Simulate all drops on snapshot</li>
+     *   <li>Fail-fast if any remaining (pre-condition violated)</li>
+     *   <li>Commit snapshot atomically to real handler</li>
+     * </ol>
+     */
     private void fitAll(List<ItemStack> stacks) {
+        // 1. Snapshot output slots
+        int outputStart = 1;
+        int slotCount = itemHandler.getSlots() - outputStart;
+        ItemStack[] snapshot = copyOutputSlots(outputStart, slotCount);
+
+        // 2. Simulate insertion on snapshot
         for (ItemStack stack : stacks) {
-            insertFirstFit(stack.copy());
+            ItemStack remaining = simulateInsert(snapshot, stack.copy(), outputStart);
+            if (!remaining.isEmpty()) {
+                // 3. Fail-fast: partial state must never reach the handler
+                throw new IllegalStateException(
+                        "Quarry cannot fit all drops: " + stack + " has "
+                        + remaining.getCount() + " remaining. "
+                        + "canFitAll pre-check should have prevented this.");
+            }
+        }
+
+        // 4. Commit: write snapshot atomically to the real handler
+        for (int i = 0; i < slotCount; i++) {
+            itemHandler.setStackInSlot(outputStart + i, snapshot[i]);
         }
     }
 
+    /**
+     * Insert a single stack into the first available output slot.
+     * Used by {@link #giveGeneratedLoot} for single-item generated loot.
+     * <p>
+     * NOTE: This method should not be reached from the canFitAll+fitAll flow
+     * (which uses snapshot+commit). Fail-fast if stack doesn't fully fit.
+     */
     private void insertFirstFit(ItemStack stack) {
         for (int i = 1; i < itemHandler.getSlots(); i++) {
             ItemStack existing = itemHandler.getStackInSlot(i);
             if (existing.isEmpty()) {
-                itemHandler.setStackInSlot(i, stack);
-                return;
+                int slotLimit = itemHandler.getSlotLimit(i);
+                if (stack.getCount() <= slotLimit) {
+                    itemHandler.setStackInSlot(i, stack);
+                    return;
+                } else {
+                    ItemStack fill = stack.copy();
+                    fill.setCount(slotLimit);
+                    stack.shrink(slotLimit);
+                    itemHandler.setStackInSlot(i, fill);
+                    continue;
+                }
             }
             if (ItemStack.isSameItem(existing, stack)) {
-                int room = existing.getMaxStackSize() - existing.getCount();
+                int slotLimit = itemHandler.getSlotLimit(i);
+                int room = slotLimit - existing.getCount();
                 int moved = Math.min(room, stack.getCount());
                 if (moved > 0) {
                     existing.grow(moved);
@@ -222,6 +366,12 @@ public class QuarryBlockEntity extends RadiusMachineBlockEntity {
                     }
                 }
             }
+        }
+        // Fail-fast: prevent silent item loss
+        if (!stack.isEmpty()) {
+            throw new IllegalStateException(
+                    "Quarry insertFirstFit cannot fit " + stack + ": no available slot. "
+                    + "canFitAll pre-check should have prevented this.");
         }
     }
 

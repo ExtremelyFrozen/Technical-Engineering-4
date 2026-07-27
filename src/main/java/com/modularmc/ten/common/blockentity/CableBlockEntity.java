@@ -21,7 +21,9 @@ import com.lowdragmc.lowdraglib2.gui.ui.UIElement;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.Label;
 import dev.vfyjxf.taffy.style.TaffyPosition;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -84,58 +86,52 @@ public class CableBlockEntity extends CmBlockEntity {
             }
         }
 
-        // Phase 2: Extract from source (actual), push to sinks first, then buffer
-        for (var sourceEntry : sources.entrySet()) {
-            IEnergyStorage source = sourceEntry.getValue();
-            int pulled = source.extractEnergy(rate, false);
-            if (pulled <= 0) continue;
-            moved += pulled;
-
-            int remaining = pulled;
-            for (var sinkEntry : sinks.entrySet()) {
-                if (remaining <= 0) break;
-                if (sinkEntry.getKey().equals(sourceEntry.getKey())) continue; // skip self
-                int accepted = sinkEntry.getValue().receiveEnergy(Math.min(remaining, rate), false);
-                remaining -= accepted;
-            }
-
-            // Overflow into cable buffer
-            if (remaining > 0) {
-                fillNetwork(network, remaining, false);
+        // Collect cable buffer storages
+        List<IEnergyStorage> cableBuffers = new ArrayList<>();
+        for (BlockPos pos : network) {
+            if (level.getBlockEntity(pos) instanceof CableBlockEntity cable) {
+                cableBuffers.add(cable.storage);
             }
         }
 
-        // Phase 3: Cable buffer -> sinks (energy left in buffer from previous cycles)
-        int bufferEnergy = drainNetwork(network, Integer.MAX_VALUE, true);
-        if (bufferEnergy > 0) {
+        // Phase 2: Atomically distribute from each source to sinks+buffers
+        // Uses simulate-then-execute via CableEnergyDistribution to prevent
+        // TOCTOU energy loss: energy is only extracted from source AFTER
+        // verifying sinks and buffers can accept it.
+        for (var sourceEntry : sources.entrySet()) {
+            IEnergyStorage source = sourceEntry.getValue();
+            BlockPos sourcePos = sourceEntry.getKey();
+
+            // Build sink list for this source (skip self-position)
+            List<IEnergyStorage> activeSinks = new ArrayList<>();
             for (var sinkEntry : sinks.entrySet()) {
-                if (bufferEnergy <= 0) break;
-                int accepted = sinkEntry.getValue().receiveEnergy(Math.min(bufferEnergy, rate), false);
-                if (accepted <= 0) continue;
-                int actual = drainNetwork(network, accepted, false);
-                if (actual > 0) {
-                    moved += actual;
-                    bufferEnergy -= actual;
+                if (!sinkEntry.getKey().equals(sourcePos)) {
+                    activeSinks.add(sinkEntry.getValue());
                 }
+            }
+
+            moved += CableEnergyDistribution.distributeFromSource(
+                    source, activeSinks, cableBuffers, rate);
+        }
+
+        // Phase 3: Cable buffer -> sinks (energy left in buffer from previous cycles)
+        // Uses per-sink simulate→execute to ensure atomic drain
+        for (var sinkEntry : sinks.entrySet()) {
+            int bufferAvailable = drainNetwork(network, rate, true);
+            if (bufferAvailable <= 0) continue;
+            int accepted = sinkEntry.getValue().receiveEnergy(bufferAvailable, true);
+            if (accepted <= 0) continue;
+            int toMove = Math.min(bufferAvailable, accepted);
+            if (toMove <= 0) continue;
+            int actualDrained = drainNetwork(network, toMove, false);
+            if (actualDrained > 0) {
+                // We pre-simulated the sink accept, so execute should succeed
+                int received = sinkEntry.getValue().receiveEnergy(actualDrained, false);
+                moved += received;
             }
         }
 
         return moved;
-    }
-
-    private int fillNetwork(Set<BlockPos> network, int amount, boolean simulate) {
-        int remaining = amount;
-        for (BlockPos pos : network) {
-            if (!(level.getBlockEntity(pos) instanceof CableBlockEntity cable)) {
-                continue;
-            }
-            int received = cable.storage.receiveEnergy(remaining, simulate);
-            remaining -= received;
-            if (remaining <= 0) {
-                break;
-            }
-        }
-        return amount - remaining;
     }
 
     private int drainNetwork(Set<BlockPos> network, int amount, boolean simulate) {

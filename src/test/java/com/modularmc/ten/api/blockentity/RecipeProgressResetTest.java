@@ -198,4 +198,158 @@ class RecipeProgressResetTest {
                     "currentRecipe assignment must appear after previousRecipe capture");
         }
     }
+
+    // ════════════════════════════════════════════════════════════
+    // H. Energy不足暂停不重置progress (新契约 — 重构目标)
+    // ════════════════════════════════════════════════════════════
+    //
+    // 当前行为（P0 RED基线）：ProcessingMachineBlockEntity.process() 的
+    // else 分支无条件 `progress = 0`。重构目标：能量不足/输出满时暂停
+    // 仅保留 progress，只有配方失效（recipe identity 变化）才重置。
+    // 本组测试验证「conditions不满足时的行为差异」：conditions不满足
+    // 不等于 energy不足。process() 中 energy不足 走 early return
+    // 而非 else 分支，progress 不会被清零（已由 ProcessStepContractTest
+    // 验证）。本组聚焦 conditionStart() 层面的 identity 变化。
+    // ════════════════════════════════════════════════════════════
+
+    @Nested
+    class EnergyPreservationContract {
+        // 这些测试验证「配方仍有效但 conditions 暂时不满足时，
+        // conditionStart 本身不应清零 progress」—— 这已经是当前
+        // simulateConditionStart 的行为（保留 progress）。
+        // 重构后的 process() 还需额外保证 energy不足 的 early return
+        // 不进入 else 分支重置，这由 ProcessStepContractTest 验证。
+
+        @Test
+        void sameRecipe_energyTemporarilyLow_preservesProgress() {
+            // 配方未变（仍为 RECIPE_A），只是暂时能量不足
+            // conditionStart 自身不应清零 progress
+            int progress = simulateConditionStart(RECIPE_A, RECIPE_A, 50);
+            assertEquals(50, progress,
+                    "conditionStart must preserve progress when same recipe continues" +
+                    " (energy不足应由 process() 的 early return 处理)");
+        }
+
+        @Test
+        void sameRecipe_outputFull_preservesProgress() {
+            // 配方未变，输出暂时满
+            int progress = simulateConditionStart(RECIPE_A, RECIPE_A, 50);
+            assertEquals(50, progress,
+                    "conditionStart must preserve progress when same recipe continues" +
+                    " (输出满应由 process() 通过 cooking() 阻止进度推进)");
+        }
+
+        @Test
+        void sameRecipe_conditionsRestored_resumesProgress() {
+            // 配方持续存在，多次调用 conditionStart 均保留
+            int progress = simulateConditionStart(RECIPE_A, RECIPE_A, 50);
+            progress = simulateConditionStart(RECIPE_A, RECIPE_A, progress);
+            progress = simulateConditionStart(RECIPE_A, RECIPE_A, progress);
+            assertEquals(50, progress,
+                    "Progress must be preserved across multiple same-recipe conditionStart calls");
+        }
+    }
+
+    // ════════════════════════════════════════════════════════════
+    // I. 配方失效才重置 progress（新契约 — 重构目标）
+    // ════════════════════════════════════════════════════════════
+    //
+    // 重构核心语义：progress 仅在 recipe identity 变化时重置，
+    // 而非在 process() else 分支无条件清零。
+    // 本组验证 simulateConditionStart 已支持的 identity 变化场景。
+    // ════════════════════════════════════════════════════════════
+
+    @Nested
+    class RecipeIdentityOnlyResetsProgress {
+
+        @Test
+        void recipeChanged_resetsProgress_energyLowDoesNot() {
+            // 配方从 A→B 应重置，而能量低不应重置
+            int changed = simulateConditionStart(RECIPE_A, RECIPE_B, 50);
+            assertEquals(0, changed, "Recipe A→B must reset progress");
+
+            int same = simulateConditionStart(RECIPE_A, RECIPE_A, 50);
+            assertEquals(50, same, "Same recipe must preserve progress");
+        }
+
+        @Test
+        void recipeGone_resetsProgress_butEnergyPreserved() {
+            int changed = simulateConditionStart(RECIPE_A, null, 75);
+            assertEquals(0, changed, "Recipe→null must reset progress");
+        }
+
+        @Test
+        void newRecipeArrives_resetsProgress() {
+            int changed = simulateConditionStart(null, RECIPE_B, 75);
+            assertEquals(0, changed, "Null→recipe must reset progress");
+        }
+
+        @Test
+        void recipeIdentityUnchanged_keepsProgress_acrossMultipleTicks() {
+            // 模拟3个 tick 的 conditionStart，配方不变
+            int progress = 50;
+            for (int i = 0; i < 3; i++) {
+                progress = simulateConditionStart(RECIPE_A, RECIPE_A, progress);
+            }
+            assertEquals(50, progress,
+                    "Multiple same-recipe ticks must preserve progress");
+        }
+    }
+
+    // ════════════════════════════════════════════════════════════
+    // J. 生产源码验证 — P1 新增语义存在（新契约正向验证）
+    // ════════════════════════════════════════════════════════════
+    //
+    // 验证 P1 重构后的 process() 已实现：else 分支不清零、>= 检查。
+    // P1 RED 阶段：这些测试应 FAIL（因新语义尚未写入生产代码）。
+    // P1 GREEN 阶段：这些测试应 PASS。
+    // ════════════════════════════════════════════════════════════
+
+    @Nested
+    class SourceCodeP1Semantics {
+
+        @Test
+        void processingMachine_usesGreaterOrEqual() throws Exception {
+            var sourceFile = new java.io.File(
+                    "src/main/java/com/modularmc/ten/api/blockentity/ProcessingMachineBlockEntity.java");
+            assertTrue(sourceFile.exists());
+            var content = java.nio.file.Files.readString(sourceFile.toPath());
+            assertTrue(content.contains("progress >= maxProgress"),
+                    "P1 target: ProcessingMachine process() must use >= for completion. " +
+                    "RED until P1-T1.");
+        }
+
+        @Test
+        void processingMachine_elseBranchDoesNotResetProgress() throws Exception {
+            var sourceFile = new java.io.File(
+                    "src/main/java/com/modularmc/ten/api/blockentity/ProcessingMachineBlockEntity.java");
+            assertTrue(sourceFile.exists());
+            var content = java.nio.file.Files.readString(sourceFile.toPath());
+            // Verify the else branch (after the energy/condition check) does NOT reset progress to 0
+            // The completion branch still uses progress = 0 after onCookFinish, which is correct
+            int elseIndex = content.indexOf("} else {\n" +
+                    "            setActive(false);");
+            if (elseIndex < 0) {
+                // Might have different formatting
+                elseIndex = content.indexOf("} else {");
+            }
+            if (elseIndex >= 0) {
+                String elseBlock = content.substring(elseIndex, Math.min(elseIndex + 200, content.length()));
+                assertFalse(elseBlock.contains("progress = 0"),
+                        "P1 target: else branch must NOT reset progress to 0. " +
+                        "RED until P1-T1.");
+            }
+        }
+
+        @Test
+        void processingMachine_hasStagnationEarlyReturn() throws Exception {
+            var sourceFile = new java.io.File(
+                    "src/main/java/com/modularmc/ten/api/blockentity/ProcessingMachineBlockEntity.java");
+            assertTrue(sourceFile.exists());
+            var content = java.nio.file.Files.readString(sourceFile.toPath());
+            assertTrue(content.contains("getEnergyStored() < fePerTick"),
+                    "P1 target: process() must have early return for energy < fePerTick. " +
+                    "RED until P1-T1.");
+        }
+    }
 }

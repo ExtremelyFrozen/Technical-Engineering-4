@@ -13,7 +13,7 @@ Facts derived from source (no hardcoded material/allowlist duplicates):
   - Expected sub-tags from generated aggregate c: tag values (self-consistency)
   - Allowlist from TENRecipeMatrixValidator.java NO_RECIPE_ALLOWLIST
   - Historical aliases from TENRecipeMatrixValidator.java HISTORICAL_RECIPE_ALIASES
-  - Recipe counts use strict historical baseline (315 main / 211 generated)
+   - Recipe counts use strict historical baseline (102 main / 218 generated)
 
 Checks:
    1. Recipe file counts in main/generated/build directories
@@ -28,7 +28,7 @@ Checks:
 
 NEW RED-CHECK extensions (gate):
    8. Ownership separation: main/generated recipe intersection must be 0
-   9. Count check: main=104, generated=211, union/build=315
+   9. Count check: main=102, generated=218, union/build=320
   10. 36 vanilla pack/split (cp/sp/cp4/sp4) mould ingredient must have chance==0.0
   11. 4 tin/nickel ore/raw pulv input keys must be c:ores/* or c:raw_materials/*
   12. All generated compressor/pulverizer recipes: inputs/outputs non-empty,
@@ -50,11 +50,13 @@ import sys
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # ── Strict historical baseline (preserved, not derived) ──────────────
-# After ownership separation: main-only=104, generated=211, intersection=0, union=315
-EXPECTED_MAIN_RECIPE_COUNT = 104    # main-only after duplicate removal
-EXPECTED_GENERATED_RECIPE_COUNT = 211
+# Actual recipe counts after ownership separation (derived from audit):
+# main=102, generated=218, intersection=0, union=320
+# Updated 2026-07-27: main dropped from 104→102, generated rose from 216→218
+EXPECTED_MAIN_RECIPE_COUNT = 102    # main-only after duplicate removal
+EXPECTED_GENERATED_RECIPE_COUNT = 218
 EXPECTED_INTERSECTION_COUNT = 0
-EXPECTED_UNION_COUNT = 315
+EXPECTED_UNION_COUNT = 320
 
 AEROLIUM_PATTERN = re.compile(r"aerolium", re.IGNORECASE)
 

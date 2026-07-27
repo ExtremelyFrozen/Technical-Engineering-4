@@ -101,16 +101,79 @@ public class EncfluBlockEntity extends ProcessingMachineBlockEntity {
         ItemStack tool = itemHandler.getStackInSlot(0);
         ItemStack target = itemHandler.getStackInSlot(1);
         ItemStack output = itemHandler.getStackInSlot(2);
-        return tool.isEnchanted() && (target.isEnchantable() || target.is(Items.BOOK)) && output.isEmpty();
+
+        // Basic input validation — if inputs are invalid, clear lock and stop
+        if (!tool.isEnchanted() || !(target.isEnchantable() || target.is(Items.BOOK)) || !output.isEmpty()) {
+            clearLockedBatch();
+            return false;
+        }
+
+        // Only compute and lock B + maxProgress when no lock exists yet
+        if (!hasLockedBatch()) {
+            // Lock maxProgress with durationMultiplier captured at operation start
+            maxProgress = Math.max(1, (int) Math.ceil(baseTickTime() * durationMultiplier));
+            lockMaxProgressForNewOperation(maxProgress);
+
+            // ── P1-T3c: Compute and lock B_actual ──
+            int B_theory = 1 + batch;
+
+            // B_byTool: tool slot can only support 1 unit (non-stackable, single slot)
+            int B_byTool = 1;
+
+            // B_byOutput: output slot must be empty
+            int B_byOutput = output.isEmpty() ? B_theory : 0;
+
+            // B_byTank: floor(availTankCapacity / xpPerGroup)
+            ItemEnchantments enchantments = EnchantmentHelper.getEnchantmentsForCrafting(tool);
+            int xpPerGroup = enchantments.isEmpty() ? 25 : Math.max(1, enchantments.size() * 25);
+            int B_byTank = 0;
+            if (!tanks.isEmpty()) {
+                int availTank = tanks.get(0).getCapacity() - tanks.get(0).getFluidAmount();
+                B_byTank = xpPerGroup > 0 ? availTank / xpPerGroup : 0;
+            }
+
+            // B_byEnergy: how many ticks can current energy sustain?
+            int baseFe = Math.max(1, getActualEfficiency());
+            int B_byEnergy = energyStorage != null ? energyStorage.getEnergyStored() / baseFe : 0;
+
+            // Lock B_actual — validateAndLockB clears lock on failure
+            // B_byTool=1 ensures actual B=1 (tool is non-stackable, no batch dup)
+            if (!validateAndLockB(B_theory, B_byTool, Integer.MAX_VALUE, Math.min(B_byOutput, B_byTank), B_byEnergy)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     @Override
     public boolean cooking() {
+        // Check output slot and tank capacity before allowing progress
+        ItemStack output = itemHandler.getStackInSlot(2);
+        if (!output.isEmpty()) return true; // output slot occupied → block
+
+        ItemStack tool = itemHandler.getStackInSlot(0);
+        if (!tool.isEnchanted()) return true; // tool depleted → block
+
+        // Check XP tank has space for at least one group
+        if (!tanks.isEmpty()) {
+            ItemEnchantments enchantments = EnchantmentHelper.getEnchantmentsForCrafting(tool);
+            int xpPerGroup = enchantments.isEmpty() ? 25 : Math.max(1, enchantments.size() * 25);
+            FluidStack xpFluid = new FluidStack(TENFluids.LIQUID_XP_SOURCE.get(), xpPerGroup);
+            int filled = tanks.get(0).fill(xpFluid, IFluidHandler.FluidAction.SIMULATE);
+            if (filled < xpPerGroup) return true; // tank full → block
+        }
+
         return false;
     }
 
     @Override
     public void onCookFinish() {
+        // ════════════════════════════════════════════════════════════
+        // Phase 0: Determine batch size
+        // ════════════════════════════════════════════════════════════
+        int B = getLockedBatchSize();
+
         // ════════════════════════════════════════════════════════════
         // Phase 1: Read current state from handlers (copies)
         // ════════════════════════════════════════════════════════════
@@ -131,7 +194,6 @@ public class EncfluBlockEntity extends ProcessingMachineBlockEntity {
         // Phase 2: Re-validate output slot is empty
         // ════════════════════════════════════════════════════════════
         if (!currentOutput.isEmpty()) {
-            // Output slot occupied — nothing to do
             return;
         }
 
@@ -154,17 +216,18 @@ public class EncfluBlockEntity extends ProcessingMachineBlockEntity {
         strippedTool.remove(DataComponents.ENCHANTMENTS);
         strippedTool.remove(DataComponents.STORED_ENCHANTMENTS);
 
-        // Build reduced target (shrunk by 1)
+        // Build reduced target (shrunk by B)
         ItemStack targetAfter = target.copy();
-        targetAfter.shrink(1);
+        targetAfter.shrink(B); // consume B targets
 
         // ════════════════════════════════════════════════════════════
-        // Phase 4: Re-validate fluid tank has space (SIMULATE)
+        // Phase 4: Re-validate fluid tank has space (SIMULATE) for B×XP
         // ════════════════════════════════════════════════════════════
         if (!tanks.isEmpty()) {
-            int filled = tanks.get(0).fill(xpFluid, IFluidHandler.FluidAction.SIMULATE);
-            if (filled < xpAmount) {
-                // Tank cannot accept full XP amount — abort
+            int totalXp = xpAmount * B;
+            FluidStack totalXpFluid = new FluidStack(TENFluids.LIQUID_XP_SOURCE.get(), totalXp);
+            int filled = tanks.get(0).fill(totalXpFluid, IFluidHandler.FluidAction.SIMULATE);
+            if (filled < totalXp) {
                 return;
             }
         }
@@ -175,41 +238,48 @@ public class EncfluBlockEntity extends ProcessingMachineBlockEntity {
         ItemStack slot0Snapshot = itemHandler.getStackInSlot(0).copy();
         ItemStack slot1Snapshot = itemHandler.getStackInSlot(1).copy();
         ItemStack slot2Snapshot = itemHandler.getStackInSlot(2).copy();
-        // Fluid tank snapshot: save current fluid stack
         FluidStack tankSnapshot = tanks.isEmpty() ? FluidStack.EMPTY : tanks.get(0).getFluid().copy();
+
+        // Ensure target doesn't go below 0
+        if (targetAfter.getCount() < 0) {
+            targetAfter = ItemStack.EMPTY;
+        }
 
         try {
             // ════════════════════════════════════════════════════════
             // Phase 6: Execute consumption FIRST (consume before output)
             // ════════════════════════════════════════════════════════
-            // Submit stripped tool back to slot 0 (consumption: enchantments removed)
+            // Strip tool enchantments once (works for any B — tool only stripped once)
             itemHandler.setStackInSlot(0, strippedTool);
-            // Submit reduced target back to slot 1 (consumption: shrink by 1)
+            // Consume B targets
             itemHandler.setStackInSlot(1, targetAfter);
 
             // ════════════════════════════════════════════════════════
             // Phase 7: Execute output AFTER consumption
             // ════════════════════════════════════════════════════════
-            // Place enchanted output in slot 2
-            itemHandler.setStackInSlot(2, output);
+            // Place enchanted output in slot 2 (one output for the batch)
+            ItemStack batchOutput = output.copyWithCount(B);
+            itemHandler.setStackInSlot(2, batchOutput);
 
-            // Fill XP fluid tank
+            // Fill XP fluid tank (B × XP)
             if (!tanks.isEmpty()) {
-                tanks.get(0).fill(xpFluid, IFluidHandler.FluidAction.EXECUTE);
+                FluidStack totalXpFluid = new FluidStack(TENFluids.LIQUID_XP_SOURCE.get(), xpAmount * B);
+                tanks.get(0).fill(totalXpFluid, IFluidHandler.FluidAction.EXECUTE);
             }
+
+            // Clear lock after successful completion
+            clearLockedBatch();
         } catch (Exception e) {
             // ── Rollback on any unexpected failure ──
             itemHandler.setStackInSlot(0, slot0Snapshot);
             itemHandler.setStackInSlot(1, slot1Snapshot);
             itemHandler.setStackInSlot(2, slot2Snapshot);
             if (!tanks.isEmpty()) {
-                // Restore tank to snapshot: drain all, then fill back
                 tanks.get(0).drain(Integer.MAX_VALUE, IFluidHandler.FluidAction.EXECUTE);
                 if (!tankSnapshot.isEmpty()) {
                     tanks.get(0).fill(tankSnapshot, IFluidHandler.FluidAction.EXECUTE);
                 }
             }
-            // Fail-fast: log and rethrow
             throw new RuntimeException("Encflu onCookFinish failed and rolled back", e);
         }
     }

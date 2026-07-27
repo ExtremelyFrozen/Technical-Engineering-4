@@ -29,6 +29,7 @@ import com.lowdragmc.lowdraglib2.syncdata.annotation.Persisted;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.ToIntBiFunction;
 
 public class FarmBlockEntity extends RadiusMachineBlockEntity {
 
@@ -107,6 +108,9 @@ public class FarmBlockEntity extends RadiusMachineBlockEntity {
     public void applyEffect() {
         if (level == null) return;
 
+        // P3-T1c: Install dynamic output slot limit for slots 6-11 based on lockedB
+        installDynamicOutputLimit();
+
         // Build X offsets for current radius
         int[] allOffsets = buildXOffsets();
         if (allOffsets.length == 0) return;
@@ -122,18 +126,27 @@ public class FarmBlockEntity extends RadiusMachineBlockEntity {
             currentRowIndex = 0;
         }
 
-        // Process current X-row
-        int xOffset = xRowOrder[currentRowIndex];
-        int maturityCount = scanRow(xOffset);
-        xRowMaturity[currentRowIndex] = maturityCount;
+        // P3-T1c: Scan B consecutive rows per cycle
+        int B = getLockedBatchSize();
+        int rowsScanned = 0;
 
-        currentRowIndex++;
+        for (int i = 0; i < B && currentRowIndex < xRowOrder.length; i++) {
+            int xOffset = xRowOrder[currentRowIndex];
+            int maturityCount = scanRow(xOffset);
+            xRowMaturity[currentRowIndex] = maturityCount;
+            currentRowIndex++;
+            rowsScanned++;
+        }
 
         // If all rows processed, sort by maturity and restart
         if (currentRowIndex >= xRowOrder.length) {
             sortRowsByMaturity();
             currentRowIndex = 0;
         }
+
+        // NOTE: If B > remaining rows (rowsScanned < B), excess batch is forfeited.
+        // Energy is still charged at full B (totalFePerTick = round(baseFePerTick * lockedB)).
+        // No wrap-around, no carry-over of excess to next cycle.
     }
 
     private int[] buildXOffsets() {
@@ -174,8 +187,6 @@ public class FarmBlockEntity extends RadiusMachineBlockEntity {
         // Scan 9 blocks along the depth axis (back direction)
         for (int d = 0; d < 9; d++) {
             int dx, dz;
-            // widthOffset: axis perpendicular to facing
-            // d: depth axis (opposite of facing = behind)
             switch (facing) {
                 case NORTH -> {
                     dx = widthOffset;
@@ -285,38 +296,149 @@ public class FarmBlockEntity extends RadiusMachineBlockEntity {
         return ItemStack.EMPTY;
     }
 
-    private boolean canFitAll(List<ItemStack> drops) {
-        for (ItemStack drop : drops) {
-            boolean fit = false;
-            for (int i = 6; i < itemHandler.getSlots(); i++) {
-                ItemStack existing = itemHandler.getStackInSlot(i);
-                if (existing.isEmpty()) {
-                    fit = true;
-                    break;
-                }
-                if (ItemStack.isSameItem(existing, drop) && existing.getCount() + drop.getCount() <= existing.getMaxStackSize()) {
-                    fit = true;
-                    break;
-                }
+    private boolean canFitAll(List<ItemStack> stacks) {
+        // Simulate accumulation into a local ItemStack[] copy of output slots.
+        // This matches the exact same logic as fitAll's commit, ensuring the
+        // pre-check is accurate and multiple different drops don't compete for
+        // the same empty slot.
+        int outputStart = 6;
+        int slotCount = itemHandler.getSlots() - outputStart;
+        ItemStack[] simulated = copyOutputSlots(outputStart, slotCount);
+        for (ItemStack stack : stacks) {
+            ItemStack remaining = simulateInsert(simulated, stack.copy(), outputStart);
+            if (!remaining.isEmpty()) {
+                return false;
             }
-            if (!fit) return false;
         }
         return true;
     }
 
-    private void fitAll(List<ItemStack> drops) {
-        for (ItemStack drop : drops) {
-            for (int i = 6; i < itemHandler.getSlots(); i++) {
-                ItemStack existing = itemHandler.getStackInSlot(i);
-                if (existing.isEmpty()) {
-                    itemHandler.setStackInSlot(i, drop.copy());
-                    break;
-                } else if (ItemStack.isSameItem(existing, drop)) {
-                    existing.grow(drop.getCount());
-                    break;
+    /**
+     * Snapshot output slots into a new ItemStack[] array (deep copy).
+     */
+    private ItemStack[] copyOutputSlots(int start, int count) {
+        ItemStack[] copy = new ItemStack[count];
+        for (int i = 0; i < count; i++) {
+            ItemStack s = itemHandler.getStackInSlot(start + i);
+            copy[i] = s.isEmpty() ? ItemStack.EMPTY : s.copy();
+        }
+        return copy;
+    }
+
+    /**
+     * Simulate inserting a single stack into the slot array, updating it in-place.
+     * Returns the remaining stack (empty if fully inserted).
+     * Logic matches the commit-phase insert exactly: respects slot limits,
+     * handles same-item merge, and spills across slots.
+     */
+    private ItemStack simulateInsert(ItemStack[] slots, ItemStack stack, int outputStart) {
+        for (int j = 0; j < slots.length && !stack.isEmpty(); j++) {
+            if (slots[j].isEmpty()) {
+                int slotLimit = itemHandler.getSlotLimit(outputStart + j);
+                if (stack.getCount() <= slotLimit) {
+                    slots[j] = stack;
+                    stack = ItemStack.EMPTY;
+                } else {
+                    ItemStack fill = stack.copy();
+                    fill.setCount(slotLimit);
+                    slots[j] = fill;
+                    stack.shrink(slotLimit);
+                }
+            } else if (ItemStack.isSameItem(slots[j], stack)) {
+                int slotLimit = itemHandler.getSlotLimit(outputStart + j);
+                int room = slotLimit - slots[j].getCount();
+                int moved = Math.min(room, stack.getCount());
+                if (moved > 0) {
+                    slots[j].grow(moved);
+                    stack.shrink(moved);
                 }
             }
         }
+        return stack;
+    }
+
+    private void fitAll(List<ItemStack> stacks) {
+        // 1. Snapshot output slots
+        int outputStart = 6;
+        int slotCount = itemHandler.getSlots() - outputStart;
+        ItemStack[] snapshot = copyOutputSlots(outputStart, slotCount);
+
+        // 2. Simulate insertion on snapshot
+        for (ItemStack stack : stacks) {
+            ItemStack remaining = simulateInsert(snapshot, stack.copy(), outputStart);
+            if (!remaining.isEmpty()) {
+                // 3. Fail-fast: partial state must never reach the handler
+                throw new IllegalStateException(
+                        "Farm cannot fit all drops: " + stack + " has "
+                        + remaining.getCount() + " remaining. "
+                        + "canFitAll pre-check should have prevented this.");
+            }
+        }
+
+        // 4. Commit: write snapshot atomically to the real handler
+        for (int i = 0; i < slotCount; i++) {
+            itemHandler.setStackInSlot(outputStart + i, snapshot[i]);
+        }
+    }
+
+    private void insertFirstFit(ItemStack stack) {
+        // NOTE: This method is kept for legacy callers but should not be
+        // reached from canFitAll+fitAll flow (which uses snapshot+commit).
+        // Fail-fast if stack doesn't fully fit.
+        for (int i = 6; i < itemHandler.getSlots(); i++) {
+            ItemStack existing = itemHandler.getStackInSlot(i);
+            if (existing.isEmpty()) {
+                int slotLimit = itemHandler.getSlotLimit(i);
+                if (stack.getCount() <= slotLimit) {
+                    itemHandler.setStackInSlot(i, stack);
+                    return;
+                } else {
+                    ItemStack fill = stack.copy();
+                    fill.setCount(slotLimit);
+                    stack.shrink(slotLimit);
+                    itemHandler.setStackInSlot(i, fill);
+                    continue;
+                }
+            }
+            if (ItemStack.isSameItem(existing, stack)) {
+                int slotLimit = itemHandler.getSlotLimit(i);
+                int room = slotLimit - existing.getCount();
+                int moved = Math.min(room, stack.getCount());
+                if (moved > 0) {
+                    existing.grow(moved);
+                    stack.shrink(moved);
+                    if (stack.isEmpty()) {
+                        return;
+                    }
+                }
+            }
+        }
+        // Fail-fast: prevent silent item loss
+        if (!stack.isEmpty()) {
+            throw new IllegalStateException(
+                    "Farm insertFirstFit cannot fit " + stack + ": no available slot. "
+                    + "canFitAll pre-check should have prevented this.");
+        }
+    }
+
+    /**
+     * Install dynamic slot limit on output slots (6..11) based on lockedB.
+     * Limit = min(lockedB + 63, 99) per slot, preserving existing overstack.
+     * Called at the start of each applyEffect cycle.
+     */
+    private void installDynamicOutputLimit() {
+        if (itemHandler == null) return;
+        int B = getLockedBatchSize();
+        itemHandler.setDynamicSlotLimit((slot, candidate) -> {
+            if (slot < 6 || slot >= inventorySize()) return 64; // Not output
+            int limit = Math.min(B + 63, 99);
+            // Never go below existing count
+            ItemStack existing = itemHandler.getStackInSlot(slot);
+            if (!existing.isEmpty()) {
+                limit = Math.max(limit, existing.getCount());
+            }
+            return limit;
+        });
     }
 
     @Override

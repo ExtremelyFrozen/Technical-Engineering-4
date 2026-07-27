@@ -75,12 +75,55 @@ public class MobRipBlockEntity extends RadiusMachineBlockEntity {
     @Override
     public void applyEffect() {
         if (level == null) return;
+        int B = getLockedBatchSize();
+
+        // P3-T1c: Check if a weapon was present at operation start.
+        // If weapon WAS valid and breaks during iterations, stop remaining loop
+        // rather than falling back to fist damage. If no weapon was ever present,
+        // preserve original semantics (allow operation without weapon).
+        boolean weaponWasPresentAtStart = hasValidWeapon();
+
+        for (int i = 0; i < B; i++) {
+            // P3-T1c: If weapon was originally present but now empty/broken → stop
+            if (weaponWasPresentAtStart && !hasValidWeapon()) {
+                break;
+            }
+            if (!tryHurtOneEntity()) {
+                // If no valid entity found, continue looping — other iterations
+                // may still find valid targets (entities can be re-selected)
+                continue;
+            }
+        }
+    }
+
+    /**
+     * Check whether the weapon in slot 0 is still valid for use.
+     * A weapon is considered valid if it exists, is not empty, and has a TOOL component.
+     * P3-T1c: If the weapon was originally present but has broken (empty/damaged),
+     * remaining iterations should stop rather than falling back to fist damage.
+     *
+     * @return true if a valid weapon is available
+     */
+    private boolean hasValidWeapon() {
+        ItemStack weapon = itemHandler.getStackInSlot(0);
+        return !weapon.isEmpty() && weapon.has(DataComponents.TOOL);
+    }
+
+    /**
+     * Try to select and damage one entity within range.
+     * @return true if an entity was damaged, false if no valid target found
+     */
+    private boolean tryHurtOneEntity() {
+        if (level == null) return false;
         AABB box = (new AABB(worldPosition)).inflate(radius);
         List<LivingEntity> entities = level.getEntitiesOfClass(LivingEntity.class, box);
-        if (entities.isEmpty()) return;
+        // Filter out dead entities and creative players
+        entities.removeIf(e -> !e.isAlive() || (e instanceof Player p && p.isCreative()));
+        if (entities.isEmpty()) return false;
 
         LivingEntity target = SafeOperationHelper.randomInCollection(entities);
-        if (target instanceof Player p && p.isCreative()) return;
+        if (target == null || !target.isAlive()) return false;
+        if (target instanceof Player p && p.isCreative()) return false;
 
         ItemStack weapon = itemHandler.getStackInSlot(0);
         float damage = 0.5f;
@@ -88,7 +131,11 @@ public class MobRipBlockEntity extends RadiusMachineBlockEntity {
             damage = 1.0f;
         }
         target.hurt(target.damageSources().cactus(), damage);
-        ItemNBTHelper.damage(weapon, level, 1);
+        // Only damage the weapon item if it actually exists (not ItemStack.EMPTY)
+        if (!weapon.isEmpty()) {
+            ItemNBTHelper.damage(weapon, level, 1);
+        }
+        return true;
     }
 
     @Override

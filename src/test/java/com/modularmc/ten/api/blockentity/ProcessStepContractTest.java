@@ -40,11 +40,12 @@ class ProcessStepContractTest {
     /**
      * Simulates one tick of the process step decision.
      * <p>
-     * Initially uses the BUGGY ordering: progress advances BEFORE
-     * the cooking() check, so blocked ticks gain free progress.
-     * <p>
-     * After GREEN fix: progress advances AFTER cooking() passes,
-     * in the same branch as energy consumption.
+     * Mirrors the production tick model:
+     * <ul>
+     *   <li>Progress advances by exactly 1 per tick ({@code progress++})</li>
+     *   <li>Completion fires when {@code progress >= maxProgress}</li>
+     *   <li>Energy consumption is independent of progress advancement</li>
+     * </ul>
      *
      * @param progress       current progress
      * @param maxProgress    max progress before completion
@@ -71,23 +72,24 @@ class ProcessStepContractTest {
         if (energyConsumed <= 0) {
             // ── No energy available: preserve progress, set inactive ──
             // Source: ProcessingMachineBlockEntity.process() returns early
-            // without resetting progress when energyConsumed <= 0
+            // without resetting progress when fePerTick > energyStored
             return new StepOutcome(progress, energy, false, false);
         }
 
         // ════════════════════════════════════════════════════════
-        // GREEN (fixed): progress advances AFTER cooking check passes
+        // Production model: progress advances AFTER cooking check
         // ════════════════════════════════════════════════════════
         if (cookingBlocks) {
             // Correct: if cooking blocks, progress and energy stay unchanged
             return new StepOutcome(progress, energy, false, true);
         }
 
-        // Cooking passed: advance progress AND consume energy in same branch
-        int newProgress = progress + energyConsumed;
+        // Cooking passed: consume energy AND advance progress by 1
+        int newProgress = progress + 1;
         int newEnergy = energy - energyConsumed;
 
-        if (newProgress > maxProgress) {
+        // Completion fires when progress >= maxProgress (not >)
+        if (newProgress >= maxProgress) {
             return new StepOutcome(0, newEnergy, true, true);
         }
 
@@ -191,21 +193,20 @@ class ProcessStepContractTest {
     class NormalProcessingContract {
 
         @Test
-        void normalTick_advancesProgress_byEnergyConsumed() {
+        void normalTick_advancesProgress_byOne() {
             int initialProgress = 0;
-            int efficiency = 100;
 
             StepOutcome outcome = simulateTick(
-                    initialProgress, 200, 1000, efficiency,
+                    initialProgress, 200, 1000, 100,
                     true, false
             );
 
-            assertEquals(initialProgress + efficiency, outcome.progress(),
-                    "Progress must increase by energyConsumed on normal tick");
+            assertEquals(initialProgress + 1, outcome.progress(),
+                    "Progress must increase by exactly 1 per tick (progress++)");
         }
 
         @Test
-        void normalTick_consumesEnergy_byEnergyConsumed() {
+        void normalTick_consumesEnergy_byEfficiency() {
             int initialEnergy = 1000;
             int efficiency = 100;
 
@@ -215,7 +216,7 @@ class ProcessStepContractTest {
             );
 
             assertEquals(initialEnergy - efficiency, outcome.energy(),
-                    "Energy must decrease by energyConsumed on normal tick");
+                    "Energy must decrease by efficiency on normal tick");
         }
 
         @Test
@@ -227,8 +228,8 @@ class ProcessStepContractTest {
                     true, false
             );
 
-            assertEquals(30, outcome.progress(),
-                    "Progress advance must be capped by available energy");
+            assertEquals(1, outcome.progress(),
+                    "Progress advances by 1 regardless of energy cap (progress++)");
             assertEquals(0, outcome.energy(),
                     "Energy must be fully consumed");
         }
@@ -265,7 +266,7 @@ class ProcessStepContractTest {
             int efficiency = 100;
             boolean onCook = false;
 
-            // Simulate 4 normal ticks: progress 0→100→200→300→400
+            // Simulate 4 normal ticks: progress 0→1→2→3→4
             for (int tick = 0; tick < 4; tick++) {
                 StepOutcome outcome = simulateTick(
                         progress, maxProgress, energy, efficiency,
@@ -276,12 +277,12 @@ class ProcessStepContractTest {
                 onCook = outcome.onCookFinishCalled();
             }
 
-            assertEquals(400, progress,
-                    "Progress should advance to 400 after 4 ticks at 100/tick");
+            assertEquals(4, progress,
+                    "Progress should advance to 4 after 4 ticks at 1/tick");
             assertEquals(600, energy,
                     "Energy should decrease to 600 after 4 ticks at 100/tick");
             assertFalse(onCook,
-                    "onCookFinish should not fire before progress > maxProgress");
+                    "onCookFinish should not fire before progress >= maxProgress");
         }
     }
 
@@ -311,9 +312,9 @@ class ProcessStepContractTest {
                     true, false
             );
 
-            // After fix: blocked doesn't change progress, unblocked adds 100
-            assertEquals(75 + efficiency, unblocked.progress(),
-                    "After unblock, progress must continue from where it stopped");
+            // Progress advances by +1 on unblocked tick
+            assertEquals(76, unblocked.progress(),
+                    "After unblock, progress must continue from 75 + 1 = 76");
         }
 
         @Test
@@ -333,15 +334,15 @@ class ProcessStepContractTest {
                 energy = outcome.energy();
             }
 
-            // After first normal tick, progress = 0 + 100 = 100 (correct)
+            // After first normal tick, progress = 0 + 1 = 1 (correct)
             // With bug: progress = 300 after blocked ticks + 100 = 400 (wrong!)
             StepOutcome outcome = simulateTick(
                     progress, maxProgress, energy, efficiency,
                     true, false
             );
 
-            assertEquals(100, outcome.progress(),
-                    "Unblocked progress must not include blocked-era phantom progress");
+            assertEquals(1, outcome.progress(),
+                    "Unblocked progress = 0 + 1 = 1 (no phantom blocked progress)");
         }
 
         @Test
@@ -357,9 +358,9 @@ class ProcessStepContractTest {
             StepOutcome r3 = simulateTick(r2.progress(), maxProgress, r2.energy(), efficiency, true, true);
             StepOutcome r4 = simulateTick(r3.progress(), maxProgress, r3.energy(), efficiency, true, false);
 
-            // After fix: 50 + 50 (r2) + 50 (r4) = 150
-            assertEquals(150, r4.progress(),
-                    "Progress should accumulate only on unblocked ticks");
+            // 50 + 1 (r2) + 1 (r4) = 52
+            assertEquals(52, r4.progress(),
+                    "Progress should accumulate only on unblocked ticks: 50 + 1 + 1 = 52");
         }
 
         @Test
@@ -384,63 +385,63 @@ class ProcessStepContractTest {
 
         @Test
         void completion_triggers_onCookFinish() {
-            // progress + energyConsumed > maxProgress → complete
+            // progress=199 + 1 = 200 >= 200 → complete
             StepOutcome outcome = simulateTick(
-                    150, 200, 1000, 100, // 150 + 100 = 250 > 200
+                    199, 200, 1000, 100,
                     true, false
             );
 
             assertTrue(outcome.onCookFinishCalled(),
-                    "onCookFinish must be called when progress exceeds maxProgress");
+                    "onCookFinish must be called when progress >= maxProgress");
             assertEquals(0, outcome.progress(),
                     "Progress must reset to 0 on completion");
         }
 
         @Test
-        void completion_exactMax_notOffByOne() {
-            // progress + energyConsumed == maxProgress → NOT complete yet
-            // Need > not >= for completion trigger
+        void completion_firesOnReachingMaxProgress() {
+            // Production uses >= (not >), so reaching maxProgress fires completion
+            // progress=199 + 1 = 200 >= 200 → fires
             StepOutcome outcome = simulateTick(
-                    100, 200, 1000, 100, // 100 + 100 = 200, NOT > 200
-                    true, false
-            );
-
-            assertFalse(outcome.onCookFinishCalled(),
-                    "onCookFinish must NOT fire when progress == maxProgress (needs >)");
-            assertEquals(200, outcome.progress(),
-                    "Progress should be exactly maxProgress, not reset yet");
-        }
-
-        @Test
-        void completion_exceedsByOne() {
-            // progress + energyConsumed = maxProgress + 1 → complete
-            StepOutcome outcome = simulateTick(
-                    101, 200, 1000, 100, // 101 + 100 = 201 > 200
+                    199, 200, 1000, 100,
                     true, false
             );
 
             assertTrue(outcome.onCookFinishCalled(),
-                    "onCookFinish must fire when progress exceeds maxProgress");
+                    "onCookFinish must fire when progress reaches maxProgress (>=)");
             assertEquals(0, outcome.progress(),
-                    "Progress must reset after completion");
+                    "Progress must reset to 0 on completion");
+        }
+
+        @Test
+        void completion_notYetWhenBelowMax() {
+            // progress=198 + 1 = 199 < 200 → NOT complete yet
+            StepOutcome outcome = simulateTick(
+                    198, 200, 1000, 100,
+                    true, false
+            );
+
+            assertFalse(outcome.onCookFinishCalled(),
+                    "onCookFinish must NOT fire when progress < maxProgress");
+            assertEquals(199, outcome.progress(),
+                    "Progress should be 199 (198+1), not reset yet");
         }
 
         @Test
         void completion_resetsProgress_properly() {
             // After completion, progress=0 and next tick starts fresh
             StepOutcome complete = simulateTick(
-                    150, 200, 1000, 100,
+                    199, 200, 1000, 100,
                     true, false
             );
             assertTrue(complete.onCookFinishCalled());
             assertEquals(0, complete.progress());
 
-            // Next tick: 0 + 100 = 100
+            // Next tick: 0 + 1 = 1
             StepOutcome nextTick = simulateTick(
                     complete.progress(), 200, complete.energy(), 100,
                     true, false
             );
-            assertEquals(100, nextTick.progress(),
+            assertEquals(1, nextTick.progress(),
                     "Progress should start from 0 after completion");
         }
 
@@ -449,7 +450,7 @@ class ProcessStepContractTest {
             // On completion tick, energy is still consumed
             int initialEnergy = 1000;
             StepOutcome outcome = simulateTick(
-                    150, 200, initialEnergy, 100,
+                    199, 200, initialEnergy, 100,
                     true, false
             );
 
@@ -541,9 +542,9 @@ class ProcessStepContractTest {
             assertTrue(cookingReturnIdx >= 0,
                     "Source must contain cooking() check");
 
-            int progressAddIdx = content.indexOf("progress += energyConsumed");
+            int progressAddIdx = content.indexOf("progress++");
             assertTrue(progressAddIdx >= 0,
-                    "Source must contain progress increment");
+                    "Source must contain progress++ (P1 target)");
 
             assertTrue(
                     progressAddIdx > cookingReturnIdx,
@@ -564,9 +565,9 @@ class ProcessStepContractTest {
             int cookingReturnIdx = content.indexOf("if (cooking())");
             assertTrue(cookingReturnIdx >= 0);
 
-            int extractEnergyIdx = content.indexOf("extractEnergy(energyConsumed, false)");
+            int extractEnergyIdx = content.indexOf("extractEnergy(fePerTick, false)");
             assertTrue(extractEnergyIdx >= 0,
-                    "Source must contain energy extraction");
+                    "Source must contain energy extraction (fePerTick)");
 
             assertTrue(
                     extractEnergyIdx > cookingReturnIdx,
@@ -574,6 +575,70 @@ class ProcessStepContractTest {
                             "(cookingCheck=" + cookingReturnIdx +
                             ", extractEnergy=" + extractEnergyIdx + ")"
             );
+        }
+
+        // ════════════════════════════════════════════════════════════
+        // M1: Atomic energy extraction ordering
+        // ════════════════════════════════════════════════════════════
+
+        @Test
+        void simulateExtract_beforeRealExtract() throws Exception {
+            var sourceFile = new java.io.File(
+                    "src/main/java/com/modularmc/ten/api/blockentity/ProcessingMachineBlockEntity.java");
+            assertTrue(sourceFile.exists());
+            var content = java.nio.file.Files.readString(sourceFile.toPath());
+
+            int simulateIdx = content.indexOf("extractEnergy(fePerTick, true)");
+            assertTrue(simulateIdx >= 0,
+                    "Source must contain simulate extract (simulate=true)");
+
+            int realExtractIdx = content.indexOf("extractEnergy(fePerTick, false)");
+            assertTrue(realExtractIdx >= 0,
+                    "Source must contain real extract (simulate=false)");
+
+            assertTrue(realExtractIdx > simulateIdx,
+                    "Real extract (simulate=false) must appear AFTER simulate (simulate=true) " +
+                            "(simulate=" + simulateIdx + ", real=" + realExtractIdx + ")");
+        }
+
+        @Test
+        void simulateExtract_afterCookingCheck() throws Exception {
+            var sourceFile = new java.io.File(
+                    "src/main/java/com/modularmc/ten/api/blockentity/ProcessingMachineBlockEntity.java");
+            assertTrue(sourceFile.exists());
+            var content = java.nio.file.Files.readString(sourceFile.toPath());
+
+            int cookingIdx = content.indexOf("if (cooking())");
+            assertTrue(cookingIdx >= 0);
+
+            int simulateIdx = content.indexOf("extractEnergy(fePerTick, true)");
+            assertTrue(simulateIdx >= 0,
+                    "Source must contain simulate extract");
+
+            assertTrue(simulateIdx > cookingIdx,
+                    "Simulate extract must appear AFTER cooking() check " +
+                            "(cooking=" + cookingIdx + ", simulate=" + simulateIdx + ")");
+        }
+
+        @Test
+        void progressIncrement_afterBothExtracts() throws Exception {
+            var sourceFile = new java.io.File(
+                    "src/main/java/com/modularmc/ten/api/blockentity/ProcessingMachineBlockEntity.java");
+            assertTrue(sourceFile.exists());
+            var content = java.nio.file.Files.readString(sourceFile.toPath());
+
+            int simulateIdx = content.indexOf("extractEnergy(fePerTick, true)");
+            assertTrue(simulateIdx >= 0);
+
+            int realExtractIdx = content.indexOf("extractEnergy(fePerTick, false)");
+            assertTrue(realExtractIdx >= 0);
+
+            int progressIdx = content.indexOf("progress++");
+            assertTrue(progressIdx >= 0);
+
+            assertTrue(progressIdx > realExtractIdx,
+                    "progress++ must appear AFTER both extractEnergy calls " +
+                            "(realExtract=" + realExtractIdx + ", progress=" + progressIdx + ")");
         }
     }
 }

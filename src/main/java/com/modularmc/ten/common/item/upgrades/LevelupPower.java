@@ -1,5 +1,7 @@
 package com.modularmc.ten.common.item.upgrades;
 
+import com.modularmc.ten.api.blockentity.CmMachineBlockEntity;
+
 public class LevelupPower extends UpgradeItem {
 
     public LevelupPower() {
@@ -12,11 +14,16 @@ public class LevelupPower extends UpgradeItem {
 
     @Override
     public boolean canApply(IUpgradableMachine machine) {
-        return true; // No type restriction; works on all upgradable machines
+        return true; // Repeatable on all upgradable machines (up to 6 slots)
     }
 
     @Override
     public boolean effect(IUpgradableMachine machine) {
-        return machine.onUpgradeApply(percent, 2);
+        if (machine instanceof CmMachineBlockEntity cm) {
+            cm.applyDurationMultiplier(0.60);  // time ×0.60 (-40%)
+            cm.applyPowerMultiplier(1.50);     // power ×1.50 (+50%)
+            cm.applyBatchIncrease(1);          // batch +1
+        }
+        return true;
     }
 }

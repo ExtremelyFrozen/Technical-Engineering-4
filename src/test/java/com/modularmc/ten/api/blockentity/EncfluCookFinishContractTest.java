@@ -642,6 +642,19 @@ class EncfluCookFinishContractTest {
                     "Source must use SIMULATE to check tank capacity before consumption");
         }
 
+        @Test
+        void onCookFinish_usesGetLockedBatchSize() throws Exception {
+            var sourceFile = new java.io.File(
+                    "src/main/java/com/modularmc/ten/common/blockentity/machine/EncfluBlockEntity.java");
+            assertTrue(sourceFile.exists());
+
+            var content = java.nio.file.Files.readString(sourceFile.toPath());
+
+            // P1-T3c: must reference getLockedBatchSize() for B-aware processing
+            assertTrue(content.contains("getLockedBatchSize()"),
+                    "P1-T3c: onCookFinish must use getLockedBatchSize() for batch processing");
+        }
+
         private int countOccurrences(String str, String target) {
             int count = 0;
             int idx = 0;

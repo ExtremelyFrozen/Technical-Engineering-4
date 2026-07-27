@@ -23,6 +23,9 @@ import java.util.List;
 
 public class BeaconBlockEntity extends RadiusMachineBlockEntity {
 
+    /** Beacon base duration in ticks — used as the nominal duration before batch multiplication */
+    private static final int BEACON_BASE_DURATION = 400;
+
     public BeaconBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
         setCapacity(kFE(20));
@@ -86,10 +89,14 @@ public class BeaconBlockEntity extends RadiusMachineBlockEntity {
         if (!effects.iterator().hasNext()) return;
 
         int amplifier = hasUpgrade(LevelupPotion.class) ? 1 : 0;
+        int B = getLockedBatchSize();
 
         for (Player player : players) {
             effects.forEach(effect -> {
-                player.addEffect(new MobEffectInstance(effect.getEffect(), 400, amplifier, true, true));
+                // Duration × B with long intermediate and int safety clamp
+                long durationLong = (long) BEACON_BASE_DURATION * B;
+                int durationClamped = (int) Math.min(durationLong, Integer.MAX_VALUE);
+                player.addEffect(new MobEffectInstance(effect.getEffect(), durationClamped, amplifier, true, true));
             });
         }
     }
@@ -103,4 +110,5 @@ public class BeaconBlockEntity extends RadiusMachineBlockEntity {
     public boolean conditionStart() {
         return !itemHandler.getStackInSlot(0).isEmpty();
     }
+
 }

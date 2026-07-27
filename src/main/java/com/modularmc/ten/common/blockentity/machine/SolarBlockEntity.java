@@ -4,6 +4,7 @@ import com.modularmc.ten.api.blockentity.EngineBlockEntity;
 import com.modularmc.ten.api.option.IngredientType;
 import com.modularmc.ten.api.option.MachineType;
 import com.modularmc.ten.common.gui.TENMachineBlockUIFactory;
+import com.modularmc.ten.utils.SkyLightHelper;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.item.ItemStack;
@@ -62,10 +63,8 @@ public class SolarBlockEntity extends EngineBlockEntity {
 
     @Override
     public int matchFuel(ItemStack stack, boolean simulate) {
-        if (level != null && level.canSeeSky(worldPosition.above()) && !level.isRaining()) {
-            // TODO: 26.1.2 - Re-add day-only check when clock API is stable.
-            // Old: level.getDayTime() % 24000L < 12000L
-            // New: clockManager().getTotalTicks(DaylightClock) via ServerLevel
+        // 使用共享光照判定 helper（可看到天空、不下雨、昼间三者同时成立）
+        if (SkyLightHelper.hasEffectiveLight(level, worldPosition)) {
             return 600;
         }
         return 0;

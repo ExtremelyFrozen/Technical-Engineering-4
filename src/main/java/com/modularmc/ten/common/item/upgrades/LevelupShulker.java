@@ -1,5 +1,7 @@
 package com.modularmc.ten.common.item.upgrades;
 
+import com.modularmc.ten.api.blockentity.CmMachineBlockEntity;
+
 public class LevelupShulker extends UpgradeItem {
 
     public LevelupShulker() {
@@ -12,11 +14,16 @@ public class LevelupShulker extends UpgradeItem {
 
     @Override
     public boolean canApply(IUpgradableMachine machine) {
-        return true; // No type restriction; works on all upgradable machines
+        return true; // Repeatable on all upgradable machines (up to 6 slots)
     }
 
     @Override
     public boolean effect(IUpgradableMachine machine) {
-        return machine.onUpgradeApply(percent, 3);
+        if (machine instanceof CmMachineBlockEntity cm) {
+            cm.applyDurationMultiplier(0.40);  // time ×0.40 (-60%)
+            cm.applyPowerMultiplier(2.00);     // power ×2.00 (+100%)
+            cm.applyBatchIncrease(3);          // batch +3
+        }
+        return true;
     }
 }

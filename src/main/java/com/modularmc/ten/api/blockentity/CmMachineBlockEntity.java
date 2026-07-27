@@ -10,7 +10,9 @@ import com.modularmc.ten.api.option.MachineType;
 import com.modularmc.ten.api.option.RedstoneMode;
 import com.modularmc.ten.common.gui.TENMachineBlockUIFactory;
 import com.modularmc.ten.common.item.upgrades.IUpgradableMachine;
+import com.modularmc.ten.common.item.upgrades.LevelupSyn;
 import com.modularmc.ten.common.item.upgrades.UpgradeItem;
+import com.modularmc.ten.utils.SkyLightHelper;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -113,6 +115,38 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
     @Persisted
     @DescSynced
     public int[] fluidFaceData = new int[6];
+
+    // ───── P1-T2/P2: 乘法模型与批处理字段 ─────
+    public double durationMultiplier = 1.0;
+    public double powerMultiplier = 1.0;
+    public int batch = 0;
+    public boolean photosynInstalled = false;
+
+    /**
+     * Locked maxProgress, set during conditionStart() alongside lockedB.
+     * Once a recipe operation is locked, maxProgress stays fixed until the
+     * cycle completes or recipe identity changes. Prevents per-tick drift
+     * from {@link #durationMultiplier} changes between doBaseData cycles.
+     * <p>
+     * 0 = not locked (use fresh computation).
+     * Not persisted — recalculated each conditionStart when no lock exists.
+     */
+    public int lockedMaxProgress = 0;
+
+    /**
+     * Locked batch size B_actual, set during conditionStart().
+     * <p>
+     * 0 = not locked (no batch active). Once locked at start of a recipe cycle,
+     * this value stays fixed until the cycle completes or recipe identity changes.
+     * During processing, {@link #getLockedBatchSize()} returns at least 1.
+     * <p>
+     * Ranges: B_theory = 1 + Σbatch_i, capped at 1..19.
+     * B_actual is further constrained by input/output/energy dimensions.
+     * <p>
+     * Not persisted — recalculated each conditionStart. P2 upgrade system
+     * will set the {@link #batch} field which feeds into B_theory.
+     */
+    public int lockedB = 0;
 
     // ───── Machine fields ─────
     public MachineEnergyStorage energyStorage;
@@ -272,8 +306,12 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         return true;
     }
 
+    /**
+     * @return base FE/t with power multiplier applied, WITHOUT batch/lockedB.
+     *         Computed as max(1, round(initialEfficientIn × powerMultiplier))
+     */
     public int getActualEfficiency() {
-        return effAuc;
+        return efficientIn;
     }
 
     public double getActualEfficiencyPercent() {
@@ -389,11 +427,38 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         };
     }
 
+    /**
+     * @return theoretical batch size for infrastructure capacity scaling:
+     *         max(1, min(1 + batch, 19)). Derived from installed upgrades,
+     *         recalculable per tick. Used for storage/throughput amplification.
+     */
+    public int getTheoreticalBatchSize() {
+        return Math.max(1, Math.min(1 + batch, 19));
+    }
+
+    /**
+     * Safe multiplication with long intermediate and int clamp.
+     * Returns 0 if either operand is <= 0.
+     */
+    public static int safeMultiply(int a, int b) {
+        if (a <= 0 || b <= 0) return 0;
+        long result = (long) a * b;
+        return (int) Math.min(result, Integer.MAX_VALUE);
+    }
+
     public boolean energyAllowRun() {
         if (energyStorage == null) return false;
+        // P3-T1a: When a batch is locked, check against total FE/t (baseFe × lockedB)
+        // to prevent active=true flicker when stored >= baseFe but < totalFe.
+        // When no lock is active, use base FE/t (preserves original behavior and
+        // does not block photosyn accumulation).
+        int baseFe = getActualEfficiency();
+        int checkFe = hasLockedBatch()
+                ? (int) Math.round((double) baseFe * getLockedBatchSize())
+                : baseFe;
         return switch (machineType()) {
-            case com.modularmc.ten.api.option.MachineType.GENERATOR, com.modularmc.ten.api.option.MachineType.ENGINE_SOLAR, com.modularmc.ten.api.option.MachineType.ENGINE_EXTRACTION, com.modularmc.ten.api.option.MachineType.ENGINE_METAL, com.modularmc.ten.api.option.MachineType.ENGINE_BIOMASS -> energyStorage.getEnergyStored() + getActualEfficiency() <= maxStorageEnergy;
-            default -> energyStorage.getEnergyStored() >= efficientIn;
+            case com.modularmc.ten.api.option.MachineType.GENERATOR, com.modularmc.ten.api.option.MachineType.ENGINE_SOLAR, com.modularmc.ten.api.option.MachineType.ENGINE_EXTRACTION, com.modularmc.ten.api.option.MachineType.ENGINE_METAL, com.modularmc.ten.api.option.MachineType.ENGINE_BIOMASS -> energyStorage.getEnergyStored() + checkFe <= maxStorageEnergy;
+            default -> energyStorage.getEnergyStored() >= checkFe;
         };
     }
 
@@ -411,8 +476,27 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         // ── Single apply: reset then apply exactly once per doBaseData cycle ──
         applyUpgradeEffects();
 
-        energyStorage.setMaxReceive(maxReceiveEnergy);
-        energyStorage.setMaxExtract(maxExtractEnergy);
+        // ── P3-T1a: Compute effective batch-scaled energy infrastructure ──
+        // theoreticalB from upgrades (batch field), used for storage/throughput.
+        // Base FE (efficientIn) is already computed by applyUpgradeEffects above.
+        int theoreticalB = getTheoreticalBatchSize();
+        int effectiveStorage = safeMultiply(initialEnergyStorage, theoreticalB);
+        int effectiveReceive = safeMultiply(initialEnergyReceive, theoreticalB);
+        int effectiveExtract = Math.max(
+                safeMultiply(initialEnergyExtract, theoreticalB),
+                safeMultiply(efficientIn, theoreticalB));
+
+        // Sync effective values to the actual energy storage capability.
+        // setCapacity handles truncation if stored > new capacity.
+        energyStorage.setCapacity(effectiveStorage);
+        energyStorage.setMaxReceive(effectiveReceive);
+        energyStorage.setMaxExtract(effectiveExtract);
+
+        // Update mirror fields so IEnergyStorage wrapper and synced display
+        // (energyRec, energyExt, maxEnergyStored) also reflect batch scaling.
+        maxStorageEnergy = effectiveStorage;
+        maxReceiveEnergy = effectiveReceive;
+        maxExtractEnergy = effectiveExtract;
 
         // ── Write to ldlib2 @DescSynced fields ──
         progress = Math.max(progress, 0);
@@ -444,6 +528,133 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         }
     }
 
+    /**
+     * 尝试从光合供能（Syn）向本机储能注入 10 FE/t。
+     * <p>
+     * 仅在以下条件同时满足时注入：
+     * <ul>
+     *   <li>{@link #photosynInstalled} 为 true（已安装 LevelupSyn）</li>
+     *   <li>machine type 为 PROCESS 或 EFFECT（Syn 仅限这两类）</li>
+     *   <li>有效光照（{@link SkyLightHelper#hasEffectiveLight}）</li>
+     * </ul>
+     * <p>
+     * 注入量固定为 10 FE/t，不受 B、powerMultiplier、batch 影响。
+     * 满储时余量自然丢弃，不报错。
+     * 不向相邻 capability 或网络 channel 推送能量。
+     *
+     * @return 实际注入的 FE 量（0-10），便于测试验证
+     */
+    protected int tryInjectPhotosynEnergy() {
+        if (!photosynInstalled) return 0;
+        if (!(machineType() == MachineType.MACHINE_PROCESS || machineType() == MachineType.MACHINE_EFFECT)) {
+            return 0;
+        }
+        if (energyStorage == null) return 0;
+        if (!SkyLightHelper.hasEffectiveLight(level, worldPosition)) return 0;
+        // Inject directly to internal storage — bypasses sided capability to ensure
+        // the energy stays local and is NOT exported via the capability network.
+        return energyStorage.receiveEnergy(10, false);
+    }
+
+    // ───── 批处理锁定接口 (P1-T3a/b/c 共享) ─────
+
+    /**
+     * Pure calculation of B_actual from all dimensional constraints.
+     * <p>
+     * Takes the minimum across all constraints, capped at 19 (hard max).
+     * Returns 0 if any constraint reduces B below 1 (cannot start).
+     * <p>
+     * This is a public static domain helper for testing — called by
+     * {@link #validateAndLockB} during normal operation.
+     * Delegates to {@link BatchMath#calculateBActual}.
+     *
+     * @param B_theory   theoretical B (= 1 + Σbatch_i)
+     * @param B_byItems  item input dimension constraint
+     * @param B_byFluids fluid input dimension constraint
+     * @param B_byOutput output capacity dimension constraint
+     * @param B_byEnergy energy dimension constraint
+     * @return clamped B in 0..19, where 0 means cannot start
+     */
+    public static int calculateBActual(int B_theory, int B_byItems, int B_byFluids,
+                                        int B_byOutput, int B_byEnergy) {
+        return BatchMath.calculateBActual(B_theory, B_byItems, B_byFluids, B_byOutput, B_byEnergy);
+    }
+
+    /**
+     * @return true if a batch lock is currently active (lockedB != 0)
+     */
+    public boolean hasLockedBatch() {
+        return lockedB != 0;
+    }
+
+    /**
+     * Clear the current batch lock and maxProgress lock. Called on operation
+     * completion, identity change, or when operation can no longer continue.
+     * After this call, {@link #hasLockedBatch()} returns false and
+     * {@link #getLockedBatchSize()} returns 1 (the effective floor).
+     */
+    public void clearLockedBatch() {
+        lockedB = 0;
+        lockedMaxProgress = 0;
+    }
+
+    /**
+     * Lock B for a new operation. Only call after {@link #calculateBActual}
+     * or {@link #validateAndLockB} confirmed B >= 1.
+     * @param B the locked batch size (1..19)
+     * @throws IllegalArgumentException if B <= 0
+     */
+    public void lockBatchForNewOperation(int B) {
+        BatchMath.requirePositiveBatchSize(B);
+        lockedB = Math.min(B, 19);
+    }
+
+    /**
+     * @return locked batch size B_actual, minimum 1 (当 lockedB=0 时返回 1)
+     */
+    public int getLockedBatchSize() {
+        return Math.max(1, lockedB);
+    }
+
+    /**
+     * @return true if maxProgress is locked (lockedMaxProgress != 0)
+     */
+    public boolean hasLockedMaxProgress() {
+        return lockedMaxProgress != 0;
+    }
+
+    /**
+     * Lock maxProgress at the start of a new operation.
+     * Duration multiplier is captured at operation start and frozen
+     * to prevent per-tick drift from upgrade recalculations.
+     * @param progress the max progress to lock (>= 1)
+     */
+    public void lockMaxProgressForNewOperation(int progress) {
+        lockedMaxProgress = Math.max(1, progress);
+    }
+
+    /**
+     * 计算并锁定 B_actual。按四维约束缩小 B 值，钳位 0..19。
+     * 若 B_actual < 1 则返回 false 并清锁（调用方应 cancelStart）。
+     *
+     * @param B_theory  理论 B（= 1 + Σbatch_i）
+     * @param B_byItems 物品输入维度约束
+     * @param B_byFluids 流体输入维度约束
+     * @param B_byOutput 输出容量维度约束
+     * @param B_byEnergy 当前储能维度约束
+     * @return true 如果 B ≥ 1 且已锁定；false 表示不可启动
+     */
+    protected boolean validateAndLockB(int B_theory, int B_byItems, int B_byFluids,
+                                        int B_byOutput, int B_byEnergy) {
+        int B = calculateBActual(B_theory, B_byItems, B_byFluids, B_byOutput, B_byEnergy);
+        if (B <= 0) {
+            clearLockedBatch();
+            return false;
+        }
+        lockBatchForNewOperation(B);
+        return true;
+    }
+
     // Slots
     public IngredientType slotType(int slot) {
         return IngredientType.IGNORE;
@@ -458,6 +669,8 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         if (!supportsUpgradeSlots()) return false;
         if (slot < 0 || slot >= MAX_UPGRADE_SLOTS) return false;
         if (!(stack.getItem() instanceof UpgradeItem upgradeItem)) return false;
+        // LevelupSyn: max 1 per machine (enforced at install time)
+        if (stack.getItem() instanceof LevelupSyn && hasUpgrade(LevelupSyn.class)) return false;
         return upgradeItem.canApply(this);
     }
 
@@ -479,6 +692,15 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         maxReceiveFluid = initialFluidReceive;
         maxExtractFluid = initialFluidExtract;
         upgradeSize = MAX_UPGRADE_SLOTS;
+        // P1-T2/P2: 重置乘法模型字段
+        durationMultiplier = 1.0;
+        powerMultiplier = 1.0;
+        batch = 0;
+        photosynInstalled = false;
+        // NOTE: lockedB and lockedMaxProgress are NOT reset here —
+        // batch/duration lock lifecycle is managed independently by
+        // conditionStart/clearLockedBatch/lockBatchForNewOperation.
+        // This prevents per-tick lock clearing (S1 fix).
     }
 
     /**
@@ -489,6 +711,10 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
      * Upgrades that don't pass canApply still have their effect() skipped to
      * prevent unintended stat modifications, but the item remains in the slot
      * so the player can retrieve it.
+     * <p>
+     * After iterating all upgrades, efficientIn is computed ONCE from
+     * initialEfficientIn × powerMultiplier (single round, no per-slot
+     * accumulation drift). See P2-T1/T2.
      */
     protected void applyUpgradeEffects() {
         if (upgradeHandler == null) return;
@@ -501,6 +727,9 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
             }
         }
         upgradeSize = MAX_UPGRADE_SLOTS;
+        // Single computation after all upgrades: base FE/t with power multiplier
+        // This avoids per-slot repeated rounding and per-tick re-multiplication drift.
+        efficientIn = Math.max(1, (int) Math.round(initialEfficientIn * powerMultiplier));
     }
 
     /**
@@ -509,6 +738,40 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
      */
     public int getUnlockedUpgradeSlots() {
         return MAX_UPGRADE_SLOTS;
+    }
+
+    // ───── P2 乘法模型 API 实现 (T1-T5) ─────
+
+    @Override
+    public void applyDurationMultiplier(double factor) {
+        if (Double.isNaN(factor) || Double.isInfinite(factor) || factor <= 0) {
+            throw new IllegalArgumentException("Invalid duration multiplier: " + factor);
+        }
+        durationMultiplier *= factor;
+    }
+
+    @Override
+    public void applyPowerMultiplier(double factor) {
+        if (Double.isNaN(factor) || Double.isInfinite(factor) || factor <= 0) {
+            throw new IllegalArgumentException("Invalid power multiplier: " + factor);
+        }
+        powerMultiplier *= factor;
+    }
+
+    @Override
+    public void applyBatchIncrease(int increase) {
+        if (increase < 0) {
+            throw new IllegalArgumentException("Batch increase must be non-negative: " + increase);
+        }
+        batch += increase;
+        // Cap Σbatch_i at 18 so B_theory max is 19 (6×Shulker = 18)
+        if (batch > 18) batch = 18;
+    }
+
+    @Override
+    public void applyPhotosyn() {
+        if (photosynInstalled) return; // Safe idempotency — already installed
+        photosynInstalled = true;
     }
 
     // Capability access
@@ -713,6 +976,19 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
             fluidFaceMode.put(direction, input.getInt("direFluid" + idx).orElse(initialFaceModeFluid()));
         }
         loadSerializedHandlers(input);
+
+        // ── P5-T1: Old save compatibility — unconditional progress reset ──
+        // Old NBT (pre-refactor) stored accumulated FE in progress/maxProgress.
+        // A furnace recipe could be ~3000 FE — well below any tick-based threshold.
+        // Without a schema version field to distinguish formats, the only safe
+        // approach is to unconditionally clear progress/maxProgress on every load,
+        // letting conditionStart() establish fresh tick-based values on the next cycle.
+        // Inventory, energy storage, upgrades, and face config are preserved above.
+        progress = 0;
+        maxProgress = 0;
+        // Clear runtime locks so conditionStart() re-initialises them
+        lockedB = 0;
+        lockedMaxProgress = 0;
     }
 
     @Override
