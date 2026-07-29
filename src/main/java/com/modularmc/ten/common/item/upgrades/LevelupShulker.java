@@ -20,9 +20,9 @@ public class LevelupShulker extends UpgradeItem {
     @Override
     public boolean effect(IUpgradableMachine machine) {
         if (machine instanceof CmMachineBlockEntity cm) {
-            cm.applyDurationMultiplier(0.40);  // time ×0.40 (-60%)
-            cm.applyPowerMultiplier(2.00);     // power ×2.00 (+100%)
-            cm.applyBatchIncrease(3);          // batch +3
+            cm.applyDurationMultiplier(UpgradeConstants.SHULKER_DURATION); // time ×0.40 (-60%)
+            cm.applyPowerMultiplier(UpgradeConstants.SHULKER_POWER);       // power ×2.00 (+100%)
+            cm.applyBatchIncrease(UpgradeConstants.SHULKER_BATCH);         // batch +3
         }
         return true;
     }

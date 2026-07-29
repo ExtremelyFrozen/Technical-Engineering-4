@@ -20,9 +20,9 @@ public class LevelupPower extends UpgradeItem {
     @Override
     public boolean effect(IUpgradableMachine machine) {
         if (machine instanceof CmMachineBlockEntity cm) {
-            cm.applyDurationMultiplier(0.60);  // time ×0.60 (-40%)
-            cm.applyPowerMultiplier(1.50);     // power ×1.50 (+50%)
-            cm.applyBatchIncrease(1);          // batch +1
+            cm.applyDurationMultiplier(UpgradeConstants.POWER_DURATION); // time ×0.60 (-40%)
+            cm.applyPowerMultiplier(UpgradeConstants.POWER_POWER);       // power ×1.50 (+50%)
+            cm.applyBatchIncrease(UpgradeConstants.POWER_BATCH);         // batch +1
         }
         return true;
     }

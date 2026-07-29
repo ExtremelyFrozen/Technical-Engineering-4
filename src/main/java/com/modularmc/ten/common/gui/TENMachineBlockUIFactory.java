@@ -277,6 +277,27 @@ public final class TENMachineBlockUIFactory {
         return fluidGaugeBase(machine, x, y, width, height, tankIndex, IGuiTexture.EMPTY);
     }
 
+    /**
+     * Creates a fixed XP fluid output slot for the Furnace smelter.
+     * <p>
+     * Always visible — not gated by Knowledge. The tank and its capability
+     * are permanent; Knowledge only controls whether XP fluid is produced
+     * during recipe processing.
+     * <p>
+     * Uses the standard {@link FluidSlot#bind(ResourceHandler, int)} pattern
+     * from LDLib2, with no per-tick manual refresh or custom sync protocol.
+     *
+     * @param machine the furnace block entity
+     * @param x       horizontal position
+     * @param y       vertical position
+     * @param width   slot width (typically 14)
+     * @param height  slot height (typically 46)
+     * @return a configured FluidSlot bound to tank index 0
+     */
+    public static FluidSlot createXpFluidSlot(CmMachineBlockEntity machine, int x, int y, int width, int height) {
+        return fluidGauge(machine, x, y, width, height, 0);
+    }
+
     public static FluidSlot fluidGaugeWithBackground(CmMachineBlockEntity machine, int x, int y, int width, int height, int tankIndex) {
         var background = SpriteTexture.of(HANDLER).setSprite(0, 92, width, height);
         background.transform(-2.0f, -2.0f);
@@ -348,6 +369,15 @@ public final class TENMachineBlockUIFactory {
         element.addEventListener(UIEvents.TICK, event -> update.run());
     }
 
+    /**
+     * Registers a tick-driven display visibility supplier for the given element.
+     * <p>
+     * Initially sets visibility via {@code visibleSupplier.getAsBoolean()},
+     * then re-evaluates on every {@link UIEvents#TICK} event.
+     *
+     * @param element         the UI element whose display is controlled
+     * @param visibleSupplier supplies true/false each tick for visibility
+     */
     private static void syncDisplay(UIElement element, BooleanSupplier visibleSupplier) {
         Runnable update = () -> element.setDisplay(visibleSupplier.getAsBoolean());
         update.run();

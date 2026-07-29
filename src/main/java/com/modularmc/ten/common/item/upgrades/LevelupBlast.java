@@ -17,6 +17,7 @@ public class LevelupBlast extends UpgradeItem {
 
     @Override
     public boolean effect(IUpgradableMachine machine) {
+        machine.setRecipeMode(IUpgradableMachine.RECIPE_MODE_BLASTING);
         return true;
     }
 }

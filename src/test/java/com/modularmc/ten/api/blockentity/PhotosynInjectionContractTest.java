@@ -239,37 +239,98 @@ class PhotosynInjectionContractTest {
     // E. Machine type restriction — only PROCESS + EFFECT
     // ════════════════════════════════════════════════════════════
 
+    /**
+     * Mirror of {@link
+     * com.modularmc.ten.api.blockentity.CmMachineBlockEntity#isType}
+     * logic: MACHINE_PROCESS matches type ID 1 + concrete process machines
+     * (FURNACE/PULVERIZER/COMPRESSOR/REFINER/INDUCTION_FURNACE/PSIONICANT/
+     * MATTER_CONDENSER/ENCHANTMENT_FLUSHER = 10-17);
+     * MACHINE_EFFECT matches type ID 2 + BEACON/MOB_RIPPER/FARM (20/21/23).
+     */
+    static boolean simulateIsType(int machineType, String type) {
+        return switch (type) {
+            case "MACHINE_PROCESS" ->
+                machineType == 1 ||
+                (machineType >= 10 && machineType <= 17);
+            case "MACHINE_EFFECT" ->
+                machineType == 2 ||
+                machineType == 20 || machineType == 21 || machineType == 23;
+            default -> false;
+        };
+    }
+
     @Nested
     class MachineTypeRestriction {
 
         @Test
         void synInstalledOnlyOnProcessAndEffect() {
-            // LevelupSyn.canApply checks MACHINE_PROCESS || MACHINE_EFFECT
-            // tryInjectPhotosynEnergy should gate on the same machine types
-            assertTrue(isSynAllowed(1), "MACHINE_PROCESS allows Syn");
-            assertTrue(isSynAllowed(2), "MACHINE_EFFECT allows Syn");
-            assertFalse(isSynAllowed(0), "GENERATOR does NOT allow Syn");
-            assertFalse(isSynAllowed(30), "ENGINE_SOLAR does NOT allow Syn");
-            assertFalse(isSynAllowed(40), "CELL does NOT allow Syn");
-        }
-
-        private static boolean isSynAllowed(int machineType) {
-            return machineType == 1 || machineType == 2;
+            // LevelupSyn.canApply + tryInjectPhotosynEnergy use isType()
+            assertTrue(simulateIsType(1, "MACHINE_PROCESS"),
+                    "MACHINE_PROCESS (1) allows Syn");
+            assertTrue(simulateIsType(2, "MACHINE_EFFECT"),
+                    "MACHINE_EFFECT (2) allows Syn");
+            assertFalse(simulateIsType(0, "MACHINE_PROCESS"),
+                    "GENERATOR (0) does NOT allow Syn");
+            assertFalse(simulateIsType(30, "MACHINE_PROCESS"),
+                    "ENGINE_SOLAR (30) does NOT allow Syn");
+            assertFalse(simulateIsType(40, "MACHINE_PROCESS"),
+                    "CELL (40) does NOT allow Syn");
         }
 
         @Test
-        void tryInjectPhotosynEnergy_checksMachineType() throws Exception {
+        void concreteProcessMachines_acceptSyn() {
+            // FURNACE=10, PULVERIZER=11, COMPRESSOR=12, REFINER=13,
+            // INDUCTION_FURNACE=14, PSIONICANT=15, MATTER_CONDENSER=16,
+            // ENCHANTMENT_FLUSHER=17
+            for (int mt = 10; mt <= 17; mt++) {
+                assertTrue(simulateIsType(mt, "MACHINE_PROCESS"),
+                        "Concrete process machine type " + mt + " must accept Syn");
+            }
+        }
+
+        @Test
+        void concreteEffectMachines_acceptSyn() {
+            // BEACON=20, MOB_RIPPER=21, FARM=23
+            assertTrue(simulateIsType(20, "MACHINE_EFFECT"),
+                    "BEACON (20) accepts Syn");
+            assertTrue(simulateIsType(21, "MACHINE_EFFECT"),
+                    "MOB_RIPPER (21) accepts Syn");
+            assertTrue(simulateIsType(23, "MACHINE_EFFECT"),
+                    "FARM (23) accepts Syn");
+        }
+
+        @Test
+        void generators_doNotAcceptSyn() {
+            // GENERATOR=0, ENGINE_SOLAR=30, ENGINE_EXTRACTION=31,
+            // ENGINE_METAL=32, ENGINE_BIOMASS=33
+            assertFalse(simulateIsType(0, "MACHINE_PROCESS"),
+                    "GENERATOR (0) rejects Syn");
+            assertFalse(simulateIsType(30, "MACHINE_PROCESS"),
+                    "ENGINE_SOLAR (30) rejects Syn");
+            assertFalse(simulateIsType(31, "MACHINE_PROCESS"),
+                    "ENGINE_EXTRACTION (31) rejects Syn");
+            assertFalse(simulateIsType(31, "MACHINE_EFFECT"),
+                    "ENGINE_EXTRACTION (31) also rejects MACHINE_EFFECT");
+        }
+
+        @Test
+        void tryInjectPhotosynEnergy_checksViaIsType() throws Exception {
             var sourceFile = new File(
                     "src/main/java/com/modularmc/ten/api/blockentity/CmMachineBlockEntity.java");
             assertTrue(sourceFile.exists());
             var content = Files.readString(sourceFile.toPath());
-            // Should check machineType() for PROCESS or EFFECT
-            assertTrue(content.contains("machineType()"),
-                    "RED: tryInjectPhotosynEnergy must check machineType");
-            boolean hasProcessCheck = content.contains("MACHINE_PROCESS") || content.contains("1");
-            boolean hasEffectCheck = content.contains("MACHINE_EFFECT") || content.contains("2");
-            assertTrue(hasProcessCheck && hasEffectCheck,
-                    "RED: tryInjectPhotosynEnergy must restrict to MACHINE_PROCESS && MACHINE_EFFECT");
+            // Must use isType() (the flexible gate) not machineType() (the raw-int gate)
+            assertTrue(content.contains("isType(\"MACHINE_PROCESS\")"),
+                    "GREEN: tryInjectPhotosynEnergy must use isType(\"MACHINE_PROCESS\")");
+            assertTrue(content.contains("isType(\"MACHINE_EFFECT\")"),
+                    "GREEN: tryInjectPhotosynEnergy must use isType(\"MACHINE_EFFECT\")");
+            // The old machineType()== equality gate must NOT remain
+            int tryInjectIdx = content.indexOf("tryInjectPhotosynEnergy");
+            assertTrue(tryInjectIdx >= 0);
+            String afterMethod = content.substring(tryInjectIdx);
+            int machineTypeEqIdx = afterMethod.indexOf("machineType() ==");
+            assertFalse(machineTypeEqIdx >= 0 && machineTypeEqIdx < afterMethod.indexOf('}'),
+                    "RED: tryInjectPhotosynEnergy method must NOT use machineType()== equality; use isType() instead");
         }
     }
 

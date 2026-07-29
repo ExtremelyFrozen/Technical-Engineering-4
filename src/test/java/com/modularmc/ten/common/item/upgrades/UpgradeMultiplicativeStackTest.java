@@ -435,8 +435,8 @@ class UpgradeMultiplicativeStackTest {
                     "src/main/java/com/modularmc/ten/common/item/upgrades/LevelupAug.java");
             assertTrue(sourceFile.exists());
             var content = Files.readString(sourceFile.toPath());
-            assertTrue(content.contains("applyDurationMultiplier(0.75)"),
-                    "P2: LevelupAug calls applyDurationMultiplier(0.75)");
+            assertTrue(content.contains("UpgradeConstants.AUG_DURATION"),
+                    "P2: LevelupAug calls applyDurationMultiplier with AUG_DURATION constant");
         }
 
         @Test
@@ -445,8 +445,8 @@ class UpgradeMultiplicativeStackTest {
                     "src/main/java/com/modularmc/ten/common/item/upgrades/LevelupAug.java");
             assertTrue(sourceFile.exists());
             var content = Files.readString(sourceFile.toPath());
-            assertTrue(content.contains("applyPowerMultiplier(1.30)"),
-                    "P2: LevelupAug calls applyPowerMultiplier(1.30)");
+            assertTrue(content.contains("UpgradeConstants.AUG_POWER"),
+                    "P2: LevelupAug calls applyPowerMultiplier with AUG_POWER constant");
         }
 
         @Test
@@ -467,8 +467,8 @@ class UpgradeMultiplicativeStackTest {
                     "src/main/java/com/modularmc/ten/common/item/upgrades/LevelupPower.java");
             assertTrue(sourceFile.exists());
             var content = Files.readString(sourceFile.toPath());
-            assertTrue(content.contains("applyDurationMultiplier(0.60)"),
-                    "P2: LevelupPower calls applyDurationMultiplier(0.60)");
+            assertTrue(content.contains("UpgradeConstants.POWER_DURATION"),
+                    "P2: LevelupPower calls applyDurationMultiplier with POWER_DURATION constant");
         }
 
         @Test
@@ -477,8 +477,8 @@ class UpgradeMultiplicativeStackTest {
                     "src/main/java/com/modularmc/ten/common/item/upgrades/LevelupPower.java");
             assertTrue(sourceFile.exists());
             var content = Files.readString(sourceFile.toPath());
-            assertTrue(content.contains("applyPowerMultiplier(1.50)"),
-                    "P2: LevelupPower calls applyPowerMultiplier(1.50)");
+            assertTrue(content.contains("UpgradeConstants.POWER_POWER"),
+                    "P2: LevelupPower calls applyPowerMultiplier with POWER_POWER constant");
         }
 
         @Test
@@ -487,8 +487,8 @@ class UpgradeMultiplicativeStackTest {
                     "src/main/java/com/modularmc/ten/common/item/upgrades/LevelupPower.java");
             assertTrue(sourceFile.exists());
             var content = Files.readString(sourceFile.toPath());
-            assertTrue(content.contains("applyBatchIncrease(1)"),
-                    "P2: LevelupPower calls applyBatchIncrease(1)");
+            assertTrue(content.contains("UpgradeConstants.POWER_BATCH"),
+                    "P2: LevelupPower calls applyBatchIncrease with POWER_BATCH constant");
         }
 
         @Test
@@ -497,8 +497,8 @@ class UpgradeMultiplicativeStackTest {
                     "src/main/java/com/modularmc/ten/common/item/upgrades/LevelupShulker.java");
             assertTrue(sourceFile.exists());
             var content = Files.readString(sourceFile.toPath());
-            assertTrue(content.contains("applyDurationMultiplier(0.40)"),
-                    "P2: LevelupShulker calls applyDurationMultiplier(0.40)");
+            assertTrue(content.contains("UpgradeConstants.SHULKER_DURATION"),
+                    "P2: LevelupShulker calls applyDurationMultiplier with SHULKER_DURATION constant");
         }
 
         @Test
@@ -507,8 +507,8 @@ class UpgradeMultiplicativeStackTest {
                     "src/main/java/com/modularmc/ten/common/item/upgrades/LevelupShulker.java");
             assertTrue(sourceFile.exists());
             var content = Files.readString(sourceFile.toPath());
-            assertTrue(content.contains("applyPowerMultiplier(2.00)"),
-                    "P2: LevelupShulker calls applyPowerMultiplier(2.00)");
+            assertTrue(content.contains("UpgradeConstants.SHULKER_POWER"),
+                    "P2: LevelupShulker calls applyPowerMultiplier with SHULKER_POWER constant");
         }
 
         @Test
@@ -517,8 +517,8 @@ class UpgradeMultiplicativeStackTest {
                     "src/main/java/com/modularmc/ten/common/item/upgrades/LevelupShulker.java");
             assertTrue(sourceFile.exists());
             var content = Files.readString(sourceFile.toPath());
-            assertTrue(content.contains("applyBatchIncrease(3)"),
-                    "P2: LevelupShulker calls applyBatchIncrease(3)");
+            assertTrue(content.contains("UpgradeConstants.SHULKER_BATCH"),
+                    "P2: LevelupShulker calls applyBatchIncrease with SHULKER_BATCH constant");
         }
 
         @Test
@@ -527,8 +527,8 @@ class UpgradeMultiplicativeStackTest {
                     "src/main/java/com/modularmc/ten/common/item/upgrades/LevelupSyn.java");
             assertTrue(sourceFile.exists());
             var content = Files.readString(sourceFile.toPath());
-            assertTrue(content.contains("applyDurationMultiplier(1.5)"),
-                    "P2: LevelupSyn calls applyDurationMultiplier(1.5)");
+            assertTrue(content.contains("UpgradeConstants.SYN_DURATION"),
+                    "P2: LevelupSyn calls applyDurationMultiplier with SYN_DURATION constant");
         }
 
         @Test
@@ -537,8 +537,8 @@ class UpgradeMultiplicativeStackTest {
                     "src/main/java/com/modularmc/ten/common/item/upgrades/LevelupSyn.java");
             assertTrue(sourceFile.exists());
             var content = Files.readString(sourceFile.toPath());
-            assertTrue(content.contains("applyPowerMultiplier(0.8)"),
-                    "P2: LevelupSyn calls applyPowerMultiplier(0.8)");
+            assertTrue(content.contains("UpgradeConstants.SYN_POWER"),
+                    "P2: LevelupSyn calls applyPowerMultiplier with SYN_POWER constant");
         }
 
         @Test
@@ -618,13 +618,14 @@ class UpgradeMultiplicativeStackTest {
 
         @Test
         void nonFourUpgradesStillUseOnUpgradeApply() throws Exception {
-            // Verify old upgrades (Potion, Know, Rg, etc.) still call onUpgradeApply
+            // LevelupKnow is now a marker upgrade — effect is no-op (XP logic moved
+            // to FurnaceBlockEntity). Verify it no longer calls onUpgradeApply.
             var knowFile = new File(
                     "src/main/java/com/modularmc/ten/common/item/upgrades/LevelupKnow.java");
             assertTrue(knowFile.exists());
             var knowContent = Files.readString(knowFile.toPath());
-            assertTrue(knowContent.contains("onUpgradeApply"),
-                    "LevelupKnow still calls onUpgradeApply for backward compat");
+            assertFalse(knowContent.contains("onUpgradeApply"),
+                    "LevelupKnow must not call onUpgradeApply (it's now a marker upgrade)");
         }
     }
 }

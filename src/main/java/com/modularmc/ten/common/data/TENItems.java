@@ -23,6 +23,7 @@ import static com.modularmc.ten.common.registry.Registration.ITEMS;
 public class TENItems {
 
     public static final LinkedHashMap<String, String> ZH_NAMES = new LinkedHashMap<>();
+    public static final LinkedHashMap<String, String> EN_NAMES = new LinkedHashMap<>();
 
     /**
      * Ordered holder list for all registered mould items, populated by
@@ -91,66 +92,66 @@ public class TENItems {
     // Raw Materials
     // ══════════════════════════════════════════════════════════════════
 
-    public static final DeferredHolder<Item, Item> RAW_TIN = simpleItem("raw_tin", "粗锡");
-    public static final DeferredHolder<Item, Item> RAW_NICKEL = simpleItem("raw_nickel", "粗镍");
+    public static final DeferredHolder<Item, Item> RAW_TIN = simpleItem("raw_tin", "Raw Tin", "粗锡");
+    public static final DeferredHolder<Item, Item> RAW_NICKEL = simpleItem("raw_nickel", "Raw Nickel", "粗镍");
 
     // ══════════════════════════════════════════════════════════════════
     // Crafting Components
     // ══════════════════════════════════════════════════════════════════
 
-    public static final DeferredHolder<Item, Item> REDSTONE_CONDUCTOR = simpleItem("redstone_conductor", "红石传导元件");
-    public static final DeferredHolder<Item, Item> REDSTONE_CONVERTER = simpleItem("redstone_converter", "红石转化元件");
-    public static final DeferredHolder<Item, Item> REDSTONE_STORER = simpleItem("redstone_storer", "红石转存元件");
-    public static final DeferredHolder<Item, Item> INDIGO = simpleItem("indigo", "靛青");
-    public static final DeferredHolder<Item, Item> AZURE_GLASS = simpleItem("azure_glass", "琉璃");
-    public static final DeferredHolder<Item, Item> BIZARRERIE = simpleItem("bizarrerie", "奇异物质");
-    public static final DeferredHolder<Item, Item> REDSTONE_AI = simpleItem("redstone_ai", "红石智能芯片");
-    public static final DeferredHolder<Item, Item> REDSTONE_AI_ADVANCED = simpleItem("redstone_ai_advanced", "自律红石智能芯片");
-    public static final DeferredHolder<Item, Item> HYDRAULIC_WIDGET = simpleItem("hydraulic_widget", "液压组件");
-    public static final DeferredHolder<Item, Item> DETECTOR = simpleItem("detector", "反射探测仪");
+    public static final DeferredHolder<Item, Item> REDSTONE_CONDUCTOR = simpleItem("redstone_conductor", "Redstone Conductor", "红石传导元件");
+    public static final DeferredHolder<Item, Item> REDSTONE_CONVERTER = simpleItem("redstone_converter", "Redstone Converter", "红石转化元件");
+    public static final DeferredHolder<Item, Item> REDSTONE_STORER = simpleItem("redstone_storer", "Redstone Storer", "红石转存元件");
+    public static final DeferredHolder<Item, Item> INDIGO = simpleItem("indigo", "Indigo", "靛青");
+    public static final DeferredHolder<Item, Item> AZURE_GLASS = simpleItem("azure_glass", "Azure Glass", "琉璃");
+    public static final DeferredHolder<Item, Item> BIZARRERIE = simpleItem("bizarrerie", "Bizarrerie", "奇异物质");
+    public static final DeferredHolder<Item, Item> REDSTONE_AI = simpleItem("redstone_ai", "Redstone AI", "红石智能芯片");
+    public static final DeferredHolder<Item, Item> REDSTONE_AI_ADVANCED = simpleItem("redstone_ai_advanced", "Advanced Redstone AI", "自律红石智能芯片");
+    public static final DeferredHolder<Item, Item> HYDRAULIC_WIDGET = simpleItem("hydraulic_widget", "Hydraulic Widget", "液压组件");
+    public static final DeferredHolder<Item, Item> DETECTOR = simpleItem("detector", "Detector", "反射探测仪");
 
-    public static final DeferredHolder<Item, Item> ROYAL_JELLY = simpleItem("royal_jelly", "蜂王浆");
-    public static final DeferredHolder<Item, Item> SPICY_JELLY = simpleItem("spicy_jelly", "香辣蜂王浆");
+    public static final DeferredHolder<Item, Item> ROYAL_JELLY = simpleItem("royal_jelly", "Royal Jelly", "蜂王浆");
+    public static final DeferredHolder<Item, Item> SPICY_JELLY = simpleItem("spicy_jelly", "Spicy Jelly", "香辣蜂王浆");
 
     // ══════════════════════════════════════════════════════════════════
     // Moulds
     // ══════════════════════════════════════════════════════════════════
 
-    public static final DeferredHolder<Item, Item> MOULD_GEAR = mould("mould_gear", "模具-齿轮");
-    public static final DeferredHolder<Item, Item> MOULD_PLATE = mould("mould_plate", "模具-板");
-    public static final DeferredHolder<Item, Item> MOULD_ROD = mould("mould_rod", "模具-杆");
-    public static final DeferredHolder<Item, Item> MOULD_STRING = mould("mould_string", "模具-线");
-    public static final DeferredHolder<Item, Item> MOULD_COMPRESSED_SMALL = mould("mould_compressed_small", "模具-2x2压缩");
-    public static final DeferredHolder<Item, Item> MOULD_COMPRESSED_LARGE = mould("mould_compressed_large", "模具-3x3压缩");
-    public static final DeferredHolder<Item, Item> MOULD_SPLIT = mould("mould_split", "模具-解压缩");
-    public static final DeferredHolder<Item, Item> MOULD_COIN = mould("mould_coin", "模具-币");
-    public static final DeferredHolder<Item, Item> MOULD_DENSE_PLATE = mould("mould_dense_plate", "模具-致密板");
+    public static final DeferredHolder<Item, Item> MOULD_GEAR = mould("mould_gear", "Gear Mould", "模具-齿轮");
+    public static final DeferredHolder<Item, Item> MOULD_PLATE = mould("mould_plate", "Plate Mould", "模具-板");
+    public static final DeferredHolder<Item, Item> MOULD_ROD = mould("mould_rod", "Rod Mould", "模具-杆");
+    public static final DeferredHolder<Item, Item> MOULD_STRING = mould("mould_string", "String Mould", "模具-线");
+    public static final DeferredHolder<Item, Item> MOULD_COMPRESSED_SMALL = mould("mould_compressed_small", "Compressed Small Mould", "模具-2x2压缩");
+    public static final DeferredHolder<Item, Item> MOULD_COMPRESSED_LARGE = mould("mould_compressed_large", "Compressed Large Mould", "模具-3x3压缩");
+    public static final DeferredHolder<Item, Item> MOULD_SPLIT = mould("mould_split", "Split Mould", "模具-解压缩");
+    public static final DeferredHolder<Item, Item> MOULD_COIN = mould("mould_coin", "Coin Mould", "模具-币");
+    public static final DeferredHolder<Item, Item> MOULD_DENSE_PLATE = mould("mould_dense_plate", "Dense Plate Mould", "模具-致密板");
 
     // ══════════════════════════════════════════════════════════════════
     // Tools
     // ══════════════════════════════════════════════════════════════════
 
-    public static final DeferredHolder<Item, SpannerItem> SPANNER = tool("spanner", "扳手", () -> new SpannerItem(new Item.Properties().setId(itemKey("spanner"))));
-    public static final DeferredHolder<Item, EnergyUnitItem> ENERGY_CAPACITY = tool("energy_capacity", "能量单元", () -> new EnergyUnitItem(new Item.Properties().setId(itemKey("energy_capacity"))));
-    public static final DeferredHolder<Item, ChannelConnectorItem> CHANNEL_CONNECTOR = tool("channel_connector", "频道桥接器", () -> new ChannelConnectorItem(new Item.Properties().setId(itemKey("channel_connector"))));
+    public static final DeferredHolder<Item, SpannerItem> SPANNER = tool("spanner", "Spanner", "扳手", () -> new SpannerItem(new Item.Properties().setId(itemKey("spanner"))));
+    public static final DeferredHolder<Item, EnergyUnitItem> ENERGY_CAPACITY = tool("energy_capacity", "Energy Unit", "能量单元", () -> new EnergyUnitItem(new Item.Properties().setId(itemKey("energy_capacity"))));
+    public static final DeferredHolder<Item, ChannelConnectorItem> CHANNEL_CONNECTOR = tool("channel_connector", "Channel Connector", "频道桥接器", () -> new ChannelConnectorItem(new Item.Properties().setId(itemKey("channel_connector"))));
 
     // ══════════════════════════════════════════════════════════════════
     // Upgrades
     // ══════════════════════════════════════════════════════════════════
 
-    public static final DeferredHolder<Item, UpgradeItem> AUGMENTED_LEVELUP = upgrade("augmented_levelup", "升级：增强组件", () -> new LevelupAug(new Item.Properties().setId(itemKey("augmented_levelup"))));
-    public static final DeferredHolder<Item, UpgradeItem> POWERED_LEVELUP = upgrade("powered_levelup", "升级：充能组件", () -> new LevelupPower(new Item.Properties().setId(itemKey("powered_levelup"))));
-    public static final DeferredHolder<Item, UpgradeItem> RELIC_LEVELUP = upgrade("relic_levelup", "升级：潜影组件", () -> new LevelupShulker(new Item.Properties().setId(itemKey("relic_levelup"))));
-    public static final DeferredHolder<Item, UpgradeItem> PHOTOSYN_LEVELUP = upgrade("photosyn_levelup", "升级：光合供能抑制", () -> new LevelupSyn(new Item.Properties().setId(itemKey("photosyn_levelup"))));
-    public static final DeferredHolder<Item, UpgradeItem> RANGE_LEVELUP = upgrade("range_levelup", "升级：作用范围扩展", () -> new LevelupRg(new Item.Properties().setId(itemKey("range_levelup"))));
-    public static final DeferredHolder<Item, UpgradeItem> SMOKE_LEVELUP = upgrade("smoke_levelup", "升级：食物专业烟熏", () -> new LevelupSmoke(new Item.Properties().setId(itemKey("smoke_levelup"))));
-    public static final DeferredHolder<Item, UpgradeItem> BLAST_LEVELUP = upgrade("blast_levelup", "升级：矿物专业冶炼", () -> new LevelupBlast(new Item.Properties().setId(itemKey("blast_levelup"))));
-    public static final DeferredHolder<Item, UpgradeItem> POTION_LEVELUP = upgrade("potion_levelup", "升级：药水效能榨取", () -> new LevelupPotion(new Item.Properties().setId(itemKey("potion_levelup"))));
-    public static final DeferredHolder<Item, UpgradeItem> STREAM_LEVELUP = upgrade("stream_levelup", "升级：星辉能量传输", () -> new LevelupStream(new Item.Properties().setId(itemKey("stream_levelup"))));
-    public static final DeferredHolder<Item, UpgradeItem> KNOWLEDGE_LEVELUP = upgrade("knowledge_levelup", "升级：知识储备扩充", () -> new LevelupKnow(new Item.Properties().setId(itemKey("knowledge_levelup"))));
-    public static final DeferredHolder<Item, UpgradeItem> ICE_LEVELUP = upgrade("ice_levelup", "升级：地下冻土开采", () -> new LevelupIce(new Item.Properties().setId(itemKey("ice_levelup"))));
-    public static final DeferredHolder<Item, UpgradeItem> MAGMA_LEVELUP = upgrade("magma_levelup", "升级：地幔深层钻井", () -> new LevelupMagma(new Item.Properties().setId(itemKey("magma_levelup"))));
-    public static final DeferredHolder<Item, UpgradeItem> MINERAL_LEVELUP = upgrade("mineral_levelup", "升级：矿物探测仪器", () -> new LevelupMineral(new Item.Properties().setId(itemKey("mineral_levelup"))));
+    public static final DeferredHolder<Item, UpgradeItem> AUGMENTED_LEVELUP = upgrade("augmented_levelup", "Upgrade: Augmented Kit", "升级：增强组件", () -> new LevelupAug(new Item.Properties().setId(itemKey("augmented_levelup"))));
+    public static final DeferredHolder<Item, UpgradeItem> POWERED_LEVELUP = upgrade("powered_levelup", "Upgrade: Powered Kit", "升级：充能组件", () -> new LevelupPower(new Item.Properties().setId(itemKey("powered_levelup"))));
+    public static final DeferredHolder<Item, UpgradeItem> RELIC_LEVELUP = upgrade("relic_levelup", "Upgrade: Shulker Kit", "升级：潜影组件", () -> new LevelupShulker(new Item.Properties().setId(itemKey("relic_levelup"))));
+    public static final DeferredHolder<Item, UpgradeItem> PHOTOSYN_LEVELUP = upgrade("photosyn_levelup", "Upgrade: Photosynthetic Power", "升级：光合供能抑制", () -> new LevelupSyn(new Item.Properties().setId(itemKey("photosyn_levelup"))));
+    public static final DeferredHolder<Item, UpgradeItem> RANGE_LEVELUP = upgrade("range_levelup", "Upgrade: Range Expansion", "升级：作用范围扩展", () -> new LevelupRg(new Item.Properties().setId(itemKey("range_levelup"))));
+    public static final DeferredHolder<Item, UpgradeItem> SMOKE_LEVELUP = upgrade("smoke_levelup", "Upgrade: Smoking Professor", "升级：食物专业烟熏", () -> new LevelupSmoke(new Item.Properties().setId(itemKey("smoke_levelup"))));
+    public static final DeferredHolder<Item, UpgradeItem> BLAST_LEVELUP = upgrade("blast_levelup", "Upgrade: Blasting Professor", "升级：矿物专业冶炼", () -> new LevelupBlast(new Item.Properties().setId(itemKey("blast_levelup"))));
+    public static final DeferredHolder<Item, UpgradeItem> POTION_LEVELUP = upgrade("potion_levelup", "Upgrade: Potion Effect Extraction", "升级：药水效能榨取", () -> new LevelupPotion(new Item.Properties().setId(itemKey("potion_levelup"))));
+    public static final DeferredHolder<Item, UpgradeItem> STREAM_LEVELUP = upgrade("stream_levelup", "Upgrade: Starlight Energy Deliverance", "升级：星辉能量传输", () -> new LevelupStream(new Item.Properties().setId(itemKey("stream_levelup"))));
+    public static final DeferredHolder<Item, UpgradeItem> KNOWLEDGE_LEVELUP = upgrade("knowledge_levelup", "Upgrade: Knowledge Expansion", "升级：知识储备扩充", () -> new LevelupKnow(new Item.Properties().setId(itemKey("knowledge_levelup"))));
+    public static final DeferredHolder<Item, UpgradeItem> ICE_LEVELUP = upgrade("ice_levelup", "Upgrade: Frozen Soil Drilling", "升级：地下冻土开采", () -> new LevelupIce(new Item.Properties().setId(itemKey("ice_levelup"))));
+    public static final DeferredHolder<Item, UpgradeItem> MAGMA_LEVELUP = upgrade("magma_levelup", "Upgrade: Mantle Drilling", "升级：地幔深层钻井", () -> new LevelupMagma(new Item.Properties().setId(itemKey("magma_levelup"))));
+    public static final DeferredHolder<Item, UpgradeItem> MINERAL_LEVELUP = upgrade("mineral_levelup", "Upgrade: Mineral Detection", "升级：矿物探测仪器", () -> new LevelupMineral(new Item.Properties().setId(itemKey("mineral_levelup"))));
 
     // ══════════════════════════════════════════════════════════════════
     // Helpers
@@ -162,15 +163,17 @@ public class TENItems {
     }
 
     /** Register a simple {@link Item} with default properties. */
-    private static DeferredHolder<Item, Item> simpleItem(String name, String cn) {
+    private static DeferredHolder<Item, Item> simpleItem(String name, String en, String cn) {
         ZH_NAMES.put(name, cn);
+        EN_NAMES.put(name, en);
         var key = itemKey(name);
         return ITEMS.register(name, () -> new Item(new Item.Properties().setId(key)));
     }
 
     /** Register a mould item (simple Item, textured), adding to MOULD_HOLDERS. */
-    private static DeferredHolder<Item, Item> mould(String name, String cn) {
+    private static DeferredHolder<Item, Item> mould(String name, String en, String cn) {
         ZH_NAMES.put(name, cn);
+        EN_NAMES.put(name, en);
         var key = itemKey(name);
         var holder = ITEMS.register(name, () -> new Item(new Item.Properties().setId(key)));
         MOULD_HOLDERS.add(holder);
@@ -178,14 +181,16 @@ public class TENItems {
     }
 
     /** Register a tool item with custom class. */
-    private static <T extends Item> DeferredHolder<Item, T> tool(String name, String cn, Supplier<T> factory) {
+    private static <T extends Item> DeferredHolder<Item, T> tool(String name, String en, String cn, Supplier<T> factory) {
         ZH_NAMES.put(name, cn);
+        EN_NAMES.put(name, en);
         return ITEMS.register(name, factory);
     }
 
     /** Register an upgrade item. */
-    private static <T extends UpgradeItem> DeferredHolder<Item, T> upgrade(String name, String cn, Supplier<T> factory) {
+    private static <T extends UpgradeItem> DeferredHolder<Item, T> upgrade(String name, String en, String cn, Supplier<T> factory) {
         ZH_NAMES.put(name, cn);
+        EN_NAMES.put(name, en);
         return ITEMS.register(name, factory);
     }
 
@@ -200,6 +205,7 @@ public class TENItems {
             String name = mat.id + "_" + category;
             mat.markRegistered(category);
             ZH_NAMES.put(name, mat.cn + categoryCn);
+            EN_NAMES.put(name, mat.englishName() + " " + categoryEn);
             var key = itemKey(name);
             var holder = ITEMS.register(name, () -> new Item(new Item.Properties().setId(key)));
             MATERIAL_VARIANT_HOLDERS.add(holder);

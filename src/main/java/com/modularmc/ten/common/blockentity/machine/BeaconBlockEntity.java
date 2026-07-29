@@ -5,6 +5,7 @@ import com.modularmc.ten.api.option.IngredientType;
 import com.modularmc.ten.api.option.MachineType;
 import com.modularmc.ten.common.gui.TENMachineBlockUIFactory;
 import com.modularmc.ten.common.item.upgrades.LevelupPotion;
+import com.modularmc.ten.common.item.upgrades.UpgradeConstants;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -88,7 +89,7 @@ public class BeaconBlockEntity extends RadiusMachineBlockEntity {
         var effects = potion.getAllEffects();
         if (!effects.iterator().hasNext()) return;
 
-        int amplifier = hasUpgrade(LevelupPotion.class) ? 1 : 0;
+        int amplifier = hasUpgrade(LevelupPotion.class) ? UpgradeConstants.POTION_AMPLIFIER : 0;
         int B = getLockedBatchSize();
 
         for (Player player : players) {

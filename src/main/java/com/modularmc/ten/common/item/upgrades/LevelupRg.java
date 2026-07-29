@@ -18,7 +18,8 @@ public class LevelupRg extends UpgradeItem {
     @Override
     public boolean effect(IUpgradableMachine machine) {
         // Only called when canApply already returned true, so radius > 0 is guaranteed
-        machine.setCurrentRadius(machine.getCurrentRadius() + (int) (machine.getInitialRadius() * 0.5));
+        int addRadius = (int) (machine.getInitialRadius() * UpgradeConstants.RG_RANGE_FRACTION);
+        machine.setCurrentRadius(machine.getCurrentRadius() + addRadius);
         return true;
     }
 }

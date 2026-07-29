@@ -14,6 +14,7 @@ import static com.modularmc.ten.common.registry.Registration.CREATIVE_TABS;
 public class TENCreativeModeTabs {
 
     public static final LinkedHashMap<String, String> ZH_NAMES = new LinkedHashMap<>();
+    public static final LinkedHashMap<String, String> EN_NAMES = new LinkedHashMap<>();
 
     // ── Tab entries ────────────────────────────────────────────────
     public static final DeferredHolder<CreativeModeTab, CreativeModeTab> BLOCK_TAB = CREATIVE_TABS.register("block", () -> CreativeModeTab.builder()
@@ -150,6 +151,10 @@ public class TENCreativeModeTabs {
         ZH_NAMES.put("itemGroup." + TEN.MOD_ID + ".machine", "科能工程:再技术化 | 机器");
         ZH_NAMES.put("itemGroup." + TEN.MOD_ID + ".item", "科能工程:再技术化 | 物品");
         ZH_NAMES.put("itemGroup." + TEN.MOD_ID + ".tool", "科能工程:再技术化 | 工具");
+        EN_NAMES.put("itemGroup." + TEN.MOD_ID + ".block", "Kenergy Engineering: Retechnicalized - Blocks");
+        EN_NAMES.put("itemGroup." + TEN.MOD_ID + ".machine", "Kenergy Engineering: Retechnicalized - Machines");
+        EN_NAMES.put("itemGroup." + TEN.MOD_ID + ".item", "Kenergy Engineering: Retechnicalized - Items");
+        EN_NAMES.put("itemGroup." + TEN.MOD_ID + ".tool", "Kenergy Engineering: Retechnicalized - Tools");
     }
 
     public static void init() {}

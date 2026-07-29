@@ -31,17 +31,8 @@ public class TENBaseItem extends Item {
             Component ttc = ComponentHelper.translated(ComponentHelper.GOLD, k);
             if (ttc.getString().equals(k)) break;
 
-            // 支持 \n 换行
-            String text = ttc.getString();
-            int nl = text.indexOf('\n');
-            if (nl >= 0) {
-                String[] lines = text.split("\n", -1);
-                for (String line : lines) {
-                    builder.accept(Component.literal(line).withStyle(ttc.getStyle()));
-                }
-            } else {
-                builder.accept(ttc);
-            }
+            // All lines for base items: GOLD only (no BOLD — that's UpgradeItem's job)
+            builder.accept(ttc);
         }
     }
 }

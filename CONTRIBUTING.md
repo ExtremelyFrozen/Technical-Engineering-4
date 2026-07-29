@@ -115,7 +115,6 @@ src/main/java/com/modularmc/ten/
 │       └── dev/                    # 开发环境专用 mixin
 ├── data/                           # 数据生成编排
 │   ├── DataGenerators.java         # GatherDataEvent 订阅
-│   ├── TENDataGen.java             # DataGen 初始化
 │   └── lang/                       # 语言提供器
 │       └── TENLangHandler.java     # 中英文翻译入口
 ├── integration/                    # 模组集成
@@ -291,7 +290,7 @@ public static final BlockEntityEntry<FurnaceBlockEntity> FURNACE = REGISTRATE
 
 #### DataGen 注册
 
-在 `TENDataGen.init()` 中注册额外的 DataGen Provider：
+在 `DataGenerators` 类中注册额外的 DataGen Provider：
 
 ```java
 REGISTRATE.addDataGenerator(ProviderType.LANG, TENLangHandler::init);

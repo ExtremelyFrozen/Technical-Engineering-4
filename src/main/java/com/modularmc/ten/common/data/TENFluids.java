@@ -28,6 +28,8 @@ public class TENFluids {
 
     public static final LinkedHashMap<String, String> ZH_NAMES = new LinkedHashMap<>();
     public static final LinkedHashMap<String, String> ZH_FLUID_KEYS = new LinkedHashMap<>();
+    public static final LinkedHashMap<String, String> EN_NAMES = new LinkedHashMap<>();
+    public static final LinkedHashMap<String, String> EN_FLUID_KEYS = new LinkedHashMap<>();
 
     // ══════════════════════════════════════════════════════════════════
     // Per-fluid FluidType holders
@@ -66,6 +68,8 @@ public class TENFluids {
     static {
         ZH_NAMES.put("liquid_royal_jelly", "蜂王浆");
         ZH_FLUID_KEYS.put("fluid." + TEN.MOD_ID + ".liquid_royal_jelly", "蜂王浆");
+        EN_NAMES.put("liquid_royal_jelly", "Liquid Royal Jelly");
+        EN_FLUID_KEYS.put("fluid." + TEN.MOD_ID + ".liquid_royal_jelly", "Liquid Royal Jelly");
     }
 
     // ══════════════════════════════════════════════════════════════════
@@ -91,6 +95,8 @@ public class TENFluids {
     static {
         ZH_NAMES.put("liquid_spicy_jelly", "香辣蜂王浆");
         ZH_FLUID_KEYS.put("fluid." + TEN.MOD_ID + ".liquid_spicy_jelly", "香辣蜂王浆");
+        EN_NAMES.put("liquid_spicy_jelly", "Liquid Spicy Jelly");
+        EN_FLUID_KEYS.put("fluid." + TEN.MOD_ID + ".liquid_spicy_jelly", "Liquid Spicy Jelly");
     }
 
     // ══════════════════════════════════════════════════════════════════
@@ -116,6 +122,8 @@ public class TENFluids {
     static {
         ZH_NAMES.put("liquid_honey", "蜂蜜");
         ZH_FLUID_KEYS.put("fluid." + TEN.MOD_ID + ".liquid_honey", "蜂蜜");
+        EN_NAMES.put("liquid_honey", "Liquid Honey");
+        EN_FLUID_KEYS.put("fluid." + TEN.MOD_ID + ".liquid_honey", "Liquid Honey");
     }
 
     // ══════════════════════════════════════════════════════════════════
@@ -141,6 +149,8 @@ public class TENFluids {
     static {
         ZH_NAMES.put("liquid_xp", "液态经验");
         ZH_FLUID_KEYS.put("fluid." + TEN.MOD_ID + ".liquid_xp", "液态经验");
+        EN_NAMES.put("liquid_xp", "Liquid XP");
+        EN_FLUID_KEYS.put("fluid." + TEN.MOD_ID + ".liquid_xp", "Liquid XP");
     }
 
     // ══════════════════════════════════════════════════════════════════
@@ -166,6 +176,8 @@ public class TENFluids {
     static {
         ZH_NAMES.put("liquid_bizarrerie", "奇异物质");
         ZH_FLUID_KEYS.put("fluid." + TEN.MOD_ID + ".liquid_bizarrerie", "奇异物质");
+        EN_NAMES.put("liquid_bizarrerie", "Liquid Bizarrerie");
+        EN_FLUID_KEYS.put("fluid." + TEN.MOD_ID + ".liquid_bizarrerie", "Liquid Bizarrerie");
     }
 
     // ══════════════════════════════════════════════════════════════════

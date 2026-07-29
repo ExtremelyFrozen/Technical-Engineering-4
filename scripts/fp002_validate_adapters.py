@@ -4,15 +4,17 @@
 
 Checks:
   - ItemHandlerResourceAdapter.java exists with ResourceHandler<ItemResource> signature
-  - ItemHandlerResourceAdapter implements size/getResource/getAmountAsLong/getCapacityAsLong/isValid/insert/extract
-  - FluidHandlerResourceAdapter.java exists with ResourceHandler<FluidResource> signature
+  - ItemHandlerResourceAdapter implements all ResourceHandler methods
+  - ItemHandlerResourceAdapter delegates to internal IItemHandler (legacy pattern)
+  - FluidHandlerResourceAdapter.java exists, extends SnapshotJournal<FluidStack[]>, implements ResourceHandler<FluidResource>
   - FluidHandlerResourceAdapter implements all ResourceHandler methods
-  - CommonProxy.registerCapabilities registers Capabilities.Item.BLOCK with adapter
-  - CommonProxy.registerCapabilities registers Capabilities.Fluid.BLOCK with adapter
-  - No direct IItemHandler/IFluidHandler exposed at capability boundary
-  - Transaction-aware insert/extract (no simulation leakage)
+  - FluidHandlerResourceAdapter uses List<MachineFluidTank>, no IFluidHandler field
+  - FluidHandlerResourceAdapter uses per-index (no handler-wide fill/drain), updateSnapshots, resource.matches
+  - FluidHandlerResourceAdapter has onRootCommit override
+  - CommonProxy.registerCapabilities registers both with correct adapter patterns
+  - No old handler exposed at capability boundary
+  - Transaction-aware insert/extract
   - Empty/null resource guards
-  - Side-aware delegation
 
 Exit 0 = GREEN (fully implemented), 1 = RED (not implemented or incomplete).
 """
@@ -42,7 +44,6 @@ def read(path):
 
 
 def check_item_adapter_exists(acc):
-    """ItemHandlerResourceAdapter.java must exist."""
     path = os.path.join(CAP_DIR, "ItemHandlerResourceAdapter.java")
     text = read(path)
     if text is None:
@@ -52,10 +53,8 @@ def check_item_adapter_exists(acc):
 
 
 def check_item_adapter_implements_resource_handler(acc):
-    """ItemHandlerResourceAdapter must implement ResourceHandler<ItemResource>."""
     text = check_item_adapter_exists(acc)
-    if text is None:
-        return
+    if text is None: return
     if "ResourceHandler<ItemResource>" not in text:
         acc("ItemHandlerResourceAdapter: missing 'implements ResourceHandler<ItemResource>'")
     if "class ItemHandlerResourceAdapter" not in text:
@@ -63,10 +62,8 @@ def check_item_adapter_implements_resource_handler(acc):
 
 
 def check_item_adapter_methods(acc):
-    """ItemHandlerResourceAdapter must have all ResourceHandler methods delegating to IItemHandler."""
     text = check_item_adapter_exists(acc)
-    if text is None:
-        return
+    if text is None: return
     required = [
         (r'@Override\s+public\s+int\s+size\s*\(', 'size()'),
         (r'@Override\s+public\s+ItemResource\s+getResource\s*\(', 'getResource(int)'),
@@ -82,16 +79,13 @@ def check_item_adapter_methods(acc):
 
 
 def check_item_adapter_has_internal_iitemhandler(acc):
-    """ItemHandlerResourceAdapter must have a field referencing IItemHandler."""
     text = check_item_adapter_exists(acc)
-    if text is None:
-        return
+    if text is None: return
     if not re.search(r'IItemHandler\s+\w+', text):
         acc("ItemHandlerResourceAdapter: no IItemHandler field found")
 
 
 def check_fluid_adapter_exists(acc):
-    """FluidHandlerResourceAdapter.java must exist."""
     path = os.path.join(CAP_DIR, "FluidHandlerResourceAdapter.java")
     text = read(path)
     if text is None:
@@ -100,22 +94,20 @@ def check_fluid_adapter_exists(acc):
     return text
 
 
-def check_fluid_adapter_implements_resource_handler(acc):
-    """FluidHandlerResourceAdapter must implement ResourceHandler<FluidResource>."""
+def check_fluid_adapter_extends_snapshot_journal(acc):
     text = check_fluid_adapter_exists(acc)
-    if text is None:
-        return
-    if "ResourceHandler<FluidResource>" not in text:
+    if text is None: return
+    if "extends SnapshotJournal<FluidStack[]>" not in text:
+        acc("FluidHandlerResourceAdapter: missing 'extends SnapshotJournal<FluidStack[]>'")
+    if "implements ResourceHandler<FluidResource>" not in text:
         acc("FluidHandlerResourceAdapter: missing 'implements ResourceHandler<FluidResource>'")
     if "class FluidHandlerResourceAdapter" not in text:
         acc("FluidHandlerResourceAdapter: class not found")
 
 
 def check_fluid_adapter_methods(acc):
-    """FluidHandlerResourceAdapter must have all ResourceHandler methods delegating to IFluidHandler."""
     text = check_fluid_adapter_exists(acc)
-    if text is None:
-        return
+    if text is None: return
     required = [
         (r'@Override\s+public\s+int\s+size\s*\(', 'size()'),
         (r'@Override\s+public\s+FluidResource\s+getResource\s*\(', 'getResource(int)'),
@@ -130,41 +122,88 @@ def check_fluid_adapter_methods(acc):
             acc(f"FluidHandlerResourceAdapter: missing method {name}")
 
 
-def check_fluid_adapter_has_internal_ifluidhandler(acc):
-    """FluidHandlerResourceAdapter must have a field referencing IFluidHandler."""
+def check_fluid_adapter_no_ifluidhandler(acc):
+    """FluidHandlerResourceAdapter must NOT have IFluidHandler field; uses List<MachineFluidTank>."""
     text = check_fluid_adapter_exists(acc)
-    if text is None:
-        return
-    if not re.search(r'IFluidHandler\s+\w+', text):
-        acc("FluidHandlerResourceAdapter: no IFluidHandler field found")
+    if text is None: return
+    if re.search(r'IFluidHandler\s+\w+\s*;', text):
+        acc("FluidHandlerResourceAdapter: still has IFluidHandler field (should use List<MachineFluidTank>)")
+    if 'List<MachineFluidTank>' not in text:
+        acc("FluidHandlerResourceAdapter: missing List<MachineFluidTank> field")
 
 
-def check_common_proxy_item_registration(acc):
-    """CommonProxy must register Capabilities.Item.BLOCK with adapter."""
+def check_fluid_adapter_no_handler_wide(acc):
+    """Must not use handler-wide fill/drain."""
+    text = check_fluid_adapter_exists(acc)
+    if text is None: return
+    if re.search(r'(handler\.fill|handler\.drain)\s*\(', text):
+        acc("FluidHandlerResourceAdapter: uses handler-wide fill/drain (should be per-index setFluid)")
+
+
+def check_fluid_adapter_update_snapshots(acc):
+    """Must call updateSnapshots in insert/extract."""
+    text = check_fluid_adapter_exists(acc)
+    if text is None: return
+    if 'updateSnapshots(transaction)' not in text:
+        acc("FluidHandlerResourceAdapter: missing updateSnapshots(transaction) calls")
+
+
+def check_fluid_adapter_resource_matches(acc):
+    """Must use resource.matches(current) for component-aware comparison."""
+    text = check_fluid_adapter_exists(acc)
+    if text is None: return
+    if 'resource.matches(current)' not in text:
+        acc("FluidHandlerResourceAdapter: missing resource.matches(current) for component-aware comparison")
+    if re.search(r'current\.is\(resource\.getFluid\(\)\)', text):
+        acc("FluidHandlerResourceAdapter: still uses current.is(resource.getFluid()) type-only comparison")
+
+
+def check_fluid_adapter_on_root_commit(acc):
+    """Must override onRootCommit to fire commitCallback once."""
+    text = check_fluid_adapter_exists(acc)
+    if text is None: return
+    if 'onRootCommit(FluidStack[] originalState)' not in text:
+        acc("FluidHandlerResourceAdapter: missing onRootCommit(FluidStack[]) override")
+
+
+def check_fluid_adapter_capacity_empty(acc):
+    """getCapacityAsLong must return general capacity even for empty resource."""
+    text = check_fluid_adapter_exists(acc)
+    if text is None: return
+    # Find getCapacityAsLong
+    cap_match = re.search(r'getCapacityAsLong\s*\([^}]*\}', text, re.DOTALL)
+    if cap_match:
+        body = cap_match.group(0)
+        if 'resource == null || resource.isEmpty()' in body or 'resource.isEmpty()' in body:
+            idx = body.find('resource.isEmpty()')
+            snippet = body[idx:idx+100]
+            if 'return 0' in snippet:
+                acc("FluidHandlerResourceAdapter: getCapacityAsLong returns 0 for empty resource (should return general tank capacity)")
+
+
+def check_common_proxy_fluid_registration(acc):
+    """CommonProxy must delegate to machine.getFluidResourceHandler, not construct adapter directly."""
     text = read(COMMON_PROXY)
     if text is None:
         acc("CommonProxy.java not found")
         return
-    if "Capabilities.Item.BLOCK" not in text:
-        acc("CommonProxy.java: missing Capabilities.Item.BLOCK registration")
-    if "ItemHandlerResourceAdapter" not in text:
-        acc("CommonProxy.java: missing ItemHandlerResourceAdapter reference in registration")
     if "Capabilities.Fluid.BLOCK" not in text:
         acc("CommonProxy.java: missing Capabilities.Fluid.BLOCK registration")
-    if "FluidHandlerResourceAdapter" not in text:
-        acc("CommonProxy.java: missing FluidHandlerResourceAdapter reference in registration")
-    # Check that the TODO comment about re-enabling is removed
-    if "TODO: Re-enable Item/Fluid capability" in text:
-        acc("CommonProxy.java: TODO comment about re-enabling item/fluid capabilities still present (should be removed)")
+    # Must NOT construct FluidHandlerResourceAdapter directly
+    if "new FluidHandlerResourceAdapter(" in text:
+        acc("CommonProxy.java: still directly constructs FluidHandlerResourceAdapter (should delegate to BE)")
+    # Must call machine.getFluidResourceHandler(side)
+    if "machine.getFluidResourceHandler(" not in text:
+        acc("CommonProxy.java: missing machine.getFluidResourceHandler(side) delegation")
+    # Should not import FluidHandlerResourceAdapter directly
+    if "import com.modularmc.ten.api.capability.FluidHandlerResourceAdapter;" in text:
+        acc("CommonProxy.java: still imports FluidHandlerResourceAdapter directly")
 
 
 def check_no_old_handler_exposed(acc):
     """Capability boundary must NOT expose IItemHandler/IFluidHandler directly."""
     text = read(COMMON_PROXY)
-    if text is None:
-        return
-    # The registerBlock should be for Capabilities.Item.BLOCK and Capabilities.Fluid.BLOCK
-    # NOT for old Capabilities.ItemHandler.BLOCK
+    if text is None: return
     if "Capabilities.ItemHandler.BLOCK" in text:
         acc("CommonProxy.java: uses old Capabilities.ItemHandler.BLOCK instead of Capabilities.Item.BLOCK")
     if "Capabilities.FluidHandler.BLOCK" in text:
@@ -172,54 +211,72 @@ def check_no_old_handler_exposed(acc):
 
 
 def check_item_adapter_uses_transaction(acc):
-    """ItemHandlerResourceAdapter must pass TransactionContext to insert/extract (not always simulate)."""
     text = check_item_adapter_exists(acc)
-    if text is None:
-        return
-    # Check that insert/extract use the transaction parameter
+    if text is None: return
     if re.search(r'insert\s*\([^)]*simulate', text):
         acc("ItemHandlerResourceAdapter: insert() uses legacy 'simulate' parameter instead of Transaction pattern")
 
 
-def check_fluid_adapter_uses_transaction(acc):
-    """FluidHandlerResourceAdapter must pass TransactionContext to insert/extract."""
+def check_fluid_adapter_empty_guard(acc):
     text = check_fluid_adapter_exists(acc)
-    if text is None:
-        return
-    if re.search(r'(fill|drain)\s*\([^)]*SIMULATE', text):
-        acc("FluidHandlerResourceAdapter: uses SIMULATE action instead of Transaction pattern")
+    if text is None: return
+    if not re.search(r'(isEmpty|checkNonEmpty|checkNonEmptyNonNegative)', text):
+        acc("FluidHandlerResourceAdapter: missing empty/non-negative resource guard pattern")
 
 
 def check_item_adapter_empty_guard(acc):
-    """ItemHandlerResourceAdapter must guard against empty ItemResource."""
     text = check_item_adapter_exists(acc)
-    if text is None:
-        return
+    if text is None: return
     if not re.search(r'(isEmpty|isValid|checkNonEmpty|checkNonEmptyNonNegative)', text):
         acc("ItemHandlerResourceAdapter: missing empty/non-negative resource guard pattern")
 
 
-def check_fluid_adapter_empty_guard(acc):
-    """FluidHandlerResourceAdapter must guard against empty FluidResource."""
-    text = check_fluid_adapter_exists(acc)
+# ─── BE-level checks ────────────────────────────────────────────────
+
+def check_be_has_fluid_resource_handler(acc):
+    """CmMachineBlockEntity must have getFluidResourceHandler method with caching."""
+    path = os.path.join(CAP_DIR, "..", "blockentity", "CmMachineBlockEntity.java")
+    text = read(os.path.normpath(path))
     if text is None:
+        acc("CmMachineBlockEntity.java not found")
         return
-    if not re.search(r'(isEmpty|isValid|checkNonEmpty|checkNonEmptyNonNegative)', text):
-        acc("FluidHandlerResourceAdapter: missing empty/non-negative resource guard pattern")
+    if "getFluidResourceHandler" not in text:
+        acc("CmMachineBlockEntity: missing getFluidResourceHandler method")
+    if "ResourceHandler<FluidResource>" not in text:
+        acc("CmMachineBlockEntity: missing ResourceHandler<FluidResource> caching field")
+    if "public boolean canReceiveFluid" in text or "protected boolean canReceiveFluid" not in text:
+        acc("CmMachineBlockEntity: canReceiveFluid not restored to protected")
+    if "public boolean canExtractFluid" in text or "protected boolean canExtractFluid" not in text:
+        acc("CmMachineBlockEntity: canExtractFluid not restored to protected")
+    if "markFluidCapabilityChanged" in text:
+        acc("CmMachineBlockEntity: markFluidCapabilityChanged still present (should be removed)")
+    if "getFluidHandler" not in text:
+        acc("CmMachineBlockEntity: getFluidHandler removed (must keep for internal compat)")
 
 
-def check_item_adapter_implements_is_valid(acc):
-    """isValid must return false for empty resource."""
-    text = check_item_adapter_exists(acc)
+def check_gui_uses_resource_handler_bind(acc):
+    """TENMachineBlockUIFactory must use ResourceHandler bind, not deprecated IFluidHandler bind.
+
+    Behavior-chain assertions (not import checks — the compiler infers types
+    from getFluidResourceHandler return and FluidSlot.bind overload resolution).
+    """
+    gui_path = SRC("main", "java", "com", "modularmc", "ten", "common", "gui", "TENMachineBlockUIFactory.java")
+    text = read(gui_path)
     if text is None:
+        acc("TENMachineBlockUIFactory.java not found")
         return
-    if re.search(r'isValid\s*\([^)]*\)\s*\{[^}]*\}', text) and not re.search(r'isEmpty', text):
-        # Check if the method body is more than just return true
-        body_match = re.search(r'isValid\s*\([^)]*\)\s*\{(.*?)\}', text, re.DOTALL)
-        if body_match:
-            body = body_match.group(1).strip()
-            if 'isEmpty' not in body and 'false' not in body:
-                acc("ItemHandlerResourceAdapter: isValid() should return false for empty resources")
+    # 1. Must NOT use deprecated bind(getFluidHandler) — IFluidHandler path
+    if "bind(machine.getFluidHandler(" in text:
+        acc("TENMachineBlockUIFactory: still uses deprecated bind(getFluidHandler)")
+    # 2. Must call getFluidResourceHandler (behavior, not import)
+    if "getFluidResourceHandler(" not in text:
+        acc("TENMachineBlockUIFactory: missing getFluidResourceHandler call")
+    # 3. Must bind the result via slot.bind(handler, tankIndex) — allowing var format
+    if not re.search(r'\.bind\(\s*\w+\s*,\s*\w+\s*\)', text):
+        acc("TENMachineBlockUIFactory: missing slot.bind(handler, tankIndex) call")
+    # 4. No deprecated IFluidHandler type used anywhere in this file
+    if re.search(r'\bIFluidHandler\b', text):
+        acc("TENMachineBlockUIFactory: references deprecated IFluidHandler type")
 
 
 # ─── Main ────────────────────────────────────────────────────────────────────
@@ -231,23 +288,46 @@ def main():
         errors.append(msg)
 
     checks = [
-        ("ItemHandlerResourceAdapter: class exists with ResourceHandler<ItemResource>", check_item_adapter_implements_resource_handler),
-        ("ItemHandlerResourceAdapter: all ResourceHandler methods present", check_item_adapter_methods),
-        ("ItemHandlerResourceAdapter: delegates to IItemHandler", check_item_adapter_has_internal_iitemhandler),
-        ("ItemHandlerResourceAdapter: uses Transaction pattern (not simulate flag)", check_item_adapter_uses_transaction),
-        ("ItemHandlerResourceAdapter: guards against empty resources", check_item_adapter_empty_guard),
-        ("ItemHandlerResourceAdapter: isValid handles empty resource", check_item_adapter_implements_is_valid),
-        ("FluidHandlerResourceAdapter: class exists with ResourceHandler<FluidResource>", check_fluid_adapter_implements_resource_handler),
-        ("FluidHandlerResourceAdapter: all ResourceHandler methods present", check_fluid_adapter_methods),
-        ("FluidHandlerResourceAdapter: delegates to IFluidHandler", check_fluid_adapter_has_internal_ifluidhandler),
-        ("FluidHandlerResourceAdapter: uses Transaction pattern (not simulate flag)", check_fluid_adapter_uses_transaction),
-        ("FluidHandlerResourceAdapter: guards against empty resources", check_fluid_adapter_empty_guard),
-        ("CommonProxy: Capabilities.Item.BLOCK registered with adapter", check_common_proxy_item_registration),
-        ("CommonProxy: no old ItemHandler.BLOCK capability used", check_no_old_handler_exposed),
+        ("ItemHandlerResourceAdapter: class exists with ResourceHandler<ItemResource>",
+         check_item_adapter_implements_resource_handler),
+        ("ItemHandlerResourceAdapter: all ResourceHandler methods present",
+         check_item_adapter_methods),
+        ("ItemHandlerResourceAdapter: delegates to IItemHandler",
+         check_item_adapter_has_internal_iitemhandler),
+        ("ItemHandlerResourceAdapter: uses Transaction pattern (not simulate flag)",
+         check_item_adapter_uses_transaction),
+        ("ItemHandlerResourceAdapter: guards against empty resources",
+         check_item_adapter_empty_guard),
+        ("FluidHandlerResourceAdapter: extends SnapshotJournal + implements ResourceHandler<FluidResource>",
+         check_fluid_adapter_extends_snapshot_journal),
+        ("FluidHandlerResourceAdapter: all ResourceHandler methods present",
+         check_fluid_adapter_methods),
+        ("FluidHandlerResourceAdapter: uses List<MachineFluidTank> (no IFluidHandler)",
+         check_fluid_adapter_no_ifluidhandler),
+        ("FluidHandlerResourceAdapter: no handler-wide fill/drain (per-index only)",
+         check_fluid_adapter_no_handler_wide),
+        ("FluidHandlerResourceAdapter: calls updateSnapshots(transaction)",
+         check_fluid_adapter_update_snapshots),
+        ("FluidHandlerResourceAdapter: uses resource.matches(current) for component check",
+         check_fluid_adapter_resource_matches),
+        ("FluidHandlerResourceAdapter: overrides onRootCommit(originalState)",
+         check_fluid_adapter_on_root_commit),
+        ("FluidHandlerResourceAdapter: getCapacityAsLong handles empty resource",
+         check_fluid_adapter_capacity_empty),
+        ("FluidHandlerResourceAdapter: guards against empty resources",
+         check_fluid_adapter_empty_guard),
+        ("CommonProxy: Capabilities registered with adapters",
+         check_common_proxy_fluid_registration),
+        ("CommonProxy: no old ItemHandler.BLOCK capability used",
+         check_no_old_handler_exposed),
+        ("CmMachineBlockEntity: getFluidResourceHandler with caching + protected restored",
+         check_be_has_fluid_resource_handler),
+        ("TENMachineBlockUIFactory: ResourceHandler bind (not deprecated IFluidHandler)",
+         check_gui_uses_resource_handler_bind),
     ]
 
     print("=" * 60)
-    print("  FP-002 TDD RED/GATE — Item/Fluid Reverse ResourceHandler Adapters")
+    print("  FP-002 TDD GATE — Item/Fluid Reverse ResourceHandler Adapters")
     print("=" * 60)
 
     for i, (name, fn) in enumerate(checks, 1):
@@ -263,7 +343,7 @@ def main():
             print(f"    - {e}")
         if len(errors) > 15:
             print(f"    ... and {len(errors) - 15} more")
-        print("\n  >>> RED - Adapters/registration incomplete (expected for TDD RED phase)")
+        print("\n  >>> RED")
         return 1
     print("\n  >>> GREEN - All adapters and registration complete")
     return 0

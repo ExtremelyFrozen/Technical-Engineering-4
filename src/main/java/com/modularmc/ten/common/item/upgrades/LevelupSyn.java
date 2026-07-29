@@ -22,10 +22,10 @@ public class LevelupSyn extends UpgradeItem {
         if (machine instanceof CmMachineBlockEntity cm) {
             // Idempotent: only apply Syn effects once per machine
             if (cm.photosynInstalled) return true;
-            cm.applyDurationMultiplier(1.5);  // time ×1.5 (50% longer)
-            cm.applyPowerMultiplier(0.8);     // FE/t ×0.8 (20% reduction)
-            cm.applyBatchIncrease(0);         // batch +0
-            cm.applyPhotosyn();               // mark installed
+            cm.applyDurationMultiplier(UpgradeConstants.SYN_DURATION); // time ×1.5 (50% longer)
+            cm.applyPowerMultiplier(UpgradeConstants.SYN_POWER);       // FE/t ×0.8 (20% reduction)
+            cm.applyBatchIncrease(0);                                  // batch +0
+            cm.applyPhotosyn();                                        // mark installed
         }
         return true;
     }

@@ -74,20 +74,11 @@ class UpgradeSlotTooltipTest {
 
         @Test
         void enUsJson_containsKey() throws Exception {
-            var file = new File("src/main/resources/assets/kenergyengineering/lang/en_us.json");
-            assertTrue(file.exists(), "en_us.json must exist");
+            var file = new File("src/generated/resources/assets/kenergyengineering/lang/en_us.json");
+            assertTrue(file.exists(), "en_us.json (generated) must exist");
             String content = Files.readString(file.toPath());
             assertTrue(content.contains("\"" + KEY + "\": \"" + EN_VALUE + "\""),
                 "en_us.json must contain " + KEY + " = " + EN_VALUE);
-        }
-
-        @Test
-        void zhCnJsonMain_containsKey() throws Exception {
-            var file = new File("src/main/resources/assets/kenergyengineering/lang/zh_cn.json");
-            assertTrue(file.exists(), "zh_cn.json (main) must exist");
-            String content = Files.readString(file.toPath());
-            assertTrue(content.contains("\"" + KEY + "\": \"" + ZH_VALUE + "\""),
-                "zh_cn.json (main) must contain " + KEY + " = " + ZH_VALUE);
         }
 
         @Test

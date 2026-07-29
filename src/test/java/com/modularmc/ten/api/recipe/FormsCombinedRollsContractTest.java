@@ -470,7 +470,7 @@ class FormsCombinedRollsContractTest {
         @Test
         void en_us_hasRollsKey() throws Exception {
             var sourceFile = new File(
-                    "src/main/resources/assets/kenergyengineering/lang/en_us.json");
+                    "src/generated/resources/assets/kenergyengineering/lang/en_us.json");
             assertTrue(sourceFile.exists());
             var content = Files.readString(sourceFile.toPath());
             assertTrue(content.contains("jei_addition_chance_rolls"),
@@ -478,13 +478,13 @@ class FormsCombinedRollsContractTest {
         }
 
         @Test
-        void zh_cn_main_hasRollsKey() throws Exception {
+        void zh_cn_generated_hasRollsKey() throws Exception {
             var sourceFile = new File(
-                    "src/main/resources/assets/kenergyengineering/lang/zh_cn.json");
+                    "src/generated/resources/assets/kenergyengineering/lang/zh_cn.json");
             assertTrue(sourceFile.exists());
             var content = Files.readString(sourceFile.toPath());
             assertTrue(content.contains("jei_addition_chance_rolls"),
-                    "zh_cn.json must contain jei_addition_chance_rolls");
+                    "zh_cn.json (generated) must contain jei_addition_chance_rolls");
         }
     }
 

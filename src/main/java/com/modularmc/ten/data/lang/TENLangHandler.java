@@ -101,19 +101,72 @@ public final class TENLangHandler {
 
     // ── Upgrade Tips ────────────────────────────────────────────────
     private static void addUpgradeTips() {
-        add("augmented_levelup.0", "Machine: +1 upgrade slot\n      +20% throughput", "机器：额外升级槽+1\n      全局性能+20%");
-        add("powered_levelup.0", "Machine: +2 upgrade slots\n      +35% throughput", "机器：额外升级槽+2\n      全局性能+35%");
-        add("relic_levelup.0", "Machine: +3 upgrade slots\n      +75% throughput", "机器：额外升级槽+3\n      全局性能+75%");
-        add("knowledge_levelup.0", "Machine: +Max upgrade slots", "机器：额外升级槽+Max");
-        add("stream_levelup.0", "Machine: Infinite FE transfer", "机器：无限 FE 传输");
-        add("photosyn_levelup.0", "Machine: +1 upgrade slot\n      -10% throughput", "机器：额外升级槽+1\n      全局性能-10%");
-        add("range_levelup.0", "Effect Machine: +50% range", "效益机器：范围+50%");
-        add("blast_levelup.0", "Smelter: Blast furnace recipes only\n      Processing speed x2", "冶炼机：限定高炉配方\n      处理速度x2");
-        add("smoke_levelup.0", "Smelter: Smoker recipes only\n      Processing speed x2", "冶炼机：限定烟熏配方\n      处理速度x2");
-        add("magma_levelup.0", "Quarry: Magma production mode\n      Produces magma blocks & cream", "采矿场：切换为岩浆产出模式\n      产出岩浆块与岩浆膏");
-        add("ice_levelup.0", "Quarry: Ice production mode\n      Produces various ice blocks", "采矿场：切换为冰块产出模式\n      产出各类冰块");
-        add("mineral_levelup.0", "Quarry: Ore-only mining mode\n      Only mines c:ores blocks", "采矿场：切换为矿物开采模式\n      仅挖掘矿物块");
-        add("potion_levelup.0", "Beacon Simulator: Buff level +1", "信标模拟器：药水等级+1");
+        // ── Generic format keys (shared across upgrades, consumed by UpgradeTooltipFormatter) ──
+        // Duration as signed percent change: arg = "-25", "+50", etc.
+        add("upgrade_tip.duration.percent", "%s%% duration", "%s%%消耗时间");
+        // Power multiplier: arg = "1.3", "2", "0.8"
+        add("upgrade_tip.power.multiplier", "x%s energy consumption", "x%s能量消耗");
+        // Batch additive count: arg = "+1", "+3" (pre-formatted signed string)
+        add("upgrade_tip.batch.add", "%s batch.", "%s批处理。");
+        // Photosynthetic FE/t: arg = "+10"
+        add("upgrade_tip.photosyn.fe", "%s FE/t photosynthetic power.", "%s FE/t光合供能。");
+        // Range additive fraction: arg = "+50" (pre-formatted signed string)
+        add("upgrade_tip.range.add", "%s%% initial range", "%s%%初始作用范围");
+        // Potion amplifier: arg = "+1" (pre-formatted signed string)
+        add("upgrade_tip.potion.amplifier", "%s potion effect level.", "%s药水效果等级。");
+        // Unknown upgrade fallback
+        add("upgrade_tip.unknown.0", "Unknown upgrade", "未知升级组件");
+
+        // ── Item-specific keys (title .0 and pure-text lines) ──
+
+        // 1 Augmented: title only (values via generic keys)
+        add("augmented_levelup.0", "In machines:", "在机器中：");
+
+        // 2 Powered: title only
+        add("powered_levelup.0", "In machines:", "在机器中：");
+
+        // 3 Shulker: title only
+        add("relic_levelup.0", "In machines:", "在机器中：");
+
+        // 4 Syn: title + pure text lines .4 (sky) and .5 (unique)
+        add("photosyn_levelup.0", "In machines:", "在机器中：");
+        add("photosyn_levelup.4", "Only generates in open sky, no rain, daytime", "仅在露天、无雨且昼间时供能");
+        add("photosyn_levelup.5", "Only 1 per machine", "每台机器仅可安装1个");
+
+        // 5 Range: title only
+        add("range_levelup.0", "In effect machines:", "在功能性机器中：");
+
+        // 6 Blast: enables Blast Furnace recipes (mutually exclusive with Smoke)
+        add("blast_levelup.0", "In smelter:", "在熔炼机中：");
+        add("blast_levelup.1", "Enables Blast Furnace smelting (exclusive with Smoke)", "启用高炉冶炼（与烟熏互斥）");
+
+        // 7 Smoke: enables Smoker recipes (mutually exclusive with Blast)
+        add("smoke_levelup.0", "In smelter:", "在熔炼机中：");
+        add("smoke_levelup.1", "Enables Smoker smelting (exclusive with Blast)", "启用烟熏冶炼（与高炉互斥）");
+
+        // 8 Potion: title only
+        add("potion_levelup.0", "In beacon simulator:", "在模拟信标中：");
+
+        // 9 Ice: quarry output mode → ice
+        add("ice_levelup.0", "In quarry:", "在采矿场中：");
+        add("ice_levelup.1", "Output mode: Ice", "产出模式修改为冰块");
+
+        // 10 Magma: quarry output mode → magma
+        add("magma_levelup.0", "In quarry:", "在采矿场中：");
+        add("magma_levelup.1", "Output mode: Magma", "产出模式修改为岩浆");
+
+        // 11 Mineral: quarry mining mode → mineral
+        add("mineral_levelup.0", "In quarry:", "在采矿场中：");
+        add("mineral_levelup.1", "Mining mode: Mineral", "开采模式修改为矿物");
+
+        // 12 Knowledge: every 10 recipe ticks → 1 mB XP fluid
+        add("knowledge_levelup.0", "In smelter:", "在熔炼机中：");
+        add("knowledge_levelup.1", "Each recipe produces XP fluid based on cooking time", "每次处理配方按熔炼时间产出经验流体");
+        add("knowledge_levelup.2", "10 ticks → 1 mB Liquid XP (per unit)", "每10 tick产1 mB液态经验（每单位）");
+
+        // 13 Stream: unlimited energy transfer
+        add("stream_levelup.0", "In machines:", "在机器中：");
+        add("stream_levelup.1", "Energy transfer rate: Infinite", "能量传输速率修改为无限");
     }
 
     // ── Levels ──────────────────────────────────────────────────────
@@ -264,6 +317,11 @@ public final class TENLangHandler {
         add("jei.base_rate_short", "%s FE/t", "%s FE/t");
         add("jei.duration_short", "%s ticks", "%s tick");
         add("jei.total_short", "%s FE", "%s FE");
+
+        // P3: Smelter three JEI category titles
+        add("jei.category.smelter_smelting", "Smelter — Smelting", "熔炼机 — 熔炉");
+        add("jei.category.smelter_blasting", "Smelter — Blasting", "熔炼机 — 高炉");
+        add("jei.category.smelter_smoking", "Smelter — Smoking", "熔炼机 — 烟熏");
     }
 
     // ── EMI ─────────────────────────────────────────────────────────

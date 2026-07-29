@@ -26,6 +26,8 @@ import os
 import re
 import sys
 
+from resource_roots import resolve_unique_resource
+
 
 def _configure_stdio_utf8():
     """Ensure stdout/stderr use UTF-8 encoding for consistent output."""
@@ -118,19 +120,16 @@ def read_tenbaseblockitem_java() -> str:
 
 
 def read_lang(lang: str) -> dict:
-    """Read a lang JSON file and return parsed dict."""
-    if lang == "en_us":
-        path = os.path.join(
-            PROJECT_ROOT, "src", "main", "resources", "assets",
-            "kenergyengineering", "lang", "en_us.json"
-        )
-    elif lang == "zh_cn":
-        path = os.path.join(
-            PROJECT_ROOT, "src", "main", "resources", "assets",
-            "kenergyengineering", "lang", "zh_cn.json"
-        )
-    else:
-        raise ValueError(f"Unknown lang: {lang}")
+    """Read a lang JSON file via dual-root resolution and return parsed dict."""
+    rel = f"assets/kenergyengineering/lang/{lang}.json"
+    try:
+        _, path = resolve_unique_resource(PROJECT_ROOT, rel)
+    except FileNotFoundError:
+        print(f"ERROR: {lang}.json not found in any resource root")
+        sys.exit(1)
+    except AssertionError as e:
+        print(f"ERROR: {lang}.json conflict: {e}")
+        sys.exit(1)
 
     if not os.path.isfile(path):
         print(f"ERROR: {lang}.json not found at {path}")

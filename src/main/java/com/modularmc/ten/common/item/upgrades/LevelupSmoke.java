@@ -1,5 +1,7 @@
 package com.modularmc.ten.common.item.upgrades;
 
+import com.modularmc.ten.api.blockentity.CmMachineBlockEntity;
+
 public class LevelupSmoke extends UpgradeItem {
 
     public LevelupSmoke() {
@@ -17,6 +19,7 @@ public class LevelupSmoke extends UpgradeItem {
 
     @Override
     public boolean effect(IUpgradableMachine machine) {
+        machine.setRecipeMode(IUpgradableMachine.RECIPE_MODE_SMOKING);
         return true;
     }
 }

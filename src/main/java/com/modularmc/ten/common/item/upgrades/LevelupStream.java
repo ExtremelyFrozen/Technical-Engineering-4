@@ -17,6 +17,7 @@ public class LevelupStream extends UpgradeItem {
 
     @Override
     public boolean effect(IUpgradableMachine machine) {
+        machine.setUnlimitedEnergyTransfer(true);
         return true;
     }
 }

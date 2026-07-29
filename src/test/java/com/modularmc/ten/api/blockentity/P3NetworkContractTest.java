@@ -655,9 +655,9 @@ class P3NetworkContractTest {
             // which would allow external extraction
             int idx = src.indexOf("tryInjectPhotosynEnergy");
             assertTrue(idx >= 0, "tryInjectPhotosynEnergy method must exist");
-            String methodBody = src.substring(idx, idx + 600);
+            String methodBody = src.substring(idx, idx + 950);
             // Must use energyStorage.receiveEnergy directly (not through getEnergyStorage)
-            assertTrue(methodBody.contains("energyStorage.receiveEnergy(10, false)"),
+            assertTrue(methodBody.contains("energyStorage.receiveEnergy(UpgradeConstants.SYN_PHOTOSYN_FE"),
                     "P3-Global: tryInjectPhotosynEnergy must inject directly to internal energyStorage");
             // Must NOT go through getEnergyStorage (which would make it externally accessible)
             assertFalse(methodBody.contains("getEnergyStorage"),

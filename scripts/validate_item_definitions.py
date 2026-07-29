@@ -29,6 +29,8 @@ import json
 import os
 import sys
 
+from resource_roots import collect_resource_files, resolve_unique_resource
+
 
 def _configure_stdio_utf8():
     """Ensure stdout/stderr use UTF-8 encoding for consistent output."""
@@ -166,22 +168,33 @@ def resolve_model_path(model_location: str) -> str | None:
     return None
 
 
-def validate_items_dir(items_dir: str) -> tuple[list[str], list[str], list[str]]:
+def validate_items_dual_root(project_root):
     """
-    Check that all expected item definition files exist, are valid JSON,
-    and their model references resolve to actual model files.
+    Check item definitions across main + generated resource roots.
+
+    Uses collect_resource_files for dual-root discovery with conflict detection.
     Returns (missing, invalid_format, unresolved_model).
     """
     missing = []
     invalid = []
     unresolved = []
 
-    for name in sorted(ALL_ITEM_NAMES):
-        file_path = os.path.join(items_dir, f"{name}.json")
-        if not os.path.exists(file_path):
-            missing.append(name)
-            continue
+    # Collect item definitions from both roots
+    items = collect_resource_files(
+        project_root, "assets/kenergyengineering/items", ".json"
+    )
 
+    # Build name -> (owner, file_path) map
+    item_map = {}
+    for rel, (owner, fp) in items.items():
+        name = os.path.splitext(os.path.basename(rel))[0]
+        item_map[name] = (owner, fp)
+
+    present_names = set(item_map.keys())
+    missing = sorted(ALL_ITEM_NAMES - present_names)
+
+    for name in sorted(present_names):
+        owner, file_path = item_map[name]
         try:
             with open(file_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
@@ -207,11 +220,56 @@ def validate_items_dir(items_dir: str) -> tuple[list[str], list[str], list[str]]
             # Resolve model reference to actual file
             resolved = resolve_model_path(model_ref)
             if resolved is None:
-                unresolved.append(f"{name}: model='{model_ref}' → NOT FOUND")
+                unresolved.append(f"{name}: model='{model_ref}' \u2192 NOT FOUND")
             else:
-                # Verify it's actually a JSON file (not just exists)
                 if not resolved.endswith(".json"):
-                    unresolved.append(f"{name}: model='{model_ref}' → not a JSON file")
+                    unresolved.append(f"{name}: model='{model_ref}' \u2192 not a JSON file")
+
+        except json.JSONDecodeError as e:
+            invalid.append(f"{name}: {e}")
+
+    return missing, invalid, unresolved
+
+
+def _legacy_validate_dir(items_dir):
+    """Validate using a single directory (--items-dir override)."""
+    missing = []
+    invalid = []
+    unresolved = []
+
+    for name in sorted(ALL_ITEM_NAMES):
+        file_path = os.path.join(items_dir, f"{name}.json")
+        if not os.path.exists(file_path):
+            missing.append(name)
+            continue
+
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+
+            if "model" not in data:
+                invalid.append(f"{name}: missing 'model' key")
+                continue
+
+            model_obj = data["model"]
+            if not isinstance(model_obj, dict):
+                invalid.append(f"{name}: 'model' is not an object")
+                continue
+
+            if model_obj.get("type") != "minecraft:model":
+                invalid.append(f"{name}: model.type is not 'minecraft:model'")
+
+            model_ref = model_obj.get("model")
+            if not model_ref:
+                invalid.append(f"{name}: model.model is missing or empty")
+                continue
+
+            resolved = resolve_model_path(model_ref)
+            if resolved is None:
+                unresolved.append(f"{name}: model='{model_ref}' \u2192 NOT FOUND")
+            else:
+                if not resolved.endswith(".json"):
+                    unresolved.append(f"{name}: model='{model_ref}' \u2192 not a JSON file")
 
         except json.JSONDecodeError as e:
             invalid.append(f"{name}: {e}")
@@ -224,41 +282,45 @@ def main():
     script_dir = os.path.dirname(os.path.abspath(__file__))
     project_dir = os.path.dirname(script_dir)
 
-    items_dir = os.path.join(
-        project_dir,
-        "src", "generated", "resources",
-        "assets", "kenergyengineering", "items",
-    )
-
-    # Allow override via --items-dir
+    # Allow override via --items-dir (skip dual-root, use single dir)
     if "--items-dir" in sys.argv:
         idx = sys.argv.index("--items-dir")
         if idx + 1 < len(sys.argv):
             items_dir = sys.argv[idx + 1]
-
-    print(f"Item definitions directory: {items_dir}")
-    print(f"Expected items: {len(ALL_ITEM_NAMES)}")
-    print(f"Model search paths:")
-    print(f"  Generated: {GENERATED_MODELS_DIR}")
-    print(f"  Main:      {MAIN_MODELS_DIR}")
-    print()
-
-    if not os.path.isdir(items_dir):
-        print(f"[FAIL] Items directory does not exist!")
-        print(f"   Expected {len(ALL_ITEM_NAMES)} items, 0 present.")
-        print(f"   Status: RED - No item definitions found")
-        sys.exit(1)
-
-    existing_items = {
-        f.replace(".json", "")
-        for f in os.listdir(items_dir)
-        if f.endswith(".json")
-    }
-
-    missing, invalid, unresolved = validate_items_dir(items_dir)
+            print(f"Item definitions directory (override): {items_dir}")
+            print(f"Expected items: {len(ALL_ITEM_NAMES)}")
+            print(f"Model search paths:")
+            print(f"  Generated: {GENERATED_MODELS_DIR}")
+            print(f"  Main:      {MAIN_MODELS_DIR}")
+            print()
+            if not os.path.isdir(items_dir):
+                print(f"[FAIL] Items directory does not exist!")
+                print(f"   Expected {len(ALL_ITEM_NAMES)} items, 0 present.")
+                print(f"   Status: RED - No item definitions found")
+                sys.exit(1)
+            existing_items = {
+                f.replace(".json", "")
+                for f in os.listdir(items_dir)
+                if f.endswith(".json")
+            }
+            missing, invalid, unresolved = _legacy_validate_dir(items_dir)
+            present = len(existing_items)
+        else:
+            print("[FAIL] --items-dir requires a path argument")
+            sys.exit(1)
+    else:
+        print(f"Expected items: {len(ALL_ITEM_NAMES)}")
+        print(f"Resource roots (dual-root scan):")
+        print(f"  Main:      {os.path.join(project_dir, 'src', 'main', 'resources', 'assets', 'kenergyengineering', 'items')}")
+        print(f"  Generated: {os.path.join(project_dir, 'src', 'generated', 'resources', 'assets', 'kenergyengineering', 'items')}")
+        print(f"Model search paths:")
+        print(f"  Generated: {GENERATED_MODELS_DIR}")
+        print(f"  Main:      {MAIN_MODELS_DIR}")
+        print()
+        missing, invalid, unresolved = validate_items_dual_root(project_dir)
+        present = len(ALL_ITEM_NAMES) - len(missing)
 
     # Stats
-    present = len(existing_items)
     expected = len(ALL_ITEM_NAMES)
     total_issues = len(missing) + len(invalid) + len(unresolved)
 

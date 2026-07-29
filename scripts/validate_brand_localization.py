@@ -9,6 +9,8 @@ Does NOT read en_ud or call external scripts.  Exit 0 = GREEN, 1 = RED.
 
 import json, os, re, sys
 
+from resource_roots import resolve_unique_resource
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # ── UTF-8 stdio ──────────────────────────────────────────────────────
@@ -31,8 +33,19 @@ FORBIDDEN = [
 ]
 
 SRC = lambda *p: os.path.join(ROOT, "src", *p)
-MAIN_LANG = lambda f: SRC("main", "resources", "assets", "kenergyengineering", "lang", f)
-GEN_LANG = lambda f: SRC("generated", "resources", "assets", "kenergyengineering", "lang", f)
+
+# ── Lang file resolution via dual-root lookup ──────────────────────────
+def _resolve_lang(filename):
+    """Resolve a lang file path using dual-root lookup.
+    Returns path if found in exactly one root, None if not found.
+    Raises AssertionError if found in both roots (conflict)."""
+    rel = f"assets/kenergyengineering/lang/{filename}"
+    try:
+        _, path = resolve_unique_resource(ROOT, rel)
+        return path
+    except FileNotFoundError:
+        return None
+
 JAVA = lambda *p: SRC("main", "java", "com", "modularmc", "ten", *p)
 
 ITEM_GROUP_KEYS = [
@@ -78,10 +91,11 @@ def check_old_brand(acc):
     files = [JAVA("TEN.java"), JAVA("data/lang/TENLangHandler.java"),
              JAVA("common/data/TENCreativeModeTabs.java"),
              os.path.join(ROOT, "gradle.properties"),
-             MAIN_LANG("en_us.json"), MAIN_LANG("zh_cn.json"),
-             GEN_LANG("zh_cn.json"),
+             _resolve_lang("en_us.json"), _resolve_lang("zh_cn.json"),
              os.path.join(ROOT, "README.md"), os.path.join(ROOT, "CONTRIBUTING.md")]
     for fp in files:
+        if fp is None:
+            continue
         text = read(fp)
         if text is None:
             continue
@@ -138,10 +152,15 @@ def check_java_authority(acc):
 
 def check_lang_brand(acc):
     """en_us / zh_cn itemGroup + adv.root use new brand."""
-    for label, path in [("en_us", MAIN_LANG("en_us.json")),
-                        ("zh_cn (main)", MAIN_LANG("zh_cn.json")),
-                        ("zh_cn (generated)", GEN_LANG("zh_cn.json"))]:
+    entries = []
+    for label, fname in [("en_us", "en_us.json"),
+                         ("zh_cn", "zh_cn.json")]:
+        path = _resolve_lang(fname)
+        if path is None:
+            continue
         data = load_json(path)
+        entries.append((label, data))
+    for label, data in entries:
         for k in ITEM_GROUP_KEYS:
             v = data.get(k, "")
             for pat in FORBIDDEN:
@@ -156,19 +175,26 @@ def check_lang_brand(acc):
 def check_key_category(acc):
     """key.categories.kenergyengineering remains 'Kenergy Engineering'."""
     for lang in ("en_us", "zh_cn"):
-        path = MAIN_LANG(f"{lang}.json")
-        if os.path.exists(path):
-            v = load_json(path).get("kenergyengineering.key.categories.kenergyengineering", "")
-            if v != KEY_SHORT:
-                acc(f"{lang}: key category = {v!r}")
+        path = _resolve_lang(f"{lang}.json")
+        if path is None:
+            continue
+        data = load_json(path)
+        v = data.get("kenergyengineering.key.categories.kenergyengineering", "")
+        if v != KEY_SHORT:
+            acc(f"{lang}: key category = {v!r}")
 
 
 def check_psionicant(acc):
     """Exact bilingual values, no placeholders, continuous numbering."""
-    for label, path, is_en in [("en_us", MAIN_LANG("en_us.json"), True),
-                               ("zh_cn (main)", MAIN_LANG("zh_cn.json"), False),
-                               ("zh_cn (generated)", GEN_LANG("zh_cn.json"), False)]:
+    entries = []
+    for label, fname, is_en in [("en_us", "en_us.json", True),
+                                ("zh_cn", "zh_cn.json", False)]:
+        path = _resolve_lang(fname)
+        if path is None:
+            continue
         data = load_json(path)
+        entries.append((label, data, is_en))
+    for label, data, is_en in entries:
         idxs = set()
         for key, (en_val, zh_val) in PSI.items():
             val = data.get(key)
@@ -187,14 +213,16 @@ def check_psionicant(acc):
 
 
 def check_generated_consistency(acc):
-    """generated zh_cn psionicant values match main zh_cn."""
-    main = load_json(MAIN_LANG("zh_cn.json"))
-    gen = load_json(GEN_LANG("zh_cn.json"))
+    """generated zh_cn psionicant values match expected (single source of truth)."""
+    path = _resolve_lang("zh_cn.json")
+    if path is None:
+        acc("zh_cn.json not found in any resource root")
+        return
+    data = load_json(path)
     for key, (_, zh_val) in PSI.items():
-        if gen.get(key) != zh_val:
-            acc(f"generated zh_cn: '{key}' = {gen.get(key)!r}, expected {zh_val!r}")
-        if main.get(key) != zh_val:
-            acc(f"main zh_cn: '{key}' = {main.get(key)!r}, expected {zh_val!r}")
+        actual = data.get(key)
+        if actual != zh_val:
+            acc(f"zh_cn: '{key}' = {actual!r}, expected {zh_val!r}")
 
 
 # ── Main ─────────────────────────────────────────────────────────────

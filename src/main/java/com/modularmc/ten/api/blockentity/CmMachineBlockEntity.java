@@ -10,7 +10,10 @@ import com.modularmc.ten.api.option.MachineType;
 import com.modularmc.ten.api.option.RedstoneMode;
 import com.modularmc.ten.common.gui.TENMachineBlockUIFactory;
 import com.modularmc.ten.common.item.upgrades.IUpgradableMachine;
+import com.modularmc.ten.common.item.upgrades.LevelupBlast;
+import com.modularmc.ten.common.item.upgrades.LevelupSmoke;
 import com.modularmc.ten.common.item.upgrades.LevelupSyn;
+import com.modularmc.ten.common.item.upgrades.UpgradeConstants;
 import com.modularmc.ten.common.item.upgrades.UpgradeItem;
 import com.modularmc.ten.utils.SkyLightHelper;
 
@@ -121,6 +124,12 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
     public double powerMultiplier = 1.0;
     public int batch = 0;
     public boolean photosynInstalled = false;
+
+    // ───── Recipe mode (Blast/Smoke) ─────
+    public int recipeMode = RECIPE_MODE_SMELTING;
+
+    // ───── Unlimited energy transfer (Stream) ─────
+    public boolean unlimitedEnergyTransfer = false;
 
     /**
      * Locked maxProgress, set during conditionStart() alongside lockedB.
@@ -498,6 +507,20 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         maxReceiveEnergy = effectiveReceive;
         maxExtractEnergy = effectiveExtract;
 
+        // ── P3-Stream: Unlimited energy transfer overrides rate limits ──
+        // When LevelupStream is installed, maxReceive/maxExtract are set to
+        // Integer.MAX_VALUE to remove rate limits. Capacity, FaceOption,
+        // canExternalExtract, and direction guards remain unchanged.
+        // Mirror fields are updated here as well (after the effective-value
+        // mirror assignment above) so that the wrapper and synced display
+        // also show unlimited transfer.
+        if (hasUnlimitedEnergyTransfer()) {
+            maxReceiveEnergy = Integer.MAX_VALUE;
+            maxExtractEnergy = Integer.MAX_VALUE;
+            energyStorage.setMaxReceive(Integer.MAX_VALUE);
+            energyStorage.setMaxExtract(Integer.MAX_VALUE);
+        }
+
         // ── Write to ldlib2 @DescSynced fields ──
         progress = Math.max(progress, 0);
         maxEnergyStored = maxStorageEnergy;
@@ -529,7 +552,7 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
     }
 
     /**
-     * 尝试从光合供能（Syn）向本机储能注入 10 FE/t。
+     * 尝试从光合供能（Syn）向本机储能注入 FE/t（由 {@link UpgradeConstants#SYN_PHOTOSYN_FE} 决定）。
      * <p>
      * 仅在以下条件同时满足时注入：
      * <ul>
@@ -538,22 +561,26 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
      *   <li>有效光照（{@link SkyLightHelper#hasEffectiveLight}）</li>
      * </ul>
      * <p>
-     * 注入量固定为 10 FE/t，不受 B、powerMultiplier、batch 影响。
+     * 注入量固定为 {@value UpgradeConstants#SYN_PHOTOSYN_FE} FE/t，不受 B、powerMultiplier、batch 影响。
      * 满储时余量自然丢弃，不报错。
      * 不向相邻 capability 或网络 channel 推送能量。
      *
-     * @return 实际注入的 FE 量（0-10），便于测试验证
+     * @return 实际注入的 FE 量（0-SYN_PHOTOSYN_FE），便于测试验证
      */
     protected int tryInjectPhotosynEnergy() {
         if (!photosynInstalled) return 0;
-        if (!(machineType() == MachineType.MACHINE_PROCESS || machineType() == MachineType.MACHINE_EFFECT)) {
+        // Use isType() so concrete machine types (FURNACE=10, PULVERIZER=11, BEACON=20, etc.)
+        // that register as MACHINE_PROCESS/MACHINE_EFFECT via the isType switch are accepted,
+        // while GENERATOR and other non-process/effect types are correctly rejected.
+        // See CmMachineBlockEntity.isType() for the full type mapping.
+        if (!(isType("MACHINE_PROCESS") || isType("MACHINE_EFFECT"))) {
             return 0;
         }
         if (energyStorage == null) return 0;
         if (!SkyLightHelper.hasEffectiveLight(level, worldPosition)) return 0;
         // Inject directly to internal storage — bypasses sided capability to ensure
         // the energy stays local and is NOT exported via the capability network.
-        return energyStorage.receiveEnergy(10, false);
+        return energyStorage.receiveEnergy(UpgradeConstants.SYN_PHOTOSYN_FE, false);
     }
 
     // ───── 批处理锁定接口 (P1-T3a/b/c 共享) ─────
@@ -671,6 +698,12 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         if (!(stack.getItem() instanceof UpgradeItem upgradeItem)) return false;
         // LevelupSyn: max 1 per machine (enforced at install time)
         if (stack.getItem() instanceof LevelupSyn && hasUpgrade(LevelupSyn.class)) return false;
+        // P3: Blast ↔ Smoke mutual exclusion — they cannot coexist.
+        // When inserting Blast, reject if Smoke is already installed (any slot).
+        // When inserting Smoke, reject if Blast is already installed.
+        // Replacing same-type upgrade is fine (stack already in slot).
+        if (stack.getItem() instanceof LevelupBlast && hasUpgrade(LevelupSmoke.class)) return false;
+        if (stack.getItem() instanceof LevelupSmoke && hasUpgrade(LevelupBlast.class)) return false;
         return upgradeItem.canApply(this);
     }
 
@@ -697,6 +730,8 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         powerMultiplier = 1.0;
         batch = 0;
         photosynInstalled = false;
+        recipeMode = RECIPE_MODE_SMELTING;
+        unlimitedEnergyTransfer = false;
         // NOTE: lockedB and lockedMaxProgress are NOT reset here —
         // batch/duration lock lifecycle is managed independently by
         // conditionStart/clearLockedBatch/lockBatchForNewOperation.
@@ -772,6 +807,32 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
     public void applyPhotosyn() {
         if (photosynInstalled) return; // Safe idempotency — already installed
         photosynInstalled = true;
+    }
+
+    @Override
+    public void setRecipeMode(int mode) {
+        // P3: First-wins semantics — only allow transition from SMELTING.
+        // The first special mode upgrade (Blast/Smoke) in slot order wins.
+        // Subsequent calls (including the other special mode) are silently
+        // ignored. Same-mode reapplication is harmless (no state drift).
+        if (this.recipeMode == RECIPE_MODE_SMELTING) {
+            this.recipeMode = mode;
+        }
+    }
+
+    @Override
+    public int getRecipeMode() {
+        return this.recipeMode;
+    }
+
+    @Override
+    public void setUnlimitedEnergyTransfer(boolean unlimited) {
+        this.unlimitedEnergyTransfer = unlimited;
+    }
+
+    @Override
+    public boolean hasUnlimitedEnergyTransfer() {
+        return this.unlimitedEnergyTransfer;
     }
 
     // Capability access
@@ -1025,21 +1086,17 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         if (sender.isServer()) {
             redstoneMode = mode;
             setChanged();
-            // 转发 face info 给所有追踪玩家
-            for (Direction direction : Direction.values()) {
-                int idx = direction.get3DDataValue();
-                rpcToTracking("rpcSyncFaceInfo", idx,
-                        energyFaceMode.getOrDefault(direction, 0),
-                        itemFaceMode.getOrDefault(direction, 0),
-                        fluidFaceMode.getOrDefault(direction, 0));
-            }
         }
+    }
+
+    private static boolean isValidFaceIndex(int dirIndex) {
+        return dirIndex >= 0 && dirIndex < 6;
     }
 
     /** C→S: 切换面配置 */
     @RPCMethod
     public void rpcCycleFaceMode(RPCSender sender, int changeType, int dirIndex) {
-        if (sender.isServer()) {
+        if (sender.isServer() && isValidFaceIndex(dirIndex)) {
             Direction direction = Direction.from3DDataValue(dirIndex);
             Map<Direction, Integer> map;
             switch (changeType) {
@@ -1054,17 +1111,24 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
             if (mode >= FaceOption.size()) mode = 0;
             map.put(direction, mode);
             setChanged();
-            rpcToTracking("rpcSyncFaceInfo", dirIndex,
-                    energyFaceMode.getOrDefault(direction, 0),
-                    itemFaceMode.getOrDefault(direction, 0),
-                    fluidFaceMode.getOrDefault(direction, 0));
+            // Immediately sync arrays to match updated maps, preventing stale
+            // window between doBaseData ticks. Use local reads for consistency.
+            int newEnergyMode = energyFaceMode.getOrDefault(direction, FaceOption.OFF);
+            int newItemMode = itemFaceMode.getOrDefault(direction, FaceOption.OFF);
+            int newFluidMode = fluidFaceMode.getOrDefault(direction, FaceOption.OFF);
+            energyFaceData[dirIndex] = newEnergyMode;
+            itemFaceData[dirIndex] = newItemMode;
+            fluidFaceData[dirIndex] = newFluidMode;
+            rpcToTracking("rpcSyncFaceInfo", dirIndex, newEnergyMode, newItemMode, newFluidMode);
         }
     }
 
     /** S→C: 同步面配置到客户端 */
     @RPCMethod
     public void rpcSyncFaceInfo(RPCSender sender, int dirIndex, int energyMode, int itemMode, int fluidMode) {
-        if (!sender.isServer()) {
+        // Guard: only accept from server (executeClient uses RPCSender.ofServer()),
+        // and validate dirIndex range to prevent ArrayIndexOutOfBoundsException.
+        if (sender.isServer() && isValidFaceIndex(dirIndex)) {
             energyFaceData[dirIndex] = energyMode;
             itemFaceData[dirIndex] = itemMode;
             fluidFaceData[dirIndex] = fluidMode;
