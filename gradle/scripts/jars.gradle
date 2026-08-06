@@ -1,7 +1,17 @@
+// ── Full mod JAR: includes both main and client source sets ────────
+// Client source set contains JEI plugin classes and its META-INF/services/
+// SPI descriptor. Without this, JEI 29 would never discover TENJeiPlugin.
+// DuplicatesStrategy.FAIL guards against accidental path collisions
+// between main and client output (none expected as of this writing).
 jar {
     exclude "**/.cache"
+    from sourceSets.client.output
+    duplicatesStrategy = DuplicatesStrategy.FAIL
 }
 
+// ── Slim JAR: server-safe artifact (intentionally main-only) ────────
+// Used for dedicated server distribution. Must NOT include client-only
+// JEI plugin classes (TENJeiPlugin) or the JEI SPI service descriptor.
 tasks.register('slimJar', Jar) {
     dependsOn("classes")
     archiveClassifier = "slim"
@@ -18,6 +28,117 @@ sourcesJar {
         sourceSets.main.allSource.contains it.file
     }
     from delombok
+}
+
+// ── JEI SPI artifact gate — runs on every check build ─────────────
+// Validates that:
+//   - Full JAR: contains META-INF/services/mezz.jei.api.IModPlugin with
+//     exact FQCN+LF, and com/.../TENJeiPlugin.class
+//   - slimJAR (server): must NOT contain either (client-only)
+tasks.register('validateJeiSpiArtifact') {
+    dependsOn jar, slimJar
+    doLast {
+        def expectedSpiPath = 'META-INF/services/mezz.jei.api.IModPlugin'
+        def expectedSpiContent = 'com.modularmc.ten.integration.jei.TENJeiPlugin\n'
+        def expectedClassPath = 'com/modularmc/ten/integration/jei/TENJeiPlugin.class'
+
+        // ── Full JAR: must have SPI descriptor + plugin class ──────
+        def fullJarFile = tasks.named('jar').get().archiveFile.get().asFile
+        if (!fullJarFile.exists()) {
+            throw new GradleException("Full JAR not found: $fullJarFile");
+        }
+        def fullJar = new java.util.jar.JarFile(fullJarFile)
+        try {
+            // SPI descriptor
+            def spiEntry = fullJar.getJarEntry(expectedSpiPath)
+            if (spiEntry == null) {
+                throw new GradleException(
+                    "Full JAR missing JEI SPI descriptor: $expectedSpiPath\n" +
+                    "JEI 29 requires this file for plugin discovery.")
+            }
+            def spiBytes = fullJar.getInputStream(spiEntry).readAllBytes()
+            def spiContent = new String(spiBytes, java.nio.charset.StandardCharsets.US_ASCII)
+            if (spiContent != expectedSpiContent) {
+                throw new GradleException(
+                    "Full JAR SPI descriptor content mismatch.\n" +
+                    "  Expected: [${expectedSpiContent.replace('\n', '\\n')}]\n" +
+                    "  Actual:   [${spiContent.replace('\n', '\\n')}]")
+            }
+            // JEI plugin class
+            def classEntry = fullJar.getJarEntry(expectedClassPath)
+            if (classEntry == null) {
+                throw new GradleException(
+                    "Full JAR missing TENJeiPlugin.class: $expectedClassPath\n" +
+                    "Client JEI plugin class must be present for JEI SPI loading.")
+            }
+        } finally {
+            fullJar.close()
+        }
+
+        // ── slimJAR: must NOT have SPI descriptor or plugin class ──
+        def slimJarFile = tasks.named('slimJar').get().archiveFile.get().asFile
+        if (!slimJarFile.exists()) {
+            throw new GradleException("slimJAR not found: $slimJarFile");
+        }
+        def slimJar = new java.util.jar.JarFile(slimJarFile)
+        try {
+            def spiEntry = slimJar.getJarEntry(expectedSpiPath)
+            if (spiEntry != null) {
+                throw new GradleException(
+                    "slimJAR contains JEI SPI descriptor (client-only).\n" +
+                    "Server artifact must not reference client JEI classes.")
+            }
+            def classEntry = slimJar.getJarEntry(expectedClassPath)
+            if (classEntry != null) {
+                throw new GradleException(
+                    "slimJAR contains TENJeiPlugin.class (client-only).\n" +
+                    "Server artifact must not include client JEI classes.")
+            }
+        } finally {
+            slimJar.close()
+        }
+
+        logger.lifecycle('validateJeiSpiArtifact: PASSED — full JAR has SPI+class, slimJAR clean.')
+    }
+}
+
+// ── Run resource SPI visibility gate — RED before sourceSet fix ──
+// Validates that the clientExtra sourceSet's processed resources contain
+// the JEI SPI descriptor.  This is REQUIRED for runClient to discover
+// TENJeiPlugin via ServiceLoader at development time.
+// Before the fix: processClientExtraResources has NO-SOURCE → file absent.
+// After the fix:  client resources are wired → file present.
+tasks.register('validateJeiSpiRunResources') {
+    dependsOn tasks.named('processClientExtraResources')
+    doLast {
+        def expectedSpiPath = 'META-INF/services/mezz.jei.api.IModPlugin'
+        def clientExtraResourcesDir = file("build/resources/clientExtra")
+        def spiFile = new File(clientExtraResourcesDir, expectedSpiPath)
+
+        if (!spiFile.isFile()) {
+            throw new GradleException(
+                "SPI descriptor NOT found in clientExtra resources output.\n" +
+                "  Expected: ${spiFile}\n" +
+                "  runClient classloader will NOT discover TENJeiPlugin via ServiceLoader.\n" +
+                "  (ValidateJeiSpiRunResources: RED — run resources are missing)")
+        }
+
+        def expectedContent = 'com.modularmc.ten.integration.jei.TENJeiPlugin\n'
+        def actualContent = spiFile.text
+        if (actualContent != expectedContent) {
+            throw new GradleException(
+                "clientExtra SPI descriptor content mismatch.\n" +
+                "  Expected: [${expectedContent.replace('\n', '\\n')}]\n" +
+                "  Actual:   [${actualContent.replace('\n', '\\n')}]\n" +
+                "  (ValidateJeiSpiRunResources: RED — content wrong)")
+        }
+
+        logger.lifecycle('validateJeiSpiRunResources: PASSED — SPI descriptor present in run resources.')
+    }
+}
+
+tasks.named('check').configure {
+    dependsOn validateJeiSpiArtifact, validateJeiSpiRunResources
 }
 
 base {

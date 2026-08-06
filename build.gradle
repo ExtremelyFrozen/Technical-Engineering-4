@@ -37,6 +37,9 @@ sourceSets {
         runtimeClasspath += main.output + main.runtimeClasspath
     }
     clientExtra {
+        resources {
+            srcDir 'src/client/resources'
+        }
         compileClasspath += client.output + extra.compileClasspath
         runtimeClasspath += client.output + client.runtimeClasspath + extra.runtimeClasspath
     }
@@ -88,6 +91,7 @@ tasks.withType(JavaExec).configureEach {
 
 test {
     useJUnitPlatform()
+    dependsOn tasks.named('processClientExtraResources')
     testLogging {
         events "passed", "skipped", "failed"
         showExceptions = true

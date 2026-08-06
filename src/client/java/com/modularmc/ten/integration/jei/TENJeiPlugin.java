@@ -3,6 +3,7 @@ package com.modularmc.ten.integration.jei;
 
 import com.modularmc.ten.TEN;
 import com.modularmc.ten.api.recipe.FormsCombinedRecipe;
+import com.modularmc.ten.client.TENClientRecipeCache;
 import com.modularmc.ten.common.blockentity.EngineFuelRecipe;
 import com.modularmc.ten.common.blockentity.MatchFuel;
 import com.modularmc.ten.common.blockentity.machine.BiomassBlockEntity;
@@ -10,15 +11,16 @@ import com.modularmc.ten.common.blockentity.machine.ExtractorBlockEntity;
 import com.modularmc.ten.common.blockentity.machine.MetalizerBlockEntity;
 import com.modularmc.ten.common.data.TENBlocks;
 import com.modularmc.ten.common.data.TENRecipeTypes;
+import com.modularmc.ten.network.JeiSyncState;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.AbstractCookingRecipe;
-import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.SingleRecipeInput;
-import net.neoforged.neoforge.registries.DeferredHolder;
+import net.neoforged.neoforge.client.event.RecipesReceivedEvent;
+import net.neoforged.neoforge.common.NeoForge;
 
 import com.lowdragmc.lowdraglib2.gui.holder.ModularUIContainerScreen;
 import com.lowdragmc.lowdraglib2.integration.xei.jei.ModularUIJEIHandlers;
@@ -38,6 +40,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Supplier;
 
 @JeiPlugin
 public class TENJeiPlugin implements IModPlugin {
@@ -52,6 +55,17 @@ public class TENJeiPlugin implements IModPlugin {
     public static final mezz.jei.api.recipe.RecipeType<SmelterJeiCategory.Recipe> SMELTER_SMOKING =
             new mezz.jei.api.recipe.RecipeType<>(TEN.id("smelter_smoking"), SmelterJeiCategory.Recipe.class);
 
+    // ── Machine JEI recipe type definitions ──────────────────────────
+    // NOTE: tenType uses Supplier<RecipeType> to avoid eager DeferredHolder.get()
+    // at class-load time.  JEI ServiceLoader may trigger TENJeiPlugin loading
+    // before NeoForge registries are fully populated; Supplier defers resolution
+    // until injection time (tryInjectMachineRecipes), where null is handled safely.
+    private record MachineTypeDef(
+            mezz.jei.api.recipe.RecipeType<FormsCombinedRecipe> jeiType,
+            Supplier<net.minecraft.world.item.crafting.RecipeType<FormsCombinedRecipe>> tenType) {}
+
+    private static final List<MachineTypeDef> MACHINE_TYPES = buildMachineTypeDefs();
+
     // ── Engine fuel recipe types ─────────────────────────────────────
     public static final mezz.jei.api.recipe.RecipeType<EngineFuelRecipe> EXTRACTOR_FUEL =
             new mezz.jei.api.recipe.RecipeType<>(TEN.id("extractor_fuel"), EngineFuelRecipe.class);
@@ -60,16 +74,23 @@ public class TENJeiPlugin implements IModPlugin {
     public static final mezz.jei.api.recipe.RecipeType<EngineFuelRecipe> BIOMASS_FUEL =
             new mezz.jei.api.recipe.RecipeType<>(TEN.id("biomass_fuel"), EngineFuelRecipe.class);
 
-    // ── Smelter runtime manager identity ──────────────────────────────
-    // Guards against duplicate addRecipes when JEI calls onRuntimeAvailable
-    // with the same IRecipeManager instance. A new manager (server switch)
-    // still triggers a fresh collection.
-    private IRecipeManager populatedSmelterManager;
+    // ═══════════════════════════════════════════════════════════════════
+    //  Runtime coordination
+    // ═══════════════════════════════════════════════════════════════════
 
-    // ── Smelter category icons ───────────────────────────────────────
-    private static final ItemStack SMELTER_ICON = icon("machine_smelter");
-    private static final ItemStack BLAST_ICON = icon("blast_levelup");
-    private static final ItemStack SMOKE_ICON = icon("smoke_levelup");
+    // Active JEI runtime recipe manager — set on onRuntimeAvailable,
+    // nulled in deactivateRuntime(). volatile for cross-thread visibility.
+    private static volatile IRecipeManager activeRecipeManager;
+
+    // Smelter guard: separate from machine injection. volatile for
+    // cross-thread visibility (JEI thread vs event bus thread).
+    private static volatile IRecipeManager smelterPopulatedManager;
+
+    // Cache update listener life-cycle: volatile since these flags are
+    // written from onRuntimeAvailable/deactivateRuntime (JEI thread) and
+    // read from onCacheUpdated (NeoForge event bus thread).
+    private static volatile boolean cacheListenerRegistered;
+    private static volatile boolean cacheListenerActive;
 
     // ── Static helpers ───────────────────────────────────────────────
 
@@ -84,6 +105,16 @@ public class TENJeiPlugin implements IModPlugin {
         return item.isPresent() ? new ItemStack(item.get()) : new ItemStack(Items.FURNACE);
     }
 
+    // ── Lazy icon accessor ──────────────────────────────────────────────
+    // Single unified icon method for all three smelter JEI pages (smelting,
+    // blasting, smoking) and their catalysts.  All use the machine_smelter
+    // block item icon, consistent with other TEN machine categories.
+    // Resolution is deferred to JEI callback time (registerCategories,
+    // registerRecipeCatalysts), when BuiltInRegistries is fully populated
+    // and ItemStack construction is safe.  Each call returns a fresh
+    // independent ItemStack.
+    static ItemStack smelterIcon() { return icon("machine_smelter"); }
+
     private record CategoryDef(String name, Identifier id, ItemStack icon) {}
 
     private List<CategoryDef> buildCategories() {
@@ -93,6 +124,28 @@ public class TENJeiPlugin implements IModPlugin {
                 new CategoryDef("Refiner", TEN.id("refiner"), icon("machine_refiner")),
                 new CategoryDef("Induction Furnace", TEN.id("induction_furnace"), icon("machine_induction_furnace")),
                 new CategoryDef("Psionicant", TEN.id("psionicant"), icon("machine_psionicant")));
+    }
+
+    private static List<MachineTypeDef> buildMachineTypeDefs() {
+        // Use method references (::get) for lazy Supplier resolution,
+        // avoiding direct DeferredHolder get() at class-load time.
+        return List.of(
+                new MachineTypeDef(
+                        new mezz.jei.api.recipe.RecipeType<>(TEN.id("pulverizer"), FormsCombinedRecipe.class),
+                        TENRecipeTypes.PULVERIZER_T::get),
+                new MachineTypeDef(
+                        new mezz.jei.api.recipe.RecipeType<>(TEN.id("compressor"), FormsCombinedRecipe.class),
+                        TENRecipeTypes.COMPRESSOR_T::get),
+                new MachineTypeDef(
+                        new mezz.jei.api.recipe.RecipeType<>(TEN.id("refiner"), FormsCombinedRecipe.class),
+                        TENRecipeTypes.REFINER_T::get),
+                new MachineTypeDef(
+                        new mezz.jei.api.recipe.RecipeType<>(TEN.id("induction_furnace"), FormsCombinedRecipe.class),
+                        TENRecipeTypes.INDUCTION_FURNACE_T::get),
+                new MachineTypeDef(
+                        new mezz.jei.api.recipe.RecipeType<>(TEN.id("psionicant"), FormsCombinedRecipe.class),
+                        TENRecipeTypes.PSIONICANT_T::get)
+        );
     }
 
     @Override
@@ -112,11 +165,10 @@ public class TENJeiPlugin implements IModPlugin {
             registration.addRecipeCategories(new TENJeiCategory(helper, data.id, type, data.icon));
         }
 
-        // P3: Three independent smelter JEI pages
         registration.addRecipeCategories(
-                new SmelterJeiCategory(helper, TEN.id("smelter_smelting"), SMELTER_SMELTING, SMELTER_ICON),
-                new SmelterJeiCategory(helper, TEN.id("smelter_blasting"), SMELTER_BLASTING, BLAST_ICON),
-                new SmelterJeiCategory(helper, TEN.id("smelter_smoking"), SMELTER_SMOKING, SMOKE_ICON)
+                new SmelterJeiCategory(helper, TEN.id("smelter_smelting"), SMELTER_SMELTING, smelterIcon()),
+                new SmelterJeiCategory(helper, TEN.id("smelter_blasting"), SMELTER_BLASTING, smelterIcon()),
+                new SmelterJeiCategory(helper, TEN.id("smelter_smoking"), SMELTER_SMOKING, smelterIcon())
         );
 
         registration.addRecipeCategories(
@@ -130,45 +182,14 @@ public class TENJeiPlugin implements IModPlugin {
                         engineIcon("biomass"),
                         TENBlocks.ENGINE_BIOMASS.get().getName())
         );
+
+        TEN.LOGGER.info("TEN JEI plugin categories registered — uid: {}", UID);
     }
 
     // ── Recipe Registration ──────────────────────────────────────────────
     @Override
     public void registerRecipes(IRecipeRegistration registration) {
         if (!TEN.Mods.isJEILoaded()) return;
-
-        // ── Smelter recipes are no longer collected here.
-        // They are now sourced at runtime from JEI built-in lookups in
-        // {@link #onRuntimeAvailable(IJeiRuntime)}. This avoids the
-        // dependency on {@code Minecraft.getInstance().getSingleplayerServer()}
-        // which is null on dedicated server clients.
-        //
-        // ── Existing machine recipes ───────────────────────────────
-        // These still use the integrated-server RecipeManager path;
-        // only smelter recipe sourcing has been migrated to the
-        // runtime-available pattern.
-        var server = Minecraft.getInstance().getSingleplayerServer();
-        net.minecraft.world.item.crafting.RecipeManager recipeManager = null;
-        if (server != null) {
-            recipeManager = server.getRecipeManager();
-        }
-
-        if (recipeManager != null) {
-            // Existing machine categories
-            for (var data : buildCategories()) {
-                List<FormsCombinedRecipe> recipes = new ArrayList<>();
-                var type = new mezz.jei.api.recipe.RecipeType<>(data.id, FormsCombinedRecipe.class);
-                var targetType = recipeType(data.id).get();
-                for (RecipeHolder<?> holder : recipeManager.getRecipes()) {
-                    if (holder.value().getType() == targetType) {
-                        recipes.add((FormsCombinedRecipe) holder.value());
-                    }
-                }
-                registration.addRecipes(type, recipes);
-            }
-
-            // [Smelter recipes removed from registerRecipes — see onRuntimeAvailable]
-        }
 
         // ── Engine fuel recipes from IIngredientManager ────────────────
         var ingredientManager = registration.getIngredientManager();
@@ -177,8 +198,8 @@ public class TENJeiPlugin implements IModPlugin {
         var allStacks = ingredientManager.getAllItemStacks();
         if (allStacks == null) return;
 
-        var clientLevel = Objects.requireNonNull(Minecraft.getInstance().level,
-                "Client level required for JEI Extractor fuel registration");
+        var clientLevel = Minecraft.getInstance().level;
+        if (clientLevel == null) return;
 
         List<EngineFuelRecipe> extractorRecipes = new ArrayList<>();
         List<EngineFuelRecipe> metalizerRecipes = new ArrayList<>();
@@ -211,32 +232,116 @@ public class TENJeiPlugin implements IModPlugin {
         registration.addRecipes(BIOMASS_FUEL, dedupSorted(biomassRecipes, byItemIdThenComponents));
     }
 
-    // ── Runtime Available — Smelter recipe sourcing ───────────────────────
-    /**
-     * Populates the three custom smelter JEI categories from JEI's built-in
-     * vanilla cooking recipe lookups.
-     * <p>
-     * This method replaces the old {@code registerRecipes}-based smelter
-     * collection that relied on {@code Minecraft.getInstance().getSingleplayerServer()},
-     * which is {@code null} on dedicated server clients. The new approach uses
-     * {@code IRecipeManager#createRecipeLookup(mezz.jei.api.recipe.RecipeType)}
-     * on JEI's client-side runtime, working correctly in both singleplayer and
-     * multiplayer environments.
-     * <p>
-     * A manager identity guard prevents duplicate additions when JEI calls
-     * this method multiple times with the same {@link IRecipeManager} instance.
-     * A different manager (server switch) still triggers fresh collection.
-     */
+    // ═══════════════════════════════════════════════════════════════════
+    //  Runtime Available — cache→runtime bridge
+    // ═══════════════════════════════════════════════════════════════════
+
     @Override
     public void onRuntimeAvailable(IJeiRuntime jeiRuntime) {
         if (!TEN.Mods.isJEILoaded()) return;
         IRecipeManager recipeManager = jeiRuntime.getRecipeManager();
 
-        // Manager identity guard: skip if same manager already populated
-        if (recipeManager == populatedSmelterManager) return;
+        // Detect runtime change: a different IRecipeManager identity means
+        // the previous JEI runtime is gone. deactivateRuntime() cleans up
+        // all guards and nulls the old reference before we activate the new one.
+        if (recipeManager != activeRecipeManager) {
+            if (activeRecipeManager != null) {
+                deactivateRuntime();
+            }
+            activeRecipeManager = recipeManager;
+            TENClientRecipeCache.getState().activateRuntime();
+        }
 
-        // Collect from JEI built-in vanilla recipe lookups via IRecipeHolderType,
-        // which is the non-deprecated holder-based API for vanilla recipe types.
+        // ── Smelter recipes (independent of cache readiness) ─────────
+        if (smelterPopulatedManager != recipeManager) {
+            injectSmelterRecipes(recipeManager);
+            smelterPopulatedManager = recipeManager;
+        }
+
+        // ── Register cache → runtime bridge listener (once) ─────────
+        if (!cacheListenerRegistered) {
+            NeoForge.EVENT_BUS.addListener(TENJeiPlugin::onCacheUpdated);
+            cacheListenerRegistered = true;
+        }
+        cacheListenerActive = true;
+
+        // ── Machine recipes (from cache, if ready) ──────────────────
+        tryInjectMachineRecipes();
+    }
+
+    /**
+     * Deactivates the current runtime state: nulls the active manager
+     * reference, clears the smelter guard, deactivates the cache listener,
+     * and tells {@link JeiSyncState} to reset the machine injection guard.
+     * <p>
+     * Called from {@link #onRuntimeAvailable(IJeiRuntime)} when a change
+     * in {@link IRecipeManager} identity is detected (world switch,
+     * disconnect, reload). Not a JEI {@code IModPlugin} override — JEI
+     * 29.13's API does not declare {@code onRuntimeUnavailable}.
+     */
+    private static void deactivateRuntime() {
+        activeRecipeManager = null;
+        smelterPopulatedManager = null;
+        cacheListenerActive = false;
+        TENClientRecipeCache.getState().deactivateRuntime();
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    //  Cache → Runtime bridge listener
+    // ═══════════════════════════════════════════════════════════════════
+
+    private static void onCacheUpdated(RecipesReceivedEvent event) {
+        if (!cacheListenerActive) return;
+        tryInjectMachineRecipes();
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    //  Machine recipe injection
+    // ═══════════════════════════════════════════════════════════════════
+
+    /**
+     * Attempts to inject machine recipes via {@link JeiSyncState#tryClaimInject()}.
+     * Only proceeds if the state machine grants an injection slot.
+     * At most one injection per active runtime.
+     * <p>
+     * Resolves {@link #MACHINE_TYPES} via {@link Supplier#get()} lazily at
+     * injection time (not at class load), and guards against null if NeoForge
+     * registries are not yet populated.
+     */
+    private static void tryInjectMachineRecipes() {
+        JeiSyncState state = TENClientRecipeCache.getState();
+        if (!state.tryClaimInject()) return;
+
+        IRecipeManager manager = activeRecipeManager;
+        if (manager == null) return;
+
+        for (var def : MACHINE_TYPES) {
+            var recipeType = def.tenType.get();
+            if (recipeType == null) {
+                TEN.LOGGER.warn("Skipping machine {} — RecipeType not yet registered",
+                        def.jeiType.getUid());
+                continue;
+            }
+            List<FormsCombinedRecipe> cached = TENClientRecipeCache.getMachineRecipes(recipeType);
+            if (!cached.isEmpty()) {
+                manager.addRecipes(def.jeiType, cached);
+            }
+        }
+
+        state.markMachinesInjected();
+
+        int totalRecipes = MACHINE_TYPES.stream()
+                .mapToInt(def -> TENClientRecipeCache.getMachineRecipes(def.tenType.get()).size())
+                .sum();
+        TEN.LOGGER.info("TEN JEI machine recipes injected — generation: {}, total recipes: {}",
+                state.getGeneration(), totalRecipes);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    //  Smelter recipe injection
+    // ═══════════════════════════════════════════════════════════════════
+
+    private static void injectSmelterRecipes(IRecipeManager recipeManager) {
         var smelting = collectFromBuiltin(recipeManager,
                 IRecipeHolderType.create(net.minecraft.world.item.crafting.RecipeType.SMELTING));
         var blasting = collectFromBuiltin(recipeManager,
@@ -244,28 +349,14 @@ public class TENJeiPlugin implements IModPlugin {
         var smoking = collectFromBuiltin(recipeManager,
                 IRecipeHolderType.create(net.minecraft.world.item.crafting.RecipeType.SMOKING));
 
-        // Add to custom smelter types. JEI runtime is fresh per invocation,
-        // so there is no residue from a previous lifecycle to clear.
         recipeManager.addRecipes(SMELTER_SMELTING, smelting);
         recipeManager.addRecipes(SMELTER_BLASTING, blasting);
         recipeManager.addRecipes(SMELTER_SMOKING, smoking);
 
-        // Identity guard populated only after successful addRecipes.
-        // If any step above throws, the guard is not set and the next
-        // onRuntimeAvailable call with the same manager will retry.
-        populatedSmelterManager = recipeManager;
+        TEN.LOGGER.info("TEN JEI smelter recipes injected — smelting: {}, blasting: {}, smoking: {}",
+                smelting.size(), blasting.size(), smoking.size());
     }
 
-    /**
-     * Collect vanilla cooking recipes from JEI's built-in recipe lookups
-     * and wrap them into {@link SmelterJeiCategory.Recipe} payloads.
-     * <p>
-     * Uses {@code IRecipeManager#createRecipeLookup} on JEI's client-side
-     * runtime, making it available on dedicated server clients.
-     * <p>
-     * The generic bound {@code T extends AbstractCookingRecipe} preserves
-     * type safety for all three vanilla cooking recipe subtypes.
-     */
     private static <T extends AbstractCookingRecipe> List<SmelterJeiCategory.Recipe> collectFromBuiltin(
             IRecipeManager recipeManager,
             IRecipeHolderType<T> builtinType) {
@@ -275,6 +366,9 @@ public class TENJeiPlugin implements IModPlugin {
                     T recipe = holder.value();
                     var ingredient = recipe.input();
                     if (ingredient.isEmpty()) return null;
+                    // Safe for AbstractCookingRecipe: result is static (result.copy()),
+                    // independent of input. Single-argument assemble(RecipeInput) is
+                    // the valid API in NeoForge 26.1.
                     ItemStack output = recipe.assemble(new SingleRecipeInput(ItemStack.EMPTY));
                     if (output.isEmpty()) return null;
                     return SmelterJeiCategory.Recipe.of(ingredient, output, recipe.cookingTime());
@@ -285,12 +379,9 @@ public class TENJeiPlugin implements IModPlugin {
 
     private static List<EngineFuelRecipe> dedupSorted(List<EngineFuelRecipe> recipes, Comparator<EngineFuelRecipe> sortKey) {
         if (recipes.isEmpty()) return List.of();
-
         recipes.sort(sortKey);
-
         List<EngineFuelRecipe> result = new ArrayList<>();
         result.add(recipes.get(0));
-
         for (int i = 1; i < recipes.size(); i++) {
             ItemStack current = recipes.get(i).ingredients().get(0);
             ItemStack last = result.get(result.size() - 1).ingredients().get(0);
@@ -311,10 +402,9 @@ public class TENJeiPlugin implements IModPlugin {
             registration.addRecipeCatalyst(data.icon, type);
         }
 
-        // P3: Smelter — three independent JEI pages, removed from vanilla SMELTING
-        registration.addRecipeCatalyst(SMELTER_ICON, SMELTER_SMELTING);
-        registration.addRecipeCatalyst(SMELTER_ICON, SMELTER_BLASTING);
-        registration.addRecipeCatalyst(SMELTER_ICON, SMELTER_SMOKING);
+        registration.addRecipeCatalyst(smelterIcon(), SMELTER_SMELTING);
+        registration.addRecipeCatalyst(smelterIcon(), SMELTER_BLASTING);
+        registration.addRecipeCatalyst(smelterIcon(), SMELTER_SMOKING);
 
         registration.addRecipeCatalyst(engineIcon("extraction"), EXTRACTOR_FUEL);
         registration.addRecipeCatalyst(engineIcon("metal"), METALIZER_FUEL);
@@ -324,16 +414,6 @@ public class TENJeiPlugin implements IModPlugin {
     @Override
     public void registerGuiHandlers(IGuiHandlerRegistration registration) {
         if (!TEN.Mods.isJEILoaded()) return;
-
         registration.addGuiContainerHandler(ModularUIContainerScreen.class, ModularUIJEIHandlers.GUI_CONTAINER_HANDLER);
-    }
-
-    private static DeferredHolder<net.minecraft.world.item.crafting.RecipeType<?>, net.minecraft.world.item.crafting.RecipeType<FormsCombinedRecipe>> recipeType(Identifier id) {
-        if (id.equals(TEN.id("pulverizer"))) return TENRecipeTypes.PULVERIZER_T;
-        if (id.equals(TEN.id("compressor"))) return TENRecipeTypes.COMPRESSOR_T;
-        if (id.equals(TEN.id("refiner"))) return TENRecipeTypes.REFINER_T;
-        if (id.equals(TEN.id("induction_furnace"))) return TENRecipeTypes.INDUCTION_FURNACE_T;
-        if (id.equals(TEN.id("psionicant"))) return TENRecipeTypes.PSIONICANT_T;
-        throw new IllegalArgumentException("Unknown TEN recipe type id: " + id);
     }
 }

@@ -6,6 +6,7 @@ import com.modularmc.ten.common.block.machine.BaseMachineBlock;
 import com.modularmc.ten.common.data.*;
 import com.modularmc.ten.common.item.EnergyUnitItem;
 import com.modularmc.ten.common.registry.Registration;
+import com.modularmc.ten.network.TENRecipeSync;
 
 import net.minecraft.core.Direction;
 import net.neoforged.bus.api.IEventBus;
@@ -35,6 +36,11 @@ public class CommonProxy {
         TENRecipeTypes.SERIALIZERS.register(modBus);
         TENRecipeTypes.TYPES.register(modBus);
         modBus.register(CommonProxy.class);
+
+        // Register NeoForge game bus listener for recipe sync (OnDatapackSyncEvent).
+        // This sends TEN machine recipes and vanilla cooking recipes to clients
+        // without requiring JEI on the server.
+        TENRecipeSync.init();
     }
 
     @SubscribeEvent
