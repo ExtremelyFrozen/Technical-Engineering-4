@@ -8,7 +8,6 @@ import com.modularmc.ten.utils.RenderHelper;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.neoforged.neoforge.fluids.FluidStack;
@@ -47,14 +46,14 @@ public final class TENRecipeWidget {
         }
     }
 
-    public record DecorationSpec(DecorationKind kind, int x, int y, int width, int height, int u, int v) {
+    public record DecorationSpec(DecorationKind kind, int x, int y, int width, int height, Identifier background, Identifier fill) {
 
-        public static DecorationSpec progress(int x, int y) {
-            return new DecorationSpec(DecorationKind.PROGRESS, x, y, 22, 16, 27, 0);
+        public static DecorationSpec progress(int x, int y, Identifier background, Identifier fill) {
+            return new DecorationSpec(DecorationKind.PROGRESS, x, y, 22, 16, background, fill);
         }
 
-        public static DecorationSpec burnLeft(int x, int y, int width, int height, int u, int v) {
-            return new DecorationSpec(DecorationKind.BURN_LEFT, x, y, width, height, u, v);
+        public static DecorationSpec energyGauge(int x, int y) {
+            return new DecorationSpec(DecorationKind.BURN_LEFT, x, y, 14, 46, TENConstants.ENERGY_GAUGE_BG, TENConstants.ENERGY_GAUGE_FILL);
         }
     }
 
@@ -65,73 +64,104 @@ public final class TENRecipeWidget {
     private static final long PROGRESS_CYCLE_MS = 10_000L;
     private static final long BURN_CYCLE_MS = 25_000L;
 
-    private static final Layout DEFAULT_LAYOUT = new Layout(
-            TENConstants.JEI_HANDLER_2, 0, 0, 160, 80,
-            List.of(
-                    SlotSpec.item(SlotRole.INPUT, 0, 10, 10),
-                    SlotSpec.item(SlotRole.OUTPUT, 0, 90, 10),
-                    SlotSpec.item(SlotRole.OUTPUT, 1, 112, 10),
-                    SlotSpec.item(SlotRole.OUTPUT, 2, 90, 32),
-                    SlotSpec.item(SlotRole.OUTPUT, 3, 112, 32)),
-            List.of(
-                    DecorationSpec.progress(65, 30),
-                    DecorationSpec.burnLeft(5, 12, 14, 46, 0, 0)));
+    /** 进度箭头素材映射（smelter→progress_arrow_smelter、pulverizer→progress_arrow_pulverizer、compressor→progress_arrow_compressor、refiner→progress_arrow_refiner、induction_furnace→progress_arrow_induction_furnace、psionicant→progress_arrow_psionicant）。集中一处，改映射只动此处。 */
+    private record ProgressArrow(Identifier background, Identifier fill) {}
 
-    private static final Map<String, Layout> LAYOUTS = Map.of(
-            "pulverizer", new Layout(
-                    TENConstants.JEI_HANDLER_1, 0, 161, 150, 50,
-                    List.of(
-                            SlotSpec.item(SlotRole.INPUT, 0, 40, 4),
-                            SlotSpec.item(SlotRole.OUTPUT, 0, 109, 9),
-                            SlotSpec.item(SlotRole.OUTPUT, 1, 127, 9),
-                            SlotSpec.item(SlotRole.OUTPUT, 2, 109, 27),
-                            SlotSpec.item(SlotRole.OUTPUT, 3, 127, 27)),
-                    List.of(
-                            DecorationSpec.progress(73, 19),
-                            DecorationSpec.burnLeft(6, 2, 14, 46, 0, 0),
-                            DecorationSpec.burnLeft(42, 32, 13, 13, 14, 0))),
-            "compressor", new Layout(
-                    TENConstants.JEI_HANDLER_1, 0, 102, 150, 58,
-                    List.of(
-                            SlotSpec.item(SlotRole.INPUT, 0, 40, 2),
-                            SlotSpec.item(SlotRole.INPUT, 1, 40, 38),
-                            SlotSpec.item(SlotRole.OUTPUT, 0, 112, 21)),
-                    List.of(
-                            DecorationSpec.progress(73, 22),
-                            DecorationSpec.burnLeft(6, 5, 14, 46, 0, 0),
-                            DecorationSpec.burnLeft(42, 23, 13, 13, 14, 0))),
-            "refiner", new Layout(
-                    TENConstants.JEI_HANDLER_2, 0, 51, 170, 54,
-                    List.of(
-                            SlotSpec.fluid(SlotRole.INPUT, 0, 34, 1),
-                            SlotSpec.item(SlotRole.INPUT, 0, 55, 18),
-                            SlotSpec.item(SlotRole.OUTPUT, 0, 114, 18),
-                            SlotSpec.fluid(SlotRole.OUTPUT, 0, 140, 1)),
-                    List.of(
-                            DecorationSpec.progress(81, 19),
-                            DecorationSpec.burnLeft(6, 2, 14, 46, 0, 0),
-                            DecorationSpec.burnLeft(57, 40, 13, 13, 14, 0))),
-            "induction_furnace", new Layout(
-                    TENConstants.JEI_HANDLER_2, 0, 0, 150, 50,
-                    List.of(
-                            SlotSpec.item(SlotRole.INPUT, 0, 30, 4),
-                            SlotSpec.item(SlotRole.INPUT, 1, 48, 4),
-                            SlotSpec.item(SlotRole.INPUT, 2, 66, 4),
-                            SlotSpec.item(SlotRole.OUTPUT, 0, 124, 18)),
-                    List.of(
-                            DecorationSpec.progress(90, 19),
-                            DecorationSpec.burnLeft(6, 2, 14, 46, 0, 0),
-                            DecorationSpec.burnLeft(51, 32, 13, 13, 14, 0))),
-            "psionicant", new Layout(
-                    TENConstants.JEI_HANDLER_1, 0, 51, 150, 50,
-                    List.of(
-                            SlotSpec.item(SlotRole.INPUT, 0, 31, 4),
-                            SlotSpec.item(SlotRole.INPUT, 1, 49, 4),
-                            SlotSpec.item(SlotRole.OUTPUT, 0, 112, 18)),
-                    List.of(
-                            DecorationSpec.progress(73, 19),
-                            DecorationSpec.burnLeft(6, 2, 14, 46, 0, 0),
-                            DecorationSpec.burnLeft(42, 32, 13, 13, 14, 0))));
+    private static ProgressArrow progressArrow(String machine) {
+        return switch (machine) {
+            case "smelter" -> new ProgressArrow(TENConstants.PROGRESS_ARROW_SMELTER_BG, TENConstants.PROGRESS_ARROW_SMELTER_FILL);
+            case "pulverizer" -> new ProgressArrow(TENConstants.PROGRESS_ARROW_PULVERIZER_BG, TENConstants.PROGRESS_ARROW_PULVERIZER_FILL);
+            case "compressor" -> new ProgressArrow(TENConstants.PROGRESS_ARROW_COMPRESSOR_BG, TENConstants.PROGRESS_ARROW_COMPRESSOR_FILL);
+            case "refiner" -> new ProgressArrow(TENConstants.PROGRESS_ARROW_REFINER_BG, TENConstants.PROGRESS_ARROW_REFINER_FILL);
+            case "induction_furnace" -> new ProgressArrow(TENConstants.PROGRESS_ARROW_INDUCTION_FURNACE_BG, TENConstants.PROGRESS_ARROW_INDUCTION_FURNACE_FILL);
+            case "psionicant" -> new ProgressArrow(TENConstants.PROGRESS_ARROW_PSIONICANT_BG, TENConstants.PROGRESS_ARROW_PSIONICANT_FILL);
+            default -> new ProgressArrow(TENConstants.PROGRESS_ARROW_SMELTER_BG, TENConstants.PROGRESS_ARROW_SMELTER_FILL);
+        };
+    }
+
+    /**
+     * 布局规则 v4（用户最终确认，组件群居中 + 间距自适应）：
+     * <ol>
+     *   <li>能量条（14×46）左缘 x=8，垂直居中 y=2，右缘 x=22</li>
+     *   <li>组件群左缘 = 8（能量条左缘）、右缘 = 142、总宽 134 → 组件群中心 = 75 = 面板中心（150×50）</li>
+     *   <li>固定宽 = 能量条14 + 输入组宽 + 箭头22 + 输出组宽；间隔总量 = 134 − 固定宽，均分到 3 个间隔
+     *       （能量条→输入组、输入组→箭头、箭头→输出组），取整保证中心精确 75、间隔 ≥4、无重叠</li>
+     *   <li>连续同种槽（多输入/多输出组）算一个整体：组内紧贴</li>
+     *   <li>垂直方向组件组在面板 50 高内居中：18×18 槽 y=16、箭头 y=17、竖排/2×2 组 y=7、fluid y=0</li>
+     *   <li>refiner 例外：布局饱满，保持 v3 现状（能量条 8、fluid 26、item 48、箭头 74、item 104、fluid 126）</li>
+     * </ol>
+     */
+    private static final Layout DEFAULT_LAYOUT = new Layout(
+            TENConstants.JEI_HANDLER_MODULAR, 0, 0, 150, 50,
+            List.of(
+                    SlotSpec.item(SlotRole.INPUT, 0, 37, 16),
+                    SlotSpec.item(SlotRole.OUTPUT, 0, 106, 7),
+                    SlotSpec.item(SlotRole.OUTPUT, 1, 124, 7),
+                    SlotSpec.item(SlotRole.OUTPUT, 2, 106, 25),
+                    SlotSpec.item(SlotRole.OUTPUT, 3, 124, 25)),
+            List.of(
+                    DecorationSpec.progress(70, 17, TENConstants.PROGRESS_ARROW_SMELTER_BG, TENConstants.PROGRESS_ARROW_SMELTER_FILL),
+                    DecorationSpec.energyGauge(8, 2)));
+
+    private static final Map<String, Layout> LAYOUTS = buildLayouts();
+
+    private static Map<String, Layout> buildLayouts() {
+        var pulverizerArrow = progressArrow("pulverizer");
+        var compressorArrow = progressArrow("compressor");
+        var refinerArrow = progressArrow("refiner");
+        var inductionFurnaceArrow = progressArrow("induction_furnace");
+        var psionicantArrow = progressArrow("psionicant");
+        return Map.of(
+                "pulverizer", new Layout(
+                        TENConstants.JEI_HANDLER_MODULAR, 0, 0, 150, 50,
+                        List.of(
+                                SlotSpec.item(SlotRole.INPUT, 0, 37, 16),
+                                SlotSpec.item(SlotRole.OUTPUT, 0, 106, 7),
+                                SlotSpec.item(SlotRole.OUTPUT, 1, 124, 7),
+                                SlotSpec.item(SlotRole.OUTPUT, 2, 106, 25),
+                                SlotSpec.item(SlotRole.OUTPUT, 3, 124, 25)),
+                        List.of(
+                                DecorationSpec.progress(70, 17, pulverizerArrow.background(), pulverizerArrow.fill()),
+                                DecorationSpec.energyGauge(8, 2))),
+                "compressor", new Layout(
+                        TENConstants.JEI_HANDLER_MODULAR, 0, 0, 150, 50,
+                        List.of(
+                                SlotSpec.item(SlotRole.INPUT, 0, 43, 7),
+                                SlotSpec.item(SlotRole.INPUT, 1, 43, 25),
+                                SlotSpec.item(SlotRole.OUTPUT, 0, 124, 16)),
+                        List.of(
+                                DecorationSpec.progress(82, 17, compressorArrow.background(), compressorArrow.fill()),
+                                DecorationSpec.energyGauge(8, 2))),
+                "refiner", new Layout(
+                        TENConstants.JEI_HANDLER_MODULAR, 0, 0, 150, 50,
+                        List.of(
+                                SlotSpec.fluid(SlotRole.INPUT, 0, 26, 0),
+                                SlotSpec.item(SlotRole.INPUT, 0, 48, 16),
+                                SlotSpec.item(SlotRole.OUTPUT, 0, 104, 16),
+                                SlotSpec.fluid(SlotRole.OUTPUT, 0, 126, 0)),
+                        List.of(
+                                DecorationSpec.progress(74, 17, refinerArrow.background(), refinerArrow.fill()),
+                                DecorationSpec.energyGauge(8, 2))),
+                "induction_furnace", new Layout(
+                        TENConstants.JEI_HANDLER_MODULAR, 0, 0, 150, 50,
+                        List.of(
+                                SlotSpec.item(SlotRole.INPUT, 0, 31, 16),
+                                SlotSpec.item(SlotRole.INPUT, 1, 49, 16),
+                                SlotSpec.item(SlotRole.INPUT, 2, 67, 16),
+                                SlotSpec.item(SlotRole.OUTPUT, 0, 124, 16)),
+                        List.of(
+                                DecorationSpec.progress(93, 17, inductionFurnaceArrow.background(), inductionFurnaceArrow.fill()),
+                                DecorationSpec.energyGauge(8, 2))),
+                "psionicant", new Layout(
+                        TENConstants.JEI_HANDLER_MODULAR, 0, 0, 150, 50,
+                        List.of(
+                                SlotSpec.item(SlotRole.INPUT, 0, 37, 16),
+                                SlotSpec.item(SlotRole.INPUT, 1, 55, 16),
+                                SlotSpec.item(SlotRole.OUTPUT, 0, 124, 16)),
+                        List.of(
+                                DecorationSpec.progress(88, 17, psionicantArrow.background(), psionicantArrow.fill()),
+                                DecorationSpec.energyGauge(8, 2))));
+    }
 
     private TENRecipeWidget() {}
 
@@ -152,7 +182,7 @@ public final class TENRecipeWidget {
     }
 
     public static void drawSlot(GuiGraphicsExtractor graphics, int x, int y, boolean isOutput) {
-        graphics.blit(RenderPipelines.GUI_TEXTURED, TENConstants.GUI_HANDLER, x, y, (float) (isOutput ? 24 : 0), 0.0F, 24, 24, 256, 256);
+        RenderHelper.render(graphics, x, y, 18, 18, 18, 18, 0, 0, TENConstants.ITEM_SLOT_SMALL);
     }
 
     public static void drawDecorations(GuiGraphicsExtractor graphics, Layout layout) {
@@ -264,29 +294,19 @@ public final class TENRecipeWidget {
     }
 
     private static void drawProgressDecoration(GuiGraphicsExtractor graphics, DecorationSpec decoration, double percent) {
-        RenderHelper.render(graphics, decoration.x(), decoration.y(), decoration.width(), decoration.height(), 256, 256, decoration.u(), decoration.v(), TENConstants.GUI_HANDLER);
+        RenderHelper.render(graphics, decoration.x(), decoration.y(), decoration.width(), decoration.height(), decoration.width(), decoration.height(), 0, 0, decoration.background());
         int filledWidth = (int) (percent * decoration.width());
         if (filledWidth > 0) {
-            RenderHelper.render(graphics, decoration.x(), decoration.y(), filledWidth, decoration.height(), 256, 256, decoration.u(), decoration.v() + decoration.height(), TENConstants.GUI_HANDLER);
+            RenderHelper.render(graphics, decoration.x(), decoration.y(), filledWidth, decoration.height(), decoration.width(), decoration.height(), 0, 0, decoration.fill());
         }
     }
 
     private static void drawBurnLeftDecoration(GuiGraphicsExtractor graphics, DecorationSpec decoration, double percent) {
-        RenderHelper.render(graphics, decoration.x(), decoration.y(), decoration.width(), decoration.height(), 256, 256, decoration.u(), decoration.v(), TENConstants.GUI_HANDLER);
+        RenderHelper.render(graphics, decoration.x(), decoration.y(), decoration.width(), decoration.height(), decoration.width(), decoration.height(), 0, 0, decoration.background());
         int hiddenHeight = (int) (decoration.height() * (1.0d - percent));
         int visibleHeight = decoration.height() - hiddenHeight;
         if (visibleHeight > 0) {
-            RenderHelper.render(
-                    graphics,
-                    decoration.x(),
-                    decoration.y() + hiddenHeight,
-                    decoration.width(),
-                    visibleHeight,
-                    256,
-                    256,
-                    decoration.u(),
-                    decoration.v() + decoration.height() + hiddenHeight,
-                    TENConstants.GUI_HANDLER);
+            RenderHelper.render(graphics, decoration.x(), decoration.y() + hiddenHeight, decoration.width(), visibleHeight, decoration.width(), decoration.height(), 0, hiddenHeight, decoration.fill());
         }
     }
 

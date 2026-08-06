@@ -4,6 +4,7 @@ import com.modularmc.ten.TENConstants;
 import com.modularmc.ten.api.recipe.FormsCombinedIngredient;
 import com.modularmc.ten.api.recipe.FormsCombinedRecipe;
 import com.modularmc.ten.integration.xei.TENRecipeWidget;
+import com.modularmc.ten.utils.RenderHelper;
 
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
@@ -34,8 +35,10 @@ public class TENJeiCategory implements IRecipeCategory<FormsCombinedRecipe> {
         this.layout = TENRecipeWidget.layout(categoryId);
         this.title = TENRecipeWidget.titleJei(categoryId);
         this.icon = helper.createDrawableItemStack(iconStack);
-        this.inputSlot = helper.getSlotDrawable();
-        this.fluidSlot = helper.createDrawable(TENConstants.GUI_HANDLER, 0, 92, 18, 50);
+        // NOTE: JEI createDrawable 按 256×256 atlas 语义解释 UV。18×18/18×50 等非 256
+        // 素材必须经 drawableBuilder().setTextureSize(实际尺寸) 声明，否则只渲染左上角区域。
+        this.inputSlot = helper.drawableBuilder(TENConstants.ITEM_SLOT_SMALL, 0, 0, 18, 18).setTextureSize(18, 18).build();
+        this.fluidSlot = helper.drawableBuilder(TENConstants.FLUID_SLOT, 0, 0, 18, 50).setTextureSize(18, 50).build();
     }
 
     @Override
@@ -161,6 +164,8 @@ public class TENJeiCategory implements IRecipeCategory<FormsCombinedRecipe> {
 
     @Override
     public void draw(FormsCombinedRecipe recipe, IRecipeSlotsView slotsView, GuiGraphicsExtractor graphics, double mouseX, double mouseY) {
+        // 底图：modular/jei_handler.png 上层 150×50@(0,0)，与 TENRecipeWidget 各布局的 u/v 一致
+        RenderHelper.render(graphics, 0, 0, layout.width(), layout.height(), 256, 256, layout.u(), layout.v(), layout.background());
         TENRecipeWidget.drawJei(recipe, graphics, layout);
         // Slot overlays (chance/rolls text) are now attached via
         // IRecipeSlotBuilder.setOverlay() in setRecipe() — drawn by JEI
