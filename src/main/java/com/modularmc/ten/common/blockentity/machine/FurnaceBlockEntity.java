@@ -94,9 +94,9 @@ public class FurnaceBlockEntity extends ProcessingMachineBlockEntity {
      * <p>
      * Recipe mode is determined by installed Blast/Smoke upgrades:
      * <ul>
-     *   <li>{@link IUpgradableMachine#RECIPE_MODE_SMELTING} → {@link RecipeType#SMELTING}</li>
-     *   <li>{@link IUpgradableMachine#RECIPE_MODE_BLASTING} → {@link RecipeType#BLASTING}</li>
-     *   <li>{@link IUpgradableMachine#RECIPE_MODE_SMOKING} → {@link RecipeType#SMOKING}</li>
+     * <li>{@link IUpgradableMachine#RECIPE_MODE_SMELTING} → {@link RecipeType#SMELTING}</li>
+     * <li>{@link IUpgradableMachine#RECIPE_MODE_BLASTING} → {@link RecipeType#BLASTING}</li>
+     * <li>{@link IUpgradableMachine#RECIPE_MODE_SMOKING} → {@link RecipeType#SMOKING}</li>
      * </ul>
      * Default is SMELTING when no mode-switching upgrade is installed.
      */
@@ -108,14 +108,11 @@ public class FurnaceBlockEntity extends ProcessingMachineBlockEntity {
         var recipeInput = new SingleRecipeInput(input);
 
         return switch (recipeMode) {
-            case IUpgradableMachine.RECIPE_MODE_BLASTING ->
-                (Optional) level.getServer().getRecipeManager()
+            case IUpgradableMachine.RECIPE_MODE_BLASTING -> (Optional) level.getServer().getRecipeManager()
                     .getRecipeFor(RecipeType.BLASTING, recipeInput, level);
-            case IUpgradableMachine.RECIPE_MODE_SMOKING ->
-                (Optional) level.getServer().getRecipeManager()
+            case IUpgradableMachine.RECIPE_MODE_SMOKING -> (Optional) level.getServer().getRecipeManager()
                     .getRecipeFor(RecipeType.SMOKING, recipeInput, level);
-            default ->
-                (Optional) level.getServer().getRecipeManager()
+            default -> (Optional) level.getServer().getRecipeManager()
                     .getRecipeFor(RecipeType.SMELTING, recipeInput, level);
         };
     }
@@ -283,8 +280,7 @@ public class FurnaceBlockEntity extends ProcessingMachineBlockEntity {
         // ── Atomic execution with rollback ──
         ItemStack inputSnapshot = itemHandler.getStackInSlot(0).copy();
         ItemStack outputSnapshot = itemHandler.getStackInSlot(1).copy();
-        FluidStack tankSnapshot = (hasKnowledge && !tanks.isEmpty())
-                ? tanks.get(0).getFluid().copy() : FluidStack.EMPTY;
+        FluidStack tankSnapshot = (hasKnowledge && !tanks.isEmpty()) ? tanks.get(0).getFluid().copy() : FluidStack.EMPTY;
 
         try {
             itemHandler.extractItem(0, B, false);

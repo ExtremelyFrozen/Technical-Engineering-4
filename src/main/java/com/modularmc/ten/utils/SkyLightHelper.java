@@ -11,9 +11,9 @@ import net.minecraft.world.level.Level;
  * <p>
  * 判定三条件（全部满足才算有效光照）：
  * <ol>
- *   <li>位置上方可看到天空 — {@link Level#canSeeSky}</li>
- *   <li>不在下雨 — {@link Level#isRaining()}</li>
- *   <li>昼间 — {@link Level#getOverworldClockTime()} % 24000 &lt; 12000</li>
+ * <li>位置上方可看到天空 — {@link Level#canSeeSky}</li>
+ * <li>不在下雨 — {@link Level#isRaining()}</li>
+ * <li>昼间 — {@link Level#getOverworldClockTime()} % 24000 &lt; 12000</li>
  * </ol>
  */
 public final class SkyLightHelper {

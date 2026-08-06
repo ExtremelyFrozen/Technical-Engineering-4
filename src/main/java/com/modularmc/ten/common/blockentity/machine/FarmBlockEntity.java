@@ -29,7 +29,6 @@ import com.lowdragmc.lowdraglib2.syncdata.annotation.Persisted;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.function.ToIntBiFunction;
 
 public class FarmBlockEntity extends RadiusMachineBlockEntity {
 
@@ -369,9 +368,7 @@ public class FarmBlockEntity extends RadiusMachineBlockEntity {
             if (!remaining.isEmpty()) {
                 // 3. Fail-fast: partial state must never reach the handler
                 throw new IllegalStateException(
-                        "Farm cannot fit all drops: " + stack + " has "
-                        + remaining.getCount() + " remaining. "
-                        + "canFitAll pre-check should have prevented this.");
+                        "Farm cannot fit all drops: " + stack + " has " + remaining.getCount() + " remaining. " + "canFitAll pre-check should have prevented this.");
             }
         }
 
@@ -416,8 +413,7 @@ public class FarmBlockEntity extends RadiusMachineBlockEntity {
         // Fail-fast: prevent silent item loss
         if (!stack.isEmpty()) {
             throw new IllegalStateException(
-                    "Farm insertFirstFit cannot fit " + stack + ": no available slot. "
-                    + "canFitAll pre-check should have prevented this.");
+                    "Farm insertFirstFit cannot fit " + stack + ": no available slot. " + "canFitAll pre-check should have prevented this.");
         }
     }
 

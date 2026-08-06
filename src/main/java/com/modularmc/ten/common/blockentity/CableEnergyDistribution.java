@@ -14,11 +14,11 @@ import java.util.Collection;
  * <p>
  * Contract:
  * <ul>
- *   <li>Energy is only ever extracted from source AFTER verifying sinks+buffers
- *       can accept it (simulate phase).</li>
- *   <li>If sinks/buffers are saturated, source is NOT deducted.</li>
- *   <li>Partial transfers are exact: only what sinks+buffers accept is taken.</li>
- *   <li>Safety fallback returns undeliverable energy to source.</li>
+ * <li>Energy is only ever extracted from source AFTER verifying sinks+buffers
+ * can accept it (simulate phase).</li>
+ * <li>If sinks/buffers are saturated, source is NOT deducted.</li>
+ * <li>Partial transfers are exact: only what sinks+buffers accept is taken.</li>
+ * <li>Safety fallback returns undeliverable energy to source.</li>
  * </ul>
  */
 public final class CableEnergyDistribution {
@@ -30,12 +30,12 @@ public final class CableEnergyDistribution {
      * <p>
      * Algorithm:
      * <ol>
-     *   <li>Simulate source extraction ({@code source.extractEnergy(rate, true)})</li>
-     *   <li>Simulate total sink acceptance ({@code sink.receiveEnergy(available, true)} each)</li>
-     *   <li>Simulate buffer acceptance for overflow</li>
-     *   <li>Extract from source only what sinks+buffers can accept</li>
-     *   <li>Execute distribution to sinks and buffers</li>
-     *   <li>Safety: if any energy couldn't be placed, return it to source</li>
+     * <li>Simulate source extraction ({@code source.extractEnergy(rate, true)})</li>
+     * <li>Simulate total sink acceptance ({@code sink.receiveEnergy(available, true)} each)</li>
+     * <li>Simulate buffer acceptance for overflow</li>
+     * <li>Extract from source only what sinks+buffers can accept</li>
+     * <li>Execute distribution to sinks and buffers</li>
+     * <li>Safety: if any energy couldn't be placed, return it to source</li>
      * </ol>
      *
      * @param source  the energy source to extract from
@@ -45,11 +45,10 @@ public final class CableEnergyDistribution {
      * @return total energy actually transferred (0 if no capacity available)
      */
     public static int distributeFromSource(
-            IEnergyStorage source,
-            Collection<? extends IEnergyStorage> sinks,
-            Collection<? extends IEnergyStorage> buffers,
-            int rate
-    ) {
+                                           IEnergyStorage source,
+                                           Collection<? extends IEnergyStorage> sinks,
+                                           Collection<? extends IEnergyStorage> buffers,
+                                           int rate) {
         if (rate <= 0) return 0;
 
         // ── Step 1: Simulate source availability ──

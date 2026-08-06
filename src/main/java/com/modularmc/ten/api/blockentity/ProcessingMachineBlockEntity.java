@@ -73,8 +73,7 @@ public abstract class ProcessingMachineBlockEntity extends CmMachineBlockEntity 
             if (energyStorage.extractEnergy(fePerTick, false) != fePerTick) {
                 // Fail-fast: invariant violation — can't silently under-deduct
                 throw new IllegalStateException(
-                        "Energy under-extraction: expected " + fePerTick
-                        + " FE but extracted less. Machine state may be inconsistent.");
+                        "Energy under-extraction: expected " + fePerTick + " FE but extracted less. Machine state may be inconsistent.");
             }
 
             // ── Step 6: Advance progress by exactly 1 tick ──

@@ -105,19 +105,19 @@ public final class UpgradeTooltipFormatter {
      * to be initialized, making it usable in unit tests.
      */
     static String regPathFor(UpgradeItem item) {
-        if (item instanceof LevelupAug)          return "augmented_levelup";
-        if (item instanceof LevelupPower)        return "powered_levelup";
-        if (item instanceof LevelupShulker)      return "relic_levelup";
-        if (item instanceof LevelupSyn)          return "photosyn_levelup";
-        if (item instanceof LevelupRg)           return "range_levelup";
-        if (item instanceof LevelupBlast)        return "blast_levelup";
-        if (item instanceof LevelupSmoke)        return "smoke_levelup";
-        if (item instanceof LevelupPotion)       return "potion_levelup";
-        if (item instanceof LevelupIce)          return "ice_levelup";
-        if (item instanceof LevelupMagma)        return "magma_levelup";
-        if (item instanceof LevelupMineral)      return "mineral_levelup";
-        if (item instanceof LevelupKnow)         return "knowledge_levelup";
-        if (item instanceof LevelupStream)       return "stream_levelup";
+        if (item instanceof LevelupAug) return "augmented_levelup";
+        if (item instanceof LevelupPower) return "powered_levelup";
+        if (item instanceof LevelupShulker) return "relic_levelup";
+        if (item instanceof LevelupSyn) return "photosyn_levelup";
+        if (item instanceof LevelupRg) return "range_levelup";
+        if (item instanceof LevelupBlast) return "blast_levelup";
+        if (item instanceof LevelupSmoke) return "smoke_levelup";
+        if (item instanceof LevelupPotion) return "potion_levelup";
+        if (item instanceof LevelupIce) return "ice_levelup";
+        if (item instanceof LevelupMagma) return "magma_levelup";
+        if (item instanceof LevelupMineral) return "mineral_levelup";
+        if (item instanceof LevelupKnow) return "knowledge_levelup";
+        if (item instanceof LevelupStream) return "stream_levelup";
         return item.getClass().getSimpleName(); // fallback
     }
 

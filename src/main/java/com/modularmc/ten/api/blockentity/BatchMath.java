@@ -40,7 +40,7 @@ public final class BatchMath {
      * @return clamped B in 0..{@value #B_HARD_MAX}, where 0 means cannot start
      */
     public static int calculateBActual(int B_theory, int B_byItems, int B_byFluids,
-                                        int B_byOutput, int B_byEnergy) {
+                                       int B_byOutput, int B_byEnergy) {
         int B = Math.max(0, B_theory);
         B = Math.min(B, Math.max(0, B_byItems));
         B = Math.min(B, Math.max(0, B_byFluids));

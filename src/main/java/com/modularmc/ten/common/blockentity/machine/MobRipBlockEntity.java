@@ -111,6 +111,7 @@ public class MobRipBlockEntity extends RadiusMachineBlockEntity {
 
     /**
      * Try to select and damage one entity within range.
+     *
      * @return true if an entity was damaged, false if no valid target found
      */
     private boolean tryHurtOneEntity() {

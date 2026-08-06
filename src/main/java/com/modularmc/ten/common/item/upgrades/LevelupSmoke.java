@@ -1,7 +1,5 @@
 package com.modularmc.ten.common.item.upgrades;
 
-import com.modularmc.ten.api.blockentity.CmMachineBlockEntity;
-
 public class LevelupSmoke extends UpgradeItem {
 
     public LevelupSmoke() {

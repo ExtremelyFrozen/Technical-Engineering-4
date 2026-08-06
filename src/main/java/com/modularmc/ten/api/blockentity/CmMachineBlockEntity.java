@@ -462,9 +462,7 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         // When no lock is active, use base FE/t (preserves original behavior and
         // does not block photosyn accumulation).
         int baseFe = getActualEfficiency();
-        int checkFe = hasLockedBatch()
-                ? (int) Math.round((double) baseFe * getLockedBatchSize())
-                : baseFe;
+        int checkFe = hasLockedBatch() ? (int) Math.round((double) baseFe * getLockedBatchSize()) : baseFe;
         return switch (machineType()) {
             case com.modularmc.ten.api.option.MachineType.GENERATOR, com.modularmc.ten.api.option.MachineType.ENGINE_SOLAR, com.modularmc.ten.api.option.MachineType.ENGINE_EXTRACTION, com.modularmc.ten.api.option.MachineType.ENGINE_METAL, com.modularmc.ten.api.option.MachineType.ENGINE_BIOMASS -> energyStorage.getEnergyStored() + checkFe <= maxStorageEnergy;
             default -> energyStorage.getEnergyStored() >= checkFe;
@@ -556,9 +554,9 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
      * <p>
      * 仅在以下条件同时满足时注入：
      * <ul>
-     *   <li>{@link #photosynInstalled} 为 true（已安装 LevelupSyn）</li>
-     *   <li>machine type 为 PROCESS 或 EFFECT（Syn 仅限这两类）</li>
-     *   <li>有效光照（{@link SkyLightHelper#hasEffectiveLight}）</li>
+     * <li>{@link #photosynInstalled} 为 true（已安装 LevelupSyn）</li>
+     * <li>machine type 为 PROCESS 或 EFFECT（Syn 仅限这两类）</li>
+     * <li>有效光照（{@link SkyLightHelper#hasEffectiveLight}）</li>
      * </ul>
      * <p>
      * 注入量固定为 {@value UpgradeConstants#SYN_PHOTOSYN_FE} FE/t，不受 B、powerMultiplier、batch 影响。
@@ -603,7 +601,7 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
      * @return clamped B in 0..19, where 0 means cannot start
      */
     public static int calculateBActual(int B_theory, int B_byItems, int B_byFluids,
-                                        int B_byOutput, int B_byEnergy) {
+                                       int B_byOutput, int B_byEnergy) {
         return BatchMath.calculateBActual(B_theory, B_byItems, B_byFluids, B_byOutput, B_byEnergy);
     }
 
@@ -628,6 +626,7 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
     /**
      * Lock B for a new operation. Only call after {@link #calculateBActual}
      * or {@link #validateAndLockB} confirmed B >= 1.
+     *
      * @param B the locked batch size (1..19)
      * @throws IllegalArgumentException if B <= 0
      */
@@ -654,6 +653,7 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
      * Lock maxProgress at the start of a new operation.
      * Duration multiplier is captured at operation start and frozen
      * to prevent per-tick drift from upgrade recalculations.
+     *
      * @param progress the max progress to lock (>= 1)
      */
     public void lockMaxProgressForNewOperation(int progress) {
@@ -664,15 +664,15 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
      * 计算并锁定 B_actual。按四维约束缩小 B 值，钳位 0..19。
      * 若 B_actual < 1 则返回 false 并清锁（调用方应 cancelStart）。
      *
-     * @param B_theory  理论 B（= 1 + Σbatch_i）
-     * @param B_byItems 物品输入维度约束
+     * @param B_theory   理论 B（= 1 + Σbatch_i）
+     * @param B_byItems  物品输入维度约束
      * @param B_byFluids 流体输入维度约束
      * @param B_byOutput 输出容量维度约束
      * @param B_byEnergy 当前储能维度约束
      * @return true 如果 B ≥ 1 且已锁定；false 表示不可启动
      */
     protected boolean validateAndLockB(int B_theory, int B_byItems, int B_byFluids,
-                                        int B_byOutput, int B_byEnergy) {
+                                       int B_byOutput, int B_byEnergy) {
         int B = calculateBActual(B_theory, B_byItems, B_byFluids, B_byOutput, B_byEnergy);
         if (B <= 0) {
             clearLockedBatch();

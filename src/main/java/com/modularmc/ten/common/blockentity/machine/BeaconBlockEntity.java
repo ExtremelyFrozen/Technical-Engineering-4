@@ -111,5 +111,4 @@ public class BeaconBlockEntity extends RadiusMachineBlockEntity {
     public boolean conditionStart() {
         return !itemHandler.getStackInSlot(0).isEmpty();
     }
-
 }

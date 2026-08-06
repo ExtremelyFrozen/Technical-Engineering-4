@@ -24,7 +24,6 @@ import com.lowdragmc.lowdraglib2.gui.factory.BlockUIMenuType;
 import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
 
 import java.util.List;
-import java.util.function.ToIntBiFunction;
 
 public class QuarryBlockEntity extends RadiusMachineBlockEntity {
 
@@ -159,6 +158,7 @@ public class QuarryBlockEntity extends RadiusMachineBlockEntity {
 
     /**
      * Execute one unit of the current mode's operation.
+     *
      * @return true if operation was executed, false if cannot continue
      */
     private boolean executeSingleOperation() {
@@ -301,10 +301,10 @@ public class QuarryBlockEntity extends RadiusMachineBlockEntity {
     /**
      * P3-T1c: Fit all drops using snapshot+simulate+commit pattern.
      * <ol>
-     *   <li>Snapshot output slots into local array</li>
-     *   <li>Simulate all drops on snapshot</li>
-     *   <li>Fail-fast if any remaining (pre-condition violated)</li>
-     *   <li>Commit snapshot atomically to real handler</li>
+     * <li>Snapshot output slots into local array</li>
+     * <li>Simulate all drops on snapshot</li>
+     * <li>Fail-fast if any remaining (pre-condition violated)</li>
+     * <li>Commit snapshot atomically to real handler</li>
      * </ol>
      */
     private void fitAll(List<ItemStack> stacks) {
@@ -319,9 +319,7 @@ public class QuarryBlockEntity extends RadiusMachineBlockEntity {
             if (!remaining.isEmpty()) {
                 // 3. Fail-fast: partial state must never reach the handler
                 throw new IllegalStateException(
-                        "Quarry cannot fit all drops: " + stack + " has "
-                        + remaining.getCount() + " remaining. "
-                        + "canFitAll pre-check should have prevented this.");
+                        "Quarry cannot fit all drops: " + stack + " has " + remaining.getCount() + " remaining. " + "canFitAll pre-check should have prevented this.");
             }
         }
 
@@ -370,8 +368,7 @@ public class QuarryBlockEntity extends RadiusMachineBlockEntity {
         // Fail-fast: prevent silent item loss
         if (!stack.isEmpty()) {
             throw new IllegalStateException(
-                    "Quarry insertFirstFit cannot fit " + stack + ": no available slot. "
-                    + "canFitAll pre-check should have prevented this.");
+                    "Quarry insertFirstFit cannot fit " + stack + ": no available slot. " + "canFitAll pre-check should have prevented this.");
         }
     }
 

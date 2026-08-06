@@ -40,8 +40,7 @@ public abstract class EffectMachineBlockEntity extends CmMachineBlockEntity {
                 // For EffectMachine, B is primarily constrained by energy dimension
                 // (baseFePerTick from efficientIn, not multiplied by B to avoid circular dep)
                 int baseFePerTick = Math.max(1, efficientIn);
-                int B_byEnergy = energyStorage != null
-                        ? energyStorage.getEnergyStored() / baseFePerTick : 0;
+                int B_byEnergy = energyStorage != null ? energyStorage.getEnergyStored() / baseFePerTick : 0;
                 int B_actual = Math.min(B_theory, Math.min(B_byEnergy, 19));
                 B_actual = Math.max(0, B_actual);
                 if (B_actual < 1) {
@@ -88,8 +87,7 @@ public abstract class EffectMachineBlockEntity extends CmMachineBlockEntity {
             if (energyStorage.extractEnergy(fePerTick, false) != fePerTick) {
                 // Fail-fast: invariant violation
                 throw new IllegalStateException(
-                        "Energy under-extraction: expected " + fePerTick
-                        + " FE but extracted less. Machine state may be inconsistent.");
+                        "Energy under-extraction: expected " + fePerTick + " FE but extracted less. Machine state may be inconsistent.");
             }
 
             // ── Step 6: Advance progress by exactly 1 tick ──

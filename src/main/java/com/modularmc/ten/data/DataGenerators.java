@@ -54,8 +54,7 @@ public class DataGenerators {
                 TENItems.EN_NAMES.forEach((id, name) -> add(TEN.MOD_ID + "." + id, name));
                 TENBlocks.EN_NAMES.forEach((id, name) -> add(TEN.MOD_ID + "." + id, name));
                 TENFluids.EN_FLUID_KEYS.forEach(this::add);
-                TENFluids.EN_NAMES.forEach((id, en) ->
-                        add("item." + TEN.MOD_ID + "." + id + "_bucket", en + " Bucket"));
+                TENFluids.EN_NAMES.forEach((id, en) -> add("item." + TEN.MOD_ID + "." + id + "_bucket", en + " Bucket"));
             } else {
                 TENBlocks.ZH_NAMES.forEach((id, name) -> addBlockName(id, name));
                 TENItems.ZH_NAMES.forEach((id, name) -> addItemName(id, name));
@@ -65,8 +64,7 @@ public class DataGenerators {
                 TENItems.ZH_NAMES.forEach((id, name) -> add(TEN.MOD_ID + "." + id, name));
                 TENBlocks.ZH_NAMES.forEach((id, name) -> add(TEN.MOD_ID + "." + id, name));
                 TENFluids.ZH_FLUID_KEYS.forEach(this::add);
-                TENFluids.ZH_NAMES.forEach((id, cn) ->
-                        add("item." + TEN.MOD_ID + "." + id + "_bucket", cn + "桶"));
+                TENFluids.ZH_NAMES.forEach((id, cn) -> add("item." + TEN.MOD_ID + "." + id + "_bucket", cn + "桶"));
             }
         }
 

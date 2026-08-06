@@ -437,7 +437,7 @@ public abstract class RecipeMachineBlockEntity extends ProcessingMachineBlockEnt
      * Slot limit = min(N × lockedB + 63, 99) where N = Σ(amountOrCount × rolls).
      */
     private ToIntBiFunction<Integer, ItemStack> createOutputSlotLimitProvider(
-                                                                               List<FormsCombinedIngredient> itemOutputs) {
+                                                                              List<FormsCombinedIngredient> itemOutputs) {
         int batchSize = getLockedBatchSize();
         return (slot, candidate) -> {
             if (slot < slotInfo.o1() || slot > slotInfo.o2()) {
@@ -706,8 +706,7 @@ public abstract class RecipeMachineBlockEntity extends ProcessingMachineBlockEnt
             plan.restore(itemHandler, tanks);
             restoreOutputSlots(outputSlotSnapshots);
             restoreOutputTanks(outputTankSnapshots);
-            LOG.severe("Output commit failed for recipe=" + currentRecipe.getId()
-                    + " — inputs and outputs rolled back");
+            LOG.severe("Output commit failed for recipe=" + currentRecipe.getId() + " — inputs and outputs rolled back");
             return;
         }
 
@@ -1053,8 +1052,8 @@ public abstract class RecipeMachineBlockEntity extends ProcessingMachineBlockEnt
          * multiplied by lockedB. Catalyst (chance &le; 0) items are NOT multiplied —
          * only a single copy is consumed regardless of batch size.
          *
-         * @param recipe     the current recipe
-         * @param slotInfo   slot layout
+         * @param recipe      the current recipe
+         * @param slotInfo    slot layout
          * @param itemHandler the item handler
          * @param tanks       the fluid tanks
          * @param slotType    slot type getter (for canIn check)
@@ -1063,14 +1062,13 @@ public abstract class RecipeMachineBlockEntity extends ProcessingMachineBlockEnt
          * @return the plan, or null if any ingredient can't be satisfied
          */
         static InputConsumptionPlan build(
-                FormsCombinedRecipe recipe,
-                SlotInfo slotInfo,
-                MachineItemHandler itemHandler,
-                List<MachineFluidTank> tanks,
-                FormsCombinedIngredient.IngredientTypeGetter slotType,
-                FormsCombinedIngredient.IngredientTypeGetter tankType,
-                int lockedB
-        ) {
+                                          FormsCombinedRecipe recipe,
+                                          SlotInfo slotInfo,
+                                          MachineItemHandler itemHandler,
+                                          List<MachineFluidTank> tanks,
+                                          FormsCombinedIngredient.IngredientTypeGetter slotType,
+                                          FormsCombinedIngredient.IngredientTypeGetter tankType,
+                                          int lockedB) {
             int itemSlots = itemHandler != null ? itemHandler.getSlots() : 0;
             int tankCount = tanks != null ? tanks.size() : 0;
             InputConsumptionPlan plan = new InputConsumptionPlan(itemSlots, tankCount);
