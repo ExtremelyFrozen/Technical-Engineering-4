@@ -1,7 +1,7 @@
 {
-  "variants": {
-    "": {
-      "model": "kenergyengineering:block/deep_tin_ore"
-    }
-  }
+	"variants": {
+		"": {
+			"model": "kenergyengineering:block/deep_tin_ore"
+		}
+	}
 }

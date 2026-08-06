@@ -1,7 +1,7 @@
 {
-  "variants": {
-    "": {
-      "model": "kenergyengineering:block/chlorium_block"
-    }
-  }
+	"variants": {
+		"": {
+			"model": "kenergyengineering:block/chlorium_block"
+		}
+	}
 }

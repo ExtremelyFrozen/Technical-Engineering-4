@@ -1,17 +1,13 @@
 {
-  "type": "minecraft:crafting_shaped",
-  "pattern": [
-    " A ",
-    "CBC",
-    " A "
-  ],
-  "key": {
-    "A": "#c:glass_blocks/colorless",
-    "B": "kenergyengineering:hydraulic_widget",
-    "C": "#c:ingots/tin"
-  },
-  "result": {
-    "id": "kenergyengineering:channel_item",
-    "count": 2
-  }
+	"type": "minecraft:crafting_shaped",
+	"pattern": [" A ", "CBC", " A "],
+	"key": {
+		"A": "#c:glass_blocks/colorless",
+		"B": "kenergyengineering:hydraulic_widget",
+		"C": "#c:ingots/tin"
+	},
+	"result": {
+		"id": "kenergyengineering:channel_item",
+		"count": 2
+	}
 }

@@ -1,14 +1,12 @@
 {
-  "type": "minecraft:crafting_shaped",
-  "pattern": [
-    "ABA"
-  ],
-  "key": {
-    "A": "#c:glass_blocks/colorless",
-    "B": "#c:ingots/gold"
-  },
-  "result": {
-    "id": "kenergyengineering:pipe",
-    "count": 4
-  }
+	"type": "minecraft:crafting_shaped",
+	"pattern": ["ABA"],
+	"key": {
+		"A": "#c:glass_blocks/colorless",
+		"B": "#c:ingots/gold"
+	},
+	"result": {
+		"id": "kenergyengineering:pipe",
+		"count": 4
+	}
 }

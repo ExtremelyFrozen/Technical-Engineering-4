@@ -1,6 +1,6 @@
 {
-  "model": {
-    "type": "minecraft:model",
-    "model": "kenergyengineering:item/channel_connector"
-  }
+	"model": {
+		"type": "minecraft:model",
+		"model": "kenergyengineering:item/channel_connector"
+	}
 }

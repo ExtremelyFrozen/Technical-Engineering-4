@@ -1,6 +1,6 @@
 {
-  "parent": "minecraft:item/generated",
-  "textures": {
-    "layer0": "kenergyengineering:item/bucket/liquid_spicy_jelly_bucket"
-  }
+	"parent": "minecraft:item/generated",
+	"textures": {
+		"layer0": "kenergyengineering:item/bucket/liquid_spicy_jelly_bucket"
+	}
 }

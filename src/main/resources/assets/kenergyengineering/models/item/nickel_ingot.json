@@ -1,6 +1,6 @@
 {
-  "parent": "minecraft:item/generated",
-  "textures": {
-    "layer0": "kenergyengineering:item/material/ingot/nickel_ingot"
-  }
+	"parent": "minecraft:item/generated",
+	"textures": {
+		"layer0": "kenergyengineering:item/material/ingot/nickel_ingot"
+	}
 }

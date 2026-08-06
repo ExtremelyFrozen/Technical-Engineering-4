@@ -1,17 +1,13 @@
 {
-  "type": "minecraft:crafting_shaped",
-  "pattern": [
-    " A ",
-    "CBC",
-    " A "
-  ],
-  "key": {
-    "A": "#c:glass_blocks/colorless",
-    "B": "kenergyengineering:redstone_ai",
-    "C": "#c:ingots/copper"
-  },
-  "result": {
-    "id": "kenergyengineering:channel_energy",
-    "count": 2
-  }
+	"type": "minecraft:crafting_shaped",
+	"pattern": [" A ", "CBC", " A "],
+	"key": {
+		"A": "#c:glass_blocks/colorless",
+		"B": "kenergyengineering:redstone_ai",
+		"C": "#c:ingots/copper"
+	},
+	"result": {
+		"id": "kenergyengineering:channel_energy",
+		"count": 2
+	}
 }

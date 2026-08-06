@@ -1,7 +1,7 @@
 {
-  "variants": {
-    "": {
-      "model": "kenergyengineering:block/fluid/liquid_honey"
-    }
-  }
+	"variants": {
+		"": {
+			"model": "kenergyengineering:block/fluid/liquid_honey"
+		}
+	}
 }

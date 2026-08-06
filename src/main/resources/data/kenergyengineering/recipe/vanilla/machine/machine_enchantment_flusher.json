@@ -1,18 +1,14 @@
 {
-  "type": "minecraft:crafting_shaped",
-  "pattern": [
-    "BDB",
-    "ACA",
-    "BVB"
-  ],
-  "key": {
-    "A": "minecraft:book",
-    "B": "#c:plates/copper",
-    "C": "kenergyengineering:redstone_storer",
-    "V": "kenergyengineering:redstone_ai_advanced",
-    "D": "minecraft:grindstone"
-  },
-  "result": {
-    "id": "kenergyengineering:machine_enchantment_flusher"
-  }
+	"type": "minecraft:crafting_shaped",
+	"pattern": ["BDB", "ACA", "BVB"],
+	"key": {
+		"A": "minecraft:book",
+		"B": "#c:plates/copper",
+		"C": "kenergyengineering:redstone_storer",
+		"V": "kenergyengineering:redstone_ai_advanced",
+		"D": "minecraft:grindstone"
+	},
+	"result": {
+		"id": "kenergyengineering:machine_enchantment_flusher"
+	}
 }

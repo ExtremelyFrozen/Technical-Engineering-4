@@ -1,17 +1,13 @@
 {
-  "type": "minecraft:crafting_shaped",
-  "pattern": [
-    " B ",
-    "DAD",
-    " C "
-  ],
-  "key": {
-    "A": "minecraft:packed_ice",
-    "B": "#c:gears/gold",
-    "C": "minecraft:glass_bottle",
-    "D": "minecraft:snow_block"
-  },
-  "result": {
-    "id": "kenergyengineering:ice_levelup"
-  }
+	"type": "minecraft:crafting_shaped",
+	"pattern": [" B ", "DAD", " C "],
+	"key": {
+		"A": "minecraft:packed_ice",
+		"B": "#c:gears/gold",
+		"C": "minecraft:glass_bottle",
+		"D": "minecraft:snow_block"
+	},
+	"result": {
+		"id": "kenergyengineering:ice_levelup"
+	}
 }

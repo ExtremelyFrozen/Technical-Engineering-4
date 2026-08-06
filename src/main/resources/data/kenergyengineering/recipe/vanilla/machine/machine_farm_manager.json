@@ -1,18 +1,14 @@
 {
-  "type": "minecraft:crafting_shaped",
-  "pattern": [
-    "BDB",
-    "ACA",
-    "BVB"
-  ],
-  "key": {
-    "A": "minecraft:iron_hoe",
-    "B": "#c:plates/chlorium",
-    "C": "kenergyengineering:redstone_storer",
-    "V": "kenergyengineering:redstone_ai",
-    "D": "kenergyengineering:hydraulic_widget"
-  },
-  "result": {
-    "id": "kenergyengineering:machine_farm_manager"
-  }
+	"type": "minecraft:crafting_shaped",
+	"pattern": ["BDB", "ACA", "BVB"],
+	"key": {
+		"A": "minecraft:iron_hoe",
+		"B": "#c:plates/chlorium",
+		"C": "kenergyengineering:redstone_storer",
+		"V": "kenergyengineering:redstone_ai",
+		"D": "kenergyengineering:hydraulic_widget"
+	},
+	"result": {
+		"id": "kenergyengineering:machine_farm_manager"
+	}
 }

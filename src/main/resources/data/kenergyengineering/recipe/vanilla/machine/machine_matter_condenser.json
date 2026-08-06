@@ -1,18 +1,14 @@
 {
-  "type": "minecraft:crafting_shaped",
-  "pattern": [
-    "BDB",
-    "ACA",
-    "BVB"
-  ],
-  "key": {
-    "A": "minecraft:ender_eye",
-    "B": "#c:plates/nickel",
-    "C": "kenergyengineering:redstone_storer",
-    "V": "kenergyengineering:redstone_ai",
-    "D": "minecraft:slime_block"
-  },
-  "result": {
-    "id": "kenergyengineering:machine_matter_condenser"
-  }
+	"type": "minecraft:crafting_shaped",
+	"pattern": ["BDB", "ACA", "BVB"],
+	"key": {
+		"A": "minecraft:ender_eye",
+		"B": "#c:plates/nickel",
+		"C": "kenergyengineering:redstone_storer",
+		"V": "kenergyengineering:redstone_ai",
+		"D": "minecraft:slime_block"
+	},
+	"result": {
+		"id": "kenergyengineering:machine_matter_condenser"
+	}
 }

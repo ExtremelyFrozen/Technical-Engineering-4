@@ -1,6 +1,6 @@
 {
-  "parent": "minecraft:item/generated",
-  "textures": {
-    "layer0": "kenergyengineering:item/channel_connector"
-  }
+	"parent": "minecraft:item/generated",
+	"textures": {
+		"layer0": "kenergyengineering:item/channel_connector"
+	}
 }

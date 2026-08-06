@@ -1,18 +1,14 @@
 {
-  "type": "minecraft:crafting_shaped",
-  "pattern": [
-    "BDB",
-    "ACA",
-    "BVB"
-  ],
-  "key": {
-    "A": "minecraft:hopper",
-    "B": "#c:plates/powered_tin",
-    "C": "kenergyengineering:redstone_storer",
-    "V": "kenergyengineering:redstone_ai",
-    "D": "kenergyengineering:detector"
-  },
-  "result": {
-    "id": "kenergyengineering:machine_refiner"
-  }
+	"type": "minecraft:crafting_shaped",
+	"pattern": ["BDB", "ACA", "BVB"],
+	"key": {
+		"A": "minecraft:hopper",
+		"B": "#c:plates/powered_tin",
+		"C": "kenergyengineering:redstone_storer",
+		"V": "kenergyengineering:redstone_ai",
+		"D": "kenergyengineering:detector"
+	},
+	"result": {
+		"id": "kenergyengineering:machine_refiner"
+	}
 }

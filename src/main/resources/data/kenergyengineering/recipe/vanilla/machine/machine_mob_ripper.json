@@ -1,18 +1,14 @@
 {
-  "type": "minecraft:crafting_shaped",
-  "pattern": [
-    "BDB",
-    "ACA",
-    "BVB"
-  ],
-  "key": {
-    "A": "minecraft:cactus",
-    "B": "#c:plates/tin",
-    "C": "kenergyengineering:redstone_storer",
-    "V": "kenergyengineering:redstone_ai",
-    "D": "kenergyengineering:hydraulic_widget"
-  },
-  "result": {
-    "id": "kenergyengineering:machine_mob_ripper"
-  }
+	"type": "minecraft:crafting_shaped",
+	"pattern": ["BDB", "ACA", "BVB"],
+	"key": {
+		"A": "minecraft:cactus",
+		"B": "#c:plates/tin",
+		"C": "kenergyengineering:redstone_storer",
+		"V": "kenergyengineering:redstone_ai",
+		"D": "kenergyengineering:hydraulic_widget"
+	},
+	"result": {
+		"id": "kenergyengineering:machine_mob_ripper"
+	}
 }

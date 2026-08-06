@@ -1,15 +1,11 @@
 {
-  "type": "minecraft:crafting_shaped",
-  "pattern": [
-    "AAA",
-    "A A",
-    "A A"
-  ],
-  "key": {
-    "A": "kenergyengineering:bizarrerie"
-  },
-  "result": {
-    "id": "minecraft:lapis_lazuli",
-    "count": 24
-  }
+	"type": "minecraft:crafting_shaped",
+	"pattern": ["AAA", "A A", "A A"],
+	"key": {
+		"A": "kenergyengineering:bizarrerie"
+	},
+	"result": {
+		"id": "minecraft:lapis_lazuli",
+		"count": 24
+	}
 }

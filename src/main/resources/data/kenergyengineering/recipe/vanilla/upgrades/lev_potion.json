@@ -1,17 +1,13 @@
 {
-  "type": "minecraft:crafting_shaped",
-  "pattern": [
-    " B ",
-    "DAD",
-    " C "
-  ],
-  "key": {
-    "A": "minecraft:emerald",
-    "B": "#c:gears/chlorium",
-    "C": "minecraft:hopper",
-    "D": "kenergyengineering:bizarrerie"
-  },
-  "result": {
-    "id": "kenergyengineering:potion_levelup"
-  }
+	"type": "minecraft:crafting_shaped",
+	"pattern": [" B ", "DAD", " C "],
+	"key": {
+		"A": "minecraft:emerald",
+		"B": "#c:gears/chlorium",
+		"C": "minecraft:hopper",
+		"D": "kenergyengineering:bizarrerie"
+	},
+	"result": {
+		"id": "kenergyengineering:potion_levelup"
+	}
 }

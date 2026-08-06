@@ -1,17 +1,13 @@
 {
-  "type": "minecraft:crafting_shaped",
-  "pattern": [
-    " B ",
-    "DAD",
-    " C "
-  ],
-  "key": {
-    "A": "minecraft:iron_bars",
-    "B": "#c:gears/gold",
-    "C": "minecraft:slime_ball",
-    "D": "minecraft:gunpowder"
-  },
-  "result": {
-    "id": "kenergyengineering:range_levelup"
-  }
+	"type": "minecraft:crafting_shaped",
+	"pattern": [" B ", "DAD", " C "],
+	"key": {
+		"A": "minecraft:iron_bars",
+		"B": "#c:gears/gold",
+		"C": "minecraft:slime_ball",
+		"D": "minecraft:gunpowder"
+	},
+	"result": {
+		"id": "kenergyengineering:range_levelup"
+	}
 }

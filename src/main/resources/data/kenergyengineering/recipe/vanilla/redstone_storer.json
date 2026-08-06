@@ -1,15 +1,11 @@
 {
-  "type": "minecraft:crafting_shaped",
-  "pattern": [
-    "C C",
-    "CAC",
-    "C C"
-  ],
-  "key": {
-    "A": "minecraft:gold_ingot",
-    "C": "minecraft:redstone"
-  },
-  "result": {
-    "id": "kenergyengineering:redstone_storer"
-  }
+	"type": "minecraft:crafting_shaped",
+	"pattern": ["C C", "CAC", "C C"],
+	"key": {
+		"A": "minecraft:gold_ingot",
+		"C": "minecraft:redstone"
+	},
+	"result": {
+		"id": "kenergyengineering:redstone_storer"
+	}
 }

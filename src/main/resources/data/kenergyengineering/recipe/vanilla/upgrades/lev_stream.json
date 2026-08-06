@@ -1,17 +1,13 @@
 {
-  "type": "minecraft:crafting_shaped",
-  "pattern": [
-    " B ",
-    "DAD",
-    " C "
-  ],
-  "key": {
-    "A": "kenergyengineering:bizarrerie",
-    "B": "kenergyengineering:cable_star",
-    "C": "kenergyengineering:redstone_conductor",
-    "D": "minecraft:chorus_fruit"
-  },
-  "result": {
-    "id": "kenergyengineering:stream_levelup"
-  }
+	"type": "minecraft:crafting_shaped",
+	"pattern": [" B ", "DAD", " C "],
+	"key": {
+		"A": "kenergyengineering:bizarrerie",
+		"B": "kenergyengineering:cable_star",
+		"C": "kenergyengineering:redstone_conductor",
+		"D": "minecraft:chorus_fruit"
+	},
+	"result": {
+		"id": "kenergyengineering:stream_levelup"
+	}
 }

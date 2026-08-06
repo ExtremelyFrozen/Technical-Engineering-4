@@ -1,15 +1,11 @@
 {
-  "type": "minecraft:crafting_shaped",
-  "pattern": [
-    " A ",
-    "AAA",
-    "A A"
-  ],
-  "key": {
-    "A": "kenergyengineering:bizarrerie"
-  },
-  "result": {
-    "id": "minecraft:redstone",
-    "count": 32
-  }
+	"type": "minecraft:crafting_shaped",
+	"pattern": [" A ", "AAA", "A A"],
+	"key": {
+		"A": "kenergyengineering:bizarrerie"
+	},
+	"result": {
+		"id": "minecraft:redstone",
+		"count": 32
+	}
 }

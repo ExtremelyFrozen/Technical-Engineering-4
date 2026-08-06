@@ -1,7 +1,7 @@
 {
-  "variants": {
-    "": {
-      "model": "kenergyengineering:block/fluid/liquid_royal_jelly"
-    }
-  }
+	"variants": {
+		"": {
+			"model": "kenergyengineering:block/fluid/liquid_royal_jelly"
+		}
+	}
 }

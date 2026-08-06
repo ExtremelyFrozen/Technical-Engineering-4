@@ -1,17 +1,13 @@
 {
-  "type": "minecraft:crafting_shaped",
-  "pattern": [
-    " B ",
-    "DAD",
-    " C "
-  ],
-  "key": {
-    "A": "minecraft:charcoal",
-    "B": "#c:gears/iron",
-    "C": "minecraft:blaze_rod",
-    "D": "#minecraft:logs"
-  },
-  "result": {
-    "id": "kenergyengineering:smoke_levelup"
-  }
+	"type": "minecraft:crafting_shaped",
+	"pattern": [" B ", "DAD", " C "],
+	"key": {
+		"A": "minecraft:charcoal",
+		"B": "#c:gears/iron",
+		"C": "minecraft:blaze_rod",
+		"D": "#minecraft:logs"
+	},
+	"result": {
+		"id": "kenergyengineering:smoke_levelup"
+	}
 }

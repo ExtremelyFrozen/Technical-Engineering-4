@@ -1,15 +1,11 @@
 {
-  "type": "minecraft:crafting_shaped",
-  "pattern": [
-    " C ",
-    "CAC",
-    " C "
-  ],
-  "key": {
-    "A": "kenergyengineering:azure_glass",
-    "C": "#c:glass_blocks/colorless"
-  },
-  "result": {
-    "id": "kenergyengineering:detector"
-  }
+	"type": "minecraft:crafting_shaped",
+	"pattern": [" C ", "CAC", " C "],
+	"key": {
+		"A": "kenergyengineering:azure_glass",
+		"C": "#c:glass_blocks/colorless"
+	},
+	"result": {
+		"id": "kenergyengineering:detector"
+	}
 }

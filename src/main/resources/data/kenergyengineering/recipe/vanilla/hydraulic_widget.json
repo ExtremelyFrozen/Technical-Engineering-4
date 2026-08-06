@@ -1,16 +1,12 @@
 {
-  "type": "minecraft:crafting_shaped",
-  "pattern": [
-    " B ",
-    "CAC",
-    " B "
-  ],
-  "key": {
-    "A": "minecraft:water_bucket",
-    "B": "minecraft:piston",
-    "C": "#c:ingots/copper"
-  },
-  "result": {
-    "id": "kenergyengineering:hydraulic_widget"
-  }
+	"type": "minecraft:crafting_shaped",
+	"pattern": [" B ", "CAC", " B "],
+	"key": {
+		"A": "minecraft:water_bucket",
+		"B": "minecraft:piston",
+		"C": "#c:ingots/copper"
+	},
+	"result": {
+		"id": "kenergyengineering:hydraulic_widget"
+	}
 }

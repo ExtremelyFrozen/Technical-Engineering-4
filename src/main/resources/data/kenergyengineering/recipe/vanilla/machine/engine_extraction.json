@@ -1,18 +1,14 @@
 {
-  "type": "minecraft:crafting_shaped",
-  "pattern": [
-    " D ",
-    "ACA",
-    "BVB"
-  ],
-  "key": {
-    "A": "minecraft:furnace",
-    "B": "#c:ingots/tin",
-    "C": "kenergyengineering:redstone_storer",
-    "V": "minecraft:redstone",
-    "D": "kenergyengineering:redstone_conductor"
-  },
-  "result": {
-    "id": "kenergyengineering:engine_extraction"
-  }
+	"type": "minecraft:crafting_shaped",
+	"pattern": [" D ", "ACA", "BVB"],
+	"key": {
+		"A": "minecraft:furnace",
+		"B": "#c:ingots/tin",
+		"C": "kenergyengineering:redstone_storer",
+		"V": "minecraft:redstone",
+		"D": "kenergyengineering:redstone_conductor"
+	},
+	"result": {
+		"id": "kenergyengineering:engine_extraction"
+	}
 }

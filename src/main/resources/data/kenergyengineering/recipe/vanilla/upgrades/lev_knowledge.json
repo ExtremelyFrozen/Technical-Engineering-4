@@ -1,17 +1,13 @@
 {
-  "type": "minecraft:crafting_shaped",
-  "pattern": [
-    " B ",
-    "DAD",
-    " C "
-  ],
-  "key": {
-    "A": "minecraft:purpur_block",
-    "B": "minecraft:book",
-    "C": "minecraft:emerald",
-    "D": "minecraft:experience_bottle"
-  },
-  "result": {
-    "id": "kenergyengineering:knowledge_levelup"
-  }
+	"type": "minecraft:crafting_shaped",
+	"pattern": [" B ", "DAD", " C "],
+	"key": {
+		"A": "minecraft:purpur_block",
+		"B": "minecraft:book",
+		"C": "minecraft:emerald",
+		"D": "minecraft:experience_bottle"
+	},
+	"result": {
+		"id": "kenergyengineering:knowledge_levelup"
+	}
 }
