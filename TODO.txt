@@ -2,11 +2,13 @@
 
 难度：低 / 中 / 高 / 待诊断
 优先级：P0 阻断，P1 核心，P2 一般，P3 后置
-推荐推进顺序：精炼机诊断 → 配方能量系统 → 升级槽迁移 → 传输模式 icon → JEI 能量 tooltip → GUI 进度条 → 四引擎 JEI → JEI 美术 → 范围显示
+后续推荐推进顺序：配方能量系统 → 升级槽迁移 → 传输模式 icon → JEI 能量 tooltip → GUI 进度条 → 四引擎 JEI → JEI 美术 → 范围显示
 
 ## 迁移未完成
 
-- [ ] 升级槽移植未完成（迁移中的未完成项，具体槽位和范围待确认） `难度：低` `优先级：P2` `推进：3`
+- [ ] 升级槽移植未完成——代码已实现待审查 `难度：低` `优先级：P2` `推进：3`
+  - 米娅已完成：可用槽 tooltip 覆盖、GUI 外潜行安装、固定 6 槽、UpgradeItem.canApply 等
+  - 后续待恢复：测试 / compileJava / 艾琳门禁
 - [ ] 传输配置中传输模式 icon 切换迁移不完整（迁移中的未完成项，具体涉及哪些传输模式待确认） `难度：低` `优先级：P2` `推进：4`
 
 ## 功能修订
@@ -32,5 +34,18 @@
 
 ## 故障定位
 
-- [ ] 精炼机不工作（异常表现和复现条件待补充） `难度：待诊断` `优先级：P0` `推进：1`
-  - 说明：先诊断，问题可能与配方能量系统有关。
+- [x] 修复精炼机单输入配方无法匹配（代码修订完成） `难度：中` `优先级：P0` `推进：1（已完成）`
+  - 根因：通用严格计数将 ALLOW_ALL 补位算作真实输入，导致单输入配方因补位计数不符被拒
+  - 处理：通用匹配忽略 ALLOW_ALL 补位并允许未占满输入；严格匹配（matchesExactInputs）改为感应炉独占
+  - 验证：回归脚本（精炼机9个含5个未占满、感应炉9个含7个未占满）/ compileJava / 774 资源检查通过，未运行游戏内验证
+
+- [ ] 机器面配置三按钮 tooltip 修复 `难度：低` `优先级：P1` `推进：待定`
+  - 根因：TENMachineBlockUIFactory 模式按钮 HOVER_TOOLTIPS 将 List<Component> 直接传入 HoverTooltips.create(Object...)
+  - 处理：展开为数组传递，语言 key kenergyengineering.info.bar_mode/energy/item/fluid 在 main 和 generated 中均存在
+  - 验证：确认三个模式按钮 tooltip 正常显示
+
+- [ ] 金属粉→锭配方链：验证生成配方正确 + 修复两个手写无序合成 `难度：低` `优先级：P1` `推进：待定`
+  - [ ] 验证 generated vanilla/burning/ 中 9 种 dust 对应 18 个 smelting/blasting JSON 正确（已确认准确）
+  - [ ] 运行时验证熔炼/高炉配方加载正确
+  - [ ] 修复 main 手写 chlorium_dust.json 和 powered_tin_dust.json 的 shapeless ingredients 为对象格式
+  - 依赖：配方能量系统稳定；合成配方独立可先行
