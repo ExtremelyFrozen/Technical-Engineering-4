@@ -1,5 +1,6 @@
 package com.modularmc.ten.common.blockentity.machine;
 
+import com.modularmc.ten.TENConstants;
 import com.modularmc.ten.api.blockentity.ProcessingMachineBlockEntity;
 import com.modularmc.ten.api.option.IngredientType;
 import com.modularmc.ten.api.option.MachineType;
@@ -81,13 +82,16 @@ public class EncfluBlockEntity extends ProcessingMachineBlockEntity {
     @Override
     public ModularUI createUI(BlockUIMenuType.BlockUIHolder holder) {
         return buildMachineUI(holder, TENMachineBlockUIFactory.backgroundFor(machineType()), root -> {
-            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 0, 43, 15));
-            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 1, 43, 51));
-            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 2, 115, 34));
+            // 2 输入竖排（39,14 / 39,50，块 14~68 中线 41 与能量条对齐），输出大槽
+            root.addChild(TENMachineBlockUIFactory.machineSlotModular(this, 0, 39, 14));
+            root.addChild(TENMachineBlockUIFactory.machineSlotModular(this, 1, 39, 50));
+            root.addChild(TENMachineBlockUIFactory.machineSlotLarge(this, 2, 113, 28));
         }, root -> {
-            root.addChild(TENMachineBlockUIFactory.energyGauge(this, 9, 18, 14, 46, 0, 0, true));
-            root.addChild(TENMachineBlockUIFactory.fuelGauge(this, 45, 36, 13, 13, 14, 0, false));
-            root.addChild(TENMachineBlockUIFactory.progressGauge(this, 76, 35, 22, 16, 27, 127, true));
+            root.addChild(TENMachineBlockUIFactory.energyGaugeModular(this, 8, 18, true));
+            // mini 装饰（静态整件 8x54）：紧贴输入槽右缘，标示上下输入槽流向（目标在下），不承载进度
+            root.addChild(TENMachineBlockUIFactory.verticalProgressMini(39, 14, 18, TENConstants.PROGRESS_ARROW_MINI_ENCFLU_BG, false));
+            // 进度箭头（modular smelter 素材 22x16）：encflu 映射 PROGRESS_ARROW_SMELTER 素材族
+            root.addChild(TENMachineBlockUIFactory.progressGaugeModular(this, 76, 33, true));
         });
     }
 
