@@ -1,6 +1,7 @@
 package com.modularmc.ten.common.gui;
 
 import com.modularmc.ten.TEN;
+import com.modularmc.ten.TENConstants;
 import com.modularmc.ten.api.blockentity.CmMachineBlockEntity;
 import com.modularmc.ten.api.option.FaceOption;
 import com.modularmc.ten.api.option.MachineType;
@@ -167,7 +168,43 @@ public final class TENMachineBlockUIFactory {
         root.addEventListener(UIEvents.TICK, event -> syncSidebar.run());
     }
 
+    /**
+     * Creates a standard 18x18 machine item slot with no background
+     * ({@link IGuiTexture#EMPTY}).
+     * <p>
+     * Used by all non-modular machines: their legacy background PNG already
+     * draws the slot frame, so adding a modular slot background would cause a
+     * double border.
+     */
     public static ItemSlot machineSlot(CmMachineBlockEntity machine, int index, int x, int y) {
+        return machineSlot(machine, index, x, y, 18, IGuiTexture.EMPTY);
+    }
+
+    /**
+     * Creates an 18x18 machine item slot with the modular small-slot background
+     * ({@link TENConstants#ITEM_SLOT_SMALL}).
+     * <p>
+     * Modular-only (smelter/pulverizer/compressor/refiner/indfur/psionicant/encflu):
+     * their background is the blank {@link TENConstants#MACHINE_GUI}, so the
+     * slot frame must come from the modular texture family.
+     */
+    public static ItemSlot machineSlotModular(CmMachineBlockEntity machine, int index, int x, int y) {
+        return machineSlot(machine, index, x, y, 18, fullTexture(TENConstants.ITEM_SLOT_SMALL, 18, 18));
+    }
+
+    /**
+     * Creates a large (26x26) machine item slot.
+     * <p>
+     * Background: {@link TENConstants#ITEM_SLOT_LARGE}. The slot element is
+     * 26x26 with 5px padding so the 16x16 content renders centered; the whole
+     * 26x26 area remains interactive (P1: LDLib2 ItemSlot native 26x26).
+     * Modular-only: only the 7 modular machines use the 26x26 output slot.
+     */
+    public static ItemSlot machineSlotLarge(CmMachineBlockEntity machine, int index, int x, int y) {
+        return machineSlot(machine, index, x, y, 26, fullTexture(TENConstants.ITEM_SLOT_LARGE, 26, 26));
+    }
+
+    private static ItemSlot machineSlot(CmMachineBlockEntity machine, int index, int x, int y, int size, IGuiTexture background) {
         Slot slot = new SlotItemHandler(machine.itemHandler, index, 0, 0) {
 
             @Override
@@ -176,7 +213,7 @@ public final class TENMachineBlockUIFactory {
                 return type.canIn() && machine.valid(getSlotIndex(), stack) && super.mayPlace(stack);
             }
         };
-        return itemSlot(slot, x, y, false);
+        return itemSlot(slot, x, y, false, size, background);
     }
 
     /**
@@ -192,7 +229,7 @@ public final class TENMachineBlockUIFactory {
      */
     private static ItemSlot upgradeSlot(CmMachineBlockEntity machine, int index, int x, int y) {
         SlotItemHandler slot = new SlotItemHandler(machine.upgradeHandler, index, 0, 0);
-        var itemSlot = itemSlot(slot, x, y, false);
+        var itemSlot = itemSlot(slot, x, y, false, 18, IGuiTexture.EMPTY);
         // Use the standard item-slot background sprite so the slot is visible
         itemSlot.style(style -> style.backgroundTexture(sprite(HANDLER, 227, 0, 18, 18)));
         // Register tooltip: only for empty slots; non-empty preserves native ItemStack tooltip
@@ -205,13 +242,17 @@ public final class TENMachineBlockUIFactory {
         return itemSlot;
     }
 
-    private static ItemSlot itemSlot(Slot slot, int x, int y, boolean isPlayerSlot) {
-        var itemSlot = absolute(new ItemSlot(slot), x, y, 18, 18);
-        itemSlot.style(style -> style.backgroundTexture(IGuiTexture.EMPTY));
+    private static ItemSlot itemSlot(Slot slot, int x, int y, boolean isPlayerSlot, int size, IGuiTexture background) {
+        var itemSlot = absolute(new ItemSlot(slot), x, y, size, size);
+        itemSlot.style(style -> style.backgroundTexture(background));
         itemSlot.slotStyle(style -> style
                 .slotOverlay(IGuiTexture.EMPTY)
                 .showSlotOverlayOnlyEmpty(false)
                 .isPlayerSlot(isPlayerSlot));
+        if (size == 26) {
+            // 26x26 大槽：padding 5px → 内容 16x16 居中（P1 结论）
+            itemSlot.layout(layout -> layout.paddingAll(5));
+        }
         return itemSlot;
     }
 
@@ -258,6 +299,138 @@ public final class TENMachineBlockUIFactory {
         return progress;
     }
 
+    // ───── Modular 素材族 gauge（D1：机器 GUI 部件素材切换）─────
+
+    /**
+     * Modular 素材族能量条（14x46）：背景 ENERGY_GAUGE_BG、填充 ENERGY_GAUGE_FILL。
+     */
+    public static RevealProgressBar energyGaugeModular(CmMachineBlockEntity machine, int x, int y, boolean displayValue) {
+        return verticalGaugeModular(machine, x, y, 14, 46,
+                TENConstants.ENERGY_GAUGE_BG, TENConstants.ENERGY_GAUGE_FILL,
+                TENMachineBlockUIFactory::energyPercent, energyGaugeTooltip(machine, displayValue), displayValue);
+    }
+
+    /**
+     * Modular 素材族燃料条（13x13）：背景 FUEL_GAUGE_01_BG、填充 FUEL_GAUGE_01_FILL。
+     */
+    public static RevealProgressBar fuelGaugeModular(CmMachineBlockEntity machine, int x, int y, boolean displayValue) {
+        return verticalGaugeModular(machine, x, y, 13, 13,
+                TENConstants.FUEL_GAUGE_01_BG, TENConstants.FUEL_GAUGE_01_FILL,
+                TENMachineBlockUIFactory::fuelPercent, fuelTooltip(machine, displayValue), displayValue);
+    }
+
+    /**
+     * Modular 素材族进度箭头（22x16）：按机器类型映射 PROGRESS_ARROW_&lt;机器&gt;_BG/FILL。
+     */
+    public static RevealProgressBar progressGaugeModular(CmMachineBlockEntity machine, int x, int y, boolean showPercent) {
+        int type = machine.machineType();
+        return horizontalProgressModular(machine, x, y, 22, 16,
+                progressArrowBg(type), progressArrowFill(type), showPercent);
+    }
+
+    private static RevealProgressBar verticalGaugeModular(CmMachineBlockEntity machine,
+                                                          int x, int y, int width, int height,
+                                                          Identifier bgTexture, Identifier fillTexture,
+                                                          java.util.function.ToDoubleFunction<CmMachineBlockEntity> percent,
+                                                          Supplier<List<Component>> tooltipSupplier,
+                                                          boolean displayValue) {
+        var filled = SpriteTexture.of(fillTexture).setSprite(0, 0, width, height);
+        var progress = absolute(new RevealProgressBar(filled), x, y, width, height);
+        progress.barContainer(container -> container.style(style -> style.backgroundTexture(SpriteTexture.of(bgTexture).setSprite(0, 0, width, height)))
+                .layout(layout -> layout.paddingAll(0)));
+        progress.barBackground.style(style -> style.backgroundTexture(IGuiTexture.EMPTY));
+        progress.label.setDisplay(false);
+        progress.progressBarStyle(style -> style.fillDirection(FillDirection.DOWN_TO_UP).interpolate(false));
+        progress.bindDataSource(SupplierDataSource.of(() -> (float) percent.applyAsDouble(machine)));
+        progress.addEventListener(UIEvents.HOVER_TOOLTIPS, event -> event.hoverTooltips = HoverTooltips.create(tooltipSupplier.get().toArray()));
+        return progress;
+    }
+
+    private static RevealProgressBar horizontalProgressModular(CmMachineBlockEntity machine,
+                                                               int x, int y, int width, int height,
+                                                               Identifier bgTexture, Identifier fillTexture,
+                                                               boolean showPercent) {
+        var filled = SpriteTexture.of(fillTexture).setSprite(0, 0, width, height);
+        var progress = absolute(new RevealProgressBar(filled), x, y, width, height);
+        progress.barContainer(container -> container.style(style -> style.backgroundTexture(SpriteTexture.of(bgTexture).setSprite(0, 0, width, height)))
+                .layout(layout -> layout.paddingAll(0)));
+        progress.barBackground.style(style -> style.backgroundTexture(IGuiTexture.EMPTY));
+        progress.label.setDisplay(false);
+        progress.progressBarStyle(style -> style.fillDirection(FillDirection.LEFT_TO_RIGHT).interpolate(false));
+        progress.bindDataSource(SupplierDataSource.of(() -> (float) progressPercent(machine)));
+        if (showPercent) {
+            progress.addEventListener(UIEvents.HOVER_TOOLTIPS, event -> event.hoverTooltips = HoverTooltips.create(ComponentHelper.make((int) (progressPercent(machine) * 100) + "%")));
+        }
+        return progress;
+    }
+
+    /**
+     * Modular 素材族 mini 装饰组件（整件 8x54 素材），用于「上下组合输入槽」机器
+     * （compressor / encflu），静态标示上下输入槽的流向关系。
+     * <p>
+     * 纯装饰：整件 blit，不绑定 progressPercent 动画；加工进度由各机器另行添加的
+     * 进度箭头（progressGaugeModular）承担，二者水平错开不重叠。
+     * <p>
+     * 几何（素材画布 8x54 与槽位垂直跨度精确对齐）：
+     * <ul>
+     * <li>水平：紧贴输入槽右缘，anchorX = inputX + slotSize（无间距）</li>
+     * <li>垂直：画布顶 = 上方输入槽 y（inputTopY），画布高 54 恰好覆盖到
+     * 下方输入槽底（inputBottomY + slotSize）；素材内非透明 8x41 区域
+     * （箭头/方块一体）按素材原样呈现</li>
+     * </ul>
+     * 两版素材互为垂直镜像、方向内嵌于素材：compressor 顶尖朝上（目标在上），
+     * encflu 尖朝下（目标在下）。{@code targetOnTop} 为调用方意图声明，与素材
+     * 内嵌方向保持一致；垂直位置由画布与槽位对齐决定，不参与几何计算。
+     *
+     * @param inputX      输入槽左缘 x（上下两槽同 x）
+     * @param inputTopY   上方输入槽 y
+     * @param slotSize    输入槽尺寸（18）
+     * @param texture     mini 素材常量（PROGRESS_ARROW_MINI_COMPRESSOR_BG / PROGRESS_ARROW_MINI_ENCFLU_BG）
+     * @param targetOnTop 目标点箭头是否位于上方槽位（compressor=true，encflu=false）
+     */
+    public static UIElement verticalProgressMini(int inputX, int inputTopY, int slotSize,
+                                                 Identifier texture, boolean targetOnTop) {
+        // 整件 8x54：紧贴输入槽右缘（无间距），垂直对齐上方输入槽顶（画布底恰好覆盖下方槽底）
+        return textureElement(inputX + slotSize, inputTopY, 8, 54,
+                fullTexture(texture, 8, 54), null, null, null, null);
+    }
+
+    /**
+     * 机器类型 → modular 进度箭头背景常量映射（集中一处）。
+     */
+    private static Identifier progressArrowBg(int machineType) {
+        return switch (machineType) {
+            case MachineType.FURNACE -> TENConstants.PROGRESS_ARROW_SMELTER_BG;
+            case MachineType.PULVERIZER -> TENConstants.PROGRESS_ARROW_PULVERIZER_BG;
+            case MachineType.COMPRESSOR -> TENConstants.PROGRESS_ARROW_COMPRESSOR_BG;
+            case MachineType.REFINER -> TENConstants.PROGRESS_ARROW_REFINER_BG;
+            case MachineType.INDUCTION_FURNACE -> TENConstants.PROGRESS_ARROW_INDUCTION_FURNACE_BG;
+            case MachineType.PSIONICANT -> TENConstants.PROGRESS_ARROW_PSIONICANT_BG;
+            case MachineType.ENCHANTMENT_FLUSHER -> TENConstants.PROGRESS_ARROW_SMELTER_BG;
+            // 仅 7 台 Modular 机器有 progressArrow 素材；其他机器走旧版 progressGauge（HANDLER 素材）。
+            // 误用 progressGaugeModular 时 fail-fast（设计如此，勿改为静默返回空纹理）。
+            default -> throw new IllegalStateException("No modular progress arrow background for machine type " + machineType);
+        };
+    }
+
+    /**
+     * 机器类型 → modular 进度箭头填充常量映射（集中一处）。
+     */
+    private static Identifier progressArrowFill(int machineType) {
+        return switch (machineType) {
+            case MachineType.FURNACE -> TENConstants.PROGRESS_ARROW_SMELTER_FILL;
+            case MachineType.PULVERIZER -> TENConstants.PROGRESS_ARROW_PULVERIZER_FILL;
+            case MachineType.COMPRESSOR -> TENConstants.PROGRESS_ARROW_COMPRESSOR_FILL;
+            case MachineType.REFINER -> TENConstants.PROGRESS_ARROW_REFINER_FILL;
+            case MachineType.INDUCTION_FURNACE -> TENConstants.PROGRESS_ARROW_INDUCTION_FURNACE_FILL;
+            case MachineType.PSIONICANT -> TENConstants.PROGRESS_ARROW_PSIONICANT_FILL;
+            case MachineType.ENCHANTMENT_FLUSHER -> TENConstants.PROGRESS_ARROW_SMELTER_FILL;
+            // 仅 7 台 Modular 机器有 progressArrow 素材；其他机器走旧版 progressGauge（HANDLER 素材）。
+            // 误用 progressGaugeModular 时 fail-fast（设计如此，勿改为静默返回空纹理）。
+            default -> throw new IllegalStateException("No modular progress arrow fill for machine type " + machineType);
+        };
+    }
+
     public static RevealProgressBar progressGauge(CmMachineBlockEntity machine, int x, int y, int width, int height, int xOff, int yOff, boolean showPercent) {
         var filled = SpriteTexture.of(HANDLER).setSprite(xOff, yOff + height, width, height);
         var progress = absolute(new RevealProgressBar(filled), x, y, width, height);
@@ -273,8 +446,28 @@ public final class TENMachineBlockUIFactory {
         return progress;
     }
 
+    /**
+     * Creates a fluid gauge with no background.
+     * <p>
+     * Non-modular machines (e.g. Condenser) keep the legacy behavior: their
+     * background PNG already draws the fluid tank frame, so adding the modular
+     * FLUID_SLOT texture would cause a double border.
+     */
     public static FluidSlot fluidGauge(CmMachineBlockEntity machine, int x, int y, int width, int height, int tankIndex) {
         return fluidGaugeBase(machine, x, y, width, height, tankIndex, IGuiTexture.EMPTY);
+    }
+
+    /**
+     * Creates a fluid gauge with the modular fluid-slot background
+     * ({@link TENConstants#FLUID_SLOT}, 18x50).
+     * <p>
+     * Modular-only: the 6 modular machines render on the blank
+     * {@link TENConstants#MACHINE_GUI} background, so the tank frame must come
+     * from the modular texture family.
+     */
+    public static FluidSlot fluidGaugeModular(CmMachineBlockEntity machine, int x, int y, int width, int height, int tankIndex) {
+        return fluidGaugeBase(machine, x, y, width, height, tankIndex,
+                SpriteTexture.of(TENConstants.FLUID_SLOT).setSprite(0, 0, 18, 50));
     }
 
     /**
@@ -290,12 +483,13 @@ public final class TENMachineBlockUIFactory {
      * @param machine the furnace block entity
      * @param x       horizontal position
      * @param y       vertical position
-     * @param width   slot width (typically 14)
-     * @param height  slot height (typically 46)
+     * @param width   slot width (typically 18)
+     * @param height  slot height (typically 50)
      * @return a configured FluidSlot bound to tank index 0
      */
     public static FluidSlot createXpFluidSlot(CmMachineBlockEntity machine, int x, int y, int width, int height) {
-        return fluidGauge(machine, x, y, width, height, 0);
+        // XP 槽为标准 18x50 流体槽（refiner 样式）→ 使用 modular FLUID_SLOT 背景，tank 0 绑定保持
+        return fluidGaugeModular(machine, x, y, width, height, 0);
     }
 
     public static FluidSlot fluidGaugeWithBackground(CmMachineBlockEntity machine, int x, int y, int width, int height, int tankIndex) {
@@ -459,14 +653,9 @@ public final class TENMachineBlockUIFactory {
 
     public static Identifier backgroundFor(int machineType) {
         return switch (machineType) {
-            case MachineType.FURNACE -> TEN.id("textures/gui/one_to_one.png");
-            case MachineType.PULVERIZER -> TEN.id("textures/gui/pulverizer.png");
-            case MachineType.COMPRESSOR -> TEN.id("textures/gui/compressor.png");
-            case MachineType.REFINER -> TEN.id("textures/gui/one_to_one_fluid.png");
-            case MachineType.INDUCTION_FURNACE -> TEN.id("textures/gui/three_to_one.png");
-            case MachineType.PSIONICANT -> TEN.id("textures/gui/two_to_one.png");
+            // D1/P3：七台 Modular 机器统一使用空面板 machine_gui.png（部件素材由 modular 素材族绘制）
+            case MachineType.FURNACE, MachineType.PULVERIZER, MachineType.COMPRESSOR, MachineType.REFINER, MachineType.INDUCTION_FURNACE, MachineType.PSIONICANT, MachineType.ENCHANTMENT_FLUSHER -> TENConstants.MACHINE_GUI;
             case MachineType.MATTER_CONDENSER -> TEN.id("textures/gui/matter_condenser.png");
-            case MachineType.ENCHANTMENT_FLUSHER -> TEN.id("textures/gui/enchantment_flusher.png");
             case MachineType.BEACON -> TEN.id("textures/gui/beacon_simulator.png");
             case MachineType.MOB_RIPPER -> TEN.id("textures/gui/mob_ripper.png");
             case MachineType.QUARRY -> TEN.id("textures/gui/quarry.png");

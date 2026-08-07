@@ -7,12 +7,14 @@ public class TENConstants {
     public static final Identifier GUI_HANDLER = TEN.id("textures/gui/handler.png");
     public static final Identifier JEI_HANDLER_1 = TEN.id("textures/gui/jei_handler1.png");
     public static final Identifier JEI_HANDLER_2 = TEN.id("textures/gui/jei_handler2.png");
+    public static final Identifier MACHINE_GUI = TEN.id("textures/gui/machine_gui.png"); // 176x166 内容于 256x256 画布
 
     // Modular 素材族（JEI 兼容层与 XEI 共享布局引擎专用）
     public static final Identifier JEI_HANDLER_MODULAR = TEN.id("textures/gui/modular/jei_handler.png"); // 底图：上层
                                                                                                          // 150x50，精炼机下层
                                                                                                          // 170x50
     public static final Identifier ITEM_SLOT_SMALL = TEN.id("textures/gui/modular/item_slot_small.png"); // 18x18
+    public static final Identifier ITEM_SLOT_LARGE = TEN.id("textures/gui/modular/item_slot_large.png"); // 26x26
     public static final Identifier FLUID_SLOT = TEN.id("textures/gui/modular/fluid_slot.png"); // 18x50
     public static final Identifier ENERGY_GAUGE_BG = TEN.id("textures/gui/modular/energy_gauge_background.png"); // 14x46
     public static final Identifier ENERGY_GAUGE_FILL = TEN.id("textures/gui/modular/energy_gauge_fill.png"); // 14x46
@@ -28,6 +30,10 @@ public class TENConstants {
     public static final Identifier PROGRESS_ARROW_INDUCTION_FURNACE_FILL = TEN.id("textures/gui/modular/progress_arrow_induction_furnace_fill.png"); // 22x16
     public static final Identifier PROGRESS_ARROW_PSIONICANT_BG = TEN.id("textures/gui/modular/progress_arrow_psionicant_background.png"); // 22x16
     public static final Identifier PROGRESS_ARROW_PSIONICANT_FILL = TEN.id("textures/gui/modular/progress_arrow_psionicant_fill.png"); // 22x16
+    public static final Identifier PROGRESS_ARROW_MINI_COMPRESSOR_BG = TEN.id("textures/gui/modular/progress_arrow_mini_compressor_background.png"); // 8x54
+                                                                                                                                                     // 整件：顶尖朝上=目标在上
+    public static final Identifier PROGRESS_ARROW_MINI_ENCFLU_BG = TEN.id("textures/gui/modular/progress_arrow_mini_encflu_background.png"); // 8x54
+                                                                                                                                             // 整件：尖朝下=目标在下
     public static final Identifier FUEL_GAUGE_01_BG = TEN.id("textures/gui/modular/fuel_gauge_01_background.png"); // 13x13
     public static final Identifier FUEL_GAUGE_01_FILL = TEN.id("textures/gui/modular/fuel_gauge_01_fill.png"); // 13x13
 
