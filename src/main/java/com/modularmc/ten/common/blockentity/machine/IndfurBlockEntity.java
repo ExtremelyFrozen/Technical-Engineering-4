@@ -60,14 +60,14 @@ public class IndfurBlockEntity extends RecipeMachineBlockEntity {
     @Override
     public ModularUI createUI(BlockUIMenuType.BlockUIHolder holder) {
         return buildMachineUI(holder, TENMachineBlockUIFactory.backgroundFor(machineType()), root -> {
-            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 0, 33, 20));
-            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 1, 51, 20));
-            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 2, 69, 20));
-            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 3, 127, 34));
+            // 3 输入横排（30/48/66，组宽 54），y=32 中线 41 与能量条对齐；输出大槽
+            root.addChild(TENMachineBlockUIFactory.machineSlotModular(this, 0, 30, 32));
+            root.addChild(TENMachineBlockUIFactory.machineSlotModular(this, 1, 48, 32));
+            root.addChild(TENMachineBlockUIFactory.machineSlotModular(this, 2, 66, 32));
+            root.addChild(TENMachineBlockUIFactory.machineSlotLarge(this, 3, 122, 28));
         }, root -> {
-            root.addChild(TENMachineBlockUIFactory.energyGauge(this, 9, 18, 14, 46, 0, 0, true));
-            root.addChild(TENMachineBlockUIFactory.fuelGauge(this, 54, 48, 13, 13, 14, 0, false));
-            root.addChild(TENMachineBlockUIFactory.progressGauge(this, 93, 35, 22, 16, 27, 0, false));
+            root.addChild(TENMachineBlockUIFactory.energyGaugeModular(this, 8, 18, true));
+            root.addChild(TENMachineBlockUIFactory.progressGaugeModular(this, 92, 33, false));
         });
     }
 

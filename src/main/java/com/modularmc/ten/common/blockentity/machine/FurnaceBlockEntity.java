@@ -77,15 +77,15 @@ public class FurnaceBlockEntity extends ProcessingMachineBlockEntity {
     @Override
     public ModularUI createUI(BlockUIMenuType.BlockUIHolder holder) {
         return buildMachineUI(holder, TENMachineBlockUIFactory.backgroundFor(machineType()), root -> {
-            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 0, 43, 20));
-            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 1, 115, 34));
+            root.addChild(TENMachineBlockUIFactory.machineSlotModular(this, 0, 39, 32));
+            root.addChild(TENMachineBlockUIFactory.machineSlotLarge(this, 1, 113, 28));
         }, root -> {
-            root.addChild(TENMachineBlockUIFactory.energyGauge(this, 9, 18, 14, 46, 0, 0, true));
-            root.addChild(TENMachineBlockUIFactory.fuelGauge(this, 45, 48, 13, 13, 14, 0, false));
-            root.addChild(TENMachineBlockUIFactory.progressGauge(this, 76, 35, 22, 16, 27, 0, false));
+            root.addChild(TENMachineBlockUIFactory.energyGaugeModular(this, 8, 18, true));
+            root.addChild(TENMachineBlockUIFactory.progressGaugeModular(this, 74, 33, false));
             // XP fluid gauge — always visible, no dependency on Knowledge.
             // Tank is always present; Knowledge only controls XP production.
-            root.addChild(TENMachineBlockUIFactory.createXpFluidSlot(this, 8, 66, 14, 46));
+            // 契约：createXpFluidSlot(143,17,18,50) — 输出大槽(113,28)右缘139 右侧 x=143（间隔4）、主区垂直对齐 y=17（中线42≈41.5）
+            root.addChild(TENMachineBlockUIFactory.createXpFluidSlot(this, 143, 17, 18, 50));
         });
     }
 

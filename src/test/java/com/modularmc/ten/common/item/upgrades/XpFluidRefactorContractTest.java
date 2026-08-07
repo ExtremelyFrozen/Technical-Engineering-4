@@ -368,22 +368,24 @@ class XpFluidRefactorContractTest {
             assertTrue(sourceFile.exists());
             var lines = Files.readAllLines(sourceFile.toPath());
 
-            boolean hasXpGaugeAt66 = false;
+            boolean hasXpGaugeAt143x17 = false;
             for (String line : lines) {
-                if (line.contains("createXpFluidSlot") && line.contains("66")) {
-                    hasXpGaugeAt66 = true;
+                if (line.contains("createXpFluidSlot") && line.contains("143") && line.contains("17")) {
+                    hasXpGaugeAt143x17 = true;
                     break;
                 }
             }
-            assertTrue(hasXpGaugeAt66,
-                    "P3: XP fluid gauge should be positioned at y=66 (below energy gauge ending at y=64)");
+            assertTrue(hasXpGaugeAt143x17,
+                    "P4: XP fluid gauge should be at (143,17,18,50) — right of output slot " +
+                    "(113,28,26x26) right edge 139, vertically centered with main area (mid 42≈41.5)");
         }
 
         @Test
         void gaugePositions_noOverlap() {
-            assertTrue(66 >= 64, "XP gauge y=66 must be >= energy gauge bottom y=64");
-            assertTrue(66 >= 61, "XP gauge y=66 must be >= fuel gauge bottom y=61");
-            assertTrue(22 <= 45, "XP gauge right edge (x=22) <= fuel gauge left edge (x=45)");
+            // XP 槽 (143,17,18,50)：x 143~161, y 17~67
+            assertTrue(143 >= 22, "XP gauge x=143 must be >= energy gauge right edge x=22 (8+14)");
+            assertTrue(143 >= 139, "XP gauge x=143 must be >= output slot right edge x=139 (113+26), gap=4");
+            assertTrue(161 <= 176, "XP gauge right edge 161 must be inside 176-wide panel");
         }
     }
 

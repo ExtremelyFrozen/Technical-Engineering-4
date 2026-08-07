@@ -60,15 +60,15 @@ public class PulverizerBlockEntity extends RecipeMachineBlockEntity {
     @Override
     public ModularUI createUI(BlockUIMenuType.BlockUIHolder holder) {
         return buildMachineUI(holder, TENMachineBlockUIFactory.backgroundFor(machineType()), root -> {
-            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 0, 43, 20));
-            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 1, 112, 25));
-            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 2, 130, 25));
-            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 3, 112, 43));
-            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 4, 130, 43));
+            // 2x2 输出块作为整体（104~142 x 25~61），输入 x=36, y=32（中线 41 与能量条对齐）
+            root.addChild(TENMachineBlockUIFactory.machineSlotModular(this, 0, 36, 32));
+            root.addChild(TENMachineBlockUIFactory.machineSlotModular(this, 1, 104, 25));
+            root.addChild(TENMachineBlockUIFactory.machineSlotModular(this, 2, 122, 25));
+            root.addChild(TENMachineBlockUIFactory.machineSlotModular(this, 3, 104, 43));
+            root.addChild(TENMachineBlockUIFactory.machineSlotModular(this, 4, 122, 43));
         }, root -> {
-            root.addChild(TENMachineBlockUIFactory.energyGauge(this, 9, 18, 14, 46, 0, 0, true));
-            root.addChild(TENMachineBlockUIFactory.fuelGauge(this, 45, 48, 13, 13, 14, 0, false));
-            root.addChild(TENMachineBlockUIFactory.progressGauge(this, 76, 35, 22, 16, 27, 32, false));
+            root.addChild(TENMachineBlockUIFactory.energyGaugeModular(this, 8, 18, true));
+            root.addChild(TENMachineBlockUIFactory.progressGaugeModular(this, 68, 33, false));
         });
     }
 
