@@ -20,8 +20,9 @@ dependencies {
     compileOnly(forge.bundles.jei)
     // Phase 4/5: compileOnly(forge.emi)
 
-    // Phase 4/5: WAILA-likes
-    // compileOnly(forge.jade)
+    // Jade (WAILA) — 编译期集成：频道接入状态高亮（ChannelJadeProvider）。
+    // 编译期 compileOnly + 运行期 clientLocalRuntime（下方已启用），两处坐标相同。
+    compileOnly(forge.jade)
 
     // Phase 4/5: Rendering / Optimizations
     // compileOnly(forge.sodium)
