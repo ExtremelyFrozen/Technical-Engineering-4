@@ -2,6 +2,9 @@
 package com.modularmc.ten.api.blockentity;
 
 import com.modularmc.ten.api.capability.MachineEnergyStorage;
+import com.modularmc.ten.common.channel.ChannelKey;
+import com.modularmc.ten.common.channel.ChannelType;
+import com.modularmc.ten.common.channel.SharedStorage;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -252,79 +255,84 @@ class P3NetworkContractTest {
     class P3_T4_ChannelVerification {
 
         static final String CHANNEL_SRC = "com/modularmc/ten/common/blockentity/channel/ChannelEnergyBlockEntity.java";
+        static final String ABSTRACT_SRC = "com/modularmc/ten/common/blockentity/channel/AbstractChannelBlockEntity.java";
         static final String NETWORKS_SRC = "com/modularmc/ten/common/blockentity/TransferNetworks.java";
 
         @Test
-        void channelUsesMoveEnergyAtomicTransfer() throws Exception {
+        void channelHasNoPerTickTransfer() throws Exception {
+            // 末影箱模式：零 tick 传输——接入后槽位直接绑定共享存储，tick 无 move* 调用
             var src = readMainSource(CHANNEL_SRC);
-            // Channel uses TransferNetworks.moveEnergy for atomic simulate-then-execute
-            assertTrue(src.contains("TransferNetworks.moveEnergy"),
-                    "P3-T4: Channel must use TransferNetworks.moveEnergy for atomic transfer");
+            assertFalse(src.contains("TransferNetworks.moveEnergy"),
+                    "P3-T4: Channel tick must NOT use TransferNetworks.moveEnergy (zero-tick transfer)");
         }
 
         @Test
-        void channelRateLimitedByMaxReceiveMaxExtract() throws Exception {
+        void channelBindsSharedStorageOnJoin() throws Exception {
+            // 接入态面能力指向共享 handler（getEnergyStorage 覆盖解析共享存储）
             var src = readMainSource(CHANNEL_SRC);
-            // Input uses maxReceiveEnergy, output uses maxExtractEnergy
-            assertTrue(src.contains("maxReceiveEnergy") && src.contains("maxExtractEnergy"),
-                    "P3-T4: Channel must use maxReceiveEnergy/maxExtractEnergy as rate limits");
+            assertTrue(src.contains("sharedStorage()"),
+                    "P3-T4: Channel must resolve shared storage on join");
+            assertTrue(src.contains("hasFaceCapabilityEnergy"),
+                    "P3-T4: Channel must gate face capability by joined state");
         }
 
         @Test
-        void channelUsesRoundRobinForInputs() throws Exception {
+        void channelRemovedRoundRobin() throws Exception {
+            // 轮询已移除：频道不再逐 tick 选择输入/输出
             var src = readMainSource(CHANNEL_SRC);
-            assertTrue(src.contains("nextRoundRobin"),
-                    "P3-T4: Channel must use round-robin for input/output selection");
+            assertFalse(src.contains("nextRoundRobin"),
+                    "P3-T4: Channel must NOT use nextRoundRobin (polling removed)");
         }
 
         @Test
-        void moveEnergySimulateThenExecute() throws Exception {
+        void moveEnergyRemovedFromTransferNetworks() throws Exception {
+            // moveEnergy/moveFluid 已删除（连接器/频道轮询废弃）；moveItems 保留供 Pipe 使用
             var src = readMainSource(NETWORKS_SRC);
-            // moveEnergy must: simulate extract → simulate receive → min → real extract → real receive
-            assertTrue(src.contains("extractEnergy(limit, true)"),
-                    "P3-T4: moveEnergy must simulate extract first");
-            assertTrue(src.contains("receiveEnergy(extracted, true)"),
-                    "P3-T4: moveEnergy must simulate receive before executing");
-            assertTrue(src.contains("extractEnergy(moved, false)"),
-                    "P3-T4: moveEnergy must execute real extract after simulation");
-            assertTrue(src.contains("receiveEnergy(drained, false)") ||
-                            src.contains("receiveEnergy(moved, false)"),
-                    "P3-T4: moveEnergy must execute real receive after extraction");
+            assertFalse(src.contains("public static int moveEnergy"),
+                    "P3-T4: moveEnergy must be removed from TransferNetworks");
+            assertFalse(src.contains("public static int moveFluid"),
+                    "P3-T4: moveFluid must be removed from TransferNetworks");
+            assertTrue(src.contains("public static int moveItems"),
+                    "P3-T4: moveItems must be retained for Pipe");
         }
 
         @Test
-        void moveEnergyGuardsZeroLimits() throws Exception {
+        void moveItemsRetainedForPipe() throws Exception {
+            // Pipe 是 moveItems 的生产调用方
+            var pipeSrc = readMainSource("com/modularmc/ten/common/blockentity/PipeBlockEntity.java");
+            assertTrue(pipeSrc.contains("TransferNetworks.moveItems"),
+                    "P3-T4: Pipe must use TransferNetworks.moveItems");
+        }
+
+        @Test
+        void moveItemsGuardsZeroLimits() throws Exception {
+            // moveItems 保留 guard：limit<=0 短路
             var src = readMainSource(NETWORKS_SRC);
-            assertTrue(src.contains("if (limit <= 0") || src.contains("if (limit <= 0)"),
-                    "P3-T4: moveEnergy must guard against zero/negative limit");
-            assertTrue(src.contains("!from.canExtract()") || src.contains("!from.canExtract()"),
-                    "P3-T4: moveEnergy must check from.canExtract()");
-            assertTrue(src.contains("!to.canReceive()") || src.contains("!to.canReceive()"),
-                    "P3-T4: moveEnergy must check to.canReceive()");
+            assertTrue(src.contains("if (limit <= 0)"),
+                    "P3-T4: moveItems must guard against zero/negative limit");
         }
 
         @Test
         void channelInitialFaceModeIsOff() throws Exception {
-            var src = readMainSource(
-                    "com/modularmc/ten/common/blockentity/channel/AbstractChannelBlockEntity.java");
+            var src = readMainSource(ABSTRACT_SRC);
             assertTrue(src.contains("return FaceOption.OFF"),
                     "P3-T4: Channel initial face mode should be OFF (no auto-connection)");
         }
 
         @Test
-        void channelDoesNotProduceOrConsumeEnergy() throws Exception {
-            // Channel only moves energy via TransferNetworks.moveEnergy.
-            // It should NOT generate or consume energy internally.
+        void channelTickDoesNotProduceOrConsumeEnergy() throws Exception {
+            // 频道 tick 只做 doBaseData + 镜像修正 + setActive，不直接生成/消耗能量
+            // （join/leave 的一次性回流 pushLocalToShared 不属于 tick 轮询路径）
             var src = readMainSource(CHANNEL_SRC);
-            // The tick() should not call energyStorage.receiveEnergy or extractEnergy directly
-            // (only through moveEnergy)
-            assertFalse(src.contains("energyStorage.receiveEnergy("),
-                    "P3-T4: Channel must NOT call energyStorage.receiveEnergy directly");
-            assertFalse(src.contains("energyStorage.extractEnergy("),
-                    "P3-T4: Channel must NOT call energyStorage.extractEnergy directly");
+            int tickIdx = src.indexOf("public void tick()");
+            assertTrue(tickIdx >= 0, "Channel tick method must exist");
+            String tickBody = src.substring(tickIdx, Math.min(src.length(), tickIdx + 400));
+            assertFalse(tickBody.contains("energyStorage.receiveEnergy("),
+                    "P3-T4: Channel tick must NOT receive energy directly");
+            assertFalse(tickBody.contains("energyStorage.extractEnergy("),
+                    "P3-T4: Channel tick must NOT extract energy directly");
         }
     }
-
     // ════════════════════════════════════════════════════════════════════
     // P3-T5: CellBlockEntity 验证
     // ════════════════════════════════════════════════════════════════════
@@ -640,6 +648,327 @@ class P3NetworkContractTest {
         }
     }
 
+    // ════════════════════════════════════════════════════════════════════
+    // P3-T8: 频道末影箱模式（ChannelRegistry/SharedStorage）验证
+    // ════════════════════════════════════════════════════════════════════
+
+    @Nested
+    class P3_T8_ChannelEnderVerification {
+
+        static final String REGISTRY_SRC = "com/modularmc/ten/common/channel/ChannelRegistry.java";
+        static final String SHARED_SRC = "com/modularmc/ten/common/channel/SharedStorage.java";
+        static final String ABSTRACT_SRC = "com/modularmc/ten/common/blockentity/channel/AbstractChannelBlockEntity.java";
+
+        @Test
+        void channelKeyUniquenessByType() {
+            // 注册表键唯一：同名称不同类型 = 不同频道（物品/流体/能量按类型独立）
+            var item = new ChannelKey("iron", ChannelType.ITEM);
+            var fluid = new ChannelKey("iron", ChannelType.FLUID);
+            var energy = new ChannelKey("iron", ChannelType.ENERGY);
+            assertNotEquals(item, fluid, "same name, different type must be distinct keys");
+            assertNotEquals(item, energy, "same name, different type must be distinct keys");
+            assertNotEquals(fluid, energy, "same name, different type must be distinct keys");
+            assertNotEquals(new ChannelKey("copper", ChannelType.ITEM), item, "different name must be distinct");
+        }
+
+        @Test
+        void sharedStorageItemCapacityScalesWithMembers() {
+            // 容量公式：物品每槽堆叠 = 64 × 成员数，槽位固定 9
+            var storage = SharedStorage.forItem();
+            assertEquals(9, storage.getItemHandler().getSlots(), "item channel must have 9 fixed slots");
+            storage.refreshMemberCount(3);
+            assertEquals(192, storage.getItemHandler().getSlotLimit(0), "64 × 3 = 192");
+            storage.refreshMemberCount(1);
+            assertEquals(64, storage.getItemHandler().getSlotLimit(0), "64 × 1 = 64");
+        }
+
+        @Test
+        void sharedStorageFluidCapacityScalesWithMembers() throws Exception {
+            // FluidTank 构造依赖 MC bootstrap（FluidInstance/BuiltInRegistries），纯 JUnit 无法
+            // 实例化流体共享存储 → 仅源码断言容量公式与固定 tank 数
+            var src = readMainSource(SHARED_SRC);
+            assertTrue(src.contains("FLUID_TANKS"), "fluid channel must have 2 fixed tanks");
+            assertTrue(src.contains("BASE_FLUID_CAPACITY * n"), "fluid capacity = 2000 × members");
+            assertTrue(src.contains("tank.getFluidAmount() <= capacity"),
+                    "fluid shrink must be refused when stored exceeds new capacity");
+        }
+
+        @Test
+        void sharedStorageEnergyCapacityScalesWithMembers() {
+            // 容量公式：能量 = kFE(10) × 成员数
+            var storage = SharedStorage.forEnergy();
+            storage.refreshMemberCount(5);
+            assertEquals(50000, storage.getEnergy().getMaxEnergyStored(), "kFE(10) × 5 = 50000");
+        }
+
+        @Test
+        void setChangeListenerSurvivesNullBackendsPerType() {
+            // 回归（F1）：setChangeListener 必须按类型非空守卫——ITEM 无 energy、
+            // ENERGY 无 itemHandler，任一类型挂监听都不得 NPE（ChannelRegistry 在
+            // join 时对每种类型都调用 setChangeListener）
+            var item = SharedStorage.forItem();
+            item.setChangeListener(() -> {});
+            item.refreshMemberCount(1);
+
+            var energy = SharedStorage.forEnergy();
+            energy.setChangeListener(() -> {});
+            energy.refreshMemberCount(1);
+        }
+
+        @Test
+        void setChangeListenerGuardsNullHandlersByType() throws Exception {
+            // FLUID 无法在纯 JUnit 实例化（FluidTank 构造依赖 MC bootstrap）→ 源码级
+            // 断言：setChangeListener 对可能为 null 的 itemHandler/energy 有非空守卫
+            var src = readMainSource(SHARED_SRC);
+            int idx = src.indexOf("public void setChangeListener(Runnable listener)");
+            assertTrue(idx >= 0, "P3-T8: setChangeListener must exist");
+            String body = src.substring(idx, idx + 500);
+            assertTrue(body.contains("itemHandler != null"),
+                    "P3-T8: itemHandler listener must be null-guarded (FLUID/ENERGY have no itemHandler)");
+            assertTrue(body.contains("energy != null"),
+                    "P3-T8: energy listener must be null-guarded (ITEM has no energy)");
+        }
+
+        @Test
+        void energyCapacityRefusesShrinkWhenStoredExceedsNewCapacity() {
+            // 拒绝缩容：成员减少且 stored > 新容量时保持当前容量（内容不丢硬约束）
+            var storage = SharedStorage.forEnergy();
+            storage.refreshMemberCount(3);
+            storage.getEnergy().setEnergy(15000);
+            storage.refreshMemberCount(1);
+            assertEquals(15000, storage.getEnergy().getEnergyStored(), "stored must not be truncated");
+            assertEquals(30000, storage.getEnergy().getMaxEnergyStored(), "capacity must be kept until drained");
+            // 清空后允许缩容
+            storage.getEnergy().setEnergy(0);
+            storage.refreshMemberCount(1);
+            assertEquals(10000, storage.getEnergy().getMaxEnergyStored(), "capacity shrinks once empty");
+        }
+
+        @Test
+        void registryJoinIsIdempotent() throws Exception {
+            var src = readMainSource(REGISTRY_SRC);
+            assertTrue(src.contains("if (!set.add(memberId))"),
+                    "P3-T8: join must be idempotent (repeat join returns false, no double count)");
+        }
+
+        @Test
+        void registryLeaveRecomputesCapacity() throws Exception {
+            var src = readMainSource(REGISTRY_SRC);
+            assertTrue(src.contains("refreshMemberCount(set.size())"),
+                    "P3-T8: leave must recompute shared capacity from remaining member count");
+        }
+
+        @Test
+        void registryPersistsViaOverworldSavedData() throws Exception {
+            // 存档级持久化：主世界 SavedDataStorage 挂载（跨维度全局共享）+ 懒加载
+            var src = readMainSource(REGISTRY_SRC);
+            assertTrue(src.contains("extends SavedData"),
+                    "P3-T8: registry must be archive-level SavedData");
+            assertTrue(src.contains("server.overworld().getDataStorage()"),
+                    "P3-T8: registry must attach to overworld data storage (cross-dimension)");
+            assertTrue(src.contains("computeIfAbsent"),
+                    "P3-T8: registry must lazy-load via computeIfAbsent");
+            assertTrue(src.contains("setDirty()"),
+                    "P3-T8: registry must event-driven save via setDirty");
+        }
+
+        @Test
+        void registryListsChannelsByType() throws Exception {
+            var src = readMainSource(REGISTRY_SRC);
+            assertTrue(src.contains("listChannels") && src.contains("key.type() == type"),
+                    "P3-T8: directory listing must filter by channel type");
+        }
+
+        @Test
+        void joinAndLeavePushLocalToShared() throws Exception {
+            // 回流：join 本地内容并入共享；leave 本地内容优先回频道（满留本地）
+            var src = readMainSource(ABSTRACT_SRC);
+            assertTrue(src.contains("protected abstract void pushLocalToShared();"),
+                    "P3-T8: pushLocalToShared must exist per storage type");
+            int joinIdx = src.indexOf("public boolean join(String name)");
+            assertTrue(joinIdx >= 0);
+            String joinBody = src.substring(joinIdx, Math.min(src.length(), joinIdx + 700));
+            assertTrue(joinBody.contains("pushLocalToShared()"),
+                    "P3-T8: join must merge local content into shared");
+            int leaveIdx = src.indexOf("public boolean leave()");
+            assertTrue(leaveIdx >= 0);
+            String leaveBody = src.substring(leaveIdx, Math.min(src.length(), leaveIdx + 500));
+            assertTrue(leaveBody.contains("pushLocalToShared()"),
+                    "P3-T8: leave must drain local content back to shared");
+        }
+
+        @Test
+        void channelIdPersistedAndClientSynced() throws Exception {
+            var src = readMainSource(ABSTRACT_SRC);
+            assertTrue(src.contains("@Persisted") && src.contains("@DescSynced"),
+                    "P3-T8: channelId must be persisted and client-synced");
+            assertTrue(src.contains("String channelId"),
+                    "P3-T8: channelId field must exist");
+        }
+
+        @Test
+        void sharedCapacityFormulaPresent() throws Exception {
+            var src = readMainSource(SHARED_SRC);
+            assertTrue(src.contains("BASE_ITEM_STACK * n"),
+                    "P3-T8: item stack limit = 64 × members");
+            assertTrue(src.contains("BASE_FLUID_CAPACITY * n"),
+                    "P3-T8: fluid capacity = 2000 × members");
+            assertTrue(src.contains("BASE_ENERGY_CAPACITY * n"),
+                    "P3-T8: energy capacity = kFE(10) × members");
+            assertTrue(src.contains("setDynamicSlotLimit"),
+                    "P3-T8: item capacity must use dynamic slot limit");
+        }
+
+        @Test
+        void shrinkRefusalGuardPresent() throws Exception {
+            // 拒绝缩容守卫（源码级）：流体/能量仅在 stored ≤ 新容量时应用缩容
+            var src = readMainSource(SHARED_SRC);
+            assertTrue(src.contains("tank.getFluidAmount() <= capacity"),
+                    "P3-T8: fluid shrink must be refused when stored exceeds new capacity");
+            assertTrue(src.contains("energy.getEnergyStored() <= capacity"),
+                    "P3-T8: energy shrink must be refused when stored exceeds new capacity");
+        }
+
+        @Test
+        void channelSlotAllowsOverstackUpToDynamicLimit() throws Exception {
+            // GUI 堆叠（P3-T8 回归）：共享槽位上限 64×成员数，但 Slot.safeInsert 经
+            // getMaxStackSize(stack)=min(槽位上限, 物品原版 64) 会把 GUI 堆叠钏制在 64 ——
+            // 频道槽必须覆写 getMaxStackSize(ItemStack) 返回动态槽位上限，才能堆叠到 192。
+            var src = readMainSource("com/modularmc/ten/common/gui/TENMachineBlockUIFactory.java");
+            int idx = src.indexOf("public static ItemSlot channelItemSlot");
+            assertTrue(idx >= 0, "P3-T8: channelItemSlot must exist");
+            String body = src.substring(idx, Math.min(src.length(), idx + 900));
+            assertTrue(body.contains("getMaxStackSize(net.minecraft.world.item.ItemStack stack)"),
+                    "P3-T8: channel slot must override getMaxStackSize(ItemStack)");
+            assertTrue(body.contains("return getMaxStackSize();"),
+                    "P3-T8: channel slot override must return the facade's dynamic slot limit");
+        }
+
+        @Test
+        void facadeReportsDynamicLimitOnClientFromSyncedMembers() throws Exception {
+            // 客户端门面（P3-T8 回归）：resolve() 在客户端落到本地缓冲（固定 64），若槽位上限仍
+            // 按本地缓冲取，客户端点击/快速移动模拟会与服务器容量不一致 —— 必须按同步的成员数
+            // 推算 64×成员数。
+            var facadeSrc = readMainSource("com/modularmc/ten/common/blockentity/channel/ChannelItemHandlerFacade.java");
+            assertTrue(facadeSrc.contains("BASE_ITEM_STACK * Math.max(1, channel.joinedMemberCount())"),
+                    "P3-T8: client facade slot limit must be 64 × synced member count");
+            assertTrue(facadeSrc.contains("channel.isJoined()"),
+                    "P3-T8: client facade dynamic limit must only apply when joined");
+        }
+
+        @Test
+        void joinedMemberCountSyncedAndRefreshedPerTick() throws Exception {
+            // 成员数同步（P3-T8 回归）：@DescSynced 推送客户端；join 立即写入、tick 持续刷新，
+            // 其它方块新接入时本端 UI 上限随之增长。
+            var src = readMainSource(ABSTRACT_SRC);
+            assertTrue(src.contains("@DescSynced") && src.contains("int joinedMemberCount"),
+                    "P3-T8: joinedMemberCount must be DescSynced");
+            assertTrue(src.contains("joinedMemberCount = reg.memberCount(key)"),
+                    "P3-T8: join must write member count from registry");
+            assertTrue(src.contains("joinedMemberCount = 0"),
+                    "P3-T8: leave must clear member count");
+            assertTrue(src.contains("refreshJoinedMemberCount()"),
+                    "P3-T8: tick must refresh joined member count");
+        }
+
+        @Test
+        void removeDeletesOnlyEmptyChannels() throws Exception {
+            // 删除空频道：remove 校验共享内容全空 + 成员集为空，通过则两 map 同步清理 + setDirty
+            var src = readMainSource(REGISTRY_SRC);
+            assertTrue(src.contains("public boolean remove(ChannelKey key)"),
+                    "P3-T8: remove must exist on ChannelRegistry");
+            assertTrue(src.contains("storage.isEmpty()"),
+                    "P3-T8: remove must refuse non-empty shared storage");
+            assertTrue(src.contains("members.getOrDefault(key, Set.of()).isEmpty()"),
+                    "P3-T8: remove must refuse channels with remaining members");
+            assertTrue(src.contains("storages.remove(key)") && src.contains("members.remove(key)"),
+                    "P3-T8: removal must clean both storages and members maps");
+            assertTrue(src.contains("setDirty()"),
+                    "P3-T8: deletion must mark registry dirty for save");
+            // SharedStorage 提供内容空判定（频道删除的前置校验）
+            var shared = readMainSource(SHARED_SRC);
+            assertTrue(shared.contains("public boolean isEmpty()"),
+                    "P3-T8: SharedStorage must expose isEmpty() for delete guard");
+        }
+
+        @Test
+        void removeRefusesNonEmptyChannels() throws Exception {
+            // 拒绝非空：共享存储有内容 → remove 短路返回 false（内容不丢硬约束）；
+            // 非空守卫必须位于删除动作之前。
+            var src = readMainSource(REGISTRY_SRC);
+            int idx = src.indexOf("public boolean remove(ChannelKey key)");
+            assertTrue(idx >= 0, "P3-T8: remove must exist");
+            String body = src.substring(idx, Math.min(src.length(), idx + 700));
+            assertTrue(body.contains("return false"),
+                    "P3-T8: non-empty channel must be refused without deletion");
+            int guardIdx = body.indexOf("return false");
+            int removeIdx = body.indexOf("storages.remove(key)");
+            assertTrue(removeIdx >= 0, "P3-T8: deletion must exist after guard");
+            assertTrue(guardIdx >= 0 && guardIdx < removeIdx,
+                    "P3-T8: non-empty guard must short-circuit before deletion");
+            // 行为验证：isEmpty 对能量内容敏感（纯 JUnit 可实例化）
+            var storage = SharedStorage.forEnergy();
+            assertTrue(storage.isEmpty(), "fresh channel must be empty");
+            storage.getEnergy().setEnergy(100);
+            assertFalse(storage.isEmpty(), "stored energy must make channel non-empty");
+            storage.getEnergy().setEnergy(0);
+            assertTrue(storage.isEmpty(), "drained channel must be empty again");
+        }
+
+        @Test
+        void deleteRefusesNonMemberOperator() throws Exception {
+            // 拒绝非成员删除：未接入频道（joinedKey()==null）的方块不能删除任何频道
+            var src = readMainSource(ABSTRACT_SRC);
+            int idx = src.indexOf("public void rpcDeleteChannel(RPCSender sender)");
+            assertTrue(idx >= 0, "P3-T8: rpcDeleteChannel must exist");
+            String body = src.substring(idx, Math.min(src.length(), idx + 900));
+            assertTrue(body.contains("sender.isRemote()"),
+                    "P3-T8: rpcDeleteChannel must guard C→S direction");
+            assertTrue(body.contains("joinedKey()") && body.contains("== null"),
+                    "P3-T8: non-member (channel not joined) must be refused");
+            assertTrue(body.contains("reg.remove(key)"),
+                    "P3-T8: delete must delegate to ChannelRegistry.remove (empty-only)");
+        }
+
+        @Test
+        void scrollButtonsSwitchNormalHoverSprites() throws Exception {
+            // hover 态切换：五按钮（▲上翻/▼下翻/＋创建/✕删除/断连退出）统一经 LDLib2
+            // Button.buttonStyle 定义三态纹理（base=normal 行0、hover=hover 行1、pressed 复用 hover），
+            // 悬停/按下切换由 Button 内部状态机完成，不再手写 MOUSE_ENTER/MOUSE_LEAVE 事件。
+            var src = readMainSource(ABSTRACT_SRC);
+            assertTrue(src.contains("buttonStyle"),
+                    "P3-T8: buttons must use LDLib2 Button.buttonStyle for texture states");
+            assertTrue(src.contains("baseTexture") && src.contains("hoverTexture") && src.contains("pressedTexture"),
+                    "P3-T8: buttonStyle must define base/hover/pressed textures");
+            assertTrue(src.contains("CHANNEL_BUTTONS"),
+                    "P3-T8: buttons must be sourced from channel_buttons sheet");
+            assertTrue(src.contains("SCROLL_UP_NORMAL") && src.contains("SCROLL_UP_HOVER"),
+                    "P3-T8: scroll-up must define normal/hover UV pair");
+            assertTrue(src.contains("SCROLL_DOWN_NORMAL") && src.contains("SCROLL_DOWN_HOVER"),
+                    "P3-T8: scroll-down must define normal/hover UV pair");
+            assertTrue(src.contains("DISCONNECT_NORMAL") && src.contains("DISCONNECT_HOVER"),
+                    "P3-T8: leave/disconnect (col4) must define normal/hover UV pair");
+        }
+
+        @Test
+        void entryMiniButtonSpritesAndHoverWired() throws Exception {
+            // mini 接入状态按钮（P3-T8 UI 契约）：channel_entry_state 四格（接入×hover）雪碧图 +
+            // 条目背景/mini 按钮经 MOUSE_ENTER/LEAVE 切换 hover 态；点击按接入态分流 join/leave RPC。
+            var src = readMainSource(ABSTRACT_SRC);
+            assertTrue(src.contains("CHANNEL_ENTRY_STATE"),
+                    "P3-T8: mini button must source from channel_entry_state sheet");
+            assertTrue(src.contains("MINI_OUT_NORMAL") && src.contains("MINI_OUT_HOVER")
+                            && src.contains("MINI_IN_NORMAL") && src.contains("MINI_IN_HOVER"),
+                    "P3-T8: mini button must define joined×hover UV quadruple");
+            assertTrue(src.contains("MOUSE_ENTER") && src.contains("MOUSE_LEAVE"),
+                    "P3-T8: entry background / mini button must switch hover sprites via MOUSE_ENTER/LEAVE");
+            assertTrue(src.contains("rpcLeaveChannel") && src.contains("rpcJoinChannel"),
+                    "P3-T8: mini click must toggle join/leave via RPC");
+            var constants = readMainSource("com/modularmc/ten/TENConstants.java");
+            assertTrue(constants.contains("channel_entry_state.png"),
+                    "P3-T8: TENConstants must declare channel_entry_state texture");
+        }
+    }
     // ════════════════════════════════════════════════════════════════════
     // P3 全局不变量：Syn 不外送、网络传输安全
     // ════════════════════════════════════════════════════════════════════

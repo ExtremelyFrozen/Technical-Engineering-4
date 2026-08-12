@@ -7,7 +7,6 @@ import net.minecraft.core.Direction;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.energy.IEnergyStorage;
-import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import net.neoforged.neoforge.items.IItemHandler;
 
@@ -73,46 +72,6 @@ public final class TransferNetworks {
     @Nullable
     public static IFluidHandler getFluids(Level level, BlockPos pos, @Nullable Direction side) {
         return CapabilityAdapters.getFluids(level, pos, side);
-    }
-
-    public static int moveEnergy(IEnergyStorage from, IEnergyStorage to, int limit, boolean simulate) {
-        if (limit <= 0 || !from.canExtract() || !to.canReceive()) {
-            return 0;
-        }
-        int extracted = from.extractEnergy(limit, true);
-        if (extracted <= 0) {
-            return 0;
-        }
-        int accepted = to.receiveEnergy(extracted, true);
-        int moved = Math.min(extracted, accepted);
-        if (moved <= 0) {
-            return 0;
-        }
-        if (!simulate) {
-            int drained = from.extractEnergy(moved, false);
-            to.receiveEnergy(drained, false);
-        }
-        return moved;
-    }
-
-    public static int moveFluid(IFluidHandler from, IFluidHandler to, int limit, boolean simulate) {
-        if (limit <= 0) {
-            return 0;
-        }
-        FluidStack drained = from.drain(limit, IFluidHandler.FluidAction.SIMULATE);
-        if (drained.isEmpty()) {
-            return 0;
-        }
-        int accepted = to.fill(drained, IFluidHandler.FluidAction.SIMULATE);
-        int moved = Math.min(drained.getAmount(), accepted);
-        if (moved <= 0) {
-            return 0;
-        }
-        if (!simulate) {
-            FluidStack extracted = from.drain(moved, IFluidHandler.FluidAction.EXECUTE);
-            to.fill(extracted, IFluidHandler.FluidAction.EXECUTE);
-        }
-        return moved;
     }
 
     public static int moveItems(IItemHandler from, IItemHandler to, int limit, Predicate<ItemStack> filter, boolean simulate) {

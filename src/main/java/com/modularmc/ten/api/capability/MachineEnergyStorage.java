@@ -23,8 +23,16 @@ public class MachineEnergyStorage extends EnergyStorage {
         this.maxReceive = max;
     }
 
+    public int getMaxReceive() {
+        return maxReceive;
+    }
+
     public void setMaxExtract(int max) {
         this.maxExtract = max;
+    }
+
+    public int getMaxExtract() {
+        return maxExtract;
     }
 
     /**
