@@ -78,7 +78,6 @@ def find_ldlib2_jar(version: str) -> str | None:
         candidates = [
             os.path.join(home_dir, ".gradle"),
             os.path.join(os.environ.get("IDEA_HOME", home_dir), ".gradle"),
-            r"E:\IDEA\.gradle",
         ]
         for c in candidates:
             if os.path.isdir(c):

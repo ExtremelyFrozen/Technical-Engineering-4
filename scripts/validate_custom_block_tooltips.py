@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-validate_custom_block_tooltips.py — TASK-012 TE4 Custom Block Item Tooltip Validator
+validate_custom_block_tooltips.py — TE4 Custom Block Item Tooltip Validator
 
 Static validation for the 21 target block items that should use TENBaseBlockItem
 to display their lang-defined custom tooltips.
@@ -266,7 +266,7 @@ def check_all_langs(targets: list[str]) -> dict:
 def main():
     _configure_stdio_utf8()
     print("=" * 72)
-    print("  TASK-012 — Custom Block Item Tooltip Validation")
+    print("  Custom Block Item Tooltip Validation")
     print("=" * 72)
     print(f"\n  Targets: {len(TARGETS)} items")
     print(f"  Exclusions: {len(EXCLUSIONS)} items")
@@ -595,7 +595,7 @@ def main():
     print()
     print("=" * 72)
     if all_pass:
-        print("  >>> GREEN: All checks passed. TASK-012 implementation complete.")
+        print("  >>> GREEN: All checks passed. Custom block tooltips verified.")
         print(f"  >>> {target_hits}/{len(TARGETS)} targets use TENBaseBlockItem.")
         print(f"  >>> 0 exclusion violations, 0 lang continuity errors.")
         print(f"  >>> .useBlockDescriptionPrefix() present, 0 name integrity issues.")
