@@ -133,7 +133,7 @@ public class TENItems {
 
     public static final DeferredHolder<Item, SpannerItem> SPANNER = tool("spanner", "Spanner", "扳手", () -> new SpannerItem(new Item.Properties().setId(itemKey("spanner"))));
     public static final DeferredHolder<Item, EnergyUnitItem> ENERGY_CAPACITY = tool("energy_capacity", "Energy Unit", "能量单元", () -> new EnergyUnitItem(new Item.Properties().setId(itemKey("energy_capacity"))));
-    public static final DeferredHolder<Item, ChannelConnectorItem> CHANNEL_CONNECTOR = tool("channel_connector", "Channel Connector", "频道桥接器", () -> new ChannelConnectorItem(new Item.Properties().setId(itemKey("channel_connector"))));
+    public static final DeferredHolder<Item, ChannelConnectorItem> CHANNEL_CONNECTOR = tool("channel_connector", "Channel Connector", "频道连接器", () -> new ChannelConnectorItem(new Item.Properties().setId(itemKey("channel_connector"))));
 
     // ══════════════════════════════════════════════════════════════════
     // Upgrades

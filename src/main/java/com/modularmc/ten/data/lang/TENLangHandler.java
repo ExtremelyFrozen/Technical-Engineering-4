@@ -78,25 +78,28 @@ public final class TENLangHandler {
 
     // ── Channel ─────────────────────────────────────────────────────
     private static void addChannel() {
-        add("channel.pos", "Position: ", "坐标: ");
-        add("channel.in", "Input Channel", "输入频道");
-        add("channel.out", "Output Channel", "输出频道");
-        add("channel_connector.0", "When in [Add Input Channel] Mode: ", "处于[添加抽取频道]模式时: ");
-        add("channel_connector.1", "Add the second clicked channel to the first one as an input", "在第一次选取的频道中添加第二次选取的频道作为输入");
-        add("channel_connector.2", "When in [Add Output Channel] Mode: ", "处于[添加推送频道]模式时: ");
-        add("channel_connector.3", "Add the second clicked channel to the first one as an output", "在第一次选取的频道中添加第二次选取的频道作为输出");
-        add("channel_connector.4", "Sneak-right-click in air to clear the selected position.", "潜行并在空中右键来清空已选取的坐标。");
-        add("channel_connector.mode.in", "Mode: Add Input Channel", "模式: 添加抽取频道");
-        add("channel_connector.mode.out", "Mode: Add Output Channel", "模式: 添加推送频道");
-        add("channel_connector.mode.rem", "Mode: Remove Channel", "模式: 移除频道");
-        add("channel.pointer_last", "Adding to: ", "添加至: ");
-        add("channel.bind", "Successfully bound ", "成功绑定 ");
-        add("channel.remove", "Successfully removed ", "成功移除 ");
-        add("channel.to", " to ", " 至 ");
-        add("channel.from", " from ", " 从 ");
-        add("channel.first_click", "Target: ", "绑定目标: ");
+        // 末影箱模式 UI（T004）：频道目录 + 创建/接入/退出；T005：删除（仅空频道）
+        add("channel.create", "Create", "创建");
+        add("channel.leave", "Leave", "退出");
+        add("channel.current", "Current: ", "当前频道: ");
+        add("channel.delete", "Delete", "删除");
+        add("channel.none", "(none)", "(无)");
+        // 操作区「当前频道」紧凑显示：未接入状态（可见文本，tooltip 仍用 channel.current+none 全格式）
+        add("channel.not_joined", "Not joined", "未接入");
+        // Jade 集成：频道接入状态高亮（ChannelJadeProvider tooltip）
+        add("channel.jade.joined", "Joined: %s", "已接入: %s");
+        add("channel.jade.not_joined", "Not joined to a channel", "未接入频道");
         add("channel", "Channel", "频道");
-        add("channel.not_found", "Channel not found at: ", "无法获取的频道，位于: ");
+
+        // 频道连接器（ChannelConnectorItem，配置复制/应用工具）
+        add("channel_connector.copied", "Copied channel configuration", "已复制频道面配置");
+        add("channel_connector.applied", "Applied channel configuration", "已应用频道面配置");
+        add("channel_connector.applied_join_failed", "Face config applied, but failed to join channel", "面配置已应用，但频道接入失败");
+        add("channel_connector.cleared", "Cleared channel configuration", "已清空频道面配置");
+        add("channel_connector.invalid_config", "Invalid channel configuration data", "频道面配置数据无效");
+        add("channel_connector.0", "Sneak + right-click a channel to copy its face config", "潜行+右键频道方块复制其面配置");
+        add("channel_connector.1", "Sneak + right-click a channel again to apply", "再次潜行+右键频道方块应用配置");
+        add("channel_connector.2", "Sneak + right-click air or a non-channel block to clear", "潜行+右键空气或非频道方块清空配置");
     }
 
     // ── Upgrade Tips ────────────────────────────────────────────────

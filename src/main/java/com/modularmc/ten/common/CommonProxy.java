@@ -24,6 +24,10 @@ public class CommonProxy {
         // Register all DeferredRegisters (BLOCKS, ITEMS, FLUIDS, BLOCK_ENTITIES, CREATIVE_TABS)
         Registration.register(modBus);
 
+        // DataComponents 注册中枢（CHANNEL_CONFIG 等）单独挂载，避免与 Registration
+        // 内空的 DATA_COMPONENTS 双源混淆（Registration 侧空挂载已移除）。
+        TENDataComponents.DATA_COMPONENTS.register(modBus);
+
         // Trigger class loading for all registration holders so their static blocks
         // execute before the registry event fires.
         TENBlocks.init();

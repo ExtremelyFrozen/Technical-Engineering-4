@@ -161,8 +161,6 @@ public class TENModelProvider implements DataProvider {
         for (var entry : TENItems.ZH_NAMES.entrySet()) {
             var name = entry.getKey();
             if (blockNames.contains(name)) continue;
-            // Channel items are hand-crafted in main resources — skip generation
-            if (name.equals("channel_connector")) continue;
 
             if (name.startsWith("mould_")) {
                 // Mould items — baseline uses "mold" directory.
@@ -210,6 +208,11 @@ public class TENModelProvider implements DataProvider {
                 if (craftingComponents.contains(name)) {
                     generatedItemModel(cache, itemModelPath, futures, name,
                             modId + ":item/crafting/" + name);
+                } else if (name.equals("channel_connector")) {
+                    // TODO(channel_connector): 正式纹理未到位，临时复用 spanner 纹理；
+                    // 纹理就绪后改为 modId + ":item/channel_connector" 并移除本分支。
+                    generatedItemModel(cache, itemModelPath, futures, name,
+                            modId + ":item/spanner");
                 } else {
                     generatedItemModel(cache, itemModelPath, futures, name,
                             modId + ":item/" + name);
@@ -248,8 +251,6 @@ public class TENModelProvider implements DataProvider {
         for (var entry : TENItems.ZH_NAMES.entrySet()) {
             var name = entry.getKey();
             if (blockNames.contains(name)) continue;
-            // Channel items are hand-crafted in main resources — skip generation
-            if (name.equals("channel_connector")) continue;
             itemDefinition(cache, itemDefPath, futures, name, modId + ":item/" + name);
         }
 
