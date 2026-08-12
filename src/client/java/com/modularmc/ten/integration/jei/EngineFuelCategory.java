@@ -22,9 +22,10 @@ import mezz.jei.api.recipe.category.IRecipeCategory;
  * JEI category for engine fuel recipes (Extractor, Metalizer, Biomass).
  * <p>
  * Uses the modular {@link TENConstants#JEI_HANDLER_MODULAR} upper layer
- * (150x50) background and the {@link TENConstants#FUEL_GAUGE_01_BG} /
- * {@link TENConstants#FUEL_GAUGE_01_FILL} 13x13 fuel gauge (this page is the
- * only consumer of the fuel_gauge_01 sprites).
+ * (150x50) background and the {@link TENConstants#FUEL_GAUGE_BG} /
+ * {@link TENConstants#FUEL_GAUGE_FILL} 13x13 fuel gauge (this page is the
+ * only JEI-side consumer of the fuel_gauge sprites; machine GUIs reuse the
+ * same sprites via fuelGaugeModular in TENMachineBlockUIFactory).
  * <p>
  * Layout (150x50):
  * <ul>
@@ -78,9 +79,9 @@ public class EngineFuelCategory implements IRecipeCategory<EngineFuelRecipe> {
         // NOTE: createDrawable 按 256×256 atlas 语义解释 UV；18×18 槽位与 13×13 燃料表素材
         // 必须经 drawableBuilder().setTextureSize(实际尺寸) 声明，否则只渲染左上角区域。
         this.inputSlot = helper.drawableBuilder(TENConstants.ITEM_SLOT_SMALL, 0, 0, 18, 18).setTextureSize(18, 18).build();
-        // Fuel gauge 01: background frame + full fill (static recipe preview, no runtime level)
-        this.fuelGaugeBg = helper.drawableBuilder(TENConstants.FUEL_GAUGE_01_BG, FUEL_GAUGE_U, FUEL_GAUGE_V, FUEL_GAUGE_W, FUEL_GAUGE_H).setTextureSize(FUEL_GAUGE_W, FUEL_GAUGE_H).build();
-        this.fuelGaugeFill = helper.drawableBuilder(TENConstants.FUEL_GAUGE_01_FILL, FUEL_GAUGE_U, FUEL_GAUGE_V, FUEL_GAUGE_W, FUEL_GAUGE_H).setTextureSize(FUEL_GAUGE_W, FUEL_GAUGE_H).build();
+        // Fuel gauge: background frame + full fill (static recipe preview, no runtime level)
+        this.fuelGaugeBg = helper.drawableBuilder(TENConstants.FUEL_GAUGE_BG, FUEL_GAUGE_U, FUEL_GAUGE_V, FUEL_GAUGE_W, FUEL_GAUGE_H).setTextureSize(FUEL_GAUGE_W, FUEL_GAUGE_H).build();
+        this.fuelGaugeFill = helper.drawableBuilder(TENConstants.FUEL_GAUGE_FILL, FUEL_GAUGE_U, FUEL_GAUGE_V, FUEL_GAUGE_W, FUEL_GAUGE_H).setTextureSize(FUEL_GAUGE_W, FUEL_GAUGE_H).build();
     }
 
     @Override
@@ -129,7 +130,7 @@ public class EngineFuelCategory implements IRecipeCategory<EngineFuelRecipe> {
         // Draw background (JEI_HANDLER_MODULAR upper layer 150x50)
         background.draw(graphics);
 
-        // Draw fuel gauge (fuel_gauge_01 background + full fill)
+        // Draw fuel gauge (fuel_gauge background + full fill)
         fuelGaugeBg.draw(graphics, FUEL_GAUGE_X, FUEL_GAUGE_Y);
         fuelGaugeFill.draw(graphics, FUEL_GAUGE_X, FUEL_GAUGE_Y);
 

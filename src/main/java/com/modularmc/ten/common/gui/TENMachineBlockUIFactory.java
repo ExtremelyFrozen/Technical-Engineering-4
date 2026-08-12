@@ -32,7 +32,6 @@ import com.lowdragmc.lowdraglib2.gui.ui.elements.inventory.InventorySlots;
 import com.lowdragmc.lowdraglib2.gui.ui.event.HoverTooltips;
 import com.lowdragmc.lowdraglib2.gui.ui.event.UIEvents;
 import com.lowdragmc.lowdraglib2.gui.ui.style.StylesheetManager;
-import com.lowdragmc.lowdraglib2.syncdata.rpc.RPCSender;
 import dev.vfyjxf.taffy.style.TaffyPosition;
 import org.jetbrains.annotations.Nullable;
 
@@ -193,6 +192,32 @@ public final class TENMachineBlockUIFactory {
     }
 
     /**
+     * Creates an 18x18 channel item slot bound to the channel facade handler
+     * ({@link com.modularmc.ten.common.blockentity.channel.ChannelItemHandlerFacade}).
+     * <p>
+     * 末影箱模式（T003）：接入后槽位直接绑定共享存储（服务端动态解析），未接入/客户端
+     * 绑定本地缓冲。join/leave 切换后槽位自动指向新后端，无需重建 UI。
+     */
+    public static ItemSlot channelItemSlot(com.modularmc.ten.common.blockentity.channel.AbstractChannelBlockEntity channel, int index, int x, int y) {
+        Slot slot = new SlotItemHandler(channel.getChannelItemFacade(), index, 0, 0) {
+
+            @Override
+            public boolean mayPlace(net.minecraft.world.item.ItemStack stack) {
+                var type = channel.slotType(getSlotIndex());
+                return type.canIn() && channel.valid(getSlotIndex(), stack) && super.mayPlace(stack);
+            }
+
+            @Override
+            public int getMaxStackSize(net.minecraft.world.item.ItemStack stack) {
+                // 末影箱动态堆叠（P3-T8）：上限=共享槽位上限（64×成员数），不按物品原版 64 封顶。
+                // 否则 Slot.safeInsert/getMaxStackSize(stack) 会把 GUI 堆叠/快速移动钳制在原版上限。
+                return getMaxStackSize();
+            }
+        };
+        return itemSlot(slot, x, y, false, 18, fullTexture(TENConstants.ITEM_SLOT_SMALL, 18, 18));
+    }
+
+    /**
      * Creates a large (26x26) machine item slot.
      * <p>
      * Background: {@link TENConstants#ITEM_SLOT_LARGE}. The slot element is
@@ -267,7 +292,9 @@ public final class TENMachineBlockUIFactory {
                 () -> {
                     Direction direction = logicalDirection(machine, logicalSide);
                     if (direction != null) {
-                        machine.rpcCycleFaceMode(RPCSender.ofServer(), uiState.getSelectedTransferMode(), direction.get3DDataValue());
+                        // LDLib2 不拦截 @RPCMethod 方法调用：直接调用会在客户端本地执行
+                        // （服务端状态不变，静默失败），必须经 rpcToServer 显式发包到服务端。
+                        machine.rpcToServer("rpcCycleFaceMode", uiState.getSelectedTransferMode(), direction.get3DDataValue());
                     }
                 },
                 uiState::isControlOpen);
@@ -311,11 +338,11 @@ public final class TENMachineBlockUIFactory {
     }
 
     /**
-     * Modular 素材族燃料条（13x13）：背景 FUEL_GAUGE_01_BG、填充 FUEL_GAUGE_01_FILL。
+     * Modular 素材族燃料条（13x13）：背景 FUEL_GAUGE_BG、填充 FUEL_GAUGE_FILL。
      */
     public static RevealProgressBar fuelGaugeModular(CmMachineBlockEntity machine, int x, int y, boolean displayValue) {
         return verticalGaugeModular(machine, x, y, 13, 13,
-                TENConstants.FUEL_GAUGE_01_BG, TENConstants.FUEL_GAUGE_01_FILL,
+                TENConstants.FUEL_GAUGE_BG, TENConstants.FUEL_GAUGE_FILL,
                 TENMachineBlockUIFactory::fuelPercent, fuelTooltip(machine, displayValue), displayValue);
     }
 
@@ -326,6 +353,48 @@ public final class TENMachineBlockUIFactory {
         int type = machine.machineType();
         return horizontalProgressModular(machine, x, y, 22, 16,
                 progressArrowBg(type), progressArrowFill(type), showPercent);
+    }
+
+    /**
+     * Modular 素材族宽进度条（80x5，L2R）：背景 PROGRESS_BAR_WIDE_BG、填充 PROGRESS_BAR_WIDE_FILL。
+     * <p>
+     * GUI 翻新 002：5 台未翻新机器（condenser/beacon/mob_ripper/quarry/farm）进度统一使用
+     * 宽进度条，与旧 handler(97,0)/(97,5) 逐像素一致。
+     */
+    public static RevealProgressBar progressGaugeWide(CmMachineBlockEntity machine, int x, int y, boolean showPercent) {
+        return horizontalProgressModular(machine, x, y, 80, 5,
+                TENConstants.PROGRESS_BAR_WIDE_BG, TENConstants.PROGRESS_BAR_WIDE_FILL, showPercent);
+    }
+
+    /**
+     * 创建一个 18x18 能量充放电槽（modular 素材族）。
+     * <p>
+     * GUI 翻新 002（D2）：Cell/CreativeCell 双槽语义——{@code chargeIn=true} 使用
+     * ITEM_SLOT_SMALL_CHARGE（绿流入=充电），否则使用 ITEM_SLOT_SMALL_DISCHARGE（红流出=放电）。
+     *
+     * @param machine  所属机器
+     * @param index    槽索引（绑定 machine.itemHandler）
+     * @param x        槽左缘 x
+     * @param y        槽顶 y
+     * @param chargeIn true=充电槽（charge），false=放电槽（discharge）
+     */
+    public static ItemSlot machineSlotPower(CmMachineBlockEntity machine, int index, int x, int y, boolean chargeIn) {
+        var texture = chargeIn ? TENConstants.ITEM_SLOT_SMALL_CHARGE : TENConstants.ITEM_SLOT_SMALL_DISCHARGE;
+        return machineSlot(machine, index, x, y, 18, fullTexture(texture, 18, 18));
+    }
+
+    /**
+     * 创建一个通用 18x18 modular 小槽背景槽（ITEM_SLOT_SMALL）。
+     * <p>
+     * GUI 翻新 002（P4）：Pipe filterSlot 复用——槽对象来自 {@link net.minecraft.world.Container}
+     * 包装的 filterContainer（非 itemHandler），因此不走 machineSlot 系列。
+     *
+     * @param slot 任意 Slot（可为非 itemHandler 来源，如 Pipe 过滤容器）
+     * @param x    槽左缘 x
+     * @param y    槽顶 y
+     */
+    public static ItemSlot itemSlotModular(Slot slot, int x, int y) {
+        return itemSlot(slot, x, y, false, 18, fullTexture(TENConstants.ITEM_SLOT_SMALL, 18, 18));
     }
 
     private static RevealProgressBar verticalGaugeModular(CmMachineBlockEntity machine,
@@ -655,14 +724,8 @@ public final class TENMachineBlockUIFactory {
         return switch (machineType) {
             // D1/P3：七台 Modular 机器统一使用空面板 machine_gui.png（部件素材由 modular 素材族绘制）
             case MachineType.FURNACE, MachineType.PULVERIZER, MachineType.COMPRESSOR, MachineType.REFINER, MachineType.INDUCTION_FURNACE, MachineType.PSIONICANT, MachineType.ENCHANTMENT_FLUSHER -> TENConstants.MACHINE_GUI;
-            case MachineType.MATTER_CONDENSER -> TEN.id("textures/gui/matter_condenser.png");
-            case MachineType.BEACON -> TEN.id("textures/gui/beacon_simulator.png");
-            case MachineType.MOB_RIPPER -> TEN.id("textures/gui/mob_ripper.png");
-            case MachineType.QUARRY -> TEN.id("textures/gui/quarry.png");
-            case MachineType.FARM -> TEN.id("textures/gui/farm_manager.png");
-            case MachineType.CELL, MachineType.CREATIVE_CELL -> TEN.id("textures/gui/energy_cell.png");
-            case MachineType.ENGINE_SOLAR -> TEN.id("textures/gui/engine_solar.png");
-            case MachineType.ENGINE_EXTRACTION, MachineType.ENGINE_METAL, MachineType.ENGINE_BIOMASS -> TEN.id("textures/gui/engine.png");
+            // GUI 翻新 002（D6）：11 台未翻新机器背景统一切换 MACHINE_GUI（专属背景 PNG 保留回退）
+            case MachineType.MATTER_CONDENSER, MachineType.BEACON, MachineType.MOB_RIPPER, MachineType.QUARRY, MachineType.FARM, MachineType.CELL, MachineType.CREATIVE_CELL, MachineType.ENGINE_SOLAR, MachineType.ENGINE_EXTRACTION, MachineType.ENGINE_METAL, MachineType.ENGINE_BIOMASS -> TENConstants.MACHINE_GUI;
             default -> HANDLER;
         };
     }
@@ -692,7 +755,8 @@ public final class TENMachineBlockUIFactory {
         if (mode >= RedstoneMode.size()) {
             mode = RedstoneMode.OFF;
         }
-        machine.rpcSetRedstoneMode(RPCSender.ofServer(), mode);
+        // 同 rpcCycleFaceMode：必须经 rpcToServer 显式发包到服务端。
+        machine.rpcToServer("rpcSetRedstoneMode", mode);
     }
 
     private static int faceMode(CmMachineBlockEntity machine, int selectedMode, int logicalSide) {

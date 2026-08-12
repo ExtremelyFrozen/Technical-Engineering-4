@@ -67,10 +67,10 @@ public class CreativeCellBlockEntity extends CmMachineBlockEntity {
     @Override
     public ModularUI createUI(BlockUIMenuType.BlockUIHolder holder) {
         return buildMachineUI(holder, TENMachineBlockUIFactory.backgroundFor(machineType()), root -> {
-            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 0, 42, 32));
-            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 1, 115, 32));
+            root.addChild(TENMachineBlockUIFactory.machineSlotPower(this, 0, 42, 32, true));
+            root.addChild(TENMachineBlockUIFactory.machineSlotPower(this, 1, 115, 32, true));
         }, root -> {
-            root.addChild(TENMachineBlockUIFactory.energyGauge(this, 81, 18, 14, 46, 0, 0, true));
+            root.addChild(TENMachineBlockUIFactory.energyGaugeModular(this, 81, 18, true));
         });
     }
 

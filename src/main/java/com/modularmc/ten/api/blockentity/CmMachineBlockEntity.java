@@ -1083,7 +1083,9 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
     /** C→S: 切换红石模式 */
     @RPCMethod
     public void rpcSetRedstoneMode(RPCSender sender, int mode) {
-        if (sender.isServer()) {
+        // LDLib2 中 C→S RPC 在服务端执行时 sender 为 ofClient(player)：isRemote()=true、asPlayer()=玩家
+        // （isServer() 仅对 S→C 方向为 true，此处用于 C→S 会永远不执行）。
+        if (sender.isRemote()) {
             redstoneMode = mode;
             setChanged();
         }
@@ -1096,7 +1098,8 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
     /** C→S: 切换面配置 */
     @RPCMethod
     public void rpcCycleFaceMode(RPCSender sender, int changeType, int dirIndex) {
-        if (sender.isServer() && isValidFaceIndex(dirIndex)) {
+        // 同 rpcSetRedstoneMode：C→S 方向服务端执行时 isRemote()=true。
+        if (sender.isRemote() && isValidFaceIndex(dirIndex)) {
             Direction direction = Direction.from3DDataValue(dirIndex);
             Map<Direction, Integer> map;
             switch (changeType) {

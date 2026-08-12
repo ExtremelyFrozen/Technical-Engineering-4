@@ -68,10 +68,12 @@ public class BeaconBlockEntity extends RadiusMachineBlockEntity {
     @Override
     public ModularUI createUI(BlockUIMenuType.BlockUIHolder holder) {
         return buildMachineUI(holder, TENMachineBlockUIFactory.backgroundFor(machineType()), root -> {
-            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 0, 79, 31));
+            // 输入槽 (79,32)：中心 x=88 与下方宽进度条竖中线 (48+40) 对齐；y=32 中心 41 符合主区中线
+            root.addChild(TENMachineBlockUIFactory.machineSlotModular(this, 0, 79, 32));
         }, root -> {
-            root.addChild(TENMachineBlockUIFactory.energyGauge(this, 9, 18, 14, 46, 0, 0, true));
-            root.addChild(TENMachineBlockUIFactory.progressGauge(this, 48, 65, 80, 5, 97, 0, true));
+            root.addChild(TENMachineBlockUIFactory.energyGaugeModular(this, 8, 18, true));
+            // 宽进度条 (48,57)：输入槽在上、进度条在下，上下平行（垂直分离 7px），而非同一水平带平齐
+            root.addChild(TENMachineBlockUIFactory.progressGaugeWide(this, 48, 57, true));
         });
     }
 

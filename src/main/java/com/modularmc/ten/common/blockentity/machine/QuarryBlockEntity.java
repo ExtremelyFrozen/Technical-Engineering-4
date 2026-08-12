@@ -73,22 +73,22 @@ public class QuarryBlockEntity extends RadiusMachineBlockEntity {
     @Override
     public ModularUI createUI(BlockUIMenuType.BlockUIHolder holder) {
         return buildMachineUI(holder, TENMachineBlockUIFactory.backgroundFor(machineType()), root -> {
-            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 0, 43, 34));
-            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 1, 79, 16));
-            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 2, 97, 16));
-            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 3, 115, 16));
-            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 4, 133, 16));
-            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 5, 79, 34));
-            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 6, 97, 34));
-            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 7, 115, 34));
-            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 8, 133, 34));
-            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 9, 79, 52));
-            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 10, 97, 52));
-            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 11, 115, 52));
-            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 12, 133, 52));
+            root.addChild(TENMachineBlockUIFactory.machineSlotModular(this, 0, 43, 34));
+            root.addChild(TENMachineBlockUIFactory.machineSlotModular(this, 1, 79, 16));
+            root.addChild(TENMachineBlockUIFactory.machineSlotModular(this, 2, 97, 16));
+            root.addChild(TENMachineBlockUIFactory.machineSlotModular(this, 3, 115, 16));
+            root.addChild(TENMachineBlockUIFactory.machineSlotModular(this, 4, 133, 16));
+            root.addChild(TENMachineBlockUIFactory.machineSlotModular(this, 5, 79, 34));
+            root.addChild(TENMachineBlockUIFactory.machineSlotModular(this, 6, 97, 34));
+            root.addChild(TENMachineBlockUIFactory.machineSlotModular(this, 7, 115, 34));
+            root.addChild(TENMachineBlockUIFactory.machineSlotModular(this, 8, 133, 34));
+            root.addChild(TENMachineBlockUIFactory.machineSlotModular(this, 9, 79, 52));
+            root.addChild(TENMachineBlockUIFactory.machineSlotModular(this, 10, 97, 52));
+            root.addChild(TENMachineBlockUIFactory.machineSlotModular(this, 11, 115, 52));
+            root.addChild(TENMachineBlockUIFactory.machineSlotModular(this, 12, 133, 52));
         }, root -> {
-            root.addChild(TENMachineBlockUIFactory.energyGauge(this, 9, 18, 14, 46, 0, 0, true));
-            root.addChild(TENMachineBlockUIFactory.progressGauge(this, 48, 73, 80, 5, 97, 0, true));
+            root.addChild(TENMachineBlockUIFactory.energyGaugeModular(this, 8, 18, true));
+            root.addChild(TENMachineBlockUIFactory.progressGaugeWide(this, 48, 74, true));
         });
     }
 

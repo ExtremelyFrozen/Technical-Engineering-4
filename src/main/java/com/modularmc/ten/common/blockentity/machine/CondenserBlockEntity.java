@@ -68,11 +68,13 @@ public class CondenserBlockEntity extends ProcessingMachineBlockEntity {
     @Override
     public ModularUI createUI(BlockUIMenuType.BlockUIHolder holder) {
         return buildMachineUI(holder, TENMachineBlockUIFactory.backgroundFor(machineType()), root -> {
-            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 0, 79, 32));
+            // 输入槽 (79,32)：中心 x=88 与宽进度条竖中线 (48+40) 对齐（翻新时 79→39 左移导致偏离，恢复）；
+            // y=32 中心 41 符合主区中线，与流体槽 (143,17) 中心 42 协调
+            root.addChild(TENMachineBlockUIFactory.machineSlotModular(this, 0, 79, 32));
         }, root -> {
-            root.addChild(TENMachineBlockUIFactory.energyGauge(this, 9, 18, 14, 46, 0, 0, true));
-            root.addChild(TENMachineBlockUIFactory.progressGauge(this, 48, 57, 80, 5, 97, 0, true));
-            root.addChild(TENMachineBlockUIFactory.fluidGauge(this, 143, 17, 18, 50, 0));
+            root.addChild(TENMachineBlockUIFactory.energyGaugeModular(this, 8, 18, true));
+            root.addChild(TENMachineBlockUIFactory.progressGaugeWide(this, 48, 57, true));
+            root.addChild(TENMachineBlockUIFactory.fluidGaugeModular(this, 143, 17, 18, 50, 0));
         });
     }
 

@@ -1,6 +1,6 @@
 package com.modularmc.ten.common.blockentity;
 
-import com.modularmc.ten.TEN;
+import com.modularmc.ten.TENConstants;
 import com.modularmc.ten.api.blockentity.CmBlockEntity;
 import com.modularmc.ten.api.capability.MachineItemHandler;
 import com.modularmc.ten.common.gui.TENMachineBlockUIFactory;
@@ -19,11 +19,9 @@ import net.minecraft.world.level.storage.ValueOutput;
 import net.neoforged.neoforge.items.IItemHandler;
 
 import com.lowdragmc.lowdraglib2.gui.factory.BlockUIMenuType;
-import com.lowdragmc.lowdraglib2.gui.texture.IGuiTexture;
 import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
 import com.lowdragmc.lowdraglib2.gui.ui.UIElement;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.ItemSlot;
-import dev.vfyjxf.taffy.style.TaffyPosition;
 
 import java.util.Set;
 
@@ -233,7 +231,7 @@ public class PipeBlockEntity extends CmBlockEntity {
     }
 
     public ModularUI createUI(BlockUIMenuType.BlockUIHolder holder) {
-        UIElement root = TENMachineBlockUIFactory.createRoot(TEN.id("textures/gui/pipe.png"));
+        UIElement root = TENMachineBlockUIFactory.createRoot(TENConstants.MACHINE_GUI);
         if (isFiltered()) {
             for (int i = 0; i < filterInventory.getSlots(); i++) {
                 int x = 7 + (i % 9) * 18;
@@ -259,23 +257,14 @@ public class PipeBlockEntity extends CmBlockEntity {
     }
 
     private ItemSlot filterSlot(int index, int x, int y) {
-        ItemSlot slot = new ItemSlot(new Slot(filterContainer, index, 0, 0) {
+        Slot slot = new Slot(filterContainer, index, 0, 0) {
 
             @Override
             public boolean mayPlace(ItemStack stack) {
                 return true;
             }
-        });
-        slot.layout(layout -> {
-            layout.positionType(TaffyPosition.ABSOLUTE);
-            layout.left(x);
-            layout.top(y);
-            layout.width(18);
-            layout.height(18);
-        });
-        slot.style(style -> style.backgroundTexture(IGuiTexture.EMPTY));
-        slot.slotStyle(style -> style.slotOverlay(IGuiTexture.EMPTY).showSlotOverlayOnlyEmpty(false));
-        return slot;
+        };
+        return TENMachineBlockUIFactory.itemSlotModular(slot, x, y);
     }
 
     private boolean isFiltered() {

@@ -39,17 +39,20 @@ public class MobRipBlockEntity extends RadiusMachineBlockEntity {
 
     @Override
     public int inventorySize() {
-        return 1;
+        return 13;
     }
 
     @Override
     public IngredientType slotType(int slot) {
-        return IngredientType.INPUT;
+        return slot == 0 ? IngredientType.INPUT : IngredientType.OUTPUT;
     }
 
     @Override
     public boolean valid(int slot, ItemStack stack) {
-        return stack.has(DataComponents.TOOL);
+        if (slot == 0) {
+            return stack.has(DataComponents.TOOL);
+        }
+        return true;
     }
 
     @Override
@@ -64,11 +67,27 @@ public class MobRipBlockEntity extends RadiusMachineBlockEntity {
 
     @Override
     public ModularUI createUI(BlockUIMenuType.BlockUIHolder holder) {
+        // 布局与 Quarry 逐坐标对齐（用户确认两者基本一致）：
+        // 输入槽 (43,34)、12 输出槽 3×4 网格 (79/97/115/133 × 16/34/52)。
+        // 输入槽中心 y=43 与输出网格第二行中心对齐，x 间距 18 不重叠。
         return buildMachineUI(holder, TENMachineBlockUIFactory.backgroundFor(machineType()), root -> {
-            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 0, 79, 31));
+            root.addChild(TENMachineBlockUIFactory.machineSlotModular(this, 0, 43, 34));
+            root.addChild(TENMachineBlockUIFactory.machineSlotModular(this, 1, 79, 16));
+            root.addChild(TENMachineBlockUIFactory.machineSlotModular(this, 2, 97, 16));
+            root.addChild(TENMachineBlockUIFactory.machineSlotModular(this, 3, 115, 16));
+            root.addChild(TENMachineBlockUIFactory.machineSlotModular(this, 4, 133, 16));
+            root.addChild(TENMachineBlockUIFactory.machineSlotModular(this, 5, 79, 34));
+            root.addChild(TENMachineBlockUIFactory.machineSlotModular(this, 6, 97, 34));
+            root.addChild(TENMachineBlockUIFactory.machineSlotModular(this, 7, 115, 34));
+            root.addChild(TENMachineBlockUIFactory.machineSlotModular(this, 8, 133, 34));
+            root.addChild(TENMachineBlockUIFactory.machineSlotModular(this, 9, 79, 52));
+            root.addChild(TENMachineBlockUIFactory.machineSlotModular(this, 10, 97, 52));
+            root.addChild(TENMachineBlockUIFactory.machineSlotModular(this, 11, 115, 52));
+            root.addChild(TENMachineBlockUIFactory.machineSlotModular(this, 12, 133, 52));
         }, root -> {
-            root.addChild(TENMachineBlockUIFactory.energyGauge(this, 9, 18, 14, 46, 0, 0, true));
-            root.addChild(TENMachineBlockUIFactory.progressGauge(this, 48, 65, 80, 5, 97, 0, true));
+            root.addChild(TENMachineBlockUIFactory.energyGaugeModular(this, 8, 18, true));
+            // 输出网格底 y=70，进度条 y=74（间距 4）避免贴边；中心 x=88 与输出列中心对齐
+            root.addChild(TENMachineBlockUIFactory.progressGaugeWide(this, 48, 74, true));
         });
     }
 
