@@ -16,7 +16,6 @@ import java.util.ArrayDeque;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.function.Predicate;
 
 public final class TransferNetworks {
 
@@ -59,6 +58,22 @@ public final class TransferNetworks {
         return self.equals(min);
     }
 
+    /**
+     * root 前剪枝（sound，不完备）：是否存在按 POS_COMPARATOR（x→y→z，与 isRoot 最小判定同序）
+     * 比 self 更小的相邻网络节点。相邻管道必属同一网络，故存在更小邻居 ⇒ self 必非网络最小者
+     * （root），可免 BFS 直接返回。不会误剪 root（root 无更小邻居）；非 root 但无更小邻居的节点
+     * 仍需 BFS 后由 isRoot 判定（剪枝不完备但 sound，用于 PipeBlockEntity.tick 的局部短路）。
+     */
+    public static boolean hasSmallerNeighbor(Level level, BlockPos self, NetworkNodePredicate predicate) {
+        for (Direction direction : Direction.values()) {
+            BlockPos neighbor = self.relative(direction);
+            if (predicate.test(level, neighbor) && POS_COMPARATOR.compare(neighbor, self) < 0) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     @Nullable
     public static IEnergyStorage getEnergy(Level level, BlockPos pos, @Nullable Direction side) {
         return CapabilityAdapters.getEnergy(level, pos, side);
@@ -72,30 +87,6 @@ public final class TransferNetworks {
     @Nullable
     public static IFluidHandler getFluids(Level level, BlockPos pos, @Nullable Direction side) {
         return CapabilityAdapters.getFluids(level, pos, side);
-    }
-
-    public static int moveItems(IItemHandler from, IItemHandler to, int limit, Predicate<ItemStack> filter, boolean simulate) {
-        if (limit <= 0) {
-            return 0;
-        }
-        for (int slot = 0; slot < from.getSlots(); slot++) {
-            ItemStack extractedSim = from.extractItem(slot, limit, true);
-            if (extractedSim.isEmpty() || !filter.test(extractedSim)) {
-                continue;
-            }
-            ItemStack remaining = insertItem(to, extractedSim.copy(), true);
-            int moved = extractedSim.getCount() - remaining.getCount();
-            if (moved <= 0) {
-                continue;
-            }
-            if (!simulate) {
-                ItemStack extracted = from.extractItem(slot, moved, false);
-                ItemStack leftover = insertItem(to, extracted.copy(), false);
-                moved = extracted.getCount() - leftover.getCount();
-            }
-            return moved;
-        }
-        return 0;
     }
 
     public static ItemStack insertItem(IItemHandler handler, ItemStack stack, boolean simulate) {

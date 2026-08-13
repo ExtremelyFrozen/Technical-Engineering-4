@@ -96,7 +96,9 @@ public class BaseMachineBlock extends Block implements EntityBlock, BlockUIMenuT
             }
         }
         BlockEntity be = level.getBlockEntity(pos);
-        if (be instanceof PipeBlockEntity pipe && !pipe.hasUi()) {
+        // 管道配置 GUI 仅在潜行右键时打开（pipe_white/pipe_black）；
+        // Spanner 潜行=拆卸已在 mainHand.useOn 中 CONSUME，不落入此分支。
+        if (be instanceof PipeBlockEntity pipe && (!pipe.hasUi() || !player.isShiftKeyDown())) {
             return InteractionResult.PASS;
         }
         if (be instanceof CableBlockEntity cable && !cable.hasUi()) {
@@ -113,6 +115,16 @@ public class BaseMachineBlock extends Block implements EntityBlock, BlockUIMenuT
 
     @Override
     protected InteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        // ── Pipe upgrades first: right-click pipe with upgrade material ──
+        // 优先拦截：粘性活塞/活塞是 BlockItem，不拦截会先被放置；潜行右键跳过（仍开配置 GUI）。
+        BlockEntity target = level.getBlockEntity(pos);
+        if (!player.isShiftKeyDown() && target instanceof PipeBlockEntity pipe) {
+            InteractionResult upgradeResult = pipe.tryApplyUpgrade(stack, player);
+            if (upgradeResult != InteractionResult.PASS) {
+                return upgradeResult;
+            }
+        }
+
         // ── Item-first: 先尊重物品自身的右键行为 ──
         // （Spanner 旋转/拆卸、ChannelConnector 复制/应用/清空等）。
         // 仅 PASS/FAIL 回落：PASS 走默认流程；FAIL 保留既有回落
@@ -154,7 +166,7 @@ public class BaseMachineBlock extends Block implements EntityBlock, BlockUIMenuT
                 return InteractionResult.SUCCESS;
             }
         }
-        if (be instanceof PipeBlockEntity pipe && !pipe.hasUi()) {
+        if (be instanceof PipeBlockEntity pipe && (!pipe.hasUi() || !player.isShiftKeyDown())) {
             return InteractionResult.PASS;
         }
         if (be instanceof CableBlockEntity cable && !cable.hasUi()) {

@@ -30,6 +30,9 @@ public final class TENLangHandler {
     static {
         addDirections();
         addCommon();
+        addPipeFilter();
+        addPipeUpgrade();
+        addPipeJade();
         addChannel();
         addUpgradeTips();
         addLevels();
@@ -74,6 +77,35 @@ public final class TENLangHandler {
         add("energy_capacity.charging_off", "Charging disabled", "全身充能已关闭");
         add("key.categories." + TEN.MOD_ID, "Kenergy Engineering", "Kenergy Engineering");
         add("key." + TEN.MOD_ID + ".toggle_charge", "Toggle Energy Unit Charging", "切换能量单元充能");
+    }
+
+    // ── Pipe Filter ─────────────────────────────────────────────────
+    private static void addPipeFilter() {
+        // 管道配置 GUI 标题（偏差 #1：pipe_white/pipe_black 标记物过滤）
+        add("pipe.filter.whitelist", "Whitelist Filter", "白名单过滤");
+        add("pipe.filter.blacklist", "Blacklist Filter", "黑名单过滤");
+        // 扩写升级多页 GUI 页码（偏差 #3：第 x/共 y 页，x 为 1 基）
+        add("pipe.filter.page", "Page %s/%s", "第 %s/%s 页");
+    }
+
+    // ── Pipe Upgrades ────────────────────────────────────────────────
+    private static void addPipeUpgrade() {
+        // 管道独特升级（偏差 #2）：右键管道手持升级物升级；类型名 + 反馈消息
+        add("pipe.upgrade.pull", "Pull", "拉取");
+        add("pipe.upgrade.push", "Push", "推入");
+        add("pipe.upgrade.speed", "Speed", "速度");
+        add("pipe.upgrade.page", "Page", "扩写");
+        add("pipe.upgrade.ender", "Ender", "末影");
+        add("pipe.upgrade.success", "%s upgraded to level %s/%s", "%s 升级至等级 %s/%s");
+        add("pipe.upgrade.max", "%s upgrade already at max level", "%s 升级已达上限");
+    }
+
+    // ── Pipe Jade ────────────────────────────────────────────────────
+    private static void addPipeJade() {
+        // Jade 集成：管道状态 tooltip（PipeJadeProvider）——过滤模式复用 pipe.filter.*，
+        // 升级名称复用 pipe.upgrade.*；仅新增 IO 速率与过滤页数两键
+        add("pipe.jade.io_rate", "IO Rate: %s items/tick", "IO 速率: %s 物品/tick");
+        add("pipe.jade.pages", "Pages: %s", "页数: %s");
     }
 
     // ── Channel ─────────────────────────────────────────────────────
