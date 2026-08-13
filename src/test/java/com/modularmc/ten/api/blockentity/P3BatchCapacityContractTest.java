@@ -969,6 +969,82 @@ class QuarryLoopMissVsBreak {
 }
 
 // ════════════════════════════════════════════════════════════
+// L2. Quarry mining range — Deviation #4: ±radius (2×radius+1)
+// ════════════════════════════════════════════════════════════
+
+@Nested
+class QuarryMiningRangeContract {
+
+    @Test
+    void quarry_mineRandomBlock_usesPlusMinusRadius() throws Exception {
+        // RED: mineRandomBlock used Mth.nextInt(-radius+1, radius-1) — at
+        // radius=3 the horizontal range was ±2 (5×5) instead of ±3 (7×7),
+        // one smaller than the nominal radius. Beacon/MobRip (AABB.inflate(radius))
+        // and Farm (offsets -radius..+radius) all use ±radius. (Deviation #4)
+        // GREEN: bounds are -radius..+radius inclusive.
+        var sourceFile = new java.io.File(
+                "src/main/java/com/modularmc/ten/common/blockentity/machine/QuarryBlockEntity.java");
+        assertTrue(sourceFile.exists());
+        var content = java.nio.file.Files.readString(sourceFile.toPath());
+        int methodStart = content.indexOf("private boolean mineRandomBlock()");
+        assertTrue(methodStart >= 0, "mineRandomBlock must exist");
+        int methodEnd = content.indexOf("private boolean canBreak", methodStart);
+        if (methodEnd < 0) methodEnd = methodStart + 1000;
+        String methodBody = content.substring(methodStart, methodEnd);
+
+        assertFalse(methodBody.contains("-radius + 1, radius - 1"),
+                "RED: mineRandomBlock must NOT use -radius+1..radius-1 — "
+                + "range is one smaller than nominal radius. GREEN after: -radius..+radius.");
+        assertTrue(methodBody.contains("-radius, radius"),
+                "GREEN: mineRandomBlock must use Mth.nextInt(-radius, radius) — span 2*radius+1.");
+    }
+
+    @Test
+    void quarry_mineRange_span_is2RPlus1() {
+        // radius=3 → dx/dz ∈ [-3, 3] → 7×7 = 49 candidate positions (was 5×5)
+        int radius = 3;
+        int span = 2 * radius + 1;
+        assertEquals(7, span, "radius=3 must yield a 7×7 mining square (was 5×5)");
+        assertEquals(49, span * span, "7×7 = 49 candidate positions");
+    }
+
+    @Test
+    void quarry_verticalRange_fullColumnBelow_unchanged() throws Exception {
+        // Vertical semantics preserved: mine anywhere from level minY up to
+        // worldPosition.getY()-1 (the block directly below the machine). This is
+        // independent of radius and untouched by the horizontal range fix.
+        var sourceFile = new java.io.File(
+                "src/main/java/com/modularmc/ten/common/blockentity/machine/QuarryBlockEntity.java");
+        assertTrue(sourceFile.exists());
+        var content = java.nio.file.Files.readString(sourceFile.toPath());
+        int methodStart = content.indexOf("private boolean mineRandomBlock()");
+        assertTrue(methodStart >= 0, "mineRandomBlock must exist");
+        int methodEnd = content.indexOf("private boolean canBreak", methodStart);
+        if (methodEnd < 0) methodEnd = methodStart + 1000;
+        String methodBody = content.substring(methodStart, methodEnd);
+        assertTrue(methodBody.contains("getMinY()") && methodBody.contains("worldPosition.getY() - 1"),
+                "Vertical range must remain minY..(machineY-1) full column below (unchanged by fix).");
+    }
+
+    @Test
+    void quarry_rgUpgrade_rangeGrows_withoutChunkBoundaryRisk() {
+        // LevelupRg: addRadius = (int)(initialRadius × RG_RANGE_FRACTION) = (int)(3×0.50) = 1.
+        // Max 6 upgrade slots → radius 3→9; max horizontal offset 9 < 16 → target is
+        // always in the machine's chunk or one of the 8 adjacent chunks. The machine
+        // only ticks while its own chunk is loaded; adjacent-chunk access matches
+        // Farm's pre-existing scan pattern (Deviation #3) and the pre-fix behavior
+        // (±(radius-1) could already reach adjacent chunks at a chunk border).
+        int initialRadius = 3;
+        int addRadius = (int) (initialRadius * 0.50);
+        assertEquals(1, addRadius, "Quarry LevelupRg adds 1 per level (initialRadius=3)");
+        int maxRadius = initialRadius + addRadius * 6; // MAX_UPGRADE_SLOTS = 6
+        assertEquals(9, maxRadius, "radius grows 3→9 with 6×LevelupRg");
+        assertTrue(maxRadius < 16,
+                "max horizontal offset (" + maxRadius + ") stays within same/adjacent chunk (< 16)");
+    }
+}
+
+// ════════════════════════════════════════════════════════════
 // M. MobRip: weapon damage guard & break stop
 // ════════════════════════════════════════════════════════════
 

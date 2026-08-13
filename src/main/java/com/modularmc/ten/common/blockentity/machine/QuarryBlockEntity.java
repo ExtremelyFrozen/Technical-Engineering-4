@@ -137,6 +137,25 @@ public class QuarryBlockEntity extends RadiusMachineBlockEntity {
         }
     }
 
+    @Override
+    public boolean cooking() {
+        // Pure capacity predicate (P1 contract): block processing when output slots
+        // (1..12) cannot accommodate this cycle's B output units. Each operation
+        // produces at most 1 output unit (mode 1/2: single item; mode 0/3: one
+        // block's drops). No progress read/write, no side effects — progress is
+        // preserved while output is full (stall semantics, Deviation #2 fix).
+        if (itemHandler == null) {
+            return false;
+        }
+        int B = getLockedBatchSize();
+        int units = 0;
+        for (int i = 1; i < itemHandler.getSlots(); i++) {
+            ItemStack existing = itemHandler.getStackInSlot(i);
+            units += existing.isEmpty() ? itemHandler.getSlotLimit(i) : Math.max(0, itemHandler.getSlotLimit(i) - existing.getCount());
+        }
+        return units < B;
+    }
+
     /**
      * Install dynamic slot limit on output slots (1..12) based on lockedB.
      * Limit = min(lockedB + 63, 99) per slot, preserving existing overstack.
@@ -176,9 +195,13 @@ public class QuarryBlockEntity extends RadiusMachineBlockEntity {
         if (level == null || itemHandler == null) {
             return false;
         }
-        int dx = Mth.nextInt(level.getRandom(), -radius + 1, radius - 1);
-        int dz = Mth.nextInt(level.getRandom(), -radius + 1, radius - 1);
+        // Deviation #4 fix: horizontal bounds are -radius..+radius (span 2*radius+1),
+        // matching Beacon/MobRip (AABB.inflate(radius)) and Farm (offsets -radius..+radius).
+        // radius=3 → 7×7 (was ±(radius-1) → 5×5, one smaller than nominal).
+        int dx = Mth.nextInt(level.getRandom(), -radius, radius);
+        int dz = Mth.nextInt(level.getRandom(), -radius, radius);
         BlockPos target = worldPosition.offset(dx, 0, dz);
+        // Vertical semantics unchanged: full column below the machine, minY..(y-1).
         target = target.atY(Mth.randomBetweenInclusive(level.getRandom(), level.getMinY(), worldPosition.getY() - 1));
         BlockState state = level.getBlockState(target);
         if (!canBreak(state)) {

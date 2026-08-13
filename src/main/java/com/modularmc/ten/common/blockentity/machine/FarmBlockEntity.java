@@ -114,7 +114,11 @@ public class FarmBlockEntity extends RadiusMachineBlockEntity {
         int[] allOffsets = buildXOffsets();
         if (allOffsets.length == 0) return;
 
-        // Validate or rebuild row order if radius changed
+        // Validate or rebuild row order if radius changed (Deviation #3).
+        // buildXOffsets() length is 2*radius+1, so any radius change (e.g.
+        // LevelupRg +2 per level) alters the length and triggers a full rebuild
+        // of the persisted scan state: row order, maturity snapshot, and the
+        // row cursor are all reset to a consistent, in-bounds state.
         if (xRowOrder.length != allOffsets.length) {
             xRowOrder = allOffsets;
             xRowMaturity = new int[allOffsets.length];
@@ -148,11 +152,34 @@ public class FarmBlockEntity extends RadiusMachineBlockEntity {
         // No wrap-around, no carry-over of excess to next cycle.
     }
 
+    @Override
+    public boolean cooking() {
+        // Pure capacity predicate (P1 contract): block processing when output slots
+        // (6..11) cannot accommodate this cycle's harvest output. Each scanned row
+        // yields up to 2 output units (1 seed + 1 produce, both stackable).
+        // No progress read/write, no side effects — progress is preserved while
+        // output is full (stall semantics, Deviation #2 fix).
+        if (itemHandler == null) {
+            return false;
+        }
+        int B = getLockedBatchSize();
+        int units = 0;
+        for (int i = 6; i < itemHandler.getSlots(); i++) {
+            ItemStack existing = itemHandler.getStackInSlot(i);
+            units += existing.isEmpty() ? itemHandler.getSlotLimit(i) : Math.max(0, itemHandler.getSlotLimit(i) - existing.getCount());
+        }
+        return units < 2L * B;
+    }
+
     private int[] buildXOffsets() {
-        // 9x9 square: 9 positions along the width axis (perpendicular to facing)
-        int[] offsets = new int[9];
-        for (int i = 0; i < 9; i++) {
-            offsets[i] = -4 + i;
+        // Dynamic square centered on the machine: (2*radius+1) positions along
+        // the width axis (perpendicular to facing), spanning -radius..+radius.
+        // Scan area follows radius upgrades (LevelupRg): radius 4 -> 9 rows,
+        // radius 6 -> 13 rows, radius 8 -> 17 rows, etc. (Deviation #3 fix).
+        int size = 2 * radius + 1;
+        int[] offsets = new int[size];
+        for (int i = 0; i < size; i++) {
+            offsets[i] = -radius + i;
         }
         return offsets;
     }
@@ -183,8 +210,12 @@ public class FarmBlockEntity extends RadiusMachineBlockEntity {
         int mz = worldPosition.getZ();
         int maturity = 0;
 
-        // Scan 9 blocks along the depth axis (back direction)
-        for (int d = 0; d < 9; d++) {
+        // Scan (2*radius+1) blocks along the depth axis (back direction).
+        // Depth follows radius in lockstep with the width axis, keeping the
+        // scanned area square and matching the pre-upgrade 9x9 footprint at
+        // the default radius of 4 (Deviation #3 fix).
+        int depth = 2 * radius + 1;
+        for (int d = 0; d < depth; d++) {
             int dx, dz;
             switch (facing) {
                 case NORTH -> {

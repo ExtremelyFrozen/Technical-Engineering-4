@@ -580,4 +580,84 @@ class UpgradeSystemContractTest {
                 "useItemOn must call UpgradeInstallHelper.tryInstall");
         }
     }
+
+    // ════════════════════════════════════════════════════════════
+    // I. Quarry-mode upgrades — LevelupIce/Magma/Mineral 仅 QUARRY
+    // ════════════════════════════════════════════════════════════
+    //
+    // Contract (user-confirmed option A): LevelupIce / LevelupMagma /
+    // LevelupMineral are Quarry-mode upgrades installable on QUARRY only.
+    // FARM must NOT accept them (eliminates slot occupation without effect).
+    // The gate is machine.isType("QUARRY"), which must resolve to
+    // MachineType.QUARRY exclusively (no FARM).
+
+    @Nested
+    class QuarryModeUpgradeScope {
+
+        @Test
+        void levelupIce_canApply_restrictedToQuarry() throws Exception {
+            assertQuarryOnlyCanApply("LevelupIce.java");
+        }
+
+        @Test
+        void levelupMagma_canApply_restrictedToQuarry() throws Exception {
+            assertQuarryOnlyCanApply("LevelupMagma.java");
+        }
+
+        @Test
+        void levelupMineral_canApply_restrictedToQuarry() throws Exception {
+            assertQuarryOnlyCanApply("LevelupMineral.java");
+        }
+
+        /**
+         * isType("QUARRY") must match MachineType.QUARRY exclusively.
+         * FARM must be excluded so Farm machines cannot install
+         * Quarry-mode upgrades (占槽无效果).
+         */
+        @Test
+        void isTypeQuarry_excludesFarm() throws Exception {
+            var sourceFile = new File(
+                "src/main/java/com/modularmc/ten/api/blockentity/CmMachineBlockEntity.java");
+            assertTrue(sourceFile.exists());
+            var content = Files.readString(sourceFile.toPath());
+
+            int quarryCase = content.indexOf("case \"QUARRY\"");
+            assertTrue(quarryCase >= 0, "isType must have a QUARRY case");
+            int defaultCase = content.indexOf("default ->", quarryCase);
+            assertTrue(defaultCase > quarryCase,
+                "QUARRY case must be followed by default");
+            String quarryBranch = content.substring(quarryCase, defaultCase);
+
+            assertTrue(quarryBranch.contains("MachineType.QUARRY"),
+                "isType(\"QUARRY\") must match MachineType.QUARRY");
+            assertFalse(quarryBranch.contains("FARM"),
+                "isType(\"QUARRY\") must NOT match FARM — " +
+                "Quarry-mode upgrades are QUARRY-only");
+        }
+
+        /**
+         * Each Quarry-mode upgrade must gate canApply on
+         * machine.isType("QUARRY") without referencing FARM.
+         */
+        private void assertQuarryOnlyCanApply(String fileName) throws Exception {
+            var sourceFile = new File(
+                "src/main/java/com/modularmc/ten/common/item/upgrades/" + fileName);
+            assertTrue(sourceFile.exists(), fileName + " must exist");
+            var content = Files.readString(sourceFile.toPath());
+
+            int canApplyIdx = content.indexOf("public boolean canApply");
+            assertTrue(canApplyIdx >= 0, fileName + " must declare canApply");
+            int effectIdx = content.indexOf("public boolean effect", canApplyIdx);
+            assertTrue(effectIdx > canApplyIdx,
+                fileName + " must declare effect after canApply");
+            String canApplyBody = content.substring(canApplyIdx, effectIdx);
+
+            assertTrue(canApplyBody.contains("isType(\"QUARRY\")"),
+                fileName + " canApply must gate on machine.isType(\"QUARRY\")");
+            assertFalse(canApplyBody.contains("FARM"),
+                fileName + " canApply must not reference FARM");
+            assertFalse(canApplyBody.contains("return true;"),
+                fileName + " canApply must not be a bare return true");
+        }
+    }
 }

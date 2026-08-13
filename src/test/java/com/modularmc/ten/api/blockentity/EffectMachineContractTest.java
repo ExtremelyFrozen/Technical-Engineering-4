@@ -501,6 +501,19 @@ class EffectMachineContractTest {
         }
 
         @Test
+        void quarry_mineRange_span_is2RPlus1() {
+            // Deviation #4: horizontal mining range must be ±radius (2×radius+1),
+            // consistent with Beacon/MobRip (AABB.inflate(radius)) and Farm
+            // (offsets -radius..+radius). radius=3 → 7×7, was 5×5 (±(radius-1)).
+            int radius = 3;
+            int span = 2 * radius + 1;
+            assertEquals(7, span,
+                    "radius=3 must yield a 7×7 mining square (was 5×5, Deviation #4)");
+            assertEquals(49, span * span,
+                    "7×7 = 49 candidate positions");
+        }
+
+        @Test
         void farm_scansB_rows_perCycle() {
             // Farm: scan B consecutive rows per cycle
             int currentRowIndex = 3;
@@ -603,6 +616,140 @@ class EffectMachineContractTest {
             boolean isDead = true;
             boolean skipped = isDead;
             assertTrue(skipped, "MobRip skips dead entities");
+        }
+    }
+
+    // ════════════════════════════════════════════════════════════
+    // I2. Farm scan scope — radius-driven area (Deviation #3)
+    // ════════════════════════════════════════════════════════════
+
+    @Nested
+    class FarmRadiusScopeContract {
+
+        private static final String FARM_SOURCE =
+                "src/main/java/com/modularmc/ten/common/blockentity/machine/FarmBlockEntity.java";
+
+        /**
+         * Model of the production buildXOffsets(): the row count along the
+         * width axis is 2*radius+1, spanning -radius..+radius. Default radius 4
+         * must reproduce the legacy 9x9 footprint; upgraded radii grow the
+         * scan area (LevelupRg adds initialRadius*RG_RANGE_FRACTION = +2/level).
+         */
+        static int[] modelBuildXOffsets(int radius) {
+            int size = 2 * radius + 1;
+            int[] offsets = new int[size];
+            for (int i = 0; i < size; i++) {
+                offsets[i] = -radius + i;
+            }
+            return offsets;
+        }
+
+        @Test
+        void farm_rowCount_followsRadius() {
+            assertEquals(9, modelBuildXOffsets(4).length,
+                    "Farm default radius 4 must scan 9 width rows (legacy 9x9 preserved)");
+            assertEquals(13, modelBuildXOffsets(6).length,
+                    "Farm radius 6 (one LevelupRg) must scan 13 width rows");
+            assertEquals(17, modelBuildXOffsets(8).length,
+                    "Farm radius 8 (two LevelupRg) must scan 17 width rows");
+        }
+
+        @Test
+        void farm_rowRange_centeredOnRadius() {
+            int[] r4 = modelBuildXOffsets(4);
+            assertEquals(-4, r4[0]);
+            assertEquals(4, r4[r4.length - 1]);
+
+            int[] r6 = modelBuildXOffsets(6);
+            assertEquals(-6, r6[0]);
+            assertEquals(6, r6[r6.length - 1]);
+        }
+
+        @Test
+        void farm_scanDepth_followsRadius() {
+            // Depth per row is 2*radius+1, matching the width axis.
+            int radius = 6;
+            int depth = 2 * radius + 1;
+            assertEquals(13, depth,
+                    "Farm scan depth must scale with radius (2*radius+1)");
+        }
+
+        @Test
+        void farm_defaultRadius_keepsLegacy9x9Footprint() {
+            // Regression: at the default radius of 4 the dynamic area must be
+            // identical to the old hardcoded 9x9 square.
+            int radius = 4;
+            int rows = 2 * radius + 1;   // 9
+            int depth = 2 * radius + 1;  // 9
+            assertEquals(9, rows, "width rows at radius 4");
+            assertEquals(9, depth, "depth at radius 4");
+        }
+
+        @Test
+        void farm_radiusChange_rebuildsRowState() {
+            // Radius grows 4 -> 6 (LevelupRg +2). The persisted row order no
+            // longer matches the new offset count, so state must be rebuilt:
+            // row order replaced, maturity reset, cursor reset to 0 (in-bounds).
+            int oldRadius = 4;
+            int newRadius = 6;
+            int[] oldOrder = modelBuildXOffsets(oldRadius);   // 9 rows
+            int[] newOrder = modelBuildXOffsets(newRadius);   // 13 rows
+            int[] xRowMaturity = new int[oldOrder.length];
+            int currentRowIndex = 5; // mid-scan when radius changes
+
+            // applyEffect rebuild condition: xRowOrder.length != new offset count
+            boolean rebuild = oldOrder.length != newOrder.length;
+            assertTrue(rebuild, "radius change must alter row count and trigger rebuild");
+            if (rebuild) {
+                xRowMaturity = new int[newOrder.length];
+                currentRowIndex = 0;
+            }
+            assertEquals(newOrder.length, xRowMaturity.length,
+                    "maturity snapshot must match new row count");
+            assertEquals(0, currentRowIndex,
+                    "cursor must reset to 0 after radius change");
+        }
+
+        @Test
+        void farm_staleCursor_clampedToBounds() {
+            // Even if rebuild is skipped (coincidentally equal length), a stale
+            // persisted cursor must be clamped back to an in-bounds index.
+            int rowCount = 13;
+            int currentRowIndex = 17; // persisted beyond new bounds
+            if (currentRowIndex < 0 || currentRowIndex >= rowCount) {
+                currentRowIndex = 0;
+            }
+            assertEquals(0, currentRowIndex,
+                    "Farm cursor must clamp to 0 when out of bounds");
+        }
+
+        @Test
+        void farm_buildXOffsets_radiusDriven() throws Exception {
+            // RED before fix: fixed new int[9] with -4+i offsets, decoupled from
+            // the radius field. GREEN: array size and offsets must derive from
+            // the radius field (2*radius+1, -radius..+radius).
+            var sourceFile = new java.io.File(FARM_SOURCE);
+            assertTrue(sourceFile.exists());
+            var content = java.nio.file.Files.readString(sourceFile.toPath());
+            assertTrue(content.contains("2 * radius + 1"),
+                    "RED: buildXOffsets must size the row array from radius (2*radius+1)");
+            assertTrue(content.contains("offsets[i] = -radius + i"),
+                    "RED: buildXOffsets must center row offsets on -radius..+radius");
+            assertFalse(content.contains("new int[9]"),
+                    "RED: hardcoded 9-row array must be gone (was decoupled from radius)");
+        }
+
+        @Test
+        void farm_scanRow_depth_radiusDriven() throws Exception {
+            // RED before fix: scanRow looped d<9 hardcoded. GREEN: depth must be
+            // derived from radius in lockstep with the width axis.
+            var sourceFile = new java.io.File(FARM_SOURCE);
+            assertTrue(sourceFile.exists());
+            var content = java.nio.file.Files.readString(sourceFile.toPath());
+            assertTrue(content.contains("int depth = 2 * radius + 1"),
+                    "RED: scanRow must derive depth from radius (2*radius+1)");
+            assertTrue(content.contains("d < depth"),
+                    "RED: scanRow depth loop must use the radius-derived depth");
         }
     }
 

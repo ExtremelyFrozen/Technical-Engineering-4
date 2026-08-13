@@ -190,14 +190,14 @@ class P3NetworkContractTest {
             assertTrue(methodIdx >= 0, "transferFor method must exist");
             String methodBody = src.substring(methodIdx, methodIdx + 500);
             // Each cable type must return a positive rate
-            assertTrue(methodBody.contains("return 200_000"),
-                    "cable_star must return 200_000");
-            assertTrue(methodBody.contains("return 4_000"),
-                    "cable_azure must return 4_000");
-            assertTrue(methodBody.contains("return 1_000"),
-                    "cable_quartz must return 1_000");
-            assertTrue(methodBody.contains("return 200"),
-                    "default cable must return 200");
+            assertTrue(methodBody.contains("return 500_000"),
+                    "cable_star must return 500_000");
+            assertTrue(methodBody.contains("return 50_000"),
+                    "cable_azure must return 50_000");
+            assertTrue(methodBody.contains("return 5_000"),
+                    "cable_quartz must return 5_000");
+            assertTrue(methodBody.contains("return 500;"),
+                    "default cable must return 500");
         }
 
         @Test
@@ -286,30 +286,37 @@ class P3NetworkContractTest {
 
         @Test
         void moveEnergyRemovedFromTransferNetworks() throws Exception {
-            // moveEnergy/moveFluid 已删除（连接器/频道轮询废弃）；moveItems 保留供 Pipe 使用
+            // moveEnergy/moveFluid 已删除（连接器/频道轮询废弃）；moveItems 也已随撮合重构删除
+            // （撮合自行 extract/insert），insertItem 保留供 Pipe 撮合执行插入
             var src = readMainSource(NETWORKS_SRC);
             assertFalse(src.contains("public static int moveEnergy"),
                     "P3-T4: moveEnergy must be removed from TransferNetworks");
             assertFalse(src.contains("public static int moveFluid"),
                     "P3-T4: moveFluid must be removed from TransferNetworks");
-            assertTrue(src.contains("public static int moveItems"),
-                    "P3-T4: moveItems must be retained for Pipe");
+            assertFalse(src.contains("public static int moveItems"),
+                    "P3-T4: moveItems must be removed from TransferNetworks (撮合自行 extract/insert)");
+            assertTrue(src.contains("public static ItemStack insertItem"),
+                    "P3-T4: insertItem must be retained for Pipe matching");
         }
 
         @Test
-        void moveItemsRetainedForPipe() throws Exception {
-            // Pipe 是 moveItems 的生产调用方
+        void matchAndTransferRetainedForPipe() throws Exception {
+            // Pipe 撮合入口：root 每 tick 调 matchAndTransfer，执行插入复用 TransferNetworks.insertItem
             var pipeSrc = readMainSource("com/modularmc/ten/common/blockentity/PipeBlockEntity.java");
-            assertTrue(pipeSrc.contains("TransferNetworks.moveItems"),
-                    "P3-T4: Pipe must use TransferNetworks.moveItems");
+            assertTrue(pipeSrc.contains("matchAndTransfer(network)"),
+                    "P3-T4: Pipe tick must call matchAndTransfer for item matching");
+            assertTrue(pipeSrc.contains("TransferNetworks.insertItem"),
+                    "P3-T4: Pipe must use TransferNetworks.insertItem for insert execution");
         }
 
         @Test
-        void moveItemsGuardsZeroLimits() throws Exception {
-            // moveItems 保留 guard：limit<=0 短路
-            var src = readMainSource(NETWORKS_SRC);
-            assertTrue(src.contains("if (limit <= 0)"),
-                    "P3-T4: moveItems must guard against zero/negative limit");
+        void matchingGuardsPerBeatLimit() throws Exception {
+            // 撮合保留限量守卫：每源每节拍限量（perBeatLimit - 已搬量），耗尽则跳过该源
+            var pipeSrc = readMainSource("com/modularmc/ten/common/blockentity/PipeBlockEntity.java");
+            assertTrue(pipeSrc.contains("perBeatLimit - movedBySource.getOrDefault"),
+                    "P3-T4: matching must guard each source by perBeatLimit (per-beat limit)");
+            assertTrue(pipeSrc.contains("remaining <= 0"),
+                    "P3-T4: exhausted source must be skipped (guard clause)");
         }
 
         @Test

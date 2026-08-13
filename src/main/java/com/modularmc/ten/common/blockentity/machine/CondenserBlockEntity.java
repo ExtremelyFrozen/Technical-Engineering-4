@@ -78,6 +78,12 @@ public class CondenserBlockEntity extends ProcessingMachineBlockEntity {
         });
     }
 
+    /**
+     * 单次加工基准时长 1000 tick（50 秒）。
+     * 生成速率规格：最低 0.001 mB/s。单次产出 5mB×B，B=1 时
+     * 5mB / 50s = 0.1 mB/s ≥ 0.001 mB/s，规格恒满足（见契约测试
+     * {@code S2_CondenserGenerationRate}）。
+     */
     @Override
     public int baseTickTime() {
         return 1000;
@@ -91,7 +97,10 @@ public class CondenserBlockEntity extends ProcessingMachineBlockEntity {
         // B_byInput: catalyst must be present for any processing
         boolean hasCatalyst = !itemHandler.getStackInSlot(0).isEmpty();
 
-        // If catalyst is gone and we had a lock, clear it
+        // If catalyst is gone and we had a lock, clear it.
+        // NOTE: 催化剂耗尽即暂停（清锁返回 false）为接受现状，不改暂停语义：
+        // 最低生成速率规格 0.001 mB/s 远低于实际 0.1 mB/s，
+        // 暂停导致的平均速率下降不构成速率违约（用户以最低速率规格确认）。
         if (!hasCatalyst) {
             clearLockedBatch();
             return false;

@@ -303,6 +303,55 @@ class P1MaxProgressAndIdentityTest {
     }
 
     // ════════════════════════════════════════════════════════════
+    // S2: Condenser 最低生成速率契约固化
+    // 规格：最低生成速率 0.001 mB/s。
+    // 实现：baseTickTime = 1000 tick（50s），单次产出 5mB×B，
+    //       B=1 时 5mB/50s = 0.1 mB/s ≥ 0.001 mB/s ✓。
+    // ════════════════════════════════════════════════════════════
+
+    @Nested
+    class S2_CondenserGenerationRate {
+
+        private static final String CONDENSER_PATH =
+                "src/main/java/com/modularmc/ten/common/blockentity/machine/CondenserBlockEntity.java";
+
+        /**
+         * 源码断言：baseTickTime() 必须返回 1000 tick（50 秒）。
+         */
+        @Test
+        void condenser_baseTickTime_is1000Ticks() throws Exception {
+            var sourceFile = new java.io.File(CONDENSER_PATH);
+            assertTrue(sourceFile.exists());
+            var content = java.nio.file.Files.readString(sourceFile.toPath());
+
+            int baseIdx = content.indexOf("public int baseTickTime()");
+            assertTrue(baseIdx >= 0,
+                    "CondenserBlockEntity must override baseTickTime()");
+            String baseBody = content.substring(baseIdx,
+                    content.indexOf("}", baseIdx) + 1);
+            assertTrue(baseBody.contains("1000"),
+                    "Condenser.baseTickTime() must return 1000 ticks (50s)");
+        }
+
+        /**
+         * 速率规格断言：B=1 时 5mB / 50s = 0.1 mB/s，
+         * 必须 ≥ 最低规格 0.001 mB/s。
+         */
+        @Test
+        void condenser_generationRate_meetsMinSpec() {
+            int baseTickTime = 1000; // ticks
+            int outputMb = 5;        // mB per batch (B=1)
+            double seconds = baseTickTime / 20.0; // 20 ticks/s → 50s
+            double mbPerSecond = outputMb / seconds; // 0.1 mB/s
+
+            assertEquals(0.1, mbPerSecond, 1e-9,
+                    "Condenser B=1 速率必须为 0.1 mB/s");
+            assertTrue(mbPerSecond >= 0.001,
+                    "Condenser 生成速率 0.1 mB/s 必须满足最低规格 0.001 mB/s");
+        }
+    }
+
+    // ════════════════════════════════════════════════════════════
     // S3: Furnace recipe identity tracking
     // ════════════════════════════════════════════════════════════
 

@@ -1355,7 +1355,9 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
             case "MACHINE_EFFECT" -> machineType() == MachineType.MACHINE_EFFECT || machineType() == MachineType.BEACON || machineType() == MachineType.MOB_RIPPER || machineType() == MachineType.FARM;
             case "FURNACE" -> machineType() == MachineType.FURNACE;
             case "BEACON" -> machineType() == MachineType.BEACON;
-            case "QUARRY" -> machineType() == MachineType.QUARRY || machineType() == MachineType.FARM;
+            // Quarry-mode upgrades (LevelupIce/Magma/Mineral) must be QUARRY-only:
+            // FARM is excluded so these upgrades cannot occupy slots without effect.
+            case "QUARRY" -> machineType() == MachineType.QUARRY;
             default -> false;
         };
     }
