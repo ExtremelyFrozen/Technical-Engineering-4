@@ -17,10 +17,13 @@ import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
 
 public class SolarBlockEntity extends EngineBlockEntity {
 
+    /** Base FE/t generation rate for Solar. Pinned by BaseGenerationRateTest. */
+    public static final int BASE_GENERATION_RATE = 10;
+
     public SolarBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
         setCapacity(kFE(80));
-        setEfficiency(10);
+        setEfficiency(BASE_GENERATION_RATE);
     }
 
     @Override

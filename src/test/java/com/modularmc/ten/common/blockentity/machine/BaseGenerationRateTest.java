@@ -4,7 +4,8 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * RED: BASE_GENERATION_RATE constants do not exist yet in the three engine BEs.
+ * Contract: pins BASE_GENERATION_RATE for all four engine block entities.
+ * Solar self-consistency: 600 fuel / 10 FE/t = 60 ticks per cycle.
  */
 class BaseGenerationRateTest {
 
@@ -21,5 +22,10 @@ class BaseGenerationRateTest {
     @Test
     void biomassBaseGenerationRate_shouldBe80() {
         assertEquals(80, BiomassBlockEntity.BASE_GENERATION_RATE);
+    }
+
+    @Test
+    void solarBaseGenerationRate_shouldBe10() {
+        assertEquals(10, SolarBlockEntity.BASE_GENERATION_RATE);
     }
 }

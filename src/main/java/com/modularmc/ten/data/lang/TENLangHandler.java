@@ -59,10 +59,10 @@ public final class TENLangHandler {
 
     // ── Common ──────────────────────────────────────────────────────
     private static void addCommon() {
-        add("cable.0", "Transfer: 1 kFE", "传输能量: 1 kFE");
-        add("cable_quartz.0", "Transfer: 10 kFE", "传输能量: 10 kFE");
-        add("cable_azure.0", "Transfer: 100 kFE", "传输能量: 100 kFE");
-        add("cable_star.0", "Transfer: Infinite FE", "传输能量: 无限 FE");
+        add("cable.0", "Transfer: 500 FE", "传输能量: 500 FE");
+        add("cable_quartz.0", "Transfer: 5 kFE", "传输能量: 5 kFE");
+        add("cable_azure.0", "Transfer: 50 kFE", "传输能量: 50 kFE");
+        add("cable_star.0", "Transfer: 500 kFE", "传输能量: 500 kFE");
         add("not_consumed", "Not consumed", "不消耗");
         add("shift", "Press [SHIFT] to see more", "按住 [SHIFT] 查看更多信息");
         add("info.too_much_upgrades", "This machine has too many upgrades!", "这台机器的升级组件太多了！");

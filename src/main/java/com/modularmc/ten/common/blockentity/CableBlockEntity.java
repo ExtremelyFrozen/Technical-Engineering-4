@@ -184,15 +184,15 @@ public class CableBlockEntity extends CmBlockEntity {
     private static int transferFor(BlockState state) {
         String name = SafeOperationHelper.regNameOf(state.getBlock());
         if ("cable_star".equals(name)) {
-            return 200_000;
+            return 500_000;
         }
         if ("cable_azure".equals(name)) {
-            return 4_000;
+            return 50_000;
         }
         if ("cable_quartz".equals(name)) {
-            return 1_000;
+            return 5_000;
         }
-        return 200;
+        return 500;
     }
 
     private static Label label(int x, int y, String text) {
