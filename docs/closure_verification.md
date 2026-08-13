@@ -4,7 +4,7 @@
 > **对应 TASK**: TASK-063（收口验证）  
 > **验证日期**: 2026-07-09  
 > **验证者**: 猫娘编写官-米娅  
-> **项目路径**: `E:\GitHub\Technical-Engineering-4\Technical-Engineering-4-26.1.2`  
+> **项目路径**: `<workspace>`  
 > **当前 HEAD**: `e28d930 fix: correct 26.1.2 version metadata`  
 > **远程分支**: `origin/26.1.2`
 
