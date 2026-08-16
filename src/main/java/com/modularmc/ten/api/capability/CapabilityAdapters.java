@@ -15,7 +15,9 @@ import net.neoforged.neoforge.transfer.item.ItemResource;
 import net.neoforged.neoforge.transfer.transaction.SnapshotJournal;
 import net.neoforged.neoforge.transfer.transaction.TransactionContext;
 
+import com.mojang.logging.LogUtils;
 import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
 
 /**
  * Adapters bridging NeoForge 26.1.2 Resource/Transaction capability API
@@ -26,6 +28,8 @@ import org.jetbrains.annotations.Nullable;
  * while the capability boundary speaks the new API.
  */
 public final class CapabilityAdapters {
+
+    private static final Logger LOGGER = LogUtils.getLogger();
 
     private CapabilityAdapters() {}
 
@@ -91,10 +95,38 @@ public final class CapabilityAdapters {
         @Override
         protected void revertToSnapshot(Integer snapshot) {
             int current = storage.getEnergyStored();
+            if (current == snapshot) {
+                return;
+            }
+            // 优先精确恢复：底层为 MachineEnergyStorage（如 CableBlockEntity.getEnergy 返回本体）时
+            // 用 setEnergy 一次性置回快照值，绕过 maxReceive/maxExtract 速率限制与信号/面模式门控。
+            if (storage instanceof MachineEnergyStorage machine) {
+                machine.setEnergy(snapshot);
+                return;
+            }
+            // 兜底：循环差值恢复（逐轮 extract/receive 直至完全恢复或单轮无进展）。
+            // 解决 per-call 速率限制把单次差值截断导致的能量残留泄漏；
+            // 若门控关闭致无进展（receiveEnergy/extractEnergy 返回 0），记录告警而非静默丢能量。
             if (current > snapshot) {
-                storage.extractEnergy(current - snapshot, false);
-            } else if (current < snapshot) {
-                storage.receiveEnergy(snapshot - current, false);
+                int remaining = current - snapshot;
+                while (remaining > 0) {
+                    int recovered = storage.extractEnergy(remaining, false);
+                    if (recovered <= 0) {
+                        LOGGER.warn("Energy revert: unable to fully restore, {} FE cannot be extracted", remaining);
+                        break;
+                    }
+                    remaining -= recovered;
+                }
+            } else {
+                int remaining = snapshot - current;
+                while (remaining > 0) {
+                    int recovered = storage.receiveEnergy(remaining, false);
+                    if (recovered <= 0) {
+                        LOGGER.warn("Energy revert: unable to fully restore, {} FE cannot be injected", remaining);
+                        break;
+                    }
+                    remaining -= recovered;
+                }
             }
         }
     }

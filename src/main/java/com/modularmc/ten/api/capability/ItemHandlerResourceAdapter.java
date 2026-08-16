@@ -59,7 +59,11 @@ public class ItemHandlerResourceAdapter
     @Override
     protected void revertToSnapshot(ItemStack[] snapshot) {
         if (!(handler instanceof IItemHandlerModifiable modifiable)) {
-            // 非可写 handler 无法回滚：不应发生（TEN 机器均 modifiable）；保守跳过。
+            // 非可写 handler 无法回滚：不应发生（TEN 机器均 modifiable）；告警而非静默跳过，
+            // 便于排查潜在的真实变更未恢复（物品丢失/复制风险）。
+            org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(ItemHandlerResourceAdapter.class);
+            logger.warn("ItemHandlerResourceAdapter.revertToSnapshot: handler {} is not modifiable; "
+                    + "transaction rollback skipped (potential item mutation not restored)", handler.getClass().getName());
             return;
         }
         int n = Math.min(snapshot.length, handler.getSlots());
@@ -97,8 +101,8 @@ public class ItemHandlerResourceAdapter
 
     @Override
     public int insert(int index, ItemResource resource, int amount, TransactionContext transaction) {
-        TransferPreconditions.checkNonEmptyNonNegative(resource, amount);
         if (amount <= 0) return 0;
+        TransferPreconditions.checkNonEmptyNonNegative(resource, amount);
         if (index < 0 || index >= size()) return 0;
         if (!isValid(index, resource)) return 0;
 
@@ -116,8 +120,8 @@ public class ItemHandlerResourceAdapter
 
     @Override
     public int extract(int index, ItemResource resource, int amount, TransactionContext transaction) {
-        TransferPreconditions.checkNonEmptyNonNegative(resource, amount);
         if (amount <= 0) return 0;
+        TransferPreconditions.checkNonEmptyNonNegative(resource, amount);
         if (index < 0 || index >= size()) return 0;
 
         ItemStack inSlot = handler.getStackInSlot(index);

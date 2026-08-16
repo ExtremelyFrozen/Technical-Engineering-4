@@ -158,11 +158,16 @@ class ResourceHandlerJournalContractTest {
         }
 
         @Test
-        void energyRevertUsesDifference() throws Exception {
+        void energyRevertPreciseFirstThenDiff() throws Exception {
             String src = readSource(SRC);
-            assertTrue(src.contains("storage.extractEnergy(current - snapshot, false);")
-                            && src.contains("storage.receiveEnergy(snapshot - current, false);"),
-                    "RED: energy revert must restore via diff (IEnergyStorage has no direct set)");
+            // 优先精确恢复：底层为 MachineEnergyStorage（如 cable 本体）时用 setEnergy 绕过速率限制与门控
+            assertTrue(src.contains("storage instanceof MachineEnergyStorage machine")
+                            && src.contains("machine.setEnergy(snapshot);"),
+                    "GREEN: energy revert must prefer precise setEnergy when storage is MachineEnergyStorage");
+            // 兜底：非 MachineEnergyStorage（机器 side 包装/能量单元）用循环差值恢复（逐轮 extract/receive）
+            assertTrue(src.contains("storage.extractEnergy(remaining, false)")
+                            && src.contains("storage.receiveEnergy(remaining, false)"),
+                    "GREEN: energy revert must loop-diff restore (extractEnergy/receiveEnergy) for non-MachineEnergyStorage");
         }
     }
 }
