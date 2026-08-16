@@ -630,9 +630,13 @@ class P3NetworkContractTest {
         @Test
         void faceModeArraysSyncedInDoBaseData() throws Exception {
             var src = readMainSource(CM_SRC);
-            // doBaseData must sync face maps to faceData arrays
-            assertTrue(src.contains("energyFaceData[idx] = energyFaceMode.getOrDefault"),
-                    "P3-T7: doBaseData must sync energyFaceData from energyFaceMode");
+            // faceData must be rebuilt from faceMode maps via rebuildFaceData (invoked by doBaseData)
+            assertTrue(src.contains("private boolean rebuildFaceData()"),
+                    "P3-T7: rebuildFaceData helper must exist (face maps -> faceData arrays)");
+            assertTrue(src.contains("energyFaceMode.getOrDefault(d, initialFaceModeEnergy())"),
+                    "P3-T7: rebuildFaceData must read energyFaceMode map");
+            assertTrue(src.contains("energyFaceData[idx] = e"),
+                    "P3-T7: rebuildFaceData must write energyFaceData from map value");
         }
 
         @Test

@@ -168,15 +168,14 @@ class FaceConfigRealtimeSyncContractTest {
             assertTrue(putIdx >= 0, "map.put(direction, mode) must exist");
             String afterPut = methodBody.substring(putIdx);
 
-            // Array write must come BEFORE rpcToTracking
+            // Array write must come BEFORE the full-face sync (rpcToTracking moved into syncAllFacesToClients)
             int arrayWriteIdx = afterPut.indexOf("energyFaceData");
-            int rpcIdx = afterPut.indexOf("rpcToTracking");
-            assertTrue(arrayWriteIdx >= 0 && rpcIdx >= 0,
-                    "Both array write and rpcToTracking must exist");
-            assertTrue(arrayWriteIdx < rpcIdx,
-                    "RED: Array write must occur BEFORE rpcToTracking. " +
-                    "Current code calls rpcToTracking without prior array update. " +
-                    "FIX: write arrays immediately after map.put, then rpcToTracking.");
+            int syncIdx = afterPut.indexOf("syncAllFacesToClients");
+            assertTrue(arrayWriteIdx >= 0 && syncIdx >= 0,
+                    "Both array write and syncAllFacesToClients call must exist");
+            assertTrue(arrayWriteIdx < syncIdx,
+                    "RED: Array write must occur BEFORE syncAllFacesToClients. "
+                            + "syncAllFacesToClients pushes all faces to clients; arrays must be up to date first.");
         }
 
         @Test
@@ -188,25 +187,25 @@ class FaceConfigRealtimeSyncContractTest {
             int bodyEnd = findMatchingBrace(src, bodyStart);
             String methodBody = src.substring(bodyStart, bodyEnd);
 
-            // rpcToTracking must send all three values (energyMode, itemMode, fluidMode)
-            int rpcIdx = methodBody.indexOf("rpcToTracking(\"rpcSyncFaceInfo\"");
-            assertTrue(rpcIdx >= 0, "rpcToTracking call must exist");
-            // Safe substring: use end of method body as bound
-            int rpcLineEnd = methodBody.indexOf('\n', rpcIdx);
-            if (rpcLineEnd < 0) rpcLineEnd = methodBody.length();
-            String rpcLine = methodBody.substring(rpcIdx, Math.min(rpcLineEnd, methodBody.length()));
+            // rpcCycleFaceMode must invoke the full-face sync helper (all 6 faces × 3 types)
+            int syncIdx = methodBody.indexOf("syncAllFacesToClients()");
+            assertTrue(syncIdx >= 0, "rpcCycleFaceMode must call syncAllFacesToClients() for full sync");
 
-            // Must pass all three modes: energyMode, itemMode, fluidMode
-            // After fix: uses local variables (newEnergyMode, newItemMode, newFluidMode)
-            assertTrue(rpcLine.contains("newEnergyMode") ||
-                            rpcLine.contains("energyFaceMode.getOrDefault"),
-                    "rpcToTracking must send energy mode (3rd arg).");
-            assertTrue(rpcLine.contains("newItemMode") ||
-                            rpcLine.contains("itemFaceMode.getOrDefault"),
-                    "rpcToTracking must send item mode (4th arg).");
-            assertTrue(rpcLine.contains("newFluidMode") ||
-                            rpcLine.contains("fluidFaceMode.getOrDefault"),
-                    "rpcToTracking must send fluid mode (5th arg).");
+            // syncAllFacesToClients must rpcToTracking all three modes per face
+            int helperIdx = src.indexOf("private void syncAllFacesToClients");
+            assertTrue(helperIdx >= 0, "syncAllFacesToClients helper must exist");
+            int helperBodyStart = src.indexOf('{', helperIdx);
+            int helperBodyEnd = findMatchingBrace(src, helperBodyStart);
+            String helperBody = src.substring(helperBodyStart, helperBodyEnd);
+            int rpcIdx = helperBody.indexOf("rpcToTracking(\"rpcSyncFaceInfo\"");
+            assertTrue(rpcIdx >= 0, "syncAllFacesToClients must rpcToTracking rpcSyncFaceInfo");
+            int rpcLineEnd = helperBody.indexOf('\n', rpcIdx);
+            if (rpcLineEnd < 0) rpcLineEnd = helperBody.length();
+            String rpcLine = helperBody.substring(rpcIdx, Math.min(rpcLineEnd, helperBody.length()));
+            assertTrue(rpcLine.contains("energyFaceData[idx]") &&
+                            rpcLine.contains("itemFaceData[idx]") &&
+                            rpcLine.contains("fluidFaceData[idx]"),
+                    "syncAllFacesToClients must send all three modes (energy, item, fluid) per face");
         }
     }
 
@@ -402,24 +401,15 @@ class FaceConfigRealtimeSyncContractTest {
             assertTrue(arrayWriteFluidIdx >= 0,
                     "fluidFaceData must be written using newFluidMode local variable");
 
-            // Same locals must be passed to rpcToTracking
-            int rpcIdx = methodBody.indexOf("rpcToTracking(\"rpcSyncFaceInfo\"");
-            assertTrue(rpcIdx >= 0, "rpcToTracking call must exist");
-            int rpcLineEnd = methodBody.indexOf('\n', rpcIdx);
-            if (rpcLineEnd < 0) rpcLineEnd = methodBody.length();
-            String rpcLine = methodBody.substring(rpcIdx, Math.min(rpcLineEnd, methodBody.length()));
-            assertTrue(rpcLine.contains("newEnergyMode"),
-                    "rpcToTracking must pass newEnergyMode (3rd arg)");
-            assertTrue(rpcLine.contains("newItemMode"),
-                    "rpcToTracking must pass newItemMode (4th arg)");
-            assertTrue(rpcLine.contains("newFluidMode"),
-                    "rpcToTracking must pass newFluidMode (5th arg)");
+            // Same locals feed the full-face sync helper
+            int syncIdx = methodBody.indexOf("syncAllFacesToClients()");
+            assertTrue(syncIdx >= 0, "syncAllFacesToClients call must exist");
 
-            // Verify order: local reads before array writes before rpcToTracking
+            // Verify order: local reads before array writes before full-face sync
             assertTrue(localEnergyIdx < arrayWriteEnergyIdx,
                     "Local variable read must come before array write");
-            assertTrue(arrayWriteEnergyIdx < rpcIdx,
-                    "Array write must come before rpcToTracking");
+            assertTrue(arrayWriteEnergyIdx < syncIdx,
+                    "Array write must come before syncAllFacesToClients");
         }
     }
 
@@ -439,13 +429,18 @@ class FaceConfigRealtimeSyncContractTest {
             int bodyEnd = findMatchingBrace(src, bodyStart);
             String methodBody = src.substring(bodyStart, bodyEnd);
 
-            // doBaseData must still sync arrays (regression: existing sync must remain)
-            assertTrue(methodBody.contains("energyFaceData[idx]"),
-                    "REGRESSION: doBaseData must still sync energyFaceData from map");
-            assertTrue(methodBody.contains("itemFaceData[idx]"),
-                    "REGRESSION: doBaseData must still sync itemFaceData from map");
-            assertTrue(methodBody.contains("fluidFaceData[idx]"),
-                    "REGRESSION: doBaseData must still sync fluidFaceData from map");
+            // doBaseData must rebuild arrays from maps via rebuildFaceData (regression: existing sync must remain)
+            assertTrue(methodBody.contains("rebuildFaceData()"),
+                    "REGRESSION: doBaseData must call rebuildFaceData() to sync faceData from maps");
+            int rebuildIdx = src.indexOf("private boolean rebuildFaceData");
+            assertTrue(rebuildIdx >= 0, "rebuildFaceData helper must exist");
+            int rebuildBodyStart = src.indexOf('{', rebuildIdx);
+            int rebuildBodyEnd = findMatchingBrace(src, rebuildBodyStart);
+            String rebuildBody = src.substring(rebuildBodyStart, rebuildBodyEnd);
+            assertTrue(rebuildBody.contains("energyFaceData[idx]") &&
+                            rebuildBody.contains("itemFaceData[idx]") &&
+                            rebuildBody.contains("fluidFaceData[idx]"),
+                    "REGRESSION: rebuildFaceData must sync all three arrays from faceMode maps");
         }
     }
 

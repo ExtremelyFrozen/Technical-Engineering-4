@@ -109,15 +109,12 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
     @DescSynced
     public boolean active = false;
 
-    // Face config for client display (synced via @DescSynced)
-    @Persisted
-    @DescSynced
+    // Face config for client display — server-authoritative mirror, rebuilt from faceMode
+    // maps in readTileData/doBaseData. NOT @Persisted (derived data; persistence lives in
+    // the faceMode maps via dire* keys), NOT @DescSynced (int[] element mutation is not
+    // detected) — synced to clients via syncAllFacesToClients() on change.
     public int[] energyFaceData = new int[6];
-    @Persisted
-    @DescSynced
     public int[] itemFaceData = new int[6];
-    @Persisted
-    @DescSynced
     public int[] fluidFaceData = new int[6];
 
     // ───── P1-T2/P2: 乘法模型与批处理字段 ─────
@@ -541,12 +538,11 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
             effAuc = efficientIn;
         }
 
-        // ── Sync face maps to arrays for client ──
-        for (Direction d : Direction.values()) {
-            int idx = d.get3DDataValue();
-            energyFaceData[idx] = energyFaceMode.getOrDefault(d, initialFaceModeEnergy());
-            itemFaceData[idx] = itemFaceMode.getOrDefault(d, initialFaceModeItem());
-            fluidFaceData[idx] = fluidFaceMode.getOrDefault(d, initialFaceModeFluid());
+        // ── Sync face maps to arrays for client (server-authoritative mirror) ──
+        // int[] element mutation is not detected by @DescSynced — on change, push all
+        // 6 faces × 3 types to tracking clients via syncAllFacesToClients().
+        if (rebuildFaceData()) {
+            syncAllFacesToClients();
         }
     }
 
@@ -1051,6 +1047,9 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
             itemFaceMode.put(direction, input.getInt("direItem" + idx).orElse(initialFaceModeItem()));
             fluidFaceMode.put(direction, input.getInt("direFluid" + idx).orElse(initialFaceModeFluid()));
         }
+        // Rebuild client-mirror faceData from restored faceMode maps so server-side state
+        // is correct immediately after load (doBaseData change-detection will sync to clients).
+        rebuildFaceData();
         loadSerializedHandlers(input);
 
         // ── P5-T1: Old save compatibility — unconditional progress reset ──
@@ -1137,7 +1136,38 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
             energyFaceData[dirIndex] = newEnergyMode;
             itemFaceData[dirIndex] = newItemMode;
             fluidFaceData[dirIndex] = newFluidMode;
-            rpcToTracking("rpcSyncFaceInfo", dirIndex, newEnergyMode, newItemMode, newFluidMode);
+            // 完整同步全部 6 面 × 3 类型（int[] 元素变更不触发 @DescSynced；
+            // 单面同步会导致其他面/其他类型保持旧值——进入界面时选中的类型才更新）。
+            syncAllFacesToClients();
+        }
+    }
+
+    /**
+     * 从 faceMode maps 重建客户端镜像 faceData（3 类型 × 6 面）。
+     * 返回是否发生变化（供调用方决定是否推送客户端）。
+     */
+    private boolean rebuildFaceData() {
+        boolean changed = false;
+        for (Direction d : Direction.values()) {
+            int idx = d.get3DDataValue();
+            int e = energyFaceMode.getOrDefault(d, initialFaceModeEnergy());
+            int i = itemFaceMode.getOrDefault(d, initialFaceModeItem());
+            int f = fluidFaceMode.getOrDefault(d, initialFaceModeFluid());
+            if (energyFaceData[idx] != e || itemFaceData[idx] != i || fluidFaceData[idx] != f) {
+                changed = true;
+            }
+            energyFaceData[idx] = e;
+            itemFaceData[idx] = i;
+            fluidFaceData[idx] = f;
+        }
+        return changed;
+    }
+
+    /** 推送全部 6 面 × 3 类型 faceData 到 tracking 客户端（逐面复用 rpcSyncFaceInfo）。 */
+    private void syncAllFacesToClients() {
+        for (Direction d : Direction.values()) {
+            int idx = d.get3DDataValue();
+            rpcToTracking("rpcSyncFaceInfo", idx, energyFaceData[idx], itemFaceData[idx], fluidFaceData[idx]);
         }
     }
 
