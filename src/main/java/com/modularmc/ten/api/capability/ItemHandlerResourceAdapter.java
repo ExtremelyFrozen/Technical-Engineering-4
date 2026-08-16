@@ -2,9 +2,11 @@ package com.modularmc.ten.api.capability;
 
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.items.IItemHandler;
+import net.neoforged.neoforge.items.IItemHandlerModifiable;
 import net.neoforged.neoforge.transfer.ResourceHandler;
 import net.neoforged.neoforge.transfer.TransferPreconditions;
 import net.neoforged.neoforge.transfer.item.ItemResource;
+import net.neoforged.neoforge.transfer.transaction.SnapshotJournal;
 import net.neoforged.neoforge.transfer.transaction.TransactionContext;
 
 /**
@@ -15,16 +17,20 @@ import net.neoforged.neoforge.transfer.transaction.TransactionContext;
  * machines that still use the old {@code IItemHandler} interface internally.
  *
  * <p>
- * <b>Transaction semantics:</b> The legacy {@code IItemHandler} API does not support rollback.
- * Operations are executed immediately on the underlying handler, consistent with the existing
- * {@link CapabilityAdapters#asEnergyHandler} pattern. Callers requiring proper transaction
- * rollback should use a native {@code ResourceHandler} implementation on the BE.
+ * <b>Transaction semantics (Journal model, NeoForge 26.1.2):</b> This adapter <em>extends</em>
+ * {@link SnapshotJournal} (matching the native {@code ItemStackResourceHandler} pattern).
+ * Every mutating insert/extract first calls {@link #updateSnapshots(TransactionContext)} so the
+ * current transaction records a before-state snapshot; if the transaction is aborted (e.g. a
+ * simulate probe via {@code IItemHandler.of()}), the journal's {@link #revertToSnapshot} restores
+ * the underlying handler — simulate never produces a real mutation (fixes item loss/duplication).
  *
  * <p>
  * <b>Guards:</b> Empty resources and negative amounts are rejected via
  * {@link TransferPreconditions}. Null handlers throw at construction.
  */
-public class ItemHandlerResourceAdapter implements ResourceHandler<ItemResource> {
+public class ItemHandlerResourceAdapter
+                                        extends SnapshotJournal<ItemStack[]>
+                                        implements ResourceHandler<ItemResource> {
 
     private final IItemHandler handler;
 
@@ -33,6 +39,33 @@ public class ItemHandlerResourceAdapter implements ResourceHandler<ItemResource>
             throw new IllegalArgumentException("handler must not be null");
         }
         this.handler = handler;
+    }
+
+    /** 事务快照：深拷贝全部槽位（abort 时恢复）。 */
+    @Override
+    protected ItemStack[] createSnapshot() {
+        int n = handler.getSlots();
+        ItemStack[] snap = new ItemStack[n];
+        for (int i = 0; i < n; i++) {
+            snap[i] = handler.getStackInSlot(i).copy();
+        }
+        return snap;
+    }
+
+    /**
+     * 事务回滚：恢复快照槽位（需底层 handler 可写，即 IItemHandlerModifiable；
+     * TEN 机器 handler 均为 ItemStackHandler 子类，满足）。
+     */
+    @Override
+    protected void revertToSnapshot(ItemStack[] snapshot) {
+        if (!(handler instanceof IItemHandlerModifiable modifiable)) {
+            // 非可写 handler 无法回滚：不应发生（TEN 机器均 modifiable）；保守跳过。
+            return;
+        }
+        int n = Math.min(snapshot.length, handler.getSlots());
+        for (int i = 0; i < n; i++) {
+            modifiable.setStackInSlot(i, snapshot[i]);
+        }
     }
 
     @Override
@@ -69,9 +102,16 @@ public class ItemHandlerResourceAdapter implements ResourceHandler<ItemResource>
         if (index < 0 || index >= size()) return 0;
         if (!isValid(index, resource)) return 0;
 
+        // 先 simulate 计算可插入量（不改 handler），>0 时先记录事务快照（修改前状态），
+        // 再真实插入——事务 abort 时 journal 恢复 before，simulate 不产生真实变更。
         ItemStack toInsert = resource.toStack(amount);
-        ItemStack remainder = handler.insertItem(index, toInsert, false);
-        return amount - remainder.getCount();
+        ItemStack remainder = handler.insertItem(index, toInsert, true);
+        int inserted = amount - remainder.getCount();
+        if (inserted > 0) {
+            this.updateSnapshots(transaction);
+            handler.insertItem(index, toInsert, false);
+        }
+        return inserted;
     }
 
     @Override
@@ -89,7 +129,13 @@ public class ItemHandlerResourceAdapter implements ResourceHandler<ItemResource>
         int toExtract = Math.min(amount, inSlot.getCount());
         if (toExtract <= 0) return 0;
 
-        ItemStack extracted = handler.extractItem(index, toExtract, false);
-        return extracted.getCount();
+        // 先 simulate 计算可抽取量，>0 时先记录事务快照再真实抽取（abort 时恢复）。
+        ItemStack extracted = handler.extractItem(index, toExtract, true);
+        int extractedCount = extracted.getCount();
+        if (extractedCount > 0) {
+            this.updateSnapshots(transaction);
+            handler.extractItem(index, extractedCount, false);
+        }
+        return extractedCount;
     }
 }

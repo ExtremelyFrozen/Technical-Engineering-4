@@ -12,6 +12,7 @@ import net.neoforged.neoforge.transfer.ResourceHandler;
 import net.neoforged.neoforge.transfer.energy.EnergyHandler;
 import net.neoforged.neoforge.transfer.fluid.FluidResource;
 import net.neoforged.neoforge.transfer.item.ItemResource;
+import net.neoforged.neoforge.transfer.transaction.SnapshotJournal;
 import net.neoforged.neoforge.transfer.transaction.TransactionContext;
 
 import org.jetbrains.annotations.Nullable;
@@ -32,31 +33,70 @@ public final class CapabilityAdapters {
 
     /**
      * Wraps an {@link IEnergyStorage} as an {@link EnergyHandler} for capability registration.
+     * Uses {@link EnergyResourceAdapter} (Journal 事务模型) so simulate probes
+     * ({@code IEnergyStorage.of()}) do not leak real energy (fixes simulate 失真)。
      */
     public static EnergyHandler asEnergyHandler(IEnergyStorage storage) {
         if (storage == null) return null;
-        return new EnergyHandler() {
+        return new EnergyResourceAdapter(storage);
+    }
 
-            @Override
-            public long getAmountAsLong() {
-                return storage.getEnergyStored();
-            }
+    /**
+     * 能量 Journal 适配器：insert/extract 先 simulate 计算可量，>0 时记录事务快照（修改前能量值）
+     * 再真实操作；事务 abort 时 revertToSnapshot 用差值恢复（IEnergyStorage 无直接 set）。
+     */
+    static final class EnergyResourceAdapter extends SnapshotJournal<Integer> implements EnergyHandler {
 
-            @Override
-            public long getCapacityAsLong() {
-                return storage.getMaxEnergyStored();
-            }
+        private final IEnergyStorage storage;
 
-            @Override
-            public int extract(int amount, TransactionContext transaction) {
-                return storage.extractEnergy(amount, false);
-            }
+        EnergyResourceAdapter(IEnergyStorage storage) {
+            this.storage = storage;
+        }
 
-            @Override
-            public int insert(int amount, TransactionContext transaction) {
-                return storage.receiveEnergy(amount, false);
+        @Override
+        public long getAmountAsLong() {
+            return storage.getEnergyStored();
+        }
+
+        @Override
+        public long getCapacityAsLong() {
+            return storage.getMaxEnergyStored();
+        }
+
+        @Override
+        public int insert(int amount, TransactionContext transaction) {
+            int canInsert = storage.receiveEnergy(amount, true);
+            if (canInsert > 0) {
+                this.updateSnapshots(transaction);
+                storage.receiveEnergy(canInsert, false);
             }
-        };
+            return canInsert;
+        }
+
+        @Override
+        public int extract(int amount, TransactionContext transaction) {
+            int canExtract = storage.extractEnergy(amount, true);
+            if (canExtract > 0) {
+                this.updateSnapshots(transaction);
+                storage.extractEnergy(canExtract, false);
+            }
+            return canExtract;
+        }
+
+        @Override
+        protected Integer createSnapshot() {
+            return storage.getEnergyStored();
+        }
+
+        @Override
+        protected void revertToSnapshot(Integer snapshot) {
+            int current = storage.getEnergyStored();
+            if (current > snapshot) {
+                storage.extractEnergy(current - snapshot, false);
+            } else if (current < snapshot) {
+                storage.receiveEnergy(snapshot - current, false);
+            }
+        }
     }
 
     /**
