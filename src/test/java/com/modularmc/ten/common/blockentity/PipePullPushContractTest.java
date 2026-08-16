@@ -122,11 +122,16 @@ class PipePullPushContractTest {
     class PullSourceCollection {
 
         @Test
-        void collectPullSourcesGatedOnPullLevel() throws Exception {
+        void collectPullSourcesGatedOnActiveOrPassiveComplement() throws Exception {
             var src = readSource(PIPE_SRC);
             String body = methodBody(src, "private List<PullCandidate> collectPullSources");
-            assertTrue(body.contains("pullLevel <= 0"),
-                    "RED: pull source collection must be gated on pullLevel > 0");
+            // 主动/被动互补模型：Pull 源 = 主动 Pull（pullLevel>0）或被动端点（无升级）且网络互补方向为 PULL
+            assertTrue(body.contains("isPullActor"),
+                    "RED: pull source must use isPullActor (active Pull or passive complement)");
+            assertTrue(src.contains("pipe.pullLevel > 0"),
+                    "RED: active Pull (pullLevel>0) must be a pull actor");
+            assertTrue(src.contains("passiveRole == PipeRole.PULL"),
+                    "RED: passive endpoint with complementary PULL role must be a pull actor");
         }
 
         @Test
@@ -166,11 +171,16 @@ class PipePullPushContractTest {
     class PushTargetCollection {
 
         @Test
-        void collectPushTargetsGatedOnPushLevel() throws Exception {
+        void collectPushTargetsGatedOnActiveOrPassiveComplement() throws Exception {
             var src = readSource(PIPE_SRC);
             String body = methodBody(src, "private List<PushTarget> collectPushTargets");
-            assertTrue(body.contains("pushLevel <= 0"),
-                    "RED: push target collection must be gated on pushLevel > 0");
+            // 主动/被动互补模型：Push 目标 = 主动 Push（pushLevel>0）或被动端点（无升级）且网络互补方向为 PUSH
+            assertTrue(body.contains("isPushActor"),
+                    "RED: push target must use isPushActor (active Push or passive complement)");
+            assertTrue(src.contains("pipe.pushLevel > 0"),
+                    "RED: active Push (pushLevel>0) must be a push actor");
+            assertTrue(src.contains("passiveRole == PipeRole.PUSH"),
+                    "RED: passive endpoint with complementary PUSH role must be a push actor");
         }
 
         @Test
@@ -209,10 +219,12 @@ class PipePullPushContractTest {
         void matchCallsBothCollections() throws Exception {
             var src = readSource(PIPE_SRC);
             String body = methodBody(src, "private void matchAndTransfer");
-            assertTrue(body.contains("collectPullSources(network)"),
-                    "RED: matching must collect pull sources");
-            assertTrue(body.contains("collectPushTargets(network)"),
-                    "RED: matching must collect push targets");
+            assertTrue(body.contains("passiveRoleForNetwork(network)"),
+                    "RED: matching must compute network-level passive complement direction");
+            assertTrue(body.contains("collectPullSources(network, passiveRole)"),
+                    "RED: matching must collect pull sources with passive role");
+            assertTrue(body.contains("collectPushTargets(network, passiveRole)"),
+                    "RED: matching must collect push targets with passive role");
         }
 
         @Test
@@ -317,6 +329,44 @@ class PipePullPushContractTest {
                     "RED: amount must be computed in long to avoid int overflow (64 << 8 = 16384)");
             assertTrue(body.contains("Math.min(amount, Integer.MAX_VALUE)"),
                     "RED: long result must be clamped to int (IItemHandler.extractItem takes int)");
+        }
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    // 网络级主动/被动互补：主动端点指定方向，被动端点（无升级）自动互补
+    // ════════════════════════════════════════════════════════════════
+
+    @Nested
+    class PassiveComplement {
+
+        @Test
+        void activePullDrivesPassivePush() throws Exception {
+            String src = readSource(PIPE_SRC);
+            String body = methodBody(src, "private PipeRole passiveRoleForNetwork");
+            assertTrue(body.contains("pullActive && !pushActive"),
+                    "RED: active Pull without active Push must make passive endpoints PUSH");
+            assertTrue(body.contains("return PipeRole.PUSH;"),
+                    "RED: active Pull alone must complement passive as PUSH");
+        }
+
+        @Test
+        void activePushDrivesPassivePull() throws Exception {
+            String src = readSource(PIPE_SRC);
+            String body = methodBody(src, "private PipeRole passiveRoleForNetwork");
+            assertTrue(body.contains("pushActive && !pullActive"),
+                    "RED: active Push without active Pull must make passive endpoints PULL");
+            assertTrue(body.contains("return PipeRole.PULL;"),
+                    "RED: active Push alone must complement passive as PULL");
+        }
+
+        @Test
+        void bothActiveOrNoneIsNeutral() throws Exception {
+            String src = readSource(PIPE_SRC);
+            String body = methodBody(src, "private PipeRole passiveRoleForNetwork");
+            assertTrue(body.contains("return PipeRole.NONE;"),
+                    "RED: passive must be neutral when both active Pull+Push exist or none exist");
+            assertTrue(src.contains("pipe.pullLevel > 0") && src.contains("pipe.pushLevel > 0"),
+                    "RED: network must scan pullLevel/pushLevel to detect active endpoints");
         }
     }
 }

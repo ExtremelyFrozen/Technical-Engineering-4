@@ -58,21 +58,29 @@
 
 ### 3.1 核心语义
 
-- **Pull 管道（出口角色，`pullLevel>0`）**：将自己相邻 6 面容器视为**源**，从源抽取物品送入网络。
-- **Push 管道（入口角色，`pushLevel>0`）**：将自己相邻 6 面容器视为**目标**，从网络取物品灌入目标。
+- **主动端点**：装升级的管道，指定网络行为方向。
+  - **主动 Pull（`pullLevel>0`，粘性活塞）**：将自己相邻 6 面容器视为**源**，主动从源抽取物品送入网络。
+  - **主动 Push（`pushLevel>0`，活塞）**：将自己相邻 6 面容器视为**目标**，主动把网络物品灌入目标。
+- **被动端点（无 Pull/Push 升级）**：方向由网络主动端点**互补**决定（见 3.2 角色收集），自动补齐缺失方向——
+  只需在任一端装升级，另一端自动被动互补，无需「源管装 Pull + 目标管装 Push」对照配置。
+- **网络级互补规则**：
+  - 有主动 Pull、无主动 Push → 被动端点全部为 Push（互补推出，支持主动抽入）
+  - 有主动 Push、无主动 Pull → 被动端点全部为 Pull（互补抽入，支持主动推出）
+  - 主动 Pull+Push 同时存在 → 被动中性（两方向已由主动端点覆盖）
+  - 全无主动端点 → 中性，网络不传输（需至少一个升级化端点）
 - **撮合（matching）**：同一网络内，root 每节拍收集所有 Pull 源候选与 Push 目标容量，做一次「源→目标」分配并执行。
 - **无缓冲直通**：网络不持有物品（不引入虚拟 buffer/持久化）。Pull 抽取的物品必须在同一节拍内找到 Push 目标；找不到则退回源容器（尽力而为、不吞物品，与现状一致）。
-- **默认行为**：未升级任何一方的网络 → 无传输（零开销守卫）；仅 Pull 无目标 → 抽取后退回（Pull 无效但不丢物品）；仅 Push 无来源 → 不动作。
+- **默认行为**：未升级任何一方 → 无传输（零开销守卫）；仅主动 Pull 无目标 → 抽取后退回（Pull 无效但不丢物品）；仅主动 Push 无来源 → 不动作。
 
 ### 3.2 流程（每节拍，root 执行）
 
 ```text
 1. 发现网络：TransferNetworks.collectConnected（复用现状）
-2. 角色收集：
-   a. Pull 源集合：遍历网络内 pullLevel>0 的管道 → 6 面相邻容器（非管道）
-      → 候选 = extractItem(slot, perBeatLimit, simulate) 且通过该 Pull 管道 isItemAllowed
-   b. Push 目标集合：遍历网络内 pushLevel>0 的管道 → 6 面相邻容器（非管道）
-      → 目标可接收量 = Σ 每槽 (getSlotLimit - 当前量)
+2. 角色收集（主动/被动互补）：
+   a. Pull 源集合：遍历网络内管道，参与 Pull 的 = 主动 Pull（`pullLevel>0`）+ 被动端点（无 Pull/Push 升级）且网络互补方向为 `PULL`
+      → 6 面相邻容器（非管道）→ 候选 = extractItem(slot, perBeatLimit, simulate) 且通过该管道 isItemAllowed
+   b. Push 目标集合：遍历网络内管道，参与 Push 的 = 主动 Push（`pushLevel>0`）+ 被动端点（无 Pull/Push 升级）且网络互补方向为 `PUSH`
+      → 6 面相邻容器（非管道）→ 目标可接收量 = Σ 每槽 (getSlotLimit - 当前量)
 3. 撮合：对每个候选（按 Pull 管道 → 槽位顺序），按 3.3 目标选择选一个目标；
    双侧过滤 AND：候选须通过 Pull 管道 isItemAllowed 且通过目标 Push 管道 isItemAllowed
 4. 执行：extract（真实）→ insert（真实，TransferNetworks.insertItem 槽遍历）

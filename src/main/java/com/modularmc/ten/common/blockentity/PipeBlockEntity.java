@@ -275,16 +275,30 @@ public class PipeBlockEntity extends CmBlockEntity {
     private record PullSourceKey(PipeBlockEntity pipe, BlockPos sourcePos) {}
 
     /**
+     * 管道网络传输角色（主动/被动互补模型）：
+     * <ul>
+     *   <li><b>主动 Pull</b>：装了粘性活塞（pullLevel&gt;0）的管道，只从相邻容器抽入进网络</li>
+     *   <li><b>主动 Push</b>：装了活塞（pushLevel&gt;0）的管道，只把网络物品推出到相邻容器</li>
+     *   <li><b>被动端点</b>：无 Pull/Push 升级（pullLevel==pushLevel==0）的管道，方向由网络
+     *       主动端点互补决定（{@link #passiveRoleForNetwork}）——支持主动端点完成网络 IO，无需
+     *       「源管装 Pull + 目标管装 Push」的对照配置</li>
+     * </ul>
+     */
+    private enum PipeRole {
+        PULL, PUSH, NONE
+    }
+
+    /**
      * 网络级 round-robin 轮转指针（仅 root 使用；同空间目标轮转打破平局，
      * 防多源在同一节拍反复竞争同一目标导致振荡）。不持久化，重建时自然重排。
      */
     private long roundRobinIndex;
 
     /** 收集网络内全部 Pull 源候选：pullLevel>0 管道 × 6 面相邻容器（跳过管道），simulate 抽取 + 源侧过滤。 */
-    private List<PullCandidate> collectPullSources(Set<BlockPos> network) {
+    private List<PullCandidate> collectPullSources(Set<BlockPos> network, PipeRole passiveRole) {
         List<PullCandidate> candidates = new ArrayList<>();
         for (BlockPos pipePos : network) {
-            if (!(level.getBlockEntity(pipePos) instanceof PipeBlockEntity pipe) || pipe.pullLevel <= 0) {
+            if (!(level.getBlockEntity(pipePos) instanceof PipeBlockEntity pipe) || !isPullActor(pipe, passiveRole)) {
                 continue;
             }
             int perBeatLimit = pipe.singleTransferAmount();
@@ -309,11 +323,11 @@ public class PipeBlockEntity extends CmBlockEntity {
         return candidates;
     }
 
-    /** 收集网络内全部 Push 目标：pushLevel>0 管道 × 6 面相邻容器（跳过管道），可接收空间 = Σ(槽上限 - 当前量)。 */
-    private List<PushTarget> collectPushTargets(Set<BlockPos> network) {
+    /** 收集网络内全部 Push 目标：主动 Push 管道 + 被动互补(PUSH)管道 × 6 面相邻容器（跳过管道），可接收空间 = Σ(槽上限 - 当前量)。 */
+    private List<PushTarget> collectPushTargets(Set<BlockPos> network, PipeRole passiveRole) {
         List<PushTarget> targets = new ArrayList<>();
         for (BlockPos pipePos : network) {
-            if (!(level.getBlockEntity(pipePos) instanceof PipeBlockEntity pipe) || pipe.pushLevel <= 0) {
+            if (!(level.getBlockEntity(pipePos) instanceof PipeBlockEntity pipe) || !isPushActor(pipe, passiveRole)) {
                 continue;
             }
             for (Direction direction : Direction.values()) {
@@ -336,6 +350,58 @@ public class PipeBlockEntity extends CmBlockEntity {
             }
         }
         return targets;
+    }
+
+    /**
+     * 网络级互补方向判定：主动端点（pullLevel&gt;0 / pushLevel&gt;0）决定被动端点（无升级）的传输角色。
+     * <ul>
+     *   <li>有主动 Pull、无主动 Push → 被动端点全部为 {@link PipeRole#PUSH}（互补推出，支持主动抽入）</li>
+     *   <li>有主动 Push、无主动 Pull → 被动端点全部为 {@link PipeRole#PULL}（互补抽入，支持主动推出）</li>
+     *   <li>主动 Pull+Push 同时存在 → 被动 {@link PipeRole#NONE}（两方向已由主动端点覆盖）</li>
+     *   <li>全无主动端点 → {@link PipeRole#NONE}（网络不传输，需至少一个升级化端点）</li>
+     * </ul>
+     */
+    private PipeRole passiveRoleForNetwork(Set<BlockPos> network) {
+        boolean pullActive = false;
+        boolean pushActive = false;
+        for (BlockPos pipePos : network) {
+            if (!(level.getBlockEntity(pipePos) instanceof PipeBlockEntity pipe)) {
+                continue;
+            }
+            if (pipe.pullLevel > 0) pullActive = true;
+            if (pipe.pushLevel > 0) pushActive = true;
+        }
+        if (pullActive && !pushActive) return PipeRole.PUSH;
+        if (pushActive && !pullActive) return PipeRole.PULL;
+        return PipeRole.NONE;
+    }
+
+    /**
+     * 该管道是否作为 Pull 源参与：主动 Pull（pullLevel&gt;0），或被动端点（无 Pull/Push 升级）
+     * 且网络互补方向为 {@link PipeRole#PULL}（互补抽入支持主动推出）。主动 Push 管道不抽入。
+     */
+    private static boolean isPullActor(PipeBlockEntity pipe, PipeRole passiveRole) {
+        if (pipe.pullLevel > 0) {
+            return true; // 主动 Pull
+        }
+        if (pipe.pullLevel == 0 && pipe.pushLevel == 0) {
+            return passiveRole == PipeRole.PULL; // 被动端点互补抽入
+        }
+        return false; // 主动 Push（或同时主动）不额外作为纯 Pull
+    }
+
+    /**
+     * 该管道是否作为 Push 目标参与：主动 Push（pushLevel&gt;0），或被动端点（无 Pull/Push 升级）
+     * 且网络互补方向为 {@link PipeRole#PUSH}（互补推出支持主动抽入）。主动 Pull 管道不推出。
+     */
+    private static boolean isPushActor(PipeBlockEntity pipe, PipeRole passiveRole) {
+        if (pipe.pushLevel > 0) {
+            return true; // 主动 Push
+        }
+        if (pipe.pullLevel == 0 && pipe.pushLevel == 0) {
+            return passiveRole == PipeRole.PUSH; // 被动端点互补推出
+        }
+        return false; // 主动 Pull（或同时主动）不额外作为纯 Push
     }
 
     /** 空间优先排序：按剩余可接收量降序；同分分组内按 round-robin 指针循环位移破平局（防振荡）。 */
@@ -370,8 +436,11 @@ public class PipeBlockEntity extends CmBlockEntity {
      * 双侧过滤 AND（源侧 + 目标侧）、目标排除同源、每源每节拍限量。
      */
     private void matchAndTransfer(Set<BlockPos> network) {
-        List<PullCandidate> candidates = collectPullSources(network);
-        List<PushTarget> targets = collectPushTargets(network);
+        // 网络级主动/被动互补方向：主动端点（升级管道）指定方向，被动端点（无升级）自动互补，
+        // 无需「源管装 Pull + 目标管装 Push」对照配置即可完成网络 IO。
+        PipeRole passiveRole = passiveRoleForNetwork(network);
+        List<PullCandidate> candidates = collectPullSources(network, passiveRole);
+        List<PushTarget> targets = collectPushTargets(network, passiveRole);
         if (candidates.isEmpty() || targets.isEmpty()) {
             // 无 Pull 源或无 Push 目标：无缓冲直通模型下不搬动（物品留在源容器）
             setActive(false);
