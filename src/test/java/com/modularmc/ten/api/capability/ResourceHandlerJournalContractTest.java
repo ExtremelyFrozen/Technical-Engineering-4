@@ -185,6 +185,13 @@ class ResourceHandlerJournalContractTest {
                     "RED: machine side item wrapper must implement IItemHandlerModifiable");
             assertTrue(src.contains("public void setStackInSlot(int slot, ItemStack stack)"),
                     "RED: machine side item wrapper must expose setStackInSlot for journal rollback");
+            // 快照/回滚对称性：getStackInSlot 必须直通内层（不能按 canExtractItem 门控返回 EMPTY），
+            // 否则 IN-only 面 insert 事务快照被污染为全空，abort 回滚 setStackInSlot(EMPTY) 清空真实物品。
+            assertFalse(src.contains("canExtractItem(side) ? itemHandler.getStackInSlot(slot) : ItemStack.EMPTY"),
+                    "RED: getStackInSlot must pass through to inner handler (symmetry with setStackInSlot), "
+                            + "not gate by canExtractItem - otherwise IN-only face insert rollback clears items");
+            assertTrue(src.contains("return itemHandler.getStackInSlot(slot);"),
+                    "GREEN: machine side getStackInSlot must pass through to inner handler");
         }
     }
 }

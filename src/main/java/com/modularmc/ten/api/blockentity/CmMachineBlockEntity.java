@@ -891,12 +891,17 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
 
             @Override
             public ItemStack getStackInSlot(int slot) {
-                return canExtractItem(side) ? itemHandler.getStackInSlot(slot) : ItemStack.EMPTY;
+                // 直通内层（与 setStackInSlot 对称）：事务快照（createSnapshot）与回滚（revertToSnapshot）
+                // 必须读写同一真实槽内容。若此处按 canExtractItem 门控返回 EMPTY，则 IN-only 面（只进不出）
+                // 的 insert 事务快照被污染为全空，abort 回滚时 setStackInSlot(EMPTY) 会清空真实物品（丢失）。
+                // 窥探语义让位于事务正确性；insert/extract 门控仍在，物品实际进出不受影响。
+                return itemHandler.getStackInSlot(slot);
             }
 
             @Override
             public void setStackInSlot(int slot, ItemStack stack) {
                 // 回滚语义：恢复到事务前全量状态，绕过 side 门控（事务前状态即合法存在）。
+                // 注：该直通也为对外 capability 暴露了可写入口，是事务回滚所需与便利性权衡，已文档化。
                 itemHandler.setStackInSlot(slot, stack);
             }
 
