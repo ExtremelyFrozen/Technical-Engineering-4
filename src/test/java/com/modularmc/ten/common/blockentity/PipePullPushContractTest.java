@@ -368,5 +368,40 @@ class PipePullPushContractTest {
             assertTrue(src.contains("pipe.pullLevel > 0") && src.contains("pipe.pushLevel > 0"),
                     "RED: network must scan pullLevel/pushLevel to detect active endpoints");
         }
+
+        @Test
+        void pullActorRejectsActivePushOnly() throws Exception {
+            String src = readSource(PIPE_SRC);
+            String body = methodBody(src, "private static boolean isPullActor");
+            // 主动 Pull（pullLevel>0）为 Pull 源；被动端点（==0 && ==0）由互补方向决定；主动 Push（仅 pushLevel>0）不抽入
+            assertTrue(body.contains("pipe.pullLevel > 0"),
+                    "RED: active Pull must be a pull actor");
+            assertTrue(body.contains("pipe.pullLevel == 0 && pipe.pushLevel == 0"),
+                    "RED: passive endpoint detection must check both levels zero");
+            assertTrue(body.contains("return false;"),
+                    "RED: active Push-only pipe must NOT be a pull actor (no cross-role pull)");
+        }
+
+        @Test
+        void pushActorRejectsActivePullOnly() throws Exception {
+            String src = readSource(PIPE_SRC);
+            String body = methodBody(src, "private static boolean isPushActor");
+            assertTrue(body.contains("pipe.pushLevel > 0"),
+                    "RED: active Push must be a push actor");
+            assertTrue(body.contains("pipe.pullLevel == 0 && pipe.pushLevel == 0"),
+                    "RED: passive endpoint detection must check both levels zero");
+            assertTrue(body.contains("return false;"),
+                    "RED: active Pull-only pipe must NOT be a push actor (no cross-role push)");
+        }
+
+        @Test
+        void passiveWithSpeedUpgradeStillPassive() throws Exception {
+            String src = readSource(PIPE_SRC);
+            // 角色判定只看 pullLevel/pushLevel：被动端点带 speed/ender/扩写升级（speedLevel>0 但 Pull/Push=0）
+            // 仍属被动端点，由网络互补方向约束；速度升级仅提升其吞吐（singleTransferAmount）。
+            String pullBody = methodBody(src, "private static boolean isPullActor");
+            assertTrue(!pullBody.contains("speedLevel"),
+                    "RED: isPullActor role must depend only on pullLevel/pushLevel, not speedLevel");
+        }
     }
 }
