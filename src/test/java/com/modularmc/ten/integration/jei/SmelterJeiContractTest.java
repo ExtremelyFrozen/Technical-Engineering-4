@@ -448,21 +448,20 @@ class SmelterJeiContractTest {
     }
 
     // ═══════════════════════════════════════════════════════════════════
-    // 8. Smelter energy gauge — left-side burnLeft decoration
+    // 8. Smelter layout — no energy gauge, 组件群居中 (v5)
     // ═══════════════════════════════════════════════════════════════════
-    // RED contract: all custom smelter JEI categories must have a 14×46
-    // burnLeft energy gauge at (8, 2) drawn from modular ENERGY_GAUGE_BG/FILL,
-    // matching the machine decoration style.  Hovering the gauge shows
-    // "15 FE/t" via the existing kenergyengineering.jei.base_rate_short lang
-    // key.  规则 v4：gauge 左缘 x=8、右缘 x=22；组件群左缘=8、右缘=OUTPUT_X+18=142、
-    // 总宽 134，中心 = (8+142)/2 = 75 = 面板中心。输入 43（22+21）、箭头 82（输入右缘
-    // 61+21）、输出 124（箭头右缘 104+20），间隔 21/21/20 自适应均分剩余 62px，无重叠。
+    // RED contract: all custom smelter JEI categories must NOT draw any
+    // energy gauge (ENERGY_GAUGE_BG/FILL / BURN_LEFT removed — user decision:
+    // JEI 配方界面不再需要能源槽)。移除后组件群重新居中：
+    // 规则 v5：组件群左缘=25、右缘=OUTPUT_X+18=125、总宽 100，
+    // 中心 = (25+125)/2 = 75 = 面板中心。输入 25、箭头 64（输入右缘 43+21）、
+    // 输出 107（箭头右缘 86+21），间隔 21/21 均分剩余 42px，无重叠。
     // Background uses JEI_HANDLER_MODULAR from UV (0,0) at 150×50 (modular
     // top layer shared with other 150×50 machines).
 
     @Nested
-    @DisplayName("8. Smelter energy gauge — left-side burnLeft decoration")
-    class SmelterEnergyGauge {
+    @DisplayName("8. Smelter layout — no energy gauge, 组件群居中 (v5)")
+    class SmelterLayoutNoGauge {
 
         @Test
         @DisplayName("Category expands to width 150 (modular top layer)")
@@ -545,100 +544,36 @@ class SmelterJeiContractTest {
         }
 
         @Test
-        @DisplayName("BurnLeft gauge constants at (8, 2) 14×46")
-        void smelterCategory_hasBurnLeftConstants() throws Exception {
+        @DisplayName("Energy gauge constants are REMOVED (no BURN_LEFT_X/Y/W/H)")
+        void smelterCategory_hasNoBurnLeftConstants() throws Exception {
             var sourceFile = new File(
                     "src/client/java/com/modularmc/ten/integration/jei/SmelterJeiCategory.java");
             var content = Files.readString(sourceFile.toPath());
 
-            assertTrue(content.contains("BURN_LEFT_X = 8"),
-                    "gauge X must be 8 (规则 v3: left edge 8px from panel, right edge 22)");
-            assertTrue(content.contains("BURN_LEFT_Y = 2"),
-                    "gauge Y must be 2 (top gutter, matching existing machine style)");
-            assertTrue(content.contains("BURN_LEFT_W = 14"),
-                    "gauge width must be 14 (matching existing machine style)");
-            assertTrue(content.contains("BURN_LEFT_H = 46"),
-                    "gauge height must be 46 (matching existing machine style)");
+            assertFalse(content.contains("BURN_LEFT_X"),
+                    "BURN_LEFT_X must be removed (JEI 不再需要能源槽)");
+            assertFalse(content.contains("BURN_LEFT_Y"),
+                    "BURN_LEFT_Y must be removed (JEI 不再需要能源槽)");
+            assertFalse(content.contains("BURN_LEFT_W"),
+                    "BURN_LEFT_W must be removed (JEI 不再需要能源槽)");
+            assertFalse(content.contains("BURN_LEFT_H"),
+                    "BURN_LEFT_H must be removed (JEI 不再需要能源槽)");
         }
 
         @Test
-        @DisplayName("Burn animation constant BURN_CYCLE_MS exists")
-        void smelterCategory_hasBurnCycleMs() throws Exception {
+        @DisplayName("Burn animation constant BURN_CYCLE_MS is removed")
+        void smelterCategory_hasNoBurnCycleMs() throws Exception {
             var sourceFile = new File(
                     "src/client/java/com/modularmc/ten/integration/jei/SmelterJeiCategory.java");
             var content = Files.readString(sourceFile.toPath());
 
-            assertTrue(content.contains("BURN_CYCLE_MS"),
-                    "gauge animation cycle constant must be defined");
+            assertFalse(content.contains("BURN_CYCLE_MS"),
+                    "BURN_CYCLE_MS must be removed with the energy gauge");
         }
 
         @Test
-        @DisplayName("Input slot at x=43 (21px gap from gauge right edge 22, 组件群居中)")
-        void smelterCategory_inputAtX43() throws Exception {
-            var sourceFile = new File(
-                    "src/client/java/com/modularmc/ten/integration/jei/SmelterJeiCategory.java");
-            var content = Files.readString(sourceFile.toPath());
-
-            assertTrue(content.contains("INPUT_X = 43"),
-                    "INPUT_X must be 43 (规则 v4 组件群居中: gauge 右缘 22 + 自适应间隔 21)");
-            assertFalse(content.contains("INPUT_X = 26"),
-                    "INPUT_X must NOT be 26 (v3 旧值，已迁移到组件群居中 v4)");
-            assertFalse(content.contains("INPUT_X = 25"),
-                    "INPUT_X must NOT be 25 (v3 旧值，已迁移到组件群居中 v4)");
-            assertFalse(content.contains("INPUT_X = 11"),
-                    "INPUT_X must NOT be 11 (would overlap with gauge at x=8..22)");
-        }
-
-        @Test
-        @DisplayName("Arrow at x=82 (21px from input right edge 61, 组件群居中)")
-        void smelterCategory_arrowAtX82() throws Exception {
-            var sourceFile = new File(
-                    "src/client/java/com/modularmc/ten/integration/jei/SmelterJeiCategory.java");
-            var content = Files.readString(sourceFile.toPath());
-
-            assertTrue(content.contains("ARROW_X = 82"),
-                    "ARROW_X must be 82 = input right edge 61 + 21 (规则 v4 自适应间隔)");
-            assertFalse(content.contains("ARROW_X = 52"),
-                    "ARROW_X must NOT be 52 (v3 旧值，已迁移到组件群居中 v4)");
-            assertFalse(content.contains("ARROW_X = 55"),
-                    "ARROW_X must NOT be 55 (v3 旧值，已迁移到组件群居中 v4)");
-        }
-
-        @Test
-        @DisplayName("Time text aligned with input slot at x=43")
-        void smelterCategory_textAlignedWithInputX43() throws Exception {
-            var sourceFile = new File(
-                    "src/client/java/com/modularmc/ten/integration/jei/SmelterJeiCategory.java");
-            var content = Files.readString(sourceFile.toPath());
-
-            assertTrue(content.contains("TEXT_X = 43"),
-                    "TEXT_X must be 43 to align left with the input slot at x=43");
-            assertFalse(content.contains("TEXT_X = 26"),
-                    "TEXT_X must NOT be 26 (v3 旧值，已迁移到组件群居中 v4)");
-        }
-
-        @Test
-        @DisplayName("createRecipeExtras with IRecipeWidget provides gauge tooltip showing 15 FE/t")
-        void smelterCategory_hasGaugeTooltip() throws Exception {
-            var sourceFile = new File(
-                    "src/client/java/com/modularmc/ten/integration/jei/SmelterJeiCategory.java");
-            var content = Files.readString(sourceFile.toPath());
-
-            assertTrue(content.contains("createRecipeExtras"),
-                    "Category must override createRecipeExtras for gauge area tooltip");
-            assertTrue(content.contains("base_rate_short"),
-                    "Tooltip must reuse existing base_rate_short lang key");
-            assertTrue(content.contains("IRecipeWidget"),
-                    "Must use IRecipeWidget for tooltip support");
-            assertTrue(content.contains("getTooltip"),
-                    "Widget must override getTooltip for gauge area");
-            assertTrue(content.contains("15"),
-                    "Tooltip must show 15 FE/t (constant energy per tick)");
-        }
-
-        @Test
-        @DisplayName("Gauge is drawn from modular ENERGY_GAUGE_BG/FILL in draw()")
-        void smelterCategory_gaugeUsesEnergyGauge() throws Exception {
+        @DisplayName("draw() no longer references BURN_LEFT or ENERGY_GAUGE textures")
+        void smelterCategory_drawHasNoGauge() throws Exception {
             var sourceFile = new File(
                     "src/client/java/com/modularmc/ten/integration/jei/SmelterJeiCategory.java");
             var content = Files.readString(sourceFile.toPath());
@@ -647,27 +582,77 @@ class SmelterJeiContractTest {
             assertTrue(drawStart >= 0, "draw method must exist");
             String drawBody = content.substring(drawStart);
 
-            assertTrue(drawBody.contains("BURN_LEFT"),
-                    "draw() must reference BURN_LEFT constants");
-            assertTrue(drawBody.contains("ENERGY_GAUGE_BG") && drawBody.contains("ENERGY_GAUGE_FILL"),
-                    "draw() must use modular ENERGY_GAUGE_BG/FILL textures for gauge rendering");
-            assertFalse(drawBody.contains("GUI_HANDLER"),
-                    "draw() must NOT use GUI_HANDLER (gauge migrated to modular ENERGY_GAUGE)");
+            assertFalse(drawBody.contains("BURN_LEFT"),
+                    "draw() must NOT reference BURN_LEFT (energy gauge removed)");
+            assertFalse(drawBody.contains("ENERGY_GAUGE_BG") && drawBody.contains("ENERGY_GAUGE_FILL"),
+                    "draw() must NOT use modular ENERGY_GAUGE_BG/FILL (energy gauge removed)");
         }
 
         @Test
-        @DisplayName("Layout has no overlap — gauge right edge 22 < input left edge 43 (gap 21)")
-        void smelterCategory_noGaugeOverlap() throws Exception {
+        @DisplayName("createRecipeExtras / IRecipeWidget removed (no gauge tooltip needed)")
+        void smelterCategory_hasNoGaugeTooltip() throws Exception {
             var sourceFile = new File(
                     "src/client/java/com/modularmc/ten/integration/jei/SmelterJeiCategory.java");
             var content = Files.readString(sourceFile.toPath());
 
-            // Gauge ends at x=22 (8+14), input starts at x=26 (gap 4, 规则 v3 ≥4)
-            // Verify by checking both constants produce no overlap
-            assertTrue(content.contains("BURN_LEFT_X = 8") && content.contains("INPUT_X = 43"),
-                    "Gauge right edge (22) < input left edge (43): gap 21, no overlap");
-            assertTrue(content.contains("BURN_LEFT_W = 14") || !content.contains("BURN_LEFT_W"),
-                    "Gauge width 14 confirmed");
+            assertFalse(content.contains("createRecipeExtras"),
+                    "createRecipeExtras must be removed (its only purpose was the gauge tooltip)");
+            assertFalse(content.contains("IRecipeWidget"),
+                    "IRecipeWidget must be removed (its only purpose was the gauge tooltip)");
+            assertFalse(content.contains("getTooltip"),
+                    "getTooltip must be removed (its only purpose was the gauge tooltip)");
+        }
+
+        @Test
+        @DisplayName("Input slot at x=25 (组件群居中 v5, gauge 移除后左缘 25)")
+        void smelterCategory_inputAtX25() throws Exception {
+            var sourceFile = new File(
+                    "src/client/java/com/modularmc/ten/integration/jei/SmelterJeiCategory.java");
+            var content = Files.readString(sourceFile.toPath());
+
+            assertTrue(content.contains("INPUT_X = 25"),
+                    "INPUT_X must be 25 (规则 v5 组件群居中: 左缘 25, 中心 75)");
+            assertFalse(content.contains("INPUT_X = 43"),
+                    "INPUT_X must NOT be 43 (v4 旧值，含能量条布局，已迁移到 v5)");
+        }
+
+        @Test
+        @DisplayName("Arrow at x=64 (21px from input right edge 43, 组件群居中)")
+        void smelterCategory_arrowAtX64() throws Exception {
+            var sourceFile = new File(
+                    "src/client/java/com/modularmc/ten/integration/jei/SmelterJeiCategory.java");
+            var content = Files.readString(sourceFile.toPath());
+
+            assertTrue(content.contains("ARROW_X = 64"),
+                    "ARROW_X must be 64 = input right edge 43 + 21 (规则 v5 自适应间隔)");
+            assertFalse(content.contains("ARROW_X = 82"),
+                    "ARROW_X must NOT be 82 (v4 旧值，含能量条布局，已迁移到 v5)");
+        }
+
+        @Test
+        @DisplayName("Time text aligned with input slot at x=25")
+        void smelterCategory_textAlignedWithInputX25() throws Exception {
+            var sourceFile = new File(
+                    "src/client/java/com/modularmc/ten/integration/jei/SmelterJeiCategory.java");
+            var content = Files.readString(sourceFile.toPath());
+
+            assertTrue(content.contains("TEXT_X = 25"),
+                    "TEXT_X must be 25 to align left with the input slot at x=25");
+            assertFalse(content.contains("TEXT_X = 43"),
+                    "TEXT_X must NOT be 43 (v4 旧值，已迁移到 v5)");
+        }
+
+        @Test
+        @DisplayName("Layout has no overlap — input 25 → arrow 64 → output 107 (gaps 21/21)")
+        void smelterCategory_noOverlap() throws Exception {
+            var sourceFile = new File(
+                    "src/client/java/com/modularmc/ten/integration/jei/SmelterJeiCategory.java");
+            var content = Files.readString(sourceFile.toPath());
+
+            // input right edge 43 < arrow left edge 64 (gap 21); arrow right edge 86 < output 107 (gap 21)
+            assertTrue(content.contains("INPUT_X = 25") && content.contains("ARROW_X = 64")
+                            && content.contains("OUTPUT_X = 107"),
+                    "input 25 → arrow 64 → output 107: gaps 21/21, no overlap");
         }
 
         @Test
@@ -684,22 +669,21 @@ class SmelterJeiContractTest {
         }
 
         @Test
-        @DisplayName("Layout 组件群居中 — gauge 8 → input 43 → arrow 82 → output 124, 中心 75")
+        @DisplayName("Layout 组件群居中 — input 25 → arrow 64 → output 107, 中心 75")
         void smelterCategory_layoutCenteredAt75() throws Exception {
             var sourceFile = new File(
                     "src/client/java/com/modularmc/ten/integration/jei/SmelterJeiCategory.java");
             var content = Files.readString(sourceFile.toPath());
 
-            // 规则 v4：组件群左缘=8（能量条左缘）、右缘=OUTPUT_X+18=142、总宽 134，
-            // 中心 = (8+142)/2 = 75 = 面板中心。三个间隔自适应均分剩余空间：
-            // 能量条右缘 22 → 输入 43（+21）、输入右缘 61 → 箭头 82（+21）、
-            // 箭头右缘 104 → 输出 124（+20），总间隔 62 = 134 − 固定宽 72。
-            assertTrue(content.contains("INPUT_X = 43") && content.contains("OUTPUT_X = 124")
-                            && content.contains("ARROW_X = 82") && content.contains("BURN_LEFT_X = 8"),
-                    "组件群居中: gauge 8 → input 43 → arrow 82 → output 124，右缘 142，中心 75");
-            assertFalse(content.contains("INPUT_X = 26") || content.contains("ARROW_X = 52")
-                            || content.contains("OUTPUT_X = 82"),
-                    "不得回退到 v3 固定间隔坐标 (26 → 52 → 82)");
+            // 规则 v5：组件群左缘=25（输入左缘）、右缘=OUTPUT_X+18=125、总宽 100，
+            // 中心 = (25+125)/2 = 75 = 面板中心。两个间隔自适应均分剩余空间：
+            // 输入右缘 43 → 箭头 64（+21）、箭头右缘 86 → 输出 107（+21），总间隔 42 = 100 − 固定宽 58。
+            assertTrue(content.contains("INPUT_X = 25") && content.contains("OUTPUT_X = 107")
+                            && content.contains("ARROW_X = 64"),
+                    "组件群居中: input 25 → arrow 64 → output 107，右缘 125，中心 75");
+            assertFalse(content.contains("BURN_LEFT_X") || content.contains("INPUT_X = 43")
+                            || content.contains("ARROW_X = 82") || content.contains("OUTPUT_X = 124"),
+                    "不得回退到 v4 含能量条坐标 (8 → 43 → 82 → 124)");
         }
 
         @Test
@@ -719,33 +703,6 @@ class SmelterJeiContractTest {
                     "Must NOT have three-line text layout (engine-specific)");
             assertFalse(content.contains("fuelBudget"),
                     "Must NOT reference engine fuel budget");
-        }
-
-        @Test
-        @DisplayName("Energy widget getPosition() returns gauge coordinates (BURN_LEFT_X, BURN_LEFT_Y)")
-        void smelterCategory_energyWidgetPositionMatchesGauge() throws Exception {
-            var sourceFile = new File(
-                    "src/client/java/com/modularmc/ten/integration/jei/SmelterJeiCategory.java");
-            var content = Files.readString(sourceFile.toPath());
-
-            // Locate getPosition() method within createRecipeExtras / IRecipeWidget boundary
-            int getPositionIdx = content.indexOf("getPosition()");
-            assertTrue(getPositionIdx >= 0,
-                    "createRecipeExtras must define getPosition() on IRecipeWidget");
-
-            // Get the return statement immediately following getPosition()
-            int returnIdx = content.indexOf("return", getPositionIdx);
-            assertTrue(returnIdx >= 0,
-                    "getPosition() must have a return statement");
-            int returnLineEnd = content.indexOf('\n', returnIdx);
-            String returnLine = content.substring(returnIdx, returnLineEnd).trim();
-
-            // Must reference BURN_LEFT_X and BURN_LEFT_Y, not hardcoded (0,0)
-            assertTrue(returnLine.contains("BURN_LEFT_X") && returnLine.contains("BURN_LEFT_Y"),
-                    "getPosition() must return ScreenPosition(BURN_LEFT_X, BURN_LEFT_Y) "
-                            + "matching gauge position, not hardcoded coordinates");
-            assertFalse(returnLine.contains("(0, 0)"),
-                    "getPosition() must NOT return (0,0) — widget position must match gauge");
         }
     }
 
