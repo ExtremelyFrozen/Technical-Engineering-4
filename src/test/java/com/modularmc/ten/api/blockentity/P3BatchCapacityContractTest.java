@@ -976,27 +976,37 @@ class QuarryLoopMissVsBreak {
 class QuarryMiningRangeContract {
 
     @Test
-    void quarry_mineRandomBlock_usesPlusMinusRadius() throws Exception {
-        // RED: mineRandomBlock used Mth.nextInt(-radius+1, radius-1) — at
-        // radius=3 the horizontal range was ±2 (5×5) instead of ±3 (7×7),
-        // one smaller than the nominal radius. Beacon/MobRip (AABB.inflate(radius))
-        // and Farm (offsets -radius..+radius) all use ±radius. (Deviation #4)
-        // GREEN: bounds are -radius..+radius inclusive.
+    void quarry_scanMine_usesPlusMinusRadius() throws Exception {
+        // RED: 旧实现 mineRandomBlock 用 Mth.nextInt(-radius+1, radius-1) — 半径
+        // 3 时水平范围 ±2（5×5）而非 ±3（7×7），比标称半径小一格（Deviation #4）。
+        // 单元 A/B：mineRandomBlock 已删，scanMine 游标栅格扫描 x/z 偏移覆盖
+        // -radius..+radius（advanceCursorInLayer 推进 scanX 到 +radius 越界后进行）。
+        // GREEN: scanMine 内层循环边界 scanZ <= +radius、层起点 (-radius, -radius)。
         var sourceFile = new java.io.File(
                 "src/main/java/com/modularmc/ten/common/blockentity/machine/QuarryBlockEntity.java");
         assertTrue(sourceFile.exists());
         var content = java.nio.file.Files.readString(sourceFile.toPath());
-        int methodStart = content.indexOf("private boolean mineRandomBlock()");
-        assertTrue(methodStart >= 0, "mineRandomBlock must exist");
-        int methodEnd = content.indexOf("private boolean canBreak", methodStart);
-        if (methodEnd < 0) methodEnd = methodStart + 1000;
+        int methodStart = content.indexOf("private boolean scanMine()");
+        assertTrue(methodStart >= 0, "scanMine must exist");
+        int methodEnd = content.indexOf("private void advanceCursorInLayer", methodStart);
+        if (methodEnd < 0) methodEnd = methodStart + 1500;
         String methodBody = content.substring(methodStart, methodEnd);
 
+        // 层内栅格扫描必须覆盖 -radius..+radius（不再是 -radius+1..radius-1）
+        assertTrue(methodBody.contains("scanZ <= radius"),
+                "GREEN: scanMine 内层循环必须扫描到 scanZ <= +radius（±radius 全范围）");
+        assertTrue(methodBody.contains("scanX = -radius") && methodBody.contains("scanZ = -radius"),
+                "GREEN: scanMine 每层起点必须为 (-radius, -radius)");
         assertFalse(methodBody.contains("-radius + 1, radius - 1"),
-                "RED: mineRandomBlock must NOT use -radius+1..radius-1 — "
-                + "range is one smaller than nominal radius. GREEN after: -radius..+radius.");
-        assertTrue(methodBody.contains("-radius, radius"),
-                "GREEN: mineRandomBlock must use Mth.nextInt(-radius, radius) — span 2*radius+1.");
+                "RED: 旧 mineRandomBlock 的 -radius+1..radius-1 缺陷必须移除");
+        // advanceCursorInLayer 推进 scanX 到 +radius 越界 → 确认 +radius 边界闭合
+        int advStart = content.indexOf("private void advanceCursorInLayer()");
+        assertTrue(advStart >= 0, "advanceCursorInLayer must exist");
+        int advEnd = content.indexOf("private int findNextNonAirLayer", advStart);
+        if (advEnd < 0) advEnd = advStart + 300;
+        String advBody = content.substring(advStart, advEnd);
+        assertTrue(advBody.contains("scanX > radius"),
+                "GREEN: advanceCursorInLayer 必须检测 scanX > +radius 越界推进");
     }
 
     @Test
@@ -1009,21 +1019,33 @@ class QuarryMiningRangeContract {
     }
 
     @Test
-    void quarry_verticalRange_fullColumnBelow_unchanged() throws Exception {
-        // Vertical semantics preserved: mine anywhere from level minY up to
-        // worldPosition.getY()-1 (the block directly below the machine). This is
-        // independent of radius and untouched by the horizontal range fix.
+    void quarry_verticalRange_scansDownToBaseBedrockLayer() throws Exception {
+        // 单元 A/B 垂直语义：旧 mineRandomBlock 全列向下挖到 getMinY()（世界底部）；
+        // 新 scanMine 以 scanY 游标从 machineY-1 逐层向下，到 y=1 为止（y=0 是基岩层），
+        // scanY 到 0 即 scanExhausted 判定挖尽停机。垂直范围 = 1..machineY-1，与水平半径解耦。
         var sourceFile = new java.io.File(
                 "src/main/java/com/modularmc/ten/common/blockentity/machine/QuarryBlockEntity.java");
         assertTrue(sourceFile.exists());
         var content = java.nio.file.Files.readString(sourceFile.toPath());
-        int methodStart = content.indexOf("private boolean mineRandomBlock()");
-        assertTrue(methodStart >= 0, "mineRandomBlock must exist");
-        int methodEnd = content.indexOf("private boolean canBreak", methodStart);
-        if (methodEnd < 0) methodEnd = methodStart + 1000;
+        int methodStart = content.indexOf("private boolean scanMine()");
+        assertTrue(methodStart >= 0, "scanMine must exist");
+        int methodEnd = content.indexOf("private void advanceCursorInLayer", methodStart);
+        if (methodEnd < 0) methodEnd = methodStart + 1500;
         String methodBody = content.substring(methodStart, methodEnd);
-        assertTrue(methodBody.contains("getMinY()") && methodBody.contains("worldPosition.getY() - 1"),
-                "Vertical range must remain minY..(machineY-1) full column below (unchanged by fix).");
+
+        // 垂直扫描下限：scanMine 单层处理 + scanY<1 挖尽早退（scanExhausted=scanY<=0），
+        // 到 y=1 为止（y=0 是基岩层）——垂直范围 1..machineY-1，非 getMinY。
+        assertTrue(methodBody.contains("scanY < 1") || methodBody.contains("scanY >= 1"),
+                "GREEN: scanMine 必须含垂直下限守卫（scanY < 1 挖尽早退或 scanY >= 1 循环）");
+        // 垂直起点：machineY-1（机器正下方一层）
+        int resetStart = content.indexOf("private void resetScanCursor()");
+        assertTrue(resetStart >= 0, "resetScanCursor must exist");
+        String resetBody = content.substring(resetStart, Math.min(resetStart + 300, content.length()));
+        assertTrue(resetBody.contains("worldPosition.getY() - 1"),
+                "GREEN: resetScanCursor 垂直起点必须为 machineY-1");
+        // 旧全列到底（getMinY）语义不再存在
+        assertFalse(content.contains("getMinY()"),
+                "单元 A/B: 垂直范围不再挖到 getMinY()（世界底部）—— 旧 mineRandomBlock 语义移除");
     }
 
     @Test

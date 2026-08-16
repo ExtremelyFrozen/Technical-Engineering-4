@@ -299,6 +299,13 @@ public final class TENLangHandler {
         add("info.quarry.0", "Automatically digs all blocks below it.", "自动挖掘它下方的所有方块。");
         add("info.quarry.1", "It needs a pickaxe!", "需要一把镐子！");
         add("info.quarry.2", "Pay attention to your underground builds.", "注意你的地下工事。");
+        // 单元 B：标准/极速扫描模式切换（GUI 按钮文案与 tooltip）
+        add("info.quarry.scan_mode", "Scan Mode", "扫描模式");
+        add("info.quarry.scan_normal", "Normal", "标准");
+        add("info.quarry.scan_fast", "Fast", "极速");
+        add("info.quarry.scan_normal_tip", "Digs layer by layer; stops automatically when the column is fully mined.", "逐层向下挖掘；整列挖尽后自动停机。");
+        add("info.quarry.scan_fast_tip", "Skips air layers to the nearest solid layer; faster progress.", "跳过空气层直达最近实心层，推进更快。");
+        add("info.quarry.scan_click", "Click to toggle scan mode", "点击切换扫描模式");
         add("info.psionicant.0", "Transforms specific pairs of materials into new items.",
                 "将特定的两种材料转化为新的物品。");
         add("info.psionicant.1", "Each recipe requires its own material pairing.",
