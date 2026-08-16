@@ -29,6 +29,8 @@ import com.lowdragmc.lowdraglib2.gui.ui.UIElement;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.Button;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.ItemSlot;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.Label;
+import com.lowdragmc.lowdraglib2.syncdata.annotation.DescSynced;
+import com.lowdragmc.lowdraglib2.syncdata.annotation.Persisted;
 import com.mojang.logging.LogUtils;
 import com.mojang.serialization.Codec;
 import dev.vfyjxf.taffy.style.TaffyPosition;
@@ -58,11 +60,22 @@ public class PipeBlockEntity extends CmBlockEntity {
     // 升级/读档时经 setSize 动态扩容（见 setUpgradeLevel PAGE 分支与 readTileData）。
     private final MachineItemHandler filterInventory = new MachineItemHandler(FILTER_SLOTS_PER_PAGE);
 
-    // ── 管道独特升级等级（持久化，0=未升级；上限见 PipeUpgradeType.maxLevel）──
+    // ── 管道独特升级等级（@Persisted @DescSynced：存档 + 客户端实时推送，
+    // Jade 状态显示依赖实时同步；与 readTileData/writeTileData 手动读写冗余共存，值一致）──
+    @Persisted
+    @DescSynced
     private int pullLevel;
+    @Persisted
+    @DescSynced
     private int pushLevel;
+    @Persisted
+    @DescSynced
     private int speedLevel;
+    @Persisted
+    @DescSynced
     private int pageLevel;
+    @Persisted
+    @DescSynced
     private int enderLevel;
     private final Container filterContainer = new Container() {
 
@@ -397,9 +410,15 @@ public class PipeBlockEntity extends CmBlockEntity {
                     // 兜底退回源容器（simulate 先行已保证可放，此处仅防御竞态）
                     ItemStack rollbackLeftover = TransferNetworks.insertItem(candidate.source, leftover, false);
                     if (!rollbackLeftover.isEmpty()) {
-                        // 退回失败（竞态致源容器被占满）：不吞物品——物品留在目标侧，记录告警便于排查
-                        LOGGER.warn("Pipe rollback failed: {} item(s) could not be returned to source {} (left in target {})",
+                        // 退回失败（竞态致源/目标均拒收）：不吞物品——生成掉落实体到目标位置，
+                        // 保证物品绝不消失（透明可拾取，而非静默丢弃）。
+                        LOGGER.warn("Pipe rollback failed: {} item(s) could not be returned to source {}, spawning item entity at {}",
                                 rollbackLeftover.getCount(), candidate.sourcePos, target.sinkPos);
+                        if (level != null) {
+                            net.minecraft.world.entity.item.ItemEntity entity = new net.minecraft.world.entity.item.ItemEntity(
+                                    level, target.sinkPos.getX() + 0.5, target.sinkPos.getY() + 0.5, target.sinkPos.getZ() + 0.5, rollbackLeftover);
+                            level.addFreshEntity(entity);
+                        }
                     }
                 }
                 movedBySource.merge(key, extracted.getCount(), Integer::sum);
