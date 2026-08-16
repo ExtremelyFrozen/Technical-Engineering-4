@@ -230,8 +230,8 @@ class PipeMatchContractTest {
             String after = body.substring(rollbackIdx, Math.min(body.length(), rollbackIdx + 400));
             assertTrue(after.contains("rollbackLeftover"),
                     "RED: rollback return value must be captured (不得吞掉失败退回的物品)");
-            assertTrue(after.contains("LOGGER.warn"),
-                    "RED: rollback failure must log a warning (留滞目标侧并告警，便于排查)");
+            assertTrue(after.contains("spawnRollbackItem"),
+                    "RED: rollback failure must drop to air via spawnRollbackItem (不吞物品，可见可拾取)");
         }
 
         @Test

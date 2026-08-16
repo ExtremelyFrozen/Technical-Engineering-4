@@ -32,6 +32,7 @@ import net.neoforged.neoforge.energy.IEnergyStorage;
 import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import net.neoforged.neoforge.items.IItemHandler;
+import net.neoforged.neoforge.items.IItemHandlerModifiable;
 import net.neoforged.neoforge.transfer.ResourceHandler;
 import net.neoforged.neoforge.transfer.fluid.FluidResource;
 
@@ -878,7 +879,10 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
     public IItemHandler getItemHandler(@Nullable Direction side) {
         if (itemHandler == null) return null;
         if (side == null) return itemHandler;
-        return new IItemHandler() {
+        // 实现 IItemHandlerModifiable：setStackInSlot 直通内层（绕过 side 门控），
+        // 供 ItemHandlerResourceAdapter 事务回滚精确恢复——否则 simulate 探测真实变更后
+        // revertToSnapshot 因非 modifiable 跳过，导致物品被 simulate 抽走/塞入无法还原（丢失/复制）。
+        return new IItemHandlerModifiable() {
 
             @Override
             public int getSlots() {
@@ -888,6 +892,12 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
             @Override
             public ItemStack getStackInSlot(int slot) {
                 return canExtractItem(side) ? itemHandler.getStackInSlot(slot) : ItemStack.EMPTY;
+            }
+
+            @Override
+            public void setStackInSlot(int slot, ItemStack stack) {
+                // 回滚语义：恢复到事务前全量状态，绕过 side 门控（事务前状态即合法存在）。
+                itemHandler.setStackInSlot(slot, stack);
             }
 
             @Override

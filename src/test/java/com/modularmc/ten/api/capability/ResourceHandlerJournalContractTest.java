@@ -170,4 +170,21 @@ class ResourceHandlerJournalContractTest {
                     "GREEN: energy revert must loop-diff restore (extractEnergy/receiveEnergy) for non-MachineEnergyStorage");
         }
     }
+
+    @Nested
+    class MachineSideItemHandlerModifiable {
+        private static final String SRC = "com/modularmc/ten/api/blockentity/CmMachineBlockEntity.java";
+
+        @Test
+        void machineSideItemWrapperMustBeModifiable() throws Exception {
+            String src = readSource(SRC);
+            // 机器 side 物品包装必须实现 IItemHandlerModifiable，否则 ItemHandlerResourceAdapter
+            // 事务回滚（simulate 真实变更 + abort）因非 modifiable 跳过 → simulate 探测真实抽走/塞入
+            // 机器物品无法还原（物品消失/复制）。此契约守护修复防回归。
+            assertTrue(src.contains("new IItemHandlerModifiable()"),
+                    "RED: machine side item wrapper must implement IItemHandlerModifiable");
+            assertTrue(src.contains("public void setStackInSlot(int slot, ItemStack stack)"),
+                    "RED: machine side item wrapper must expose setStackInSlot for journal rollback");
+        }
+    }
 }
