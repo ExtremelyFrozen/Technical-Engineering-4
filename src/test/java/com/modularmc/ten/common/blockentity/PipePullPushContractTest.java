@@ -141,6 +141,8 @@ class PipePullPushContractTest {
                     "RED: pull collection must skip adjacent pipe blocks (network interior)");
             assertTrue(body.contains("TransferNetworks.getItems"),
                     "RED: pull collection must look up item capability at the neighbor");
+            assertTrue(body.contains("canHoldItems"),
+                    "RED: only blocks that can hold items may count as network containers");
         }
 
         @Test
@@ -181,6 +183,8 @@ class PipePullPushContractTest {
                     "RED: push collection must skip adjacent pipe blocks (network interior)");
             assertTrue(body.contains("TransferNetworks.getItems"),
                     "RED: push collection must look up item capability at the neighbor");
+            assertTrue(body.contains("canHoldItems"),
+                    "RED: only blocks that can hold items may count as network containers");
         }
 
         @Test

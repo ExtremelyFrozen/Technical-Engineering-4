@@ -294,8 +294,8 @@ public class PipeBlockEntity extends CmBlockEntity {
                     continue;
                 }
                 IItemHandler source = TransferNetworks.getItems(level, sourcePos, direction.getOpposite());
-                if (source == null) {
-                    continue;
+                if (source == null || !canHoldItems(source)) {
+                    continue; // 仅"可容纳物品"的方块才算作被连接到网络的容器
                 }
                 for (int slot = 0; slot < source.getSlots(); slot++) {
                     ItemStack simulated = source.extractItem(slot, perBeatLimit, true);
@@ -322,8 +322,8 @@ public class PipeBlockEntity extends CmBlockEntity {
                     continue;
                 }
                 IItemHandler sink = TransferNetworks.getItems(level, sinkPos, direction.getOpposite());
-                if (sink == null) {
-                    continue;
+                if (sink == null || !canHoldItems(sink)) {
+                    continue; // 仅"可容纳物品"的方块才算作被连接到网络的容器
                 }
                 int freeSpace = 0;
                 for (int slot = 0; slot < sink.getSlots(); slot++) {
@@ -405,20 +405,23 @@ public class PipeBlockEntity extends CmBlockEntity {
                 if (extracted.isEmpty()) {
                     continue;
                 }
+                // 防御竞态：真实 extract 的物品可能与 simulate 的 preview 不同（第三方并发修改源），
+                // 目标侧过滤按真实物品复查（simulate 基于 preview 可能误放行黑名单物品）。
+                if (!target.pushPipe.isItemAllowed(extracted)) {
+                    // 目标过滤拒绝：物品未进入目标，退回源（失败则掉落兜底），结束该候选待下节拍重试。
+                    ItemStack back = TransferNetworks.insertItem(candidate.source, extracted, false);
+                    if (!back.isEmpty()) {
+                        spawnRollbackItem(back, candidate.sourcePos, target.sinkPos);
+                    }
+                    break;
+                }
                 ItemStack leftover = TransferNetworks.insertItem(target.sink, extracted.copy(), false);
                 if (!leftover.isEmpty()) {
                     // 兜底退回源容器（simulate 先行已保证可放，此处仅防御竞态）
                     ItemStack rollbackLeftover = TransferNetworks.insertItem(candidate.source, leftover, false);
                     if (!rollbackLeftover.isEmpty()) {
-                        // 退回失败（竞态致源/目标均拒收）：不吞物品——生成掉落实体到目标位置，
-                        // 保证物品绝不消失（透明可拾取，而非静默丢弃）。
-                        LOGGER.warn("Pipe rollback failed: {} item(s) could not be returned to source {}, spawning item entity at {}",
-                                rollbackLeftover.getCount(), candidate.sourcePos, target.sinkPos);
-                        if (level != null) {
-                            net.minecraft.world.entity.item.ItemEntity entity = new net.minecraft.world.entity.item.ItemEntity(
-                                    level, target.sinkPos.getX() + 0.5, target.sinkPos.getY() + 0.5, target.sinkPos.getZ() + 0.5, rollbackLeftover);
-                            level.addFreshEntity(entity);
-                        }
+                        // 退回失败（竞态致源/目标均拒收）：不吞物品——掉落实体到目标附近空气格（可见可拾取）
+                        spawnRollbackItem(rollbackLeftover, candidate.sourcePos, target.sinkPos);
                     }
                 }
                 movedBySource.merge(key, extracted.getCount(), Integer::sum);
@@ -427,6 +430,57 @@ public class PipeBlockEntity extends CmBlockEntity {
             }
         }
         setActive(movedAny);
+    }
+
+    /**
+     * 该邻居方块是否"可用容纳物品"（存在至少一个容量 &gt; 0 的槽位）。
+     * 只有可容纳物品的方块才算作被连接到网络的容器；空壳 handler（0 槽 / 全零容量）不算，
+     * 避免把不能装物品的方块误识别为网络 Pull 源 / Push 目标。
+     */
+    private static boolean canHoldItems(IItemHandler handler) {
+        for (int slot = 0; slot < handler.getSlots(); slot++) {
+            if (handler.getSlotLimit(slot) > 0) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 竞态兜底：源/目标均拒收时生成掉落实体到目标附近空气格（优先上方，其次 6 面），
+     * 保证物品绝不消失且可见可拾取（而非卡在实心方块内部不可见）。全部非空气时回退目标中心。
+     */
+    private void spawnRollbackItem(ItemStack stack, BlockPos sourcePos, BlockPos targetPos) {
+        LOGGER.warn("Pipe rollback failed: {} item(s) could not be returned to source {}, spawning item entity at {}",
+                stack.getCount(), sourcePos, targetPos);
+        if (level == null) {
+            return;
+        }
+        BlockPos spawnPos = findAirSpawnPos(targetPos);
+        if (spawnPos == null) {
+            spawnPos = targetPos;
+        }
+        net.minecraft.world.entity.item.ItemEntity entity = new net.minecraft.world.entity.item.ItemEntity(
+                level, spawnPos.getX() + 0.5, spawnPos.getY() + 0.5, spawnPos.getZ() + 0.5, stack);
+        level.addFreshEntity(entity);
+    }
+
+    /** 寻找 targetPos 附近空气格：优先上方（玩家易见可拾取），其次 6 面；全非空气返回 null。 */
+    private BlockPos findAirSpawnPos(BlockPos targetPos) {
+        if (level == null) {
+            return null;
+        }
+        BlockPos above = targetPos.above();
+        if (level.getBlockState(above).isAir()) {
+            return above;
+        }
+        for (Direction direction : Direction.values()) {
+            BlockPos neighbor = targetPos.relative(direction);
+            if (level.getBlockState(neighbor).isAir()) {
+                return neighbor;
+            }
+        }
+        return null;
     }
 
     // ── 翻页控件坐标（偏差 #3：扩写升级多页 GUI）──
