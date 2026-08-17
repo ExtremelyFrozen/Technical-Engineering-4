@@ -112,15 +112,12 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
     public boolean active = false;
 
     // Face config for client display — server-authoritative mirror, rebuilt from faceMode
-    // maps in readTileData/doBaseData. @DescSynced covers initial sync on client connection;
-    // int[] element mutation is not detected by @DescSynced, so on change syncAllFacesToClients()
-    // pushes all 6 faces x 3 types manually. NOT @Persisted (derived data; persistence lives
-    // in the faceMode maps via dire* keys).
-    @DescSynced
+    // maps in readTileData/doBaseData. NOT @Persisted (derived data; persistence lives in the
+    // faceMode maps via dire* keys). NOT @DescSynced: int[] sync is unreliable (initial sync
+    // fails, client keeps defaults until first manual sync) — instead buildMachineUI() pushes
+    // all faces on GUI open, and syncAllFacesToClients() pushes on every change.
     public int[] energyFaceData = new int[6];
-    @DescSynced
     public int[] itemFaceData = new int[6];
-    @DescSynced
     public int[] fluidFaceData = new int[6];
 
     // ───── P1-T2/P2: 乘法模型与批处理字段 ─────
@@ -1335,6 +1332,10 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         }
         TENMachineBlockUIFactory.addPlayerInventory(root);
         TENMachineBlockUIFactory.addCommonSidebar(root, holder, this, new TENMachineBlockUIFactory.UIState(holder));
+        // GUI 打开（服务端 createUI 构建）时推送完整 faceData 到客户端：
+        // faceData 是 int[]，@DescSynced 初始同步不可靠（客户端保持默认直到首次手动同步），
+        // 改为打开 GUI 即推送真实配置，避免「进入世界显示默认、首次点击才跳变」。
+        syncAllFacesToClients();
         contentBuilder.accept(root);
         return TENMachineBlockUIFactory.buildModularUI(root, holder.player);
     }
