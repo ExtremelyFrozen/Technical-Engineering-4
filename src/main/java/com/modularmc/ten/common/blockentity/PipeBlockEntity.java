@@ -12,6 +12,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.Container;
+import net.minecraft.world.Containers;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
@@ -30,6 +31,7 @@ import com.mojang.serialization.Codec;
 import dev.vfyjxf.taffy.style.TaffyPosition;
 
 import java.util.ArrayList;
+import java.util.EnumSet;
 
 /**
  * 物品管道（pipe / pipe_white / pipe_black）——逐级传递模型。
@@ -70,8 +72,12 @@ public class PipeBlockEntity extends CmBlockEntity {
 
     /** 逐级传递缓冲：物品沿管道网络逐跳移动的中间态（单物品类型，容量 64，存档持久化）。 */
     private ItemStack buffer = ItemStack.EMPTY;
-    /** 本 tick 的抽取来源方向：推送时跳过（防相邻管道间回传震荡）。 */
-    private Direction lastSourceDir;
+    /**
+     * 物品来源方向集合：缓冲中物品进入的方向（容器抽取 + 相邻管道接力接收）。
+     * 推送时跳过这些方向（防相邻管道间回传震荡）；缓冲清空后清空。跨 tick 保留：
+     * 物品还在缓冲中时持续不回传。
+     */
+    private final EnumSet<Direction> sourceDirs = EnumSet.noneOf(Direction.class);
 
     /**
      * 抽入点面配置：用扳手右键管道与方块的连接端，将该连接段设为抽入点（管道主动拉取）。
@@ -179,14 +185,13 @@ public class PipeBlockEntity extends CmBlockEntity {
         if (level == null || level.isClientSide()) {
             return;
         }
-        lastSourceDir = null;
-        // 1. 推送：缓冲 → 相邻容器（到达目标）或相邻管道（接力），每 tick 最多 TRANSFER_RATE
-        if (!buffer.isEmpty()) {
-            pushBuffer();
-        }
-        // 2. 抽取：相邻容器 → 缓冲，每 tick 最多 TRANSFER_RATE
+        // 先抽取（记录物品来源方向到 sourceDirs），再推送（跳过来源方向防回传震荡）。
+        // 来源方向跨 tick 保留：缓冲中物品持续不回传；缓冲清空后 sourceDirs 清空。
         if (buffer.getCount() < BUFFER_CAPACITY) {
             pullFromContainers();
+        }
+        if (!buffer.isEmpty()) {
+            pushBuffer();
         }
         setActive(!buffer.isEmpty());
     }
@@ -202,7 +207,7 @@ public class PipeBlockEntity extends CmBlockEntity {
             if (budget <= 0 || buffer.isEmpty()) {
                 break;
             }
-            if (direction == lastSourceDir) {
+            if (sourceDirs.contains(direction)) {
                 continue;
             }
             BlockPos targetPos = worldPosition.relative(direction);
@@ -214,7 +219,7 @@ public class PipeBlockEntity extends CmBlockEntity {
                 continue;
             }
             if (!isItemAllowed(buffer)) {
-                continue; // 目标侧过滤（AND：本管道过滤标记物）
+                continue; // 本管道过滤（pipe_white/pipe_black 标记物）：目标侧 AND 语义的一环
             }
             int toPush = Math.min(buffer.getCount(), budget);
             ItemStack toInsert = buffer.copy();
@@ -233,7 +238,7 @@ public class PipeBlockEntity extends CmBlockEntity {
                 if (budget <= 0 || buffer.isEmpty()) {
                     break;
                 }
-                if (direction == lastSourceDir) {
+                if (sourceDirs.contains(direction)) {
                     continue;
                 }
                 BlockPos targetPos = worldPosition.relative(direction);
@@ -247,6 +252,10 @@ public class PipeBlockEntity extends CmBlockEntity {
                     markDirty();
                 }
             }
+        }
+        // 缓冲已推完：清空来源方向记录（物品已离开，下次抽取重新记录）
+        if (buffer.isEmpty()) {
+            sourceDirs.clear();
         }
     }
 
@@ -293,7 +302,7 @@ public class PipeBlockEntity extends CmBlockEntity {
                 } else {
                     buffer.grow(extracted.getCount());
                 }
-                lastSourceDir = direction;
+                sourceDirs.add(direction);
                 remaining -= extracted.getCount();
                 markDirty();
             }
@@ -313,7 +322,7 @@ public class PipeBlockEntity extends CmBlockEntity {
             int accepted = Math.min(stack.getCount(), BUFFER_CAPACITY);
             buffer = stack.copy();
             buffer.setCount(accepted);
-            lastSourceDir = fromDir; // 记录来源方向：本 tick 推送不再回传
+            sourceDirs.add(fromDir); // 记录来源方向：本管道推送不再回传
             markDirty();
             return accepted;
         }
@@ -458,6 +467,58 @@ public class PipeBlockEntity extends CmBlockEntity {
         BlockState state = getBlockState();
         if (state.hasProperty(BaseMachineBlock.ACTIVE) && state.getValue(BaseMachineBlock.ACTIVE) != active) {
             level.setBlock(worldPosition, state.setValue(BaseMachineBlock.ACTIVE, active), 3);
+        }
+    }
+
+    // ── 掉落（破坏管道时：缓冲传输物品 + 过滤标记物不丢失）─────────────────
+
+    // Guard flag: true when the chunk is being unloaded (setRemoved should NOT drop contents in that case).
+    private transient boolean chunkUnloading = false;
+    // Guard flag: set by block destroy handling to prevent double-drop (player breaking also triggers setRemoved).
+    private transient boolean destroyDropsHandled = false;
+
+    /** 由方块 destroy 处理标记已掉落，避免 setRemoved 重复掉落。 */
+    public void markDestroyDropsHandled() {
+        this.destroyDropsHandled = true;
+    }
+
+    @Override
+    public void onChunkUnloaded() {
+        super.onChunkUnloaded();
+        this.chunkUnloading = true;
+    }
+
+    @Override
+    public void setRemoved() {
+        // 破坏/替换方块时掉落缓冲物品与过滤标记物（chunk 卸载或 destroy 已处理时跳过）
+        if (!chunkUnloading && !destroyDropsHandled && level != null && !level.isClientSide()) {
+            dropAllContents();
+        }
+        super.setRemoved();
+    }
+
+    @Override
+    public void clearRemoved() {
+        super.clearRemoved();
+        this.chunkUnloading = false;
+        this.destroyDropsHandled = false;
+    }
+
+    /** 掉落缓冲传输物品与全部过滤标记物（物品绝不因管道破坏而消失）。 */
+    public void dropAllContents() {
+        if (level == null) {
+            return;
+        }
+        if (!buffer.isEmpty()) {
+            Containers.dropItemStack(level, worldPosition.getX(), worldPosition.getY(), worldPosition.getZ(), buffer);
+            buffer = ItemStack.EMPTY;
+        }
+        for (int i = 0; i < filterInventory.getSlots(); i++) {
+            ItemStack stack = filterInventory.getStackInSlot(i);
+            if (!stack.isEmpty()) {
+                Containers.dropItemStack(level, worldPosition.getX(), worldPosition.getY(), worldPosition.getZ(), stack);
+                filterInventory.setStackInSlot(i, ItemStack.EMPTY);
+            }
         }
     }
 }

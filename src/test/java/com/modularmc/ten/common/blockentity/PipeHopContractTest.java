@@ -71,8 +71,11 @@ class PipeHopContractTest {
                 "RED: tick must push buffer to neighbors (hop-by-hop)");
         assertTrue(body.contains("pullFromContainers()"),
                 "RED: tick must pull from containers into buffer");
-        assertTrue(body.contains("lastSourceDir = null"),
-                "RED: tick must reset lastSourceDir each tick (backflow prevention)");
+        // 先抽取（记录来源）再推送（跳过来源）：pull 调用必须在 push 之前
+        int pullIdx = body.indexOf("pullFromContainers()");
+        int pushIdx = body.indexOf("pushBuffer()");
+        assertTrue(pullIdx >= 0 && pushIdx >= 0 && pullIdx < pushIdx,
+                "RED: tick must pull (record sources) before push (skip sources) for backflow prevention");
     }
 
     @Test
@@ -97,11 +100,17 @@ class PipeHopContractTest {
     }
 
     @Test
-    void backflowSkippedByLastSourceDir() throws Exception {
+    void backflowSkippedBySourceDirs() throws Exception {
         var src = readSource(PIPE_SRC);
         String pushBody = methodBody(src, "private void pushBuffer");
-        assertTrue(pushBody.contains("direction == lastSourceDir"),
-                "RED: push must skip the source direction of this tick (prevent A<->B oscillation)");
+        assertTrue(pushBody.contains("sourceDirs.contains(direction)"),
+                "RED: push must skip source directions recorded in sourceDirs (prevent A<->B oscillation)");
+        assertTrue(src.contains("sourceDirs.add(direction)"),
+                "RED: pull must record pulled-from direction into sourceDirs");
+        assertTrue(src.contains("sourceDirs.add(fromDir)"),
+                "RED: tryReceive must record incoming direction into sourceDirs");
+        assertTrue(pushBody.contains("sourceDirs.clear()"),
+                "RED: sourceDirs must clear once buffer is fully pushed (next pull re-records)");
     }
 
     @Test
