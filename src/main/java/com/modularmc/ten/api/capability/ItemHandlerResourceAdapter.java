@@ -62,8 +62,7 @@ public class ItemHandlerResourceAdapter
             // 非可写 handler 无法回滚：不应发生（TEN 机器均 modifiable）；告警而非静默跳过，
             // 便于排查潜在的真实变更未恢复（物品丢失/复制风险）。
             org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(ItemHandlerResourceAdapter.class);
-            logger.warn("ItemHandlerResourceAdapter.revertToSnapshot: handler {} is not modifiable; "
-                    + "transaction rollback skipped (potential item mutation not restored)", handler.getClass().getName());
+            logger.warn("ItemHandlerResourceAdapter.revertToSnapshot: handler {} is not modifiable; " + "transaction rollback skipped (potential item mutation not restored)", handler.getClass().getName());
             return;
         }
         int n = Math.min(snapshot.length, handler.getSlots());

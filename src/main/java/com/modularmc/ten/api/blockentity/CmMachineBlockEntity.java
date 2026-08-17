@@ -8,6 +8,8 @@ import com.modularmc.ten.api.option.FaceOption;
 import com.modularmc.ten.api.option.IngredientType;
 import com.modularmc.ten.api.option.MachineType;
 import com.modularmc.ten.api.option.RedstoneMode;
+import com.modularmc.ten.common.blockentity.PipeBlockEntity;
+import com.modularmc.ten.common.blockentity.TransferNetworks;
 import com.modularmc.ten.common.gui.TENMachineBlockUIFactory;
 import com.modularmc.ten.common.item.upgrades.IUpgradableMachine;
 import com.modularmc.ten.common.item.upgrades.LevelupBlast;
@@ -110,11 +112,15 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
     public boolean active = false;
 
     // Face config for client display — server-authoritative mirror, rebuilt from faceMode
-    // maps in readTileData/doBaseData. NOT @Persisted (derived data; persistence lives in
-    // the faceMode maps via dire* keys), NOT @DescSynced (int[] element mutation is not
-    // detected) — synced to clients via syncAllFacesToClients() on change.
+    // maps in readTileData/doBaseData. @DescSynced covers initial sync on client connection;
+    // int[] element mutation is not detected by @DescSynced, so on change syncAllFacesToClients()
+    // pushes all 6 faces x 3 types manually. NOT @Persisted (derived data; persistence lives
+    // in the faceMode maps via dire* keys).
+    @DescSynced
     public int[] energyFaceData = new int[6];
+    @DescSynced
     public int[] itemFaceData = new int[6];
+    @DescSynced
     public int[] fluidFaceData = new int[6];
 
     // ───── P1-T2/P2: 乘法模型与批处理字段 ─────
@@ -400,16 +406,26 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         return FaceOption.isOut(energyFaceMode.getOrDefault(side, FaceOption.OFF)) || energyFaceMode.getOrDefault(side, FaceOption.OFF) == FaceOption.BOTH;
     }
 
+    /**
+     * 物品面接收门控（主动/被动语义）：仅「被动输入 / 被动双向」允许被外部塞入；
+     * 「主动输入」由机器自身主动拉取（{@link #doActiveItemIo}），不开放给外部。
+     */
     protected boolean canReceiveItem(@Nullable Direction side) {
         if (!hasFaceCapabilityItem(side)) return false;
         if (side == null) return true;
-        return FaceOption.isIn(itemFaceMode.getOrDefault(side, FaceOption.OFF)) || itemFaceMode.getOrDefault(side, FaceOption.OFF) == FaceOption.BOTH;
+        int mode = itemFaceMode.getOrDefault(side, FaceOption.OFF);
+        return mode == FaceOption.BE_IN || mode == FaceOption.BOTH;
     }
 
+    /**
+     * 物品面提取门控（主动/被动语义）：仅「被动输出 / 被动双向」允许被外部抽取；
+     * 「主动输出」由机器自身主动推出（{@link #doActiveItemIo}），不开放给外部。
+     */
     protected boolean canExtractItem(@Nullable Direction side) {
         if (!hasFaceCapabilityItem(side)) return false;
         if (side == null) return true;
-        return FaceOption.isOut(itemFaceMode.getOrDefault(side, FaceOption.OFF)) || itemFaceMode.getOrDefault(side, FaceOption.OFF) == FaceOption.BOTH;
+        int mode = itemFaceMode.getOrDefault(side, FaceOption.OFF);
+        return mode == FaceOption.BE_OUT || mode == FaceOption.BOTH;
     }
 
     protected boolean canReceiveFluid(@Nullable Direction side) {
@@ -537,6 +553,9 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         if (getAliveTime() % 4 == 0) {
             effAuc = efficientIn;
         }
+
+        // ── 主动物品 IO：面配置 IN=机器主动拉取 / OUT=机器主动推出（64/tick）──
+        doActiveItemIo();
 
         // ── Sync face maps to arrays for client (server-authoritative mirror) ──
         // int[] element mutation is not detected by @DescSynced — on change, push all
@@ -1169,6 +1188,108 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
             int idx = d.get3DDataValue();
             rpcToTracking("rpcSyncFaceInfo", idx, energyFaceData[idx], itemFaceData[idx], fluidFaceData[idx]);
         }
+    }
+
+    // ───── 主动物品 IO（面配置 IN=主动输入 / OUT=主动输出，64/tick）─────
+
+    /** 机器主动拉取/推出的统一传输量（化繁为简：与管道一致 64/tick）。 */
+    private static final int ACTIVE_IO_RATE = 64;
+
+    /**
+     * 主动物品 IO：按面配置执行机器自身的拉取/推送（每 tick 调用一次）。
+     * IN 面 → 从相邻容器拉取到输入槽；OUT 面 → 从输出槽推送到相邻容器。
+     * 相邻为管道时跳过（管道由逐级传递独立处理）。
+     */
+    private void doActiveItemIo() {
+        if (level == null || level.isClientSide() || itemHandler == null) {
+            return;
+        }
+        for (Direction direction : Direction.values()) {
+            int mode = itemFaceMode.getOrDefault(direction, FaceOption.OFF);
+            if (mode == FaceOption.IN) {
+                activePullItems(direction);
+            } else if (mode == FaceOption.OUT) {
+                activePushItems(direction);
+            }
+        }
+    }
+
+    /** 主动输入：从该面相邻容器拉取物品到机器输入槽（每 tick 最多 {@link #ACTIVE_IO_RATE}）。 */
+    private void activePullItems(Direction direction) {
+        BlockPos sourcePos = worldPosition.relative(direction);
+        if (level.getBlockEntity(sourcePos) instanceof PipeBlockEntity) {
+            return; // 相邻为管道：由管道逐级传递处理，机器不主动跨管道拉
+        }
+        IItemHandler source = TransferNetworks.getItems(level, sourcePos, direction.getOpposite());
+        if (source == null) {
+            return;
+        }
+        int remaining = ACTIVE_IO_RATE;
+        for (int srcSlot = 0; srcSlot < source.getSlots() && remaining > 0; srcSlot++) {
+            ItemStack simulated = source.extractItem(srcSlot, remaining, true);
+            if (simulated.isEmpty()) {
+                continue;
+            }
+            // simulate 确认输入槽可接收
+            ItemStack simLeft = insertIntoInputSlots(simulated.copy(), true);
+            int accepted = simulated.getCount() - simLeft.getCount();
+            if (accepted <= 0) {
+                continue;
+            }
+            ItemStack extracted = source.extractItem(srcSlot, accepted, false);
+            if (extracted.isEmpty()) {
+                continue;
+            }
+            ItemStack leftover = insertIntoInputSlots(extracted.copy(), false);
+            if (!leftover.isEmpty()) {
+                // 防御竞态：真实插入失败退回源
+                TransferNetworks.insertItem(source, leftover, false);
+            }
+            remaining -= accepted;
+        }
+    }
+
+    /** 主动输出：从机器输出槽推送物品到该面相邻容器（每 tick 最多 {@link #ACTIVE_IO_RATE}）。 */
+    private void activePushItems(Direction direction) {
+        BlockPos targetPos = worldPosition.relative(direction);
+        if (level.getBlockEntity(targetPos) instanceof PipeBlockEntity) {
+            return; // 相邻为管道：由管道逐级传递处理
+        }
+        IItemHandler sink = TransferNetworks.getItems(level, targetPos, direction.getOpposite());
+        if (sink == null) {
+            return;
+        }
+        int remaining = ACTIVE_IO_RATE;
+        for (int slot = 0; slot < itemHandler.getSlots() && remaining > 0; slot++) {
+            if (!slotType(slot).canOut()) {
+                continue; // 仅输出槽
+            }
+            ItemStack stack = itemHandler.getStackInSlot(slot);
+            if (stack.isEmpty()) {
+                continue;
+            }
+            int toPush = Math.min(stack.getCount(), remaining);
+            ItemStack toInsert = stack.copy();
+            toInsert.setCount(toPush);
+            ItemStack leftover = TransferNetworks.insertItem(sink, toInsert, false);
+            int accepted = toPush - leftover.getCount();
+            if (accepted > 0) {
+                itemHandler.extractItem(slot, accepted, false);
+                remaining -= accepted;
+            }
+        }
+    }
+
+    /** 尝试将物品插入机器输入槽（slotType canIn），返回剩余。 */
+    private ItemStack insertIntoInputSlots(ItemStack stack, boolean simulate) {
+        ItemStack remaining = stack;
+        for (int slot = 0; slot < itemHandler.getSlots() && !remaining.isEmpty(); slot++) {
+            if (!slotType(slot).canIn()) {
+                continue;
+            }
+            remaining = itemHandler.insertItem(slot, remaining, simulate);
+        }
+        return remaining;
     }
 
     /** S→C: 同步面配置到客户端 */

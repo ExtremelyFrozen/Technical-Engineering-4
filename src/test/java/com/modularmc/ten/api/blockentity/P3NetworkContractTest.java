@@ -300,23 +300,23 @@ class P3NetworkContractTest {
         }
 
         @Test
-        void matchAndTransferRetainedForPipe() throws Exception {
-            // Pipe 撮合入口：root 每 tick 调 matchAndTransfer，执行插入复用 TransferNetworks.insertItem
+        void hopTransferRetainedForPipe() throws Exception {
+            // 管道逐级传递：每根管道 tick 独立执行 pushBuffer/pullFromContainers（无网络 root 撮合）
             var pipeSrc = readMainSource("com/modularmc/ten/common/blockentity/PipeBlockEntity.java");
-            assertTrue(pipeSrc.contains("matchAndTransfer(network)"),
-                    "P3-T4: Pipe tick must call matchAndTransfer for item matching");
+            assertTrue(pipeSrc.contains("pushBuffer()") && pipeSrc.contains("pullFromContainers()"),
+                    "P3-T4: Pipe tick must call pushBuffer/pullFromContainers for hop-by-hop transfer");
             assertTrue(pipeSrc.contains("TransferNetworks.insertItem"),
                     "P3-T4: Pipe must use TransferNetworks.insertItem for insert execution");
         }
 
         @Test
-        void matchingGuardsPerBeatLimit() throws Exception {
-            // 撮合保留限量守卫：每源每节拍限量（perBeatLimit - 已搬量），耗尽则跳过该源
+        void transferRateGuardsHop() throws Exception {
+            // 逐级传递限量守卫：每 tick 传输量 ≤ TRANSFER_RATE（64），缓冲容量 ≤ BUFFER_CAPACITY
             var pipeSrc = readMainSource("com/modularmc/ten/common/blockentity/PipeBlockEntity.java");
-            assertTrue(pipeSrc.contains("perBeatLimit - movedBySource.getOrDefault"),
-                    "P3-T4: matching must guard each source by perBeatLimit (per-beat limit)");
-            assertTrue(pipeSrc.contains("remaining <= 0"),
-                    "P3-T4: exhausted source must be skipped (guard clause)");
+            assertTrue(pipeSrc.contains("TRANSFER_RATE"),
+                    "P3-T4: pipe must cap per-tick transfer by TRANSFER_RATE (64)");
+            assertTrue(pipeSrc.contains("BUFFER_CAPACITY - buffer.getCount()"),
+                    "P3-T4: pipe pull must respect buffer capacity remaining space");
         }
 
         @Test

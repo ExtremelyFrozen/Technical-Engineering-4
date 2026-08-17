@@ -1,10 +1,13 @@
 package com.modularmc.ten.common.item;
 
+import com.modularmc.ten.common.blockentity.PipeBlockEntity;
 import com.modularmc.ten.common.data.TENTags;
 import com.modularmc.ten.common.data.WrenchDismantleService;
+import com.modularmc.ten.utils.ComponentHelper;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.context.UseOnContext;
@@ -40,7 +43,23 @@ public class SpannerItem extends TENBaseItem {
             return dismantled ? InteractionResult.CONSUME : InteractionResult.PASS;
         }
 
-        // ── Right-click (no sneak): rotate ─────────────────────────────
+        // ── Right-click (no sneak): pipe connection-end config / rotate ──
+        if (level.getBlockEntity(pos) instanceof PipeBlockEntity pipe) {
+            // 管道连接端配置：被点击的面（管道面向容器的连接端）切换为抽入点（主动拉取）；
+            // 未配置的面为被动 IO（管道不主动拉，仅作推送目标）。
+            Direction side = context.getClickedFace();
+            if (level.isClientSide()) {
+                return InteractionResult.SUCCESS;
+            }
+            boolean pull = pipe.togglePullSide(side);
+            if (context.getPlayer() != null) {
+                context.getPlayer().sendSystemMessage(
+                        Component.translatable(ComponentHelper.getKey(
+                                pull ? "pipe.pull_side.enabled" : "pipe.pull_side.disabled"),
+                                Component.translatable(ComponentHelper.getKey("pipe.pull_side." + side.getName()))));
+            }
+            return InteractionResult.CONSUME;
+        }
         if (!state.is(TENTags.MACHINES)) {
             return InteractionResult.PASS;
         }

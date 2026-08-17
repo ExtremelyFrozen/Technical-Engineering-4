@@ -65,13 +65,13 @@ class PipeFilterContractTest {
     class FilterSlotCount {
 
         @Test
-        void filterInventoryStartsWithSinglePage27Slots() throws Exception {
+        void filterInventoryStartsWithFixed27Slots() throws Exception {
             var src = readSource(PIPE_SRC);
-            // 单页容量常量 = 3×9 = 27；构造用常量而非裸数字（扩写升级按 27×页数动态扩容）
-            assertTrue(src.contains("FILTER_SLOTS_PER_PAGE = 27"),
-                    "RED: per-page slot constant must be 3×9=27");
-            assertTrue(src.contains("new MachineItemHandler(FILTER_SLOTS_PER_PAGE)"),
-                    "RED: filter inventory must init with per-page constant (27 slots at pageLevel 0)");
+            // 过滤槽固定 3×9 = 27（升级系统已移除，无扩写翻页；化繁为简）
+            assertTrue(src.contains("FILTER_SLOTS = 27"),
+                    "RED: filter slot constant must be 3×9=27");
+            assertTrue(src.contains("new MachineItemHandler(FILTER_SLOTS)"),
+                    "RED: filter inventory must init with fixed 27 slots");
         }
 
         @Test
@@ -93,19 +93,16 @@ class PipeFilterContractTest {
     class GuiLayout {
 
         @Test
-        void createUiRendersPerPage3x9Grid() throws Exception {
+        void createUiRendersFixed3x9Grid() throws Exception {
             var src = readSource(PIPE_SRC);
             String body = methodBody(src, "public ModularUI createUI");
-            // 每页 3×9 网格：列 = i % 9，行 = i / 9（三行 y = 24 / 42 / 60）
+            // 固定 3×9 网格：列 = i % 9，行 = i / 9（三行 y = 24 / 42 / 60）；无翻页
             assertTrue(body.contains("(i % 9) * 18"),
                     "RED: createUI must position columns by (i % 9) * 18");
             assertTrue(body.contains("(i / 9) * 18"),
                     "RED: createUI must position rows by (i / 9) * 18 (3 rows × 9 cols)");
-            // 每页遍历 FILTER_SLOTS_PER_PAGE 槽；页循环覆盖全部页（总槽 = 27×页数）
-            assertTrue(body.contains("i < FILTER_SLOTS_PER_PAGE"),
-                    "RED: createUI must iterate FILTER_SLOTS_PER_PAGE slots per page");
             assertTrue(body.contains("filterInventory.getSlots()"),
-                    "RED: createUI must allocate slots for the full filter inventory");
+                    "RED: createUI must iterate the full filter inventory (fixed 27 slots, no pages)");
         }
 
         @Test

@@ -132,41 +132,33 @@ class PipeJadeContractTest {
         }
 
         @Test
-        void readsUpgradeLevelsFromAllTypes() throws Exception {
+        void readsPullSidesFromPipeBlockEntity() throws Exception {
             var src = readClientSource(PROVIDER_SRC);
             String body = methodBody(src, "public void appendTooltip");
-            assertTrue(body.contains("PipeUpgradeType.values()"),
-                    "RED: provider must iterate all upgrade types (no hard-coded level list)");
-            assertTrue(body.contains("pipe.getUpgradeLevel(type)"),
-                    "RED: provider must read levels via getUpgradeLevel(type)");
-            assertTrue(body.contains("type.maxLevel()"),
-                    "RED: provider must show level against type maxLevel (level/max)");
-            assertTrue(body.contains("type.nameKey()"),
-                    "RED: provider must reuse pipe.upgrade.* name keys for labels");
-            assertTrue(body.contains("tooltip.add"),
-                    "RED: each active upgrade must occupy its own tooltip line");
-            assertTrue(body.contains("pipe.getUpgradeLevel(type) == 0"),
-                    "RED: inactive upgrades (level 0) must be skipped");
+            assertTrue(body.contains("pipe.isPullSide"),
+                    "RED: provider must read pull sides via isPullSide(direction)");
+            assertTrue(body.contains("pipe.jade.pull_side"),
+                    "RED: pull side line must use pipe.jade.pull_side lang key");
         }
 
         @Test
-        void readsIoRateFromSingleTransferAmount() throws Exception {
+        void readsIoRateFromConstant() throws Exception {
             var src = readClientSource(PROVIDER_SRC);
             String body = methodBody(src, "public void appendTooltip");
-            assertTrue(body.contains("pipe.singleTransferAmount()"),
-                    "RED: IO rate must come from PipeBlockEntity.singleTransferAmount (no duplicated formula)");
+            assertTrue(body.contains("PipeBlockEntity.TRANSFER_RATE"),
+                    "RED: IO rate must come from PipeBlockEntity.TRANSFER_RATE constant (unified 64/tick)");
             assertTrue(body.contains("pipe.jade.io_rate"),
                     "RED: IO rate line must use pipe.jade.io_rate lang key");
         }
 
         @Test
-        void readsFilterPageCountWhenExpanded() throws Exception {
+        void readsBufferState() throws Exception {
             var src = readClientSource(PROVIDER_SRC);
             String body = methodBody(src, "public void appendTooltip");
-            assertTrue(body.contains("pipe.getFilterPageCount()"),
-                    "RED: provider must read filter page count via getFilterPageCount()");
-            assertTrue(body.contains("pipe.jade.pages"),
-                    "RED: pages line must use pipe.jade.pages lang key");
+            assertTrue(body.contains("pipe.getBuffer()"),
+                    "RED: provider must read pipe buffer via getBuffer()");
+            assertTrue(body.contains("pipe.jade.buffer"),
+                    "RED: buffer line must use pipe.jade.buffer lang key");
         }
     }
 
@@ -186,18 +178,19 @@ class PipeJadeContractTest {
                     "RED: isWhitelist() must be public");
             assertTrue(src.contains("public boolean isBlacklist()"),
                     "RED: isBlacklist() must be public");
-            assertTrue(src.contains("public int singleTransferAmount()"),
-                    "RED: singleTransferAmount() must be public");
+            assertTrue(src.contains("public static final int TRANSFER_RATE = 64"),
+                    "RED: TRANSFER_RATE constant must be public (unified 64/tick)");
+            assertTrue(src.contains("public boolean isPullSide"),
+                    "RED: isPullSide must be public (cross-package provider access)");
         }
 
         @Test
-        void levelGetterCoversAllFiveTypes() throws Exception {
+        void pullSideAccessorsPublic() throws Exception {
             var src = readSource(PIPE_SRC);
-            String body = methodBody(src, "public int getUpgradeLevel");
-            for (String field : new String[]{"pullLevel", "pushLevel", "speedLevel", "pageLevel", "enderLevel"}) {
-                assertTrue(body.contains("-> " + field + ";"),
-                        "RED: getUpgradeLevel must map a case to " + field);
-            }
+            assertTrue(src.contains("public boolean isPullSide(Direction side)"),
+                    "RED: isPullSide must be public");
+            assertTrue(src.contains("public boolean togglePullSide(Direction side)"),
+                    "RED: togglePullSide must be public (spanner interaction)");
         }
     }
 
@@ -243,8 +236,10 @@ class PipeJadeContractTest {
                     "RED: TENLangHandler static block must invoke addPipeJade()");
             assertTrue(src.contains("add(\"pipe.jade.io_rate\""),
                     "RED: missing pipe.jade.io_rate key in handler");
-            assertTrue(src.contains("add(\"pipe.jade.pages\""),
-                    "RED: missing pipe.jade.pages key in handler");
+            assertTrue(src.contains("add(\"pipe.jade.buffer\""),
+                    "RED: missing pipe.jade.buffer key in handler");
+            assertTrue(src.contains("add(\"pipe.jade.pull_side\""),
+                    "RED: missing pipe.jade.pull_side key in handler");
         }
 
         @Test
@@ -255,10 +250,10 @@ class PipeJadeContractTest {
                     "RED: en_us.json must contain pipe.jade.io_rate");
             assertTrue(zh.contains("\"kenergyengineering.pipe.jade.io_rate\""),
                     "RED: zh_cn.json must contain pipe.jade.io_rate");
-            assertTrue(en.contains("\"kenergyengineering.pipe.jade.pages\""),
-                    "RED: en_us.json must contain pipe.jade.pages");
-            assertTrue(zh.contains("\"kenergyengineering.pipe.jade.pages\""),
-                    "RED: zh_cn.json must contain pipe.jade.pages");
+            assertTrue(en.contains("\"kenergyengineering.pipe.jade.buffer\""),
+                    "RED: en_us.json must contain pipe.jade.buffer");
+            assertTrue(zh.contains("\"kenergyengineering.pipe.jade.buffer\""),
+                    "RED: zh_cn.json must contain pipe.jade.buffer");
             assertTrue(zh.contains("\"kenergyengineering.pipe.jade.io_rate\": \"IO 速率: %s 物品/tick\""),
                     "RED: zh_cn.json must contain Chinese IO rate message");
         }

@@ -31,7 +31,6 @@ public final class TENLangHandler {
         addDirections();
         addCommon();
         addPipeFilter();
-        addPipeUpgrade();
         addPipeJade();
         addChannel();
         addUpgradeTips();
@@ -89,23 +88,21 @@ public final class TENLangHandler {
     }
 
     // ── Pipe Upgrades ────────────────────────────────────────────────
-    private static void addPipeUpgrade() {
-        // 管道独特升级（偏差 #2）：右键管道手持升级物升级；类型名 + 反馈消息
-        add("pipe.upgrade.pull", "Pull", "拉取");
-        add("pipe.upgrade.push", "Push", "推入");
-        add("pipe.upgrade.speed", "Speed", "速度");
-        add("pipe.upgrade.page", "Page", "扩写");
-        add("pipe.upgrade.ender", "Ender", "末影");
-        add("pipe.upgrade.success", "%s upgraded to level %s/%s", "%s 升级至等级 %s/%s");
-        add("pipe.upgrade.max", "%s upgrade already at max level", "%s 升级已达上限");
-    }
-
-    // ── Pipe Jade ────────────────────────────────────────────────────
     private static void addPipeJade() {
-        // Jade 集成：管道状态 tooltip（PipeJadeProvider）——过滤模式复用 pipe.filter.*，
-        // 升级名称复用 pipe.upgrade.*；仅新增 IO 速率与过滤页数两键
+        // Jade 集成：管道状态 tooltip（PipeJadeProvider）——过滤模式复用 pipe.filter.*；
+        // 统一传输速率 64/tick + 管道缓冲状态
         add("pipe.jade.io_rate", "IO Rate: %s items/tick", "IO 速率: %s 物品/tick");
-        add("pipe.jade.pages", "Pages: %s", "页数: %s");
+        add("pipe.jade.buffer", "Buffer: %s x%s", "缓冲: %s x%s");
+        add("pipe.jade.pull_side", "Pull: %s", "抽入: %s");
+        // 扳手配置管道连接端为抽入点（管道主动拉取）的反馈消息
+        add("pipe.pull_side.enabled", "Pull side %s enabled", "%s 抽入点已启用");
+        add("pipe.pull_side.disabled", "Pull side %s disabled", "%s 抽入点已禁用");
+        add("pipe.pull_side.down", "Down", "下");
+        add("pipe.pull_side.up", "Up", "上");
+        add("pipe.pull_side.north", "North", "北");
+        add("pipe.pull_side.south", "South", "南");
+        add("pipe.pull_side.west", "West", "西");
+        add("pipe.pull_side.east", "East", "东");
     }
 
     // ── Channel ─────────────────────────────────────────────────────

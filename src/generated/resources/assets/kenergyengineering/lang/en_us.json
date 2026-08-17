@@ -488,6 +488,8 @@
   "kenergyengineering.pipe.filter.page": "Page %s/%s",
   "kenergyengineering.pipe.filter.whitelist": "Whitelist Filter",
   "kenergyengineering.pipe.jade.io_rate": "IO Rate: %s items/tick",
+  "kenergyengineering.pipe.jade.buffer": "Buffer: %s x%s",
+  "kenergyengineering.pipe.jade.pull_side": "Pull: %s",
   "kenergyengineering.pipe.jade.pages": "Pages: %s",
   "kenergyengineering.pipe.upgrade.ender": "Ender",
   "kenergyengineering.pipe.upgrade.max": "%s upgrade already at max level",
