@@ -481,6 +481,24 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         lockedMaxProgress = Math.max(1, progress);
     }
 
+    public static int safeMultiply(int a, int b) {
+        if (a <= 0 || b <= 0) return 0;
+        long result = (long) a * b;
+        return (int) Math.min(result, Integer.MAX_VALUE);
+    }
+
+    protected ItemStack effectiveToolForDrops(ItemStack tool) {
+        if (tool.isEmpty()) {
+            return tool;
+        }
+        // 1.21.1 简化版：不移除附魔（与 26.1.2 useEnchantments toggle 等价的开状态）
+        return tool;
+    }
+
+    public List<net.minecraft.world.phys.AABB> getRangeBoxes() {
+        return java.util.Collections.emptyList();
+    }
+
     /**
      * Pure calculation of B_actual from all dimensional constraints.
      * 委托 {@link BatchMath#calculateBActual}（无 MC 依赖，可单元测试）。

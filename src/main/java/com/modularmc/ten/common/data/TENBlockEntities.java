@@ -90,6 +90,20 @@ public class TENBlockEntities {
             .validBlocks(TENBlocks.MACHINE_QUARRY)
             .register();
 
+    // P1-1 新增三台机器
+    public static final BlockEntityEntry<BlockBreakerBlockEntity> BLOCK_BREAKER = REGISTRATE
+            .blockEntity("machine_block_breaker", BlockBreakerBlockEntity::new)
+            .validBlocks(TENBlocks.MACHINE_BLOCK_BREAKER)
+            .register();
+    public static final BlockEntityEntry<BlockFormerBlockEntity> BLOCK_FORMER = REGISTRATE
+            .blockEntity("machine_block_former", BlockFormerBlockEntity::new)
+            .validBlocks(TENBlocks.MACHINE_BLOCK_FORMER)
+            .register();
+    public static final BlockEntityEntry<CoolerBlockEntity> COOLER = REGISTRATE
+            .blockEntity("machine_cooler", CoolerBlockEntity::new)
+            .validBlocks(TENBlocks.MACHINE_COOLER)
+            .register();
+
     // Engines
     public static final BlockEntityEntry<SolarBlockEntity> SOLAR = REGISTRATE
             .blockEntity("engine_solar", SolarBlockEntity::new)

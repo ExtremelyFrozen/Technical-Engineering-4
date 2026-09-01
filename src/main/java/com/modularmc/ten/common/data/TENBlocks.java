@@ -54,6 +54,9 @@ public class TENBlocks {
     public static final BlockEntry<HorizontalMachineBlock> MACHINE_ENCHFLU = machine("machine_enchantment_flusher", "Enchantment Flusher", "祛魔机");
     public static final BlockEntry<HorizontalMachineBlock> MACHINE_CONDENSER = machine("machine_matter_condenser", "Matter Condenser", "物质结晶器");
     public static final BlockEntry<HorizontalMachineBlock> MACHINE_FARM = machine("machine_farm_manager", "Farm Manager", "农场管理机");
+    public static final BlockEntry<HorizontalMachineBlock> MACHINE_BLOCK_BREAKER = machine("machine_block_breaker", "Block Breaker", "方块破坏器");
+    public static final BlockEntry<HorizontalMachineBlock> MACHINE_BLOCK_FORMER = machine("machine_block_former", "Block Former", "方块成型器");
+    public static final BlockEntry<HorizontalMachineBlock> MACHINE_COOLER = machine("machine_cooler", "Cooler", "冷却器");
 
     // === Engines ===
     public static final BlockEntry<HorizontalMachineBlock> ENGINE_EXTRACTION = engine("engine_extraction", "Extraction Engine", "萃取引擎");

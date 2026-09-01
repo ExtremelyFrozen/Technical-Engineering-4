@@ -105,18 +105,24 @@
 
 ### P1 — 功能级（依赖 P0 基类就绪）
 
-- [ ] **P1-1 新增 3 台机器**（D13）`难度：中高`（详见 §3）
-  - 方块破坏器 Block Breaker（RadiusMachine，面向 B 格深×宽 ±(radius-1)，槽 0 工具 + 1..12 输出，破坏规则同采矿场普通模式：不破坏含 BE 方块、需正确工具含挖掘等级；每 3s）。
-  - 方块成型器 Block Former（RadiusMachine，槽 0 当前放置物块 + 1..12 候选栏；需 canSurvive；消耗后自动补充；每 5s）。
-  - 冷却器 Cooler（EffectMachine，冷却剂→正面一格机器减耗时；Coolants 注册中心：冰 10s/20tick×64 次、浮冰 8s/40tick、蓝冰 5s/80tick；双进度条 GUI）。
-  - 依赖：P0-1/2/3（批量+范围语义、面配置）。
-- [ ] **P1-2 BE 存储迁移**（D9）`难度：中` 🔒 **结论（2026-08-31）：保留 CompoundTag 范式**
+- [x] **P1-1 新增 3 台机器**（D13）✅ **代码落地（2026-09-01）**
+  - 方块破坏器 Block Breaker（RadiusMachine）：面向 B 格深×宽 ±(radius-1)，槽 0 工具 + 1..12 输出，破坏规则同采矿场普通模式（不破坏含 BE 方块、需正确工具含挖掘等级）；effectInterval 3s；applyEffect 批量+范围语义、canFitAll/fitAll 快照-模拟-提交防丢失、installDynamicOutputLimit 动态槽上限、cooking 输出满停滞、conditionStart 范围判定。
+  - 方块成型器 Block Former（RadiusMachine）：槽 0 当前放置物块 + 1..12 候选栏（BOTH），需 canSurvive；effectInterval 5s；refillFromCandidates 候选栏自动补充；applyEffect 批量+范围放置。
+  - 冷却器 Cooler（EffectMachine）：冷却剂→正面一格机器减耗时；新增 Coolants 注册中心（冰 10s/20tick×64 次、浮冰 8s/40tick、蓝冰 5s/80tick）+ Coolant record（intervalSeconds/reductionTicks/uses，入参校验）；双进度条 GUI（主进度 + 冷却剂进度）；effectInterval 由冷却剂数据驱动；applyEffect 推进正面机器 progress（safeMultiply×B）。
+  - 基类补充：MachineType 加 BLOCK_BREAKER=24/BLOCK_FORMER=25/COOLER=26；CmMachineBlockEntity 加 safeMultiply/effectiveToolForDrops/getRangeBoxes。
+  - 注册：TENBlocks 三台机器（machine helper）+ TENBlockEntities 三个 BE；纹理 machine_block_breaker/former/cooler (+_active) 从 26.1.2 复制；GUI 用 machine_gui 背景 + machineSlot/energyGauge/progressGauge（1.21.1 无 machineSlotModular/progressGaugeWide/coolantProgressBar，用现有组件等价替代）。
+  - 验证：compileJava 通过。行为验证（破坏/放置/冷却游戏内）待统一做。
+- [x] **P1-2 BE 存储迁移**（D9）✅ **核对完成（2026-09-01）**
   - 事实：26.1.2 的 ValueInput/ValueOutput 是 **MC 26.1.2 原版 API**（`net.minecraft.world.level.storage`），MC 1.21.1 不存在此类——**无论 LDLib2 是否升级都无法获得**。
   - 结论：1.21.1 保留 `loadAdditional(CompoundTag, HolderLookup)` 范式，仅移植机器逻辑（能量模型/批处理/面配置等），序列化差异单独处理（旧档 NBT 无条件重置兜底可参考 26.1.2 1.0.0 方案）。
-- [ ] **P1-3 配置系统 ModConfigSpec**（D10）`难度：低`
-  - 1.21.1 的 dev.toma.configuration → NeoForge ModConfigSpec（COMMON te4-config.toml：energyMultiplier/baseEnergyCapacity/14 机器开关/EnergyUnit 参数/Farm bushCrops；CLIENT te4-client.toml：showMachineHUD/showCableHUD）。
-- [ ] **P1-4 JEI 网络同步**（D12）`难度：中`
-  - TENRecipeSync（OnDatapackSyncEvent 推机器配方 + 原版烹饪配方）；JeiSyncState 会话状态机。1.21.1 现保留本地集成，需评估替换或保留。
+  - 核对：1.21.1 全部 BE 序列化走 readTileData/writeTileData(CompoundTag)，无 ValueInput/ValueOutput 引用，结论已落地，无需改动。
+- [x] **P1-3 配置系统 ModConfigSpec**（D10）✅ **代码落地（2026-09-01）**
+  - 新增 TENConfig.java（NeoForge ModConfigSpec：COMMON te4-config.toml——machine 块 energyMultiplier/baseEnergyCapacity/14 机器开关 + energyUnit 块 5 项 + farm 块 bushCrops；CLIENT te4-client.toml——showMachineHUD/showCableHUD），替换 dev.toma.configuration 注解系统。
+  - ConfigHolder 重写为静态门面（machine()/energyUnit()/farm()/client() + 各 getter + enableMachine(machineType) 开关查询）；TEN.java 构造器 registerConfig（ModConfig.Type.COMMON/CLIENT）；消费点更新（FarmBlockEntity isBushCrop → ConfigHolder.farm().bushCrops()；EnergyUnitItem 五项 getter → ConfigHolder.maxEnergy() 等）。
+  - 验证：compileJava 通过（26.1.2 也未接入 enable 开关到放置逻辑，属对齐现状）。
+- [x] **P1-4 JEI 网络同步**（D12）✅ **评估完成（2026-09-01）：1.21.1 不需要 TENRecipeSync**
+  - 事实：1.21.1 的 `OnDatapackSyncEvent` **无 `sendRecipes` 方法**（26.1.2 NeoForge API）；且 1.21.1 原版数据包同步会把全部服务端配方同步到客户端 RecipeManager。
+  - 结论：1.21.1 保留本地 JEI（TENJeiPlugin）+ EMI（TENEmiPlugin）集成——两者均从客户端 RecipeManager 读取机器配方，原版同步天然覆盖单机+联机场景，无需网络同步层（26.1.2 因移除本地集成才需要 TENRecipeSync 补充）。
 
 ### P2 — 表面级（独立，最后）
 

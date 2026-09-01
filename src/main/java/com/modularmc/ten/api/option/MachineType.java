@@ -25,4 +25,8 @@ public class MachineType {
     public static final int ENGINE_BIOMASS = 33;
     public static final int CELL = 40;
     public static final int CREATIVE_CELL = 50;
+
+    public static final int BLOCK_BREAKER = 24;
+    public static final int BLOCK_FORMER = 25;
+    public static final int COOLER = 26;
 }

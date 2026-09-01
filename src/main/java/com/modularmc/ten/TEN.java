@@ -2,12 +2,15 @@ package com.modularmc.ten;
 
 import com.modularmc.ten.common.CommonProxy;
 import com.modularmc.ten.config.ConfigHolder;
+import com.modularmc.ten.config.TENConfig;
 import com.modularmc.ten.network.ToggleEnergyUnitPayload;
 
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.ModLoadingContext;
 import net.neoforged.fml.ModList;
 import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.config.ModConfig;
 import net.neoforged.fml.javafmlmod.FMLModContainer;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
@@ -28,6 +31,10 @@ public class TEN {
 
     public TEN(IEventBus modBus, FMLModContainer container) {
         TEN.tenModBus = modBus;
+
+        // P1-3: 配置系统从 dev.toma.configuration 迁移到 NeoForge ModConfigSpec
+        container.registerConfig(ModConfig.Type.COMMON, TENConfig.COMMON_SPEC, "te4-config.toml");
+        container.registerConfig(ModConfig.Type.CLIENT, TENConfig.CLIENT_SPEC, "te4-client.toml");
 
         ConfigHolder.init();
         CommonProxy.init(modBus);

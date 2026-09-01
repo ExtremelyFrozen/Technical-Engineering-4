@@ -50,15 +50,17 @@ public class NetworkLogicGameTest {
 
         helper.runAtTickTime(2, () -> {
             ChannelEnergyBlockEntity source = helper.getBlockEntity(sourcePos);
-            helper.assertTrue(source.hasOutputLink(absoluteTarget), "expected connector to bind output link");
+            // 新频道系统：连接器是复制/应用面配置，不再硬链接
+            // 验证连接器复制面配置（非空即成功）
+            helper.assertTrue(source.isJoined() || !source.energyFaceMode.isEmpty(), "expected connector to have copied face config");
             helper.succeed();
         });
     }
 
-    @TestHolder(value = TEN.MOD_ID + ":channel_energy_transfers_wirelessly", enabledByDefault = true)
+    @TestHolder(value = TEN.MOD_ID + ":channel_energy_shares_wirelessly", enabledByDefault = true)
     @GameTest(template = "empty_5x5")
     @PrefixGameTestTemplate(false)
-    public static void channelEnergyTransfersWirelessly(GameTestHelper helper) {
+    public static void channelEnergySharesWirelessly(GameTestHelper helper) {
         BlockPos sourcePos = new BlockPos(1, 1, 1);
         BlockPos targetPos = new BlockPos(3, 1, 1);
         helper.setBlock(sourcePos, TENBlocks.CHANNEL_ENERGY.get());
@@ -68,19 +70,23 @@ public class NetworkLogicGameTest {
         ChannelEnergyBlockEntity target = helper.getBlockEntity(targetPos);
         source.initMachine();
         target.initMachine();
+        // 先塞本地缓冲再 join：join 的 pushLocalToShared 把本地内容并入共享存储
         source.energyStorage.setEnergy(4000);
-        source.linkOut(helper.absolutePos(targetPos));
+        source.join("test_energy");
+        target.join("test_energy");
 
-        helper.runAtTickTime(20, () -> {
-            helper.assertTrue(target.energyStorage.getEnergyStored() > 0, "expected wireless channel to transfer energy");
+        helper.runAtTickTime(2, () -> {
+            // 共享存储：source 存入的能量应能被 target 看到（同一共享存储）
+            helper.assertTrue(source.sharedStorage() == target.sharedStorage(), "expected both channels to share the same storage");
+            helper.assertTrue(source.sharedStorage().getEnergy().getEnergyStored() > 0, "expected shared storage to have energy");
             helper.succeed();
         });
     }
 
-    @TestHolder(value = TEN.MOD_ID + ":channel_item_transfers_wirelessly", enabledByDefault = true)
+    @TestHolder(value = TEN.MOD_ID + ":channel_item_shares_wirelessly", enabledByDefault = true)
     @GameTest(template = "empty_5x5")
     @PrefixGameTestTemplate(false)
-    public static void channelItemTransfersWirelessly(GameTestHelper helper) {
+    public static void channelItemSharesWirelessly(GameTestHelper helper) {
         BlockPos sourcePos = new BlockPos(1, 1, 1);
         BlockPos targetPos = new BlockPos(3, 1, 1);
         helper.setBlock(sourcePos, TENBlocks.CHANNEL_ITEM.get());
@@ -90,19 +96,23 @@ public class NetworkLogicGameTest {
         ChannelItemBlockEntity target = helper.getBlockEntity(targetPos);
         source.initMachine();
         target.initMachine();
+        // 先塞本地缓冲再 join：join 的 pushLocalToShared 把本地内容并入共享存储
         source.itemHandler.setStackInSlot(0, new ItemStack(Items.IRON_INGOT, 1));
-        source.linkOut(helper.absolutePos(targetPos));
+        source.join("test_item");
+        target.join("test_item");
 
-        helper.runAtTickTime(20, () -> {
-            helper.assertTrue(!target.itemHandler.getStackInSlot(0).isEmpty(), "expected wireless item channel to transfer items");
+        helper.runAtTickTime(2, () -> {
+            // 共享存储：source 存入的物品应能被 target 看到
+            helper.assertTrue(source.sharedStorage() == target.sharedStorage(), "expected both channels to share the same storage");
+            helper.assertTrue(!source.sharedStorage().getItemHandler().getStackInSlot(0).isEmpty(), "expected shared storage to have items");
             helper.succeed();
         });
     }
 
-    @TestHolder(value = TEN.MOD_ID + ":channel_fluid_transfers_wirelessly", enabledByDefault = true)
+    @TestHolder(value = TEN.MOD_ID + ":channel_fluid_shares_wirelessly", enabledByDefault = true)
     @GameTest(template = "empty_5x5")
     @PrefixGameTestTemplate(false)
-    public static void channelFluidTransfersWirelessly(GameTestHelper helper) {
+    public static void channelFluidSharesWirelessly(GameTestHelper helper) {
         BlockPos sourcePos = new BlockPos(1, 1, 1);
         BlockPos targetPos = new BlockPos(3, 1, 1);
         helper.setBlock(sourcePos, TENBlocks.CHANNEL_FLUID.get());
@@ -112,11 +122,15 @@ public class NetworkLogicGameTest {
         ChannelFluidBlockEntity target = helper.getBlockEntity(targetPos);
         source.initMachine();
         target.initMachine();
+        // 先塞本地缓冲再 join：join 的 pushLocalToShared 把本地内容并入共享存储
         source.tanks.get(0).fill(new FluidStack(Fluids.WATER, 1000), net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE);
-        source.linkOut(helper.absolutePos(targetPos));
+        source.join("test_fluid");
+        target.join("test_fluid");
 
-        helper.runAtTickTime(20, () -> {
-            helper.assertTrue(target.tanks.get(0).getFluidAmount() > 0, "expected wireless fluid channel to transfer fluid");
+        helper.runAtTickTime(2, () -> {
+            // 共享存储：source 存入的流体应能被 target 看到
+            helper.assertTrue(source.sharedStorage() == target.sharedStorage(), "expected both channels to share the same storage");
+            helper.assertTrue(source.sharedStorage().getTanks().get(0).getFluidAmount() > 0, "expected shared storage to have fluid");
             helper.succeed();
         });
     }
