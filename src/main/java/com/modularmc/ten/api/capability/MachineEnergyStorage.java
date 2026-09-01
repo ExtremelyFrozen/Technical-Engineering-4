@@ -27,6 +27,17 @@ public class MachineEnergyStorage extends EnergyStorage {
         this.maxExtract = max;
     }
 
+    /**
+     * 设置容量（频道共享存储动态容量用）。若当前储能超过新容量则截断。
+     */
+    public void setCapacity(int capacity) {
+        this.capacity = Math.max(0, capacity);
+        if (this.energy > this.capacity) {
+            this.energy = this.capacity;
+        }
+        changeListener.run();
+    }
+
     @Override
     public int receiveEnergy(int maxReceive, boolean simulate) {
         int received = super.receiveEnergy(maxReceive, simulate);

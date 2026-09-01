@@ -88,5 +88,8 @@ public class CreativeCellBlockEntity extends CmMachineBlockEntity {
                 energyStorage.extractEnergy(accepted, false);
             }
         }
+
+        // 主动能量输出：向相邻能量接收方推送能量（P0-3：创造单元无限供电相邻机器）
+        doActiveEnergyIo();
     }
 }

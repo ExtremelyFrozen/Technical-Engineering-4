@@ -6,8 +6,18 @@ public class LevelupBlast extends UpgradeItem {
         super(0);
     }
 
+    public LevelupBlast(Properties properties) {
+        super(0, properties);
+    }
+
+    @Override
+    public boolean canApply(IUpgradableMachine machine) {
+        return machine.isType("FURNACE");
+    }
+
     @Override
     public boolean effect(IUpgradableMachine machine) {
-        return machine.isType("FURNACE");
+        machine.setRecipeMode(IUpgradableMachine.RECIPE_MODE_BLASTING);
+        return true;
     }
 }

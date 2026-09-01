@@ -6,8 +6,17 @@ public class LevelupMagma extends UpgradeItem {
         super(0);
     }
 
+    public LevelupMagma(Properties properties) {
+        super(0, properties);
+    }
+
+    @Override
+    public boolean canApply(IUpgradableMachine machine) {
+        return machine.isType("QUARRY");
+    }
+
     @Override
     public boolean effect(IUpgradableMachine machine) {
-        return machine.isType("QUARRY");
+        return true;
     }
 }

@@ -27,6 +27,10 @@ public class FormsCombinedIngredient {
 
     boolean ALLOW_ALL;
 
+    public boolean isAllowAll() {
+        return ALLOW_ALL;
+    }
+
     String type;
     String form;
     Collection<Item> matchItems = new ArrayList<>();
@@ -36,9 +40,17 @@ public class FormsCombinedIngredient {
     ResourceLocation key;
     int amountOrCount;
     double chance;
+    int rolls = 1;
 
     public int amountOrCount() {
         return amountOrCount;
+    }
+
+    /**
+     * 输出掷骰次数（1.21.1 配方无此字段时恒 1；与 26.1.2 无 rolls 配方一致）。
+     */
+    public int rolls() {
+        return rolls;
     }
 
     public String type() {
