@@ -30,6 +30,7 @@ public class CommonProxy {
 
         TENRecipeTypes.SERIALIZERS.register(modBus);
         TENRecipeTypes.TYPES.register(modBus);
+        TENDataComponents.DATA_COMPONENTS.register(modBus);
         modBus.register(CommonProxy.class);
     }
 

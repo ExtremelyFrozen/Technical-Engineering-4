@@ -27,6 +27,14 @@ public class MachineEnergyStorage extends EnergyStorage {
         this.maxExtract = max;
     }
 
+    public int getMaxReceive() {
+        return maxReceive;
+    }
+
+    public int getMaxExtract() {
+        return maxExtract;
+    }
+
     /**
      * 设置容量（频道共享存储动态容量用）。若当前储能超过新容量则截断。
      */

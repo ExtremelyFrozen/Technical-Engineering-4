@@ -1,6 +1,7 @@
 package com.modularmc.ten.common.data;
 
 import com.modularmc.ten.common.block.machine.CableBased;
+import com.modularmc.ten.common.block.machine.ChannelBlock;
 import com.modularmc.ten.common.block.machine.DirectionalMachineBlock;
 import com.modularmc.ten.common.block.machine.HorizontalMachineBlock;
 
@@ -76,20 +77,20 @@ public class TENBlocks {
     public static final BlockEntry<HorizontalMachineBlock> CREATIVE_CELL = cell("creative_energy_cell", "Creative Energy Cell", "创造能量单元");
 
     // === Channels ===
-    public static final BlockEntry<DirectionalMachineBlock> CHANNEL_ENERGY = REGISTRATE
-            .block("channel_energy", DirectionalMachineBlock::new)
+    public static final BlockEntry<ChannelBlock> CHANNEL_ENERGY = REGISTRATE
+            .block("channel_energy", ChannelBlock::new)
             .lang("Energy Channel")
             .tag(TENTags.MACHINES)
             .blockstate((ctx, prov) -> TENModels.channelBlockstate(prov, ctx.getEntry(), "channel_energy"))
             .item().model((ctx, prov) -> prov.blockItem(ctx::getEntry)).build().register();
-    public static final BlockEntry<DirectionalMachineBlock> CHANNEL_ITEM = REGISTRATE
-            .block("channel_item", DirectionalMachineBlock::new)
+    public static final BlockEntry<ChannelBlock> CHANNEL_ITEM = REGISTRATE
+            .block("channel_item", ChannelBlock::new)
             .lang("Item Channel")
             .tag(TENTags.MACHINES)
             .blockstate((ctx, prov) -> TENModels.channelBlockstate(prov, ctx.getEntry(), "channel_item"))
             .item().model((ctx, prov) -> prov.blockItem(ctx::getEntry)).build().register();
-    public static final BlockEntry<DirectionalMachineBlock> CHANNEL_FLUID = REGISTRATE
-            .block("channel_fluid", DirectionalMachineBlock::new)
+    public static final BlockEntry<ChannelBlock> CHANNEL_FLUID = REGISTRATE
+            .block("channel_fluid", ChannelBlock::new)
             .lang("Fluid Channel")
             .tag(TENTags.MACHINES)
             .blockstate((ctx, prov) -> TENModels.channelBlockstate(prov, ctx.getEntry(), "channel_fluid"))
