@@ -96,10 +96,12 @@
   - 剩余：**游戏内面配置行为验证**（IN/OUT 机器主动拉推、BE_IN/BE_OUT 外部插取门控）——compileJava 已过，运行时行为待统一游戏内测试（与 P0-1/2/3/4/5 行为验证合并做）。
 - [ ] **P0-7 ~~管道跳跳传输重构~~** 🔒 **已冻结（小黑屋）**：1.21.1 保留 root 撮合现状，不移植、不修改（含线缆能量传输）。相关代码保持现状。
   - 注意：P0-3 面配置主动 IO 中「相邻为管道时跳过」的语义依赖 26.1.2 跳跳管道；冻结后，1.21.1 面配置移植需按现有 root 撮合管道定义交互（待用户确认细节）。
-- [ ] **P0-8 频道架构重构**（D6）`难度：高` 🔄 **数据层已落地（2026-08-31）**
+- [x] **P0-8 频道架构重构**（D6）`难度：高` ✅ **BE 层代码落地（2026-09-01）**
   - ✅ 数据层：common/channel/ 新增 ChannelKey(name,type)、ChannelType(ITEM/FLUID/ENERGY)、SharedStorage（物品 9 槽×64×成员数 / 流体 2 tank×2000mB×成员数 / 能量 kFE(10)×成员数，拒绝缩容）、ChannelRegistry（SavedData：懒加载 computeIfAbsent + 事件驱动保存 + 跨维度统一经 server.overworld()）。1.21.1 适配：SavedDataType/Codec → SavedData.Factory(BiFunction deserializer) + CompoundTag NBT；MachineEnergyStorage 补 setCapacity；FluidStack 序列化改用 FluidTank.writeToNBT/readFromNBT（1.21.1 无 writeToNBT/loadFromNBT 静态）。
-  - ⏳ 待做（BE 层）：AbstractChannelBlockEntity 重构（358→891 行，零 tick 传输/join-leave/本地缓冲回流/频道名正则）；3 个频道 BE（Item/Fluid/Energy）改绑 SharedStorage；ChannelItemHandlerFacade/ChannelFluidResourceFacade（26.1.2 的 Resource API 门面——1.21.1 经典 Capability 可能不需或需适配）；ChannelBlock 方块类（定制 VoxelShape）；CHANNEL_CONFIG DataComponent（频道连接器）。
-  - 验证：数据层 compileJava 通过（9s）。
+  - ✅ BE 层（2026-09-01）：AbstractChannelBlockEntity 移植 26.1.2 版（891 行对齐：join/leave 接入退出、本地缓冲回流 pushLocalToShared、零 tick 传输、频道名正则 `[\w\u4e00-\u9fa5\- ]{1,16}`、生命周期 setRemoved 退频道、RPC 目录同步/创建/接入/退出/删除）；3 个频道 BE（Item/Fluid/Energy）改绑 SharedStorage（接入态面能力指向共享 handler，容量镜像字段 tick 修正）；ChannelItemHandlerFacade（IItemHandlerModifiable 动态门面，客户端按成员数推 64×n 槽上限）；ChannelFluidResourceFacade→**ChannelFluidHandlerFacade**（1.21.1 经典 Capability IFluidHandler 适配，26.1.2 的 Resource API 门面不适用）；ChannelBlock 方块类（定制 VoxelShape 六朝向静态表）；TENDataComponents CHANNEL_CONFIG（频道连接器复制/应用载荷）+ ChannelConnectorItem 重写（复制→应用→清空，含 channelId join）；TENConstants 补频道 UI 素材常量（CHANNEL_LIST_BG/CHANNEL_ENTRY_*/CHANNEL_ENTRY_STATE/CHANNEL_BUTTONS/SheetUV）；6 个 modular 频道素材 + machine_gui.png 从 26.1.2 复制；lang 键更新（channel.create/current/delete/leave/none/not_joined + channel_connector.*，zh_cn 物品名频道桥接器→频道连接器）。
+  - 1.21.1 API 适配记录：`Identifier`→`ResourceLocation`；RPC 方向判定 `sender.isRemote()`→`sender.isServer()`（C→S 用 RPCSender.ofServer() 直接调用，S→C 用 rpcToTracking 广播替代 rpcToPlayer 单播）；`HoverTooltips.create()`→`new HoverTooltips(List.of(..), null, null, null)`（2.2.37 无 create 静态）；`MachineEnergyStorage` 补 getMaxReceive/getMaxExtract；`Item.use()` 返回 InteractionResultHolder（1.21.1 API）；`hasUpgrade()` 频道返回 false（1.21.1 无 supportsUpgradeSlots 两阶段控制）；机器 UI 槽位用 `machineSlot`（1.21.1 无 channelItemSlot）。
+  - 验证：compileJava 通过（EXIT=0）。行为验证（join/leave 跨维度共享、零 tick 传输、频道目录 UI）待游戏内统一做。
+  - 遗留：IModeChangable 接口孤儿化（旧链接模式遗留，无引用，可后续删除）；26.1.2 的 Jade ChannelJadeProvider（未移植，属集成层可选）。
 
 ### P1 — 功能级（依赖 P0 基类就绪）
 
