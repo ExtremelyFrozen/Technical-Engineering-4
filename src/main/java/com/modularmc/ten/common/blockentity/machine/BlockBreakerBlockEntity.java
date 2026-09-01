@@ -85,7 +85,7 @@ public class BlockBreakerBlockEntity extends RadiusMachineBlockEntity {
             root.addChild(TENMachineBlockUIFactory.machineSlot(this, 12, 133, 52));
         }, root -> {
             root.addChild(TENMachineBlockUIFactory.energyGauge(this, 8, 18, 14, 46, 0, 0, true));
-            root.addChild(TENMachineBlockUIFactory.progressGauge(this, 48, 74, 80, 5, 97, 0, false));
+            root.addChild(TENMachineBlockUIFactory.progressGaugeWide(this, 48, 74, false));
         });
     }
 

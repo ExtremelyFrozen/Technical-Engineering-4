@@ -15,6 +15,7 @@ import static com.modularmc.ten.common.registry.Registration.REGISTRATE;
 public class TENItems {
 
     public static final java.util.LinkedHashMap<String, String> ZH_NAMES = new java.util.LinkedHashMap<>();
+    public static final java.util.LinkedHashMap<String, String> EN_NAMES = new java.util.LinkedHashMap<>();
 
     static {
         REGISTRATE.creativeModeTab(() -> TENCreativeModeTabs.ITEM_TAB);
@@ -89,6 +90,7 @@ public class TENItems {
 
     private static ItemEntry<Item> mould(String name, String englishName, String cn, String texturePath) {
         ZH_NAMES.put(name, cn);
+        EN_NAMES.put(name, englishName);
         return REGISTRATE.item(name, Item::new)
                 .lang(englishName)
                 .model((ctx, prov) -> prov.generated(ctx::getEntry, prov.modLoc(texturePath)))
@@ -109,6 +111,7 @@ public class TENItems {
     private static <T extends Item> ItemEntry<T> tool(String name, String englishName, String cn,
                                                       NonNullFunction<Item.Properties, T> factory, String texturePath) {
         ZH_NAMES.put(name, cn);
+        EN_NAMES.put(name, englishName);
         return REGISTRATE.item(name, factory)
                 .lang(englishName)
                 .model((ctx, prov) -> prov.generated(ctx::getEntry, prov.modLoc(texturePath)))
@@ -135,6 +138,7 @@ public class TENItems {
 
     private static ItemEntry<Item> item(String name, String englishName, String cn) {
         ZH_NAMES.put(name, cn);
+        EN_NAMES.put(name, englishName);
         return REGISTRATE.item(name, Item::new)
                 .lang(englishName)
                 .register();
@@ -142,6 +146,7 @@ public class TENItems {
 
     private static ItemEntry<Item> texturedItem(String name, String englishName, String cn, String texturePath) {
         ZH_NAMES.put(name, cn);
+        EN_NAMES.put(name, englishName);
         return REGISTRATE.item(name, Item::new)
                 .lang(englishName)
                 .model((ctx, prov) -> prov.generated(ctx::getEntry, prov.modLoc(texturePath)))
@@ -150,6 +155,7 @@ public class TENItems {
 
     private static <T extends UpgradeItem> ItemEntry<T> upgrade(String name, String englishName, String cn, NonNullFunction<Item.Properties, T> factory) {
         ZH_NAMES.put(name, cn);
+        EN_NAMES.put(name, englishName);
         return REGISTRATE.item(name, factory)
                 .lang(englishName)
                 .model((ctx, prov) -> prov.generated(ctx::getEntry, prov.modLoc("item/upgrade/" + name)))
@@ -168,6 +174,7 @@ public class TENItems {
             String texturePath = "item/material/" + category + "/" + name;
 
             ZH_NAMES.put(name, chineseName);
+            EN_NAMES.put(name, englishName);
             REGISTRATE.item(name, factory)
                     .lang(englishName)
                     .model((ctx, prov) -> prov.generated(ctx::getEntry, prov.modLoc(texturePath)))

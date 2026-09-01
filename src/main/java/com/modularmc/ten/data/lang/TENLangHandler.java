@@ -1,6 +1,8 @@
 package com.modularmc.ten.data.lang;
 
 import com.modularmc.ten.TEN;
+import com.modularmc.ten.common.data.TENBlocks;
+import com.modularmc.ten.common.data.TENItems;
 
 import com.tterrag.registrate.providers.RegistrateLangProvider;
 
@@ -9,6 +11,11 @@ public final class TENLangHandler {
     public static final java.util.LinkedHashMap<String, String> ZH_ENTRIES = new java.util.LinkedHashMap<>();
 
     public static void init(RegistrateLangProvider provider) {
+        // Bare keys (kenergyengineering.xxx) = same value as item./block. prefixed keys.
+        // Registrate generates prefixed keys from .lang() calls but not bare keys.
+        TENItems.EN_NAMES.forEach((id, en) -> provider.add(TEN.MOD_ID + "." + id, en));
+        TENBlocks.EN_NAMES.forEach((id, en) -> provider.add(TEN.MOD_ID + "." + id, en));
+
         addDirections(provider);
         addCommon(provider);
         addChannel(provider);
@@ -55,27 +62,28 @@ public final class TENLangHandler {
     }
 
     private static void addChannel(RegistrateLangProvider provider) {
-        add(provider, "channel.pos", "Position: ", "坐标: ");
-        add(provider, "channel.in", "Input Channel", "输入频道");
-        add(provider, "channel.out", "Output Channel", "输出频道");
-        // Removed: channel_energy, channel_item, channel_fluid — now auto-derived from TENBlocks.ZH_NAMES
-        // Removed: channel_connector base key — now auto-derived from TENItems.ZH_NAMES
-        add(provider, "channel_connector.0", "When in [Add Input Channel] Mode: ", "处于[添加抽取频道]模式时: ");
-        add(provider, "channel_connector.1", "Add the second clicked channel to the first one as an input", "在第一次选取的频道中添加第二次选取的频道作为输入");
-        add(provider, "channel_connector.2", "When in [Add Output Channel] Mode: ", "处于[添加推送频道]模式时: ");
-        add(provider, "channel_connector.3", "Add the second clicked channel to the first one as an output", "在第一次选取的频道中添加第二次选取的频道作为输出");
-        add(provider, "channel_connector.4", "Sneak-right-click in air to clear the selected position.", "潜行并在空中右键来清空已选取的坐标。");
-        add(provider, "channel_connector.mode.in", "Mode: Add Input Channel", "模式: 添加抽取频道");
-        add(provider, "channel_connector.mode.out", "Mode: Add Output Channel", "模式: 添加推送频道");
-        add(provider, "channel_connector.mode.rem", "Mode: Remove Channel", "模式: 移除频道");
-        add(provider, "channel.pointer_last", "Adding to: ", "添加至: ");
-        add(provider, "channel.bind", "Successfully bound ", "成功绑定 ");
-        add(provider, "channel.remove", "Successfully removed ", "成功移除 ");
-        add(provider, "channel.to", " to ", " 至 ");
-        add(provider, "channel.from", " from ", " 从 ");
-        add(provider, "channel.first_click", "Target: ", "绑定目标: ");
+        // 末影箱模式 UI：频道目录 + 创建/接入/退出；删除（仅空频道）
+        add(provider, "channel.create", "Create", "创建");
+        add(provider, "channel.leave", "Leave", "退出");
+        add(provider, "channel.current", "Current: ", "当前频道: ");
+        add(provider, "channel.delete", "Delete", "删除");
+        add(provider, "channel.none", "(none)", "(无)");
+        // 操作区「当前频道」紧凑显示
+        add(provider, "channel.not_joined", "Not joined", "未接入");
+        // Jade 集成：频道接入状态高亮
+        add(provider, "channel.jade.joined", "Joined: %s", "已接入: %s");
+        add(provider, "channel.jade.not_joined", "Not joined to a channel", "未接入频道");
         add(provider, "channel", "Channel", "频道");
-        add(provider, "channel.not_found", "Channel not found at: ", "无法获取的频道，位于: ");
+
+        // 频道连接器（ChannelConnectorItem，配置复制/应用工具）
+        add(provider, "channel_connector.copied", "Copied channel configuration", "已复制频道面配置");
+        add(provider, "channel_connector.applied", "Applied channel configuration", "已应用频道面配置");
+        add(provider, "channel_connector.applied_join_failed", "Face config applied, but failed to join channel", "面配置已应用，但频道接入失败");
+        add(provider, "channel_connector.cleared", "Cleared channel configuration", "已清空频道面配置");
+        add(provider, "channel_connector.invalid_config", "Invalid channel configuration data", "频道面配置数据无效");
+        add(provider, "channel_connector.0", "Sneak + right-click a channel to copy its face config", "潜行+右键频道方块复制其面配置");
+        add(provider, "channel_connector.1", "Sneak + right-click a channel again to apply", "再次潜行+右键频道方块应用配置");
+        add(provider, "channel_connector.2", "Sneak + right-click air or a non-channel block to clear", "潜行+右键空气或非频道方块清空配置");
     }
 
     private static void addUpgradeTips(RegistrateLangProvider provider) {
@@ -233,6 +241,16 @@ public final class TENLangHandler {
         // Legacy cell keys (kept for compatibility)
         add(provider, "info.cell.0", "Stores plenty of energy.", "可以存储大量能量。");
         add(provider, "info.cell.1", "It can also charge items.", "另外，它还有能力充能物品。");
+        // P1-1 新机器
+        add(provider, "info.block_breaker.0", "Breaks the block in front of it.", "破坏机器正面一格的方块。");
+        add(provider, "info.block_breaker.1", "Place a tool in the left slot; it consumes durability.", "将工具放入左侧槽位，破坏会消耗耐久。");
+        add(provider, "info.block_former.0", "Places the block in front of it.", "放置机器正面一格的方块。");
+        add(provider, "info.block_former.1", "Candidates auto-refill the input slot until depleted.", "候选栏会自动补充输入槽，直到候选耗尽。");
+        add(provider, "info.cooler.0", "Reduces the work time of the machine in front.", "减少正面机器的工作耗时。");
+        add(provider, "info.cooler.1", "Uses coolant (Ice/Packed Ice/Blue Ice).", "消耗冷却剂（冰/浮冰/蓝冰）。");
+        add(provider, "info.coolant_progress", "Coolant left", "剩余冷却剂");
+        add(provider, "info.psionicant.1", "Each recipe requires its own material pairing.", "每种配方都需要特定的材料配对。");
+        add(provider, "info.pulverizer.3", "Stone can be pulverized into gravel, then into sand and dirt.", "还可以把石头打成砂砾，进而打成沙子和泥土，等等。");
     }
 
     private static void addAdvancements(RegistrateLangProvider provider) {

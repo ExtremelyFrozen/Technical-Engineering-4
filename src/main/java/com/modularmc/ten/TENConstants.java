@@ -25,6 +25,29 @@ public class TENConstants {
     public static final ResourceLocation PROGRESS_ARROW_MINI_COMPRESSOR_BG = TEN.id("textures/gui/modular/progress_arrow_mini_compressor_background.png"); // 8x54 顶尖朝上
     public static final ResourceLocation PROGRESS_ARROW_MINI_ENCFLU_BG = TEN.id("textures/gui/modular/progress_arrow_mini_encflu_background.png"); // 8x54 尖朝下
 
+    // ───── 机器 GUI 素材族（全量化对齐 26.1.2，modular 独立切片）─────
+    public static final ResourceLocation ITEM_SLOT_SMALL = TEN.id("textures/gui/modular/item_slot_small.png"); // 18x18
+    public static final ResourceLocation ITEM_SLOT_LARGE = TEN.id("textures/gui/modular/item_slot_large.png"); // 26x26
+    public static final ResourceLocation ITEM_SLOT_SMALL_CHARGE = TEN.id("textures/gui/modular/item_slot_small_charge.png"); // 18x18 充电动画
+    public static final ResourceLocation ITEM_SLOT_SMALL_DISCHARGE = TEN.id("textures/gui/modular/item_slot_small_discharge.png"); // 18x18 放电动画
+    public static final ResourceLocation ENERGY_GAUGE_BG = TEN.id("textures/gui/modular/energy_gauge_background.png"); // 14x46
+    public static final ResourceLocation ENERGY_GAUGE_FILL = TEN.id("textures/gui/modular/energy_gauge_fill.png"); // 14x46
+    public static final ResourceLocation FUEL_GAUGE_BG = TEN.id("textures/gui/modular/fuel_gauge_background.png"); // 13x13
+    public static final ResourceLocation FUEL_GAUGE_FILL = TEN.id("textures/gui/modular/fuel_gauge_fill.png"); // 13x13
+    public static final ResourceLocation PROGRESS_ARROW_SMELTER_BG = TEN.id("textures/gui/modular/progress_arrow_smelter_background.png"); // 22x16
+    public static final ResourceLocation PROGRESS_ARROW_SMELTER_FILL = TEN.id("textures/gui/modular/progress_arrow_smelter_fill.png"); // 22x16
+    public static final ResourceLocation PROGRESS_ARROW_PULVERIZER_BG = TEN.id("textures/gui/modular/progress_arrow_pulverizer_background.png"); // 22x16
+    public static final ResourceLocation PROGRESS_ARROW_PULVERIZER_FILL = TEN.id("textures/gui/modular/progress_arrow_pulverizer_fill.png"); // 22x16
+    public static final ResourceLocation PROGRESS_ARROW_COMPRESSOR_BG = TEN.id("textures/gui/modular/progress_arrow_compressor_background.png"); // 22x16
+    public static final ResourceLocation PROGRESS_ARROW_COMPRESSOR_FILL = TEN.id("textures/gui/modular/progress_arrow_compressor_fill.png"); // 22x16
+    public static final ResourceLocation PROGRESS_ARROW_REFINER_BG = TEN.id("textures/gui/modular/progress_arrow_refiner_background.png"); // 22x16
+    public static final ResourceLocation PROGRESS_ARROW_REFINER_FILL = TEN.id("textures/gui/modular/progress_arrow_refiner_fill.png"); // 22x16
+    public static final ResourceLocation PROGRESS_ARROW_INDUCTION_FURNACE_BG = TEN.id("textures/gui/modular/progress_arrow_induction_furnace_background.png"); // 22x16
+    public static final ResourceLocation PROGRESS_ARROW_INDUCTION_FURNACE_FILL = TEN.id("textures/gui/modular/progress_arrow_induction_furnace_fill.png"); // 22x16
+    public static final ResourceLocation PROGRESS_ARROW_PSIONICANT_BG = TEN.id("textures/gui/modular/progress_arrow_psionicant_background.png"); // 22x16
+    public static final ResourceLocation PROGRESS_ARROW_PSIONICANT_FILL = TEN.id("textures/gui/modular/progress_arrow_psionicant_fill.png"); // 22x16
+    public static final ResourceLocation JEI_HANDLER_MODULAR = TEN.id("textures/gui/modular/jei_handler.png"); // 上层150x50/下层170x50
+
     /** 雪碧图内精灵区域（像素坐标：u, v, 宽, 高）。 */
     public record SheetUV(int u, int v, int width, int height) {}
 

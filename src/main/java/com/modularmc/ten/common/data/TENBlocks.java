@@ -19,6 +19,7 @@ import static com.modularmc.ten.common.registry.Registration.REGISTRATE;
 public class TENBlocks {
 
     public static final java.util.LinkedHashMap<String, String> ZH_NAMES = new java.util.LinkedHashMap<>();
+    public static final java.util.LinkedHashMap<String, String> EN_NAMES = new java.util.LinkedHashMap<>();
 
     static {
         REGISTRATE.creativeModeTab(() -> TENCreativeModeTabs.BLOCK_TAB);
@@ -101,14 +102,18 @@ public class TENBlocks {
 
     static {
         ZH_NAMES.put("channel_energy", "能量频道");
+        EN_NAMES.put("channel_energy", "Energy Channel");
         ZH_NAMES.put("channel_item", "物品频道");
+        EN_NAMES.put("channel_item", "Item Channel");
         ZH_NAMES.put("channel_fluid", "流体频道");
+        EN_NAMES.put("channel_fluid", "Fluid Channel");
     }
 
     // === Helpers ===
 
     private static BlockEntry<Block> ore(String n, String englishName, String cn, double h, MapColor c) {
         ZH_NAMES.put(n, cn);
+        EN_NAMES.put(n, englishName);
         return REGISTRATE.block(n, Block::new)
                 .lang(englishName)
                 .initialProperties(() -> c == MapColor.DEEPSLATE ? Blocks.DEEPSLATE : Blocks.STONE)
@@ -121,6 +126,7 @@ public class TENBlocks {
 
     private static BlockEntry<Block> storage(String n, String englishName, String cn, float h) {
         ZH_NAMES.put(n, cn);
+        EN_NAMES.put(n, englishName);
         return REGISTRATE.block(n, Block::new)
                 .lang(englishName)
                 .initialProperties(() -> Blocks.IRON_BLOCK)
@@ -132,6 +138,7 @@ public class TENBlocks {
 
     private static BlockEntry<Block> rawStorage(String n, String englishName, String cn, float h) {
         ZH_NAMES.put(n, cn);
+        EN_NAMES.put(n, englishName);
         return REGISTRATE.block(n, Block::new)
                 .lang(englishName)
                 .initialProperties(() -> Blocks.IRON_BLOCK)
@@ -143,6 +150,7 @@ public class TENBlocks {
 
     private static BlockEntry<HorizontalMachineBlock> machine(String n, String englishName, String cn) {
         ZH_NAMES.put(n, cn);
+        EN_NAMES.put(n, englishName);
         return REGISTRATE.block(n, HorizontalMachineBlock::new)
                 .lang(englishName)
                 .tag(TENTags.MACHINES)
@@ -173,6 +181,7 @@ public class TENBlocks {
 
     private static BlockEntry<HorizontalMachineBlock> engine(String n, String englishName, String cn) {
         ZH_NAMES.put(n, cn);
+        EN_NAMES.put(n, englishName);
         return REGISTRATE.block(n, HorizontalMachineBlock::new)
                 .lang(englishName)
                 .tag(TENTags.MACHINES)
@@ -203,6 +212,7 @@ public class TENBlocks {
 
     private static BlockEntry<CableBased> cable(String n, String englishName, String cn) {
         ZH_NAMES.put(n, cn);
+        EN_NAMES.put(n, englishName);
         return REGISTRATE.block(n, CableBased::new)
                 .lang(englishName)
                 .blockstate((ctx, prov) -> TENModels.cableMultipart(prov, ctx.getEntry(), n))
@@ -212,6 +222,7 @@ public class TENBlocks {
 
     private static BlockEntry<HorizontalMachineBlock> cell(String n, String englishName, String cn) {
         ZH_NAMES.put(n, cn);
+        EN_NAMES.put(n, englishName);
         return REGISTRATE.block(n, HorizontalMachineBlock::new)
                 .lang(englishName)
                 .tag(TENTags.MACHINES)

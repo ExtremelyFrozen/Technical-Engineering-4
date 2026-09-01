@@ -219,6 +219,31 @@ public final class TENMachineBlockUIFactory {
         return verticalGauge(machine, x, y, width, height, xOff, yOff, TENMachineBlockUIFactory::fuelPercent, fuelTooltip(machine, displayValue), displayValue);
     }
 
+    // ───── Modular 素材族 gauge（全量化对齐 26.1.2）─────
+
+    public static ProgressBar energyGaugeModular(CmMachineBlockEntity machine, int x, int y, boolean displayValue) {
+        return verticalGaugeModular(machine, x, y, 14, 46,
+                com.modularmc.ten.TENConstants.ENERGY_GAUGE_BG, com.modularmc.ten.TENConstants.ENERGY_GAUGE_FILL,
+                TENMachineBlockUIFactory::energyPercent, energyGaugeTooltip(machine, displayValue), displayValue);
+    }
+
+    public static ProgressBar fuelGaugeModular(CmMachineBlockEntity machine, int x, int y, boolean displayValue) {
+        return verticalGaugeModular(machine, x, y, 13, 13,
+                com.modularmc.ten.TENConstants.FUEL_GAUGE_BG, com.modularmc.ten.TENConstants.FUEL_GAUGE_FILL,
+                TENMachineBlockUIFactory::fuelPercent, fuelTooltip(machine, displayValue), displayValue);
+    }
+
+    public static ProgressBar progressGaugeModular(CmMachineBlockEntity machine, int x, int y, boolean showPercent) {
+        int type = machine.machineType();
+        return horizontalProgressModular(machine, x, y, 22, 16,
+                progressArrowBg(type), progressArrowFill(type), showPercent);
+    }
+
+    public static ProgressBar progressGaugeWide(CmMachineBlockEntity machine, int x, int y, boolean showPercent) {
+        return horizontalProgressModular(machine, x, y, 80, 5,
+                com.modularmc.ten.TENConstants.PROGRESS_BAR_WIDE_BG, com.modularmc.ten.TENConstants.PROGRESS_BAR_WIDE_FILL, showPercent);
+    }
+
     private static ProgressBar verticalGauge(CmMachineBlockEntity machine,
                                              int x, int y, int width, int height,
                                              int xOff, int yOff,
@@ -250,6 +275,70 @@ public final class TENMachineBlockUIFactory {
             progress.addEventListener(UIEvents.HOVER_TOOLTIPS, event -> event.hoverTooltips = new HoverTooltips(List.of(ComponentHelper.make((int) (progressPercent(machine) * 100) + "%")), null, null, null));
         }
         return progress;
+    }
+
+    private static ProgressBar verticalGaugeModular(CmMachineBlockEntity machine,
+                                                    int x, int y, int width, int height,
+                                                    ResourceLocation bgTexture, ResourceLocation fillTexture,
+                                                    java.util.function.ToDoubleFunction<CmMachineBlockEntity> percent,
+                                                    Supplier<List<Component>> tooltipSupplier,
+                                                    boolean displayValue) {
+        var filled = SpriteTexture.of(fillTexture).setSprite(0, 0, width, height);
+        var progress = absolute(new ProgressBar(), x, y, width, height);
+        progress.barContainer(container -> container.style(style -> style.backgroundTexture(SpriteTexture.of(bgTexture).setSprite(0, 0, width, height)))
+                .layout(layout -> layout.paddingAll(0)));
+        progress.barBackground.style(style -> style.backgroundTexture(IGuiTexture.EMPTY));
+        progress.bar(bar -> bar.style(style -> style.backgroundTexture(filled)));
+        progress.label.setDisplay(false);
+        progress.progressBarStyle(style -> style.fillDirection(FillDirection.DOWN_TO_UP).interpolate(false));
+        progress.bindDataSource(SupplierDataSource.of(() -> (float) percent.applyAsDouble(machine)));
+        progress.addEventListener(UIEvents.HOVER_TOOLTIPS, event -> event.hoverTooltips = new HoverTooltips(tooltipSupplier.get(), null, null, null));
+        return progress;
+    }
+
+    private static ProgressBar horizontalProgressModular(CmMachineBlockEntity machine,
+                                                         int x, int y, int width, int height,
+                                                         ResourceLocation bgTexture, ResourceLocation fillTexture,
+                                                         boolean showPercent) {
+        var filled = SpriteTexture.of(fillTexture).setSprite(0, 0, width, height);
+        var progress = absolute(new ProgressBar(), x, y, width, height);
+        progress.barContainer(container -> container.style(style -> style.backgroundTexture(SpriteTexture.of(bgTexture).setSprite(0, 0, width, height)))
+                .layout(layout -> layout.paddingAll(0)));
+        progress.barBackground.style(style -> style.backgroundTexture(IGuiTexture.EMPTY));
+        progress.bar(bar -> bar.style(style -> style.backgroundTexture(filled)));
+        progress.label.setDisplay(false);
+        progress.progressBarStyle(style -> style.fillDirection(FillDirection.LEFT_TO_RIGHT).interpolate(false));
+        progress.bindDataSource(SupplierDataSource.of(() -> (float) progressPercent(machine)));
+        if (showPercent) {
+            progress.addEventListener(UIEvents.HOVER_TOOLTIPS, event -> event.hoverTooltips = new HoverTooltips(List.of(ComponentHelper.make((int) (progressPercent(machine) * 100) + "%")), null, null, null));
+        }
+        return progress;
+    }
+
+    private static ResourceLocation progressArrowBg(int machineType) {
+        return switch (machineType) {
+            case MachineType.FURNACE -> com.modularmc.ten.TENConstants.PROGRESS_ARROW_SMELTER_BG;
+            case MachineType.PULVERIZER -> com.modularmc.ten.TENConstants.PROGRESS_ARROW_PULVERIZER_BG;
+            case MachineType.COMPRESSOR -> com.modularmc.ten.TENConstants.PROGRESS_ARROW_COMPRESSOR_BG;
+            case MachineType.REFINER -> com.modularmc.ten.TENConstants.PROGRESS_ARROW_REFINER_BG;
+            case MachineType.INDUCTION_FURNACE -> com.modularmc.ten.TENConstants.PROGRESS_ARROW_INDUCTION_FURNACE_BG;
+            case MachineType.PSIONICANT -> com.modularmc.ten.TENConstants.PROGRESS_ARROW_PSIONICANT_BG;
+            case MachineType.ENCHANTMENT_FLUSHER -> com.modularmc.ten.TENConstants.PROGRESS_ARROW_SMELTER_BG;
+            default -> com.modularmc.ten.TENConstants.PROGRESS_ARROW_SMELTER_BG;
+        };
+    }
+
+    private static ResourceLocation progressArrowFill(int machineType) {
+        return switch (machineType) {
+            case MachineType.FURNACE -> com.modularmc.ten.TENConstants.PROGRESS_ARROW_SMELTER_FILL;
+            case MachineType.PULVERIZER -> com.modularmc.ten.TENConstants.PROGRESS_ARROW_PULVERIZER_FILL;
+            case MachineType.COMPRESSOR -> com.modularmc.ten.TENConstants.PROGRESS_ARROW_COMPRESSOR_FILL;
+            case MachineType.REFINER -> com.modularmc.ten.TENConstants.PROGRESS_ARROW_REFINER_FILL;
+            case MachineType.INDUCTION_FURNACE -> com.modularmc.ten.TENConstants.PROGRESS_ARROW_INDUCTION_FURNACE_FILL;
+            case MachineType.PSIONICANT -> com.modularmc.ten.TENConstants.PROGRESS_ARROW_PSIONICANT_FILL;
+            case MachineType.ENCHANTMENT_FLUSHER -> com.modularmc.ten.TENConstants.PROGRESS_ARROW_SMELTER_FILL;
+            default -> com.modularmc.ten.TENConstants.PROGRESS_ARROW_SMELTER_FILL;
+        };
     }
 
     public static FluidSlot fluidGauge(CmMachineBlockEntity machine, int x, int y, int width, int height, int tankIndex, boolean showValue) {
