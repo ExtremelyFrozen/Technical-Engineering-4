@@ -121,6 +121,20 @@ public class QuarryBlockEntity extends RadiusMachineBlockEntity {
     }
 
     @Override
+    public boolean cooking() {
+        // P0-5 纯容量谓词：输出槽（1..12）连 1 件都放不下时停滞（保留 progress）。
+        // 每周期至多挖掘 1 格；掉落多件时 canFitAll 已在 applyEffect 内兜底，此处只做容量门控。
+        if (itemHandler == null) {
+            return false;
+        }
+        int units = 0;
+        for (int i = 1; i < itemHandler.getSlots(); i++) {
+            ItemStack existing = itemHandler.getStackInSlot(i);
+            units += existing.isEmpty() ? itemHandler.getSlotLimit(i) : Math.max(0, itemHandler.getSlotLimit(i) - existing.getCount());
+        }
+        return units < 1;
+    }
+
     public void applyEffect() {
         if (level == null || itemHandler == null) {
             return;

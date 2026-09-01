@@ -19,6 +19,15 @@ import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
 
 public class CondenserBlockEntity extends ProcessingMachineBlockEntity {
 
+    /**
+     * Counter tracking successful processing ticks for periodic catalyst
+     * consumption. Every 20 processing ticks, one catalyst is consumed.
+     * Initialized to 20 so the first processing tick immediately consumes
+     * (matching the old {@code getAliveTime() % 20 == 0} behavior where
+     * tick 0 triggered consumption).
+     */
+    private int catalystTickCounter = 20;
+
     public CondenserBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
         setCapacity(kFE(20));
@@ -74,29 +83,86 @@ public class CondenserBlockEntity extends ProcessingMachineBlockEntity {
 
     @Override
     public boolean conditionStart() {
-        return !itemHandler.getStackInSlot(0).isEmpty();
+        // Compute and lock B_actual (四维：输入/流体/输出罐/能量)
+        int B_theory = 1 + batch;
+
+        // B_byInput: catalyst must be present for any processing
+        boolean hasCatalyst = !itemHandler.getStackInSlot(0).isEmpty();
+
+        // If catalyst is gone and we had a lock, clear it.
+        // NOTE: 催化剂耗尽即暂停（清锁返回 false）为接受现状，不改暂停语义：
+        // 最低生成速率规格 0.001 mB/s 远低于实际 0.1 mB/s，
+        // 暂停导致的平均速率下降不构成速率违约（用户以最低速率规格确认）。
+        if (!hasCatalyst) {
+            clearLockedBatch();
+            return false;
+        }
+
+        // Only compute and lock B when no lock exists yet
+        if (!hasLockedBatch()) {
+            // Lock maxProgress with durationMultiplier captured at operation start
+            maxProgress = Math.max(1, (int) Math.ceil(baseTickTime() * durationMultiplier));
+            lockMaxProgressForNewOperation(maxProgress);
+
+            int B_byInput = hasCatalyst ? B_theory : 0;
+
+            // B_byTank: floor(availTankCapacity / 5mB)
+            int B_byTank = 0;
+            if (!tanks.isEmpty()) {
+                int availTank = tanks.get(0).getCapacity() - tanks.get(0).getFluidAmount();
+                B_byTank = availTank / 5;
+            }
+
+            // B_byEnergy: how many ticks can current energy sustain?
+            int baseFe = Math.max(1, getActualEfficiency());
+            int B_byEnergy = energyStorage != null ? energyStorage.getEnergyStored() / baseFe : 0;
+
+            // Lock B_actual — validateAndLockB clears lock on failure
+            if (!validateAndLockB(B_theory, B_byInput, Integer.MAX_VALUE, B_byTank, B_byEnergy)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     @Override
     public boolean cooking() {
-        FluidStack produced = new FluidStack((net.minecraft.world.level.material.Fluid) TENFluids.LIQUID_BIZARRERIE.getSource(), 5);
+        // 纯容量谓词：只检查输出罐能否容纳 B×5mB。
+        // 无 progress 读写、无催化剂消耗、无副作用——输出满时保留 progress（P0-5 停滞语义）。
+        int B = getLockedBatchSize();
+        FluidStack produced = new FluidStack((net.minecraft.world.level.material.Fluid) TENFluids.LIQUID_BIZARRERIE.getSource(), 5 * B);
         if (tanks.isEmpty() || tanks.get(0).fill(produced, IFluidHandler.FluidAction.SIMULATE) < produced.getAmount()) {
-            progress = 0;
-            return true;
-        }
-
-        ItemStack catalyst = itemHandler.getStackInSlot(0);
-        if (valid(0, catalyst) && getAliveTime() % 20 == 0) {
-            catalyst.shrink(1);
-            progress += 200 * getActualEfficiency();
+            return true; // tank full → block processing
         }
         return false;
     }
 
     @Override
+    protected void onProcessTick() {
+        // 催化剂消耗：每 20 个成功处理 tick 消耗 1 个。
+        // 仅在实际处理（能量已扣、进度已推进）的 tick 消耗；停滞/受阻 tick 不消耗。
+        // 单催化剂/周期（不随 B 倍增），与旧语义一致。
+        catalystTickCounter++;
+        if (catalystTickCounter >= 20) {
+            catalystTickCounter = 0;
+            ItemStack catalyst = itemHandler.getStackInSlot(0);
+            if (!catalyst.isEmpty()) {
+                catalyst.shrink(1);
+            }
+        }
+    }
+
+    @Override
     public void onCookFinish() {
         if (!tanks.isEmpty()) {
-            tanks.get(0).fill(new FluidStack((net.minecraft.world.level.material.Fluid) TENFluids.LIQUID_BIZARRERIE.getSource(), 5), IFluidHandler.FluidAction.EXECUTE);
+            int B = getLockedBatchSize();
+            FluidStack produced = new FluidStack((net.minecraft.world.level.material.Fluid) TENFluids.LIQUID_BIZARRERIE.getSource(), 5 * B);
+            int filled = tanks.get(0).fill(produced, IFluidHandler.FluidAction.SIMULATE);
+            if (filled >= produced.getAmount()) {
+                tanks.get(0).fill(produced, IFluidHandler.FluidAction.EXECUTE);
+            }
         }
+        clearLockedBatch();
     }
 }

@@ -104,6 +104,21 @@ public class FarmBlockEntity extends RadiusMachineBlockEntity {
     }
 
     @Override
+    public boolean cooking() {
+        // P0-5 纯容量谓词：输出槽（6..11）无法容纳本周期收割产出时停滞（保留 progress）。
+        // 每周期处理 1 行；单格最多 2 件（1 种子 + 1 产物），阈值 2 保证单格产出放得下。
+        if (itemHandler == null) {
+            return false;
+        }
+        int units = 0;
+        for (int i = 6; i < itemHandler.getSlots(); i++) {
+            ItemStack existing = itemHandler.getStackInSlot(i);
+            units += existing.isEmpty() ? itemHandler.getSlotLimit(i) : Math.max(0, itemHandler.getSlotLimit(i) - existing.getCount());
+        }
+        return units < 2;
+    }
+
+    @Override
     public void applyEffect() {
         if (level == null) return;
 
