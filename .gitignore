@@ -10,6 +10,7 @@ bin/
 libs/
 
 .classpath
+/.factorypath
 */.factorypath
 .project
 .idea/
