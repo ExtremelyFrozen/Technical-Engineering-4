@@ -265,6 +265,32 @@ public final class TENMachineBlockUIFactory {
         return slot;
     }
 
+    /**
+     * 冷却剂消耗进度栏（P2-1）：绑定冷却器的冷却剂剩余比例，素材 progress_bar_wide_coolant。
+     */
+    public static ProgressBar coolantProgressBar(com.modularmc.ten.common.blockentity.machine.CoolerBlockEntity cooler, int x, int y) {
+        var filled = SpriteTexture.of(com.modularmc.ten.TENConstants.PROGRESS_BAR_WIDE_COOLANT).setSprite(0, 0, 80, 5);
+        var progress = absolute(new ProgressBar(), x, y, 80, 5);
+        progress.barContainer(container -> container.style(style -> style.backgroundTexture(SpriteTexture.of(com.modularmc.ten.TENConstants.PROGRESS_BAR_WIDE_BG).setSprite(0, 0, 80, 5)))
+                .layout(layout -> layout.paddingAll(0)));
+        progress.barBackground.style(style -> style.backgroundTexture(IGuiTexture.EMPTY));
+        progress.bar(bar -> bar.style(style -> style.backgroundTexture(filled)));
+        progress.label.setDisplay(false);
+        progress.progressBarStyle(style -> style.fillDirection(FillDirection.LEFT_TO_RIGHT).interpolate(false));
+        progress.bindDataSource(SupplierDataSource.of(() -> (float) cooler.getCoolantPercent()));
+        progress.addEventListener(UIEvents.HOVER_TOOLTIPS, event -> event.hoverTooltips = new HoverTooltips(List.of(ComponentHelper.translated("kenergyengineering.info.coolant_progress")), null, null, null));
+        return progress;
+    }
+
+    /**
+     * 迷你垂直进度箭头（P2-1）：输入槽右侧 8x54 素材（顶尖朝上/朝下），非动态（仅背景）。
+     */
+    public static UIElement verticalProgressMini(int inputX, int inputTopY, int slotSize,
+                                                 ResourceLocation texture, boolean targetOnTop) {
+        return textureElement(inputX + slotSize, inputTopY, 8, 54,
+                fullTexture(texture, 8, 54), null, null, null, null);
+    }
+
     private static UIElement textureElement(int x, int y, int width, int height,
                                             IGuiTexture texture,
                                             @Nullable Supplier<List<Component>> tooltipSupplier,

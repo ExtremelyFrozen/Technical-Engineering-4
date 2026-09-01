@@ -72,6 +72,8 @@ public class CoolerBlockEntity extends EffectMachineBlockEntity {
             root.addChild(TENMachineBlockUIFactory.machineSlot(this, 0, 79, 32));
         }, root -> {
             root.addChild(TENMachineBlockUIFactory.energyGauge(this, 8, 18, 14, 46, 0, 0, true));
+            // 冷却剂消耗进度栏：主进度条上方平行布置（progress_bar_wide_coolant）
+            root.addChild(TENMachineBlockUIFactory.coolantProgressBar(this, 48, 50));
             // 主进度条（冷却周期）同模拟信标位置
             root.addChild(TENMachineBlockUIFactory.progressGauge(this, 48, 57, 80, 5, 97, 0, false));
         });

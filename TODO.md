@@ -126,11 +126,14 @@
 
 ### P2 — 表面级（独立，最后）
 
-- [ ] **P2-1 GUI 新组件**：RevealProgressBar（按进度切纹理）、TENFluidSlot（tooltip 过滤温度/气液键）、TransferModeButtonState（stateIndex 贴图切换）、coolantProgressBar、EnergyUnitData、verticalProgressMini。
-  - 依赖 P0-0：验证 LDLib2 2.2.8 是否已含这些组件；不含则用 2.2.8 现有能力等价实现（手写进度条等）。
-- [ ] **P2-2 物品改名**：能量单元→能量模块、频道桥接器→频道连接器（含 lang 文案）。
-- [ ] **P2-3 WrenchDismantleService**：扳手拆解（面/红石/facing/active 走 BLOCK_ENTITY_DATA 组件保存，物品栏/升级独立掉落不重复，失败恢复原方块）。
-- [ ] **P2-4 升级槽固定 6 全解锁 + 移除扩写升级**（D11）。
+- [x] **P2-1 GUI 新组件**：RevealProgressBar（UV 裁剪进度条，防纹理失真）、TENFluidSlot（过滤温度/气液键 tooltip）、TransferModeButtonState（纯状态计算，4 态贴图切换）、coolantProgressBar（冷却剂消耗进度栏，绑定 Cooler.getCoolantPercent）、EnergyUnitData（已存在，1.21.1 已有）、verticalProgressMini（迷你垂直进度箭头 8x54，顶尖朝上/朝下）。
+  - 依赖 P0-0：LDLib2 2.2.37 已验证 API 兼容（ProgressBar/FluidSlot 等）。素材 progress_bar_wide_* + progress_arrow_mini_* 从 26.1.2 复制。Cooler 接入双进度条 GUI（冷却剂栏 + 主进度栏）。
+  - 验证：compileJava 通过。
+- [x] **P2-2 物品改名**：能量单元→能量模块（en_us/zh_cn lang 文案 + TENItems 注册名已改）、频道桥接器→频道连接器（P0-8 已改，本项确认完成）。
+  - 验证：compileJava 通过。
+- [x] **P2-3 WrenchDismantleService**：扳手拆解服务（1.21.1 CompoundTag 适配版：TagValueOutput→CompoundTag，ProblemReporter→try-catch，onDestroyedByPlayer 用 5 参签名）。SpannerItem 更新（潜行+右键→WrenchDismantleService.dismantle，右键→旋转；1.21.1 管道推拉配置已冻结不移植）。TENTags 补 WRENCH_DISMANTLEABLE tag。
+  - 验证：compileJava 通过。
+- [x] **P2-4 升级槽固定 6 全解锁 + 移除扩写升级**（D11）：`upgradeSize = MAX_UPGRADE_SLOTS` 已由 P0-4 落地（6 全解锁）；1.21.1 和 26.1.2 均无 Expander 类，扩写升级已移除。核对完成。#
 
 ---
 

@@ -18,6 +18,13 @@ public class TENConstants {
     // 频道面板翻页/创建/删除/断开按钮雪碧图：5列×2行，每格 12x12（列0▲/列1▼/列2＋/列3✕/列4断连；行0=normal、行1=hover）
     public static final ResourceLocation CHANNEL_BUTTONS = TEN.id("textures/gui/modular/channel_buttons.png"); // 60x24
 
+    // ───── 进度条素材（P2-1 移植自 26.1.2）─────
+    public static final ResourceLocation PROGRESS_BAR_WIDE_BG = TEN.id("textures/gui/modular/progress_bar_wide_background.png"); // 80x5 横向灰底槽
+    public static final ResourceLocation PROGRESS_BAR_WIDE_FILL = TEN.id("textures/gui/modular/progress_bar_wide_fill.png"); // 80x5 绿填充
+    public static final ResourceLocation PROGRESS_BAR_WIDE_COOLANT = TEN.id("textures/gui/modular/progress_bar_wide_coolant.png"); // 80x5 冷却剂消耗进度栏
+    public static final ResourceLocation PROGRESS_ARROW_MINI_COMPRESSOR_BG = TEN.id("textures/gui/modular/progress_arrow_mini_compressor_background.png"); // 8x54 顶尖朝上
+    public static final ResourceLocation PROGRESS_ARROW_MINI_ENCFLU_BG = TEN.id("textures/gui/modular/progress_arrow_mini_encflu_background.png"); // 8x54 尖朝下
+
     /** 雪碧图内精灵区域（像素坐标：u, v, 宽, 高）。 */
     public record SheetUV(int u, int v, int width, int height) {}
 

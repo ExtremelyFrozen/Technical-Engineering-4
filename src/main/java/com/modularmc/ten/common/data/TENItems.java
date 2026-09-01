@@ -116,8 +116,8 @@ public class TENItems {
     }
 
     public static final ItemEntry<SpannerItem> SPANNER = tool("spanner", "Spanner", "扳手", SpannerItem::new, "item/spanner");
-    public static final ItemEntry<EnergyUnitItem> ENERGY_CAPACITY = tool("energy_capacity", "Energy Unit", "能量单元", EnergyUnitItem::new, "item/energy_capacity");
-    public static final ItemEntry<ChannelConnectorItem> CHANNEL_CONNECTOR = tool("channel_connector", "Channel Connector", "频道桥接器", ChannelConnectorItem::new, "item/channel_connector");
+    public static final ItemEntry<EnergyUnitItem> ENERGY_CAPACITY = tool("energy_capacity", "Energy Module", "能量模块", EnergyUnitItem::new, "item/energy_capacity");
+    public static final ItemEntry<ChannelConnectorItem> CHANNEL_CONNECTOR = tool("channel_connector", "Channel Connector", "频道连接器", ChannelConnectorItem::new, "item/channel_connector");
     // Upgrades
     public static final ItemEntry<? extends UpgradeItem> AUGMENTED_LEVELUP = upgrade("augmented_levelup", "Upgrade: Augmented Kit", "升级：增强组件", p -> new LevelupAug());
     public static final ItemEntry<? extends UpgradeItem> POWERED_LEVELUP = upgrade("powered_levelup", "Upgrade: Powered Kit", "升级：充能组件", p -> new LevelupPower());

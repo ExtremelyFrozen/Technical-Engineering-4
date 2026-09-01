@@ -12,6 +12,7 @@ import net.minecraft.world.level.block.Block;
 public class TENTags {
 
     public static final TagKey<Block> MACHINES = blockTag("machines");
+    public static final TagKey<Block> WRENCH_DISMANTLEABLE = blockTag("wrench_dismantleable");
 
     private static TagKey<Block> blockTag(String path) {
         return BlockTags.create(ResourceLocation.fromNamespaceAndPath(TEN.MOD_ID, path));
