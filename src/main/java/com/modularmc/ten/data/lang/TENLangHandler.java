@@ -25,6 +25,7 @@ public final class TENLangHandler {
         addMachineInfo(provider);
         addAdvancements(provider);
         addEmi(provider);
+        addJei(provider);
     }
 
     private static void addDirections(RegistrateLangProvider provider) {
@@ -287,6 +288,23 @@ public final class TENLangHandler {
         addRaw(provider, "emi.category.kenergyengineering.refiner", "Refiner", "精炼机");
         addRaw(provider, "emi.category.kenergyengineering.induction_furnace", "Induction Furnace", "感应炉");
         addRaw(provider, "emi.category.kenergyengineering.psionicant", "Psionicant", "灵能处理器");
+    }
+
+    private static void addJei(RegistrateLangProvider provider) {
+        // JEI 引擎燃料信息
+        add(provider, "jei.base_output", "Base Output: %s FE", "基础产出: %s FE");
+        add(provider, "jei.base_rate", "Base Rate: %s FE/t", "基础功率: %s FE/t");
+        add(provider, "jei.duration_ticks", "Duration: %s ticks", "持续时间: %s tick");
+        add(provider, "jei.total_energy", "Total Energy: %s FE", "总能量: %s FE");
+        add(provider, "jei.base_rate_short", "%s FE/t", "%s FE/t");
+        add(provider, "jei.duration_short", "%s ticks", "%s tick");
+        add(provider, "jei.total_short", "%s FE", "%s FE");
+        // JEI 冶炼分类标题
+        add(provider, "jei.category.smelter_smelting", "Smelter \u2014 Smelting", "熔炼机 \u2014 熔炉");
+        add(provider, "jei.category.smelter_blasting", "Smelter \u2014 Blasting", "熔炼机 \u2014 高炉");
+        add(provider, "jei.category.smelter_smoking", "Smelter \u2014 Smoking", "熔炼机 \u2014 烟熏");
+        // JEI 槽位覆盖（chance/rolls）
+        add(provider, "jei_addition_chance_rolls", "Additional Chance: %s%% × %s rolls", "附加几率: %s%% × %s 次");
     }
 
     private static void add(RegistrateLangProvider provider, String suffix, String en, String cn) {

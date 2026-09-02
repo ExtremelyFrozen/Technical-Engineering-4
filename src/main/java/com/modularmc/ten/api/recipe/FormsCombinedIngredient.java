@@ -69,6 +69,56 @@ public class FormsCombinedIngredient {
         return chance;
     }
 
+    private static final double CHANCE_CERTAIN_THRESHOLD = 1.0d - 1e-12;
+
+    /**
+     * @return overlay chance text like {@code "40%"}, or {@code null} if chance is at or
+     *         above the certainty threshold (no overlay needed). Rounded to integer percentage.
+     */
+    public String chanceOverlayText() {
+        if (chance >= CHANCE_CERTAIN_THRESHOLD) return null;
+        return Math.round(chance * 100.0d) + "%";
+    }
+
+    /**
+     * @return overlay rolls text like {@code "R9"}, or {@code null} if rolls <= 1
+     *         (no overlay needed).
+     */
+    public String rollsOverlayText() {
+        if (rolls <= 1) return null;
+        return "R" + rolls;
+    }
+
+    /**
+     * Describes what kind of rich tooltip callback should be registered for a
+     * slot in JEI/EMI integration, based purely on this ingredient's chance and
+     * rolls values. This is a pure function — no JEI runtime required.
+     */
+    public enum TooltipKind {
+        /** No tooltip callback needed. */
+        NONE,
+        /** OUTPUT + chance &lt; 1.0: translates to {@code kenergyengineering.jei_addition_chance}. */
+        CHANCE_ONLY,
+        /** OUTPUT + chance &lt; 1.0 + rolls &gt; 1: translates to {@code kenergyengineering.jei_addition_chance_rolls}. */
+        CHANCE_WITH_ROLLS,
+        /** INPUT + chance &le; 0: translates to {@code kenergyengineering.not_consumed}. */
+        NOT_CONSUMED
+    }
+
+    /**
+     * Determines the {@link TooltipKind} for JEI/EMI tooltip registration.
+     * Pure function, no JEI runtime dependencies.
+     */
+    public TooltipKind tooltipKind(boolean isOutput) {
+        if (isOutput && chance < CHANCE_CERTAIN_THRESHOLD) {
+            return rolls > 1 ? TooltipKind.CHANCE_WITH_ROLLS : TooltipKind.CHANCE_ONLY;
+        }
+        if (!isOutput && chance <= 0) {
+            return TooltipKind.NOT_CONSUMED;
+        }
+        return TooltipKind.NONE;
+    }
+
     public List<ItemStack> itemStacks() {
         if (ALLOW_ALL) return List.of(ItemStack.EMPTY);
         return matchItems.stream().map(i -> new ItemStack(i, amountOrCount)).toList();

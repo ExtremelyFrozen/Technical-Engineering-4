@@ -209,6 +209,14 @@ public final class TENRecipeWidget {
         return String.format("%.0f%% chance", chance * 100.0d);
     }
 
+    /**
+     * @param chance raw probability in [0,1] range
+     * @return percentage as integer (0-100), rounded
+     */
+    public static int chancePercent(double chance) {
+        return (int) Math.round(chance * 100.0d);
+    }
+
     private static void drawProgressDecoration(GuiGraphics graphics, DecorationSpec decoration, double percent) {
         RenderHelper.render(graphics, decoration.x(), decoration.y(), decoration.width(), decoration.height(), 256, 256, decoration.u(), decoration.v(), TENConstants.GUI_HANDLER);
         int filledWidth = (int) (percent * decoration.width());

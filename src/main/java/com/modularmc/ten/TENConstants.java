@@ -47,6 +47,7 @@ public class TENConstants {
     public static final ResourceLocation PROGRESS_ARROW_PSIONICANT_BG = TEN.id("textures/gui/modular/progress_arrow_psionicant_background.png"); // 22x16
     public static final ResourceLocation PROGRESS_ARROW_PSIONICANT_FILL = TEN.id("textures/gui/modular/progress_arrow_psionicant_fill.png"); // 22x16
     public static final ResourceLocation JEI_HANDLER_MODULAR = TEN.id("textures/gui/modular/jei_handler.png"); // 上层150x50/下层170x50
+    public static final ResourceLocation FLUID_SLOT = TEN.id("textures/gui/modular/fluid_slot.png"); // 18x50
 
     /** 雪碧图内精灵区域（像素坐标：u, v, 宽, 高）。 */
     public record SheetUV(int u, int v, int width, int height) {}

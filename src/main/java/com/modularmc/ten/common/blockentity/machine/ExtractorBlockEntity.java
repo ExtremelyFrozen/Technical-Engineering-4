@@ -13,6 +13,9 @@ import net.neoforged.neoforge.fluids.FluidStack;
 
 public class ExtractorBlockEntity extends EngineBlockEntity {
 
+    /** 引擎基础产能（FE/t），与 setEfficiency 一致，供 JEI 燃料页显示。 */
+    public static final int BASE_GENERATION_RATE = 30;
+
     public ExtractorBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
         setCapacity(kFE(60));
