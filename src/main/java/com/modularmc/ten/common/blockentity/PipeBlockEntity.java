@@ -275,15 +275,15 @@ public class PipeBlockEntity extends CmBlockEntity {
         return slot;
     }
 
-    private boolean isFiltered() {
+    public boolean isFiltered() {
         return isWhitelist() || isBlacklist();
     }
 
-    private boolean isWhitelist() {
+    public boolean isWhitelist() {
         return "pipe_white".equals(SafeOperationHelper.regNameOf(getBlockState().getBlock()));
     }
 
-    private boolean isBlacklist() {
+    public boolean isBlacklist() {
         return "pipe_black".equals(SafeOperationHelper.regNameOf(getBlockState().getBlock()));
     }
 

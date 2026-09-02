@@ -19,6 +19,7 @@ dependencies {
 
     // WAILA-likes
     compileOnly(forge.jade)
+    clientCompileOnly(forge.jade)
 
     // Rendering / Optimizations
     compileOnly(forge.sodium)

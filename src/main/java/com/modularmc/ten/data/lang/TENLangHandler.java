@@ -73,6 +73,9 @@ public final class TENLangHandler {
         // Jade 集成：频道接入状态高亮
         add(provider, "channel.jade.joined", "Joined: %s", "已接入: %s");
         add(provider, "channel.jade.not_joined", "Not joined to a channel", "未接入频道");
+        // Jade 集成：管道过滤模式（PipeJadeProvider）
+        add(provider, "pipe.filter.whitelist", "Whitelist", "白名单");
+        add(provider, "pipe.filter.blacklist", "Blacklist", "黑名单");
         add(provider, "channel", "Channel", "频道");
 
         // 频道连接器（ChannelConnectorItem，配置复制/应用工具）

@@ -473,6 +473,8 @@
   "kenergyengineering.photosyn_levelup": "Upgrade: Photosynthetic Power",
   "kenergyengineering.photosyn_levelup.0": "Machine: +1 upgrade slot\n      -10% throughput",
   "kenergyengineering.pipe": "Item Pipe",
+  "kenergyengineering.pipe.filter.blacklist": "Blacklist",
+  "kenergyengineering.pipe.filter.whitelist": "Whitelist",
   "kenergyengineering.pipe_black": "Exceptional Item Pipe",
   "kenergyengineering.pipe_white": "Conditional Item Pipe",
   "kenergyengineering.potion_levelup": "Upgrade: Potion Effect Extraction",

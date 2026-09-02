@@ -21,6 +21,7 @@ neoForge {
 //
 //    interfaceInjectionData = project.files('injected_interfaces/interfaces.json')
 
+    addModdingDependenciesTo(sourceSets.client)
     addModdingDependenciesTo(sourceSets.test)
     addModdingDependenciesTo(sourceSets.extra)
 
