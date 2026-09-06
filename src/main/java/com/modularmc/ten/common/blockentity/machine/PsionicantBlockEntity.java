@@ -60,13 +60,13 @@ public class PsionicantBlockEntity extends RecipeMachineBlockEntity {
     @Override
     public ModularUI createUI(BlockUIMenuType.BlockUIHolder holder) {
         return buildMachineUI(holder, TENMachineBlockUIFactory.backgroundFor(machineType()), root -> {
-            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 0, 34, 20));
-            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 1, 52, 20));
-            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 2, 115, 34));
+            // 2 输入横排（34/52，组宽 36），y=32 中线 41 与能量条对齐；输出大槽
+            root.addChild(TENMachineBlockUIFactory.machineSlotModular(this, 0, 34, 32));
+            root.addChild(TENMachineBlockUIFactory.machineSlotModular(this, 1, 52, 32));
+            root.addChild(TENMachineBlockUIFactory.machineSlotLarge(this, 2, 116, 28));
         }, root -> {
-            root.addChild(TENMachineBlockUIFactory.energyGauge(this, 9, 18, 14, 46, 0, 0, true));
-            root.addChild(TENMachineBlockUIFactory.fuelGauge(this, 45, 48, 13, 13, 14, 0, false));
-            root.addChild(TENMachineBlockUIFactory.progressGauge(this, 76, 35, 22, 16, 27, 95, false));
+            root.addChild(TENMachineBlockUIFactory.energyGaugeModular(this, 8, 18, true));
+            root.addChild(TENMachineBlockUIFactory.progressGaugeModular(this, 82, 33, false));
         });
     }
 

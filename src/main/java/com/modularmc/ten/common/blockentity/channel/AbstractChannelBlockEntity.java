@@ -14,6 +14,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 
@@ -45,9 +46,10 @@ import java.util.regex.Pattern;
  * 共享存储，不再有逐 tick 轮询搬运。退出（{@link #leave}）时本地缓冲内容
  * 优先回流频道共享存储，频道满则留本地缓冲。
  * <p>
- * P0-8 移植说明：1.21.1 的 RPC 走 LDLib2 {@code RPCSender.ofServer()} 直接调用 +
- * {@code rpcToTracking} 广播（26.1.2 的 rpcToServer/rpcToPlayer 在 2.2.37 未启用）；
- * {@link net.minecraft.resources.Identifier} 以 {@link ResourceLocation} 替代。
+ * P0-8 移植说明：RPC 语义与 26.1.2 一致——C→S 经 {@code rpcToServer} 发起，服务端
+ * 处理器以 {@code sender.isRemote()} 守卫；S→C 单播经 {@code rpcToPlayer}、广播经
+ * {@code rpcToTracking}，客户端处理器以 {@code sender.isServer()} 守卫。
+ * 26.1.2 的 Identifier 在 1.21.1 以 {@link ResourceLocation} 替代。
  */
 public abstract class AbstractChannelBlockEntity extends CmMachineBlockEntity {
 
@@ -79,6 +81,11 @@ public abstract class AbstractChannelBlockEntity extends CmMachineBlockEntity {
 
     @Override
     public boolean hasUpgrade() {
+        return false;
+    }
+
+    @Override
+    public boolean supportsUpgradeSlots() {
         return false;
     }
 
@@ -293,21 +300,21 @@ public abstract class AbstractChannelBlockEntity extends CmMachineBlockEntity {
     }
 
     // ───── RPC：频道目录同步 + 创建/接入/退出 ─────
-    // 1.21.1 适配：C→S 经 RPCSender.ofServer() 直接调用（LDLib2 路由到服务端，sender.isServer() 为 true）；
-    // S→C 经 rpcToTracking 广播（26.1.2 的 rpcToPlayer 单播未启用，广播目录给 tracking 玩家行为等价）。
+    // LDLib2 语义：C→S 包在服务端执行时 sender=RPCSender.ofClient(player)（isRemote()=true、asPlayer()=玩家）；
+    // S→C 包在客户端执行时 sender=RPCSender.ofServer()（isServer()=true）。
 
     /** C→S：请求频道目录（UI 打开时）。 */
     @RPCMethod
     public void rpcRequestChannelDirectory(RPCSender sender) {
-        if (sender.isServer()) {
-            rpcToTracking("rpcSyncChannelDirectory", encodeDirectory());
+        if (sender.isRemote() && sender.asPlayer() != null) {
+            rpcToPlayer(sender.asPlayer(), "rpcSyncChannelDirectory", encodeDirectory());
         }
     }
 
     /** S→C：推送频道目录（name:count;name:count，按类型过滤）。 */
     @RPCMethod
     public void rpcSyncChannelDirectory(RPCSender sender, String directory) {
-        if (!sender.isServer()) {
+        if (sender.isServer()) {
             this.directoryData = directory == null ? "" : directory;
         }
     }
@@ -315,7 +322,7 @@ public abstract class AbstractChannelBlockEntity extends CmMachineBlockEntity {
     /** C→S：创建频道（命名）。 */
     @RPCMethod
     public void rpcCreateChannel(RPCSender sender, String name) {
-        if (!sender.isServer() || !isValidChannelName(name)) {
+        if (!sender.isRemote() || !isValidChannelName(name)) {
             return;
         }
         ChannelRegistry reg = registry();
@@ -323,28 +330,28 @@ public abstract class AbstractChannelBlockEntity extends CmMachineBlockEntity {
             return;
         }
         reg.getOrCreate(channelKey(name));
-        rpcToTracking("rpcSyncChannelDirectory", encodeDirectory());
+        pushDirectory(sender.asPlayer());
     }
 
     /** C→S：接入频道。 */
     @RPCMethod
     public void rpcJoinChannel(RPCSender sender, String name) {
-        if (!sender.isServer() || !isValidChannelName(name)) {
+        if (!sender.isRemote() || !isValidChannelName(name)) {
             return;
         }
         if (join(name)) {
-            rpcToTracking("rpcSyncChannelDirectory", encodeDirectory());
+            pushDirectory(sender.asPlayer());
         }
     }
 
     /** C→S：退出当前频道。 */
     @RPCMethod
     public void rpcLeaveChannel(RPCSender sender) {
-        if (!sender.isServer()) {
+        if (!sender.isRemote()) {
             return;
         }
         if (leave()) {
-            rpcToTracking("rpcSyncChannelDirectory", encodeDirectory());
+            pushDirectory(sender.asPlayer());
         }
     }
 
@@ -354,7 +361,7 @@ public abstract class AbstractChannelBlockEntity extends CmMachineBlockEntity {
      */
     @RPCMethod
     public void rpcDeleteChannel(RPCSender sender) {
-        if (!sender.isServer()) {
+        if (!sender.isRemote()) {
             return;
         }
         ChannelRegistry reg = registry();
@@ -374,7 +381,13 @@ public abstract class AbstractChannelBlockEntity extends CmMachineBlockEntity {
             joinedMemberCount = 0;
             markDirty();
             setActive(false);
-            rpcToTracking("rpcSyncChannelDirectory", encodeDirectory());
+            pushDirectory(sender.asPlayer());
+        }
+    }
+
+    private void pushDirectory(ServerPlayer player) {
+        if (player != null) {
+            rpcToPlayer(player, "rpcSyncChannelDirectory", encodeDirectory());
         }
     }
 
@@ -472,7 +485,7 @@ public abstract class AbstractChannelBlockEntity extends CmMachineBlockEntity {
 
         // UI 打开时向服务端请求当前频道目录
         if (holder.player.level().isClientSide()) {
-            rpcRequestChannelDirectory(RPCSender.ofServer());
+            rpcToServer("rpcRequestChannelDirectory");
         }
 
         // 列表容器底图：channel_list_bg（69x73 深色容器）
@@ -507,7 +520,7 @@ public abstract class AbstractChannelBlockEntity extends CmMachineBlockEntity {
                     var entries = parseDirectory();
                     int entryIndex = state.cursorFrom + row;
                     if (entryIndex < entries.size() && !entries.get(entryIndex).name().equals(channelId)) {
-                        rpcJoinChannel(RPCSender.ofServer(), entries.get(entryIndex).name());
+                        rpcToServer("rpcJoinChannel", entries.get(entryIndex).name());
                     }
                 }
             });
@@ -545,9 +558,9 @@ public abstract class AbstractChannelBlockEntity extends CmMachineBlockEntity {
                     if (entryIndex < entries.size()) {
                         String name = entries.get(entryIndex).name();
                         if (isJoined() && name.equals(channelId)) {
-                            rpcLeaveChannel(RPCSender.ofServer());
+                            rpcToServer("rpcLeaveChannel");
                         } else {
-                            rpcJoinChannel(RPCSender.ofServer(), name);
+                            rpcToServer("rpcJoinChannel", name);
                         }
                     }
                 }
@@ -586,7 +599,7 @@ public abstract class AbstractChannelBlockEntity extends CmMachineBlockEntity {
         createButton.setOnClick(event -> {
             String name = nameField.getValue() == null ? "" : nameField.getValue().trim();
             if (!name.isEmpty()) {
-                rpcCreateChannel(RPCSender.ofServer(), name);
+                rpcToServer("rpcCreateChannel", name);
             }
         });
         createButton.addEventListener(UIEvents.HOVER_TOOLTIPS, event -> event.hoverTooltips = tooltip(ComponentHelper.translated(ComponentHelper.getKey("channel.create"))));
@@ -612,11 +625,11 @@ public abstract class AbstractChannelBlockEntity extends CmMachineBlockEntity {
         });
 
         var leaveButton = channelSheetButton(130, 53, TENConstants.DISCONNECT_NORMAL, TENConstants.DISCONNECT_HOVER);
-        leaveButton.setOnClick(event -> rpcLeaveChannel(RPCSender.ofServer()));
+        leaveButton.setOnClick(event -> rpcToServer("rpcLeaveChannel"));
         leaveButton.addEventListener(UIEvents.HOVER_TOOLTIPS, event -> event.hoverTooltips = tooltip(ComponentHelper.translated(ComponentHelper.getKey("channel.leave"))));
 
         var deleteButton = channelSheetButton(130, 37, TENConstants.DELETE_NORMAL, TENConstants.DELETE_HOVER);
-        deleteButton.setOnClick(event -> rpcDeleteChannel(RPCSender.ofServer()));
+        deleteButton.setOnClick(event -> rpcToServer("rpcDeleteChannel"));
         deleteButton.addEventListener(UIEvents.HOVER_TOOLTIPS, event -> event.hoverTooltips = tooltip(ComponentHelper.translated(ComponentHelper.getKey("channel.delete"))));
         deleteButton.setDisplay(false);
 

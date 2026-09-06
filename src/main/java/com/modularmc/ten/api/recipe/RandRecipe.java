@@ -11,13 +11,19 @@ public interface RandRecipe extends IBaseRecipeCm {
 
     default List<ItemStack> generateItems() {
         List<ItemStack> list = new ArrayList<>();
-        for (var ing : output()) list.add(ing.genItem());
+        for (var ing : output()) {
+            // 仅物品条目参与物品生成（26.1.2 对齐：按 form 过滤，流体条目不调 genItem）
+            if ("item".equals(ing.form())) list.add(ing.genItem());
+        }
         return list;
     }
 
     default List<FluidStack> generateFluids() {
         List<FluidStack> list = new ArrayList<>();
-        for (var ing : output()) list.add(ing.genFluid());
+        for (var ing : output()) {
+            // 仅流体条目参与流体生成（26.1.2 对齐）
+            if ("fluid".equals(ing.form())) list.add(ing.genFluid());
+        }
         return list;
     }
 

@@ -99,7 +99,9 @@ public class FormsCombinedIngredient {
         NONE,
         /** OUTPUT + chance &lt; 1.0: translates to {@code kenergyengineering.jei_addition_chance}. */
         CHANCE_ONLY,
-        /** OUTPUT + chance &lt; 1.0 + rolls &gt; 1: translates to {@code kenergyengineering.jei_addition_chance_rolls}. */
+        /**
+         * OUTPUT + chance &lt; 1.0 + rolls &gt; 1: translates to {@code kenergyengineering.jei_addition_chance_rolls}.
+         */
         CHANCE_WITH_ROLLS,
         /** INPUT + chance &le; 0: translates to {@code kenergyengineering.not_consumed}. */
         NOT_CONSUMED
@@ -186,16 +188,34 @@ public class FormsCombinedIngredient {
             default -> JsonParser.getIntOr(json, "count", 1);
         };
         double chance = JsonParser.getFloatOr(json, "chance", 1);
-        return create(limit, form, type, key, chance);
+        int rolls = JsonParser.getIntOr(json, "rolls", 1);
+        return create(limit, form, type, key, chance, rolls);
     }
 
     public static FormsCombinedIngredient create(int limit, String form, String type, String key, double chance) {
+        return create(limit, form, type, key, chance, 1);
+    }
+
+    public static FormsCombinedIngredient create(int limit, String form, String type, String key, double chance, int rolls) {
+        // ── Rolls 校验（26.1.2 对齐）：仅输出物品允许掷骰 ──
+        if (rolls < 1) throw new IllegalArgumentException("rolls must be >= 1, got: " + rolls);
+        if ("fluid".equals(form) && rolls > 1) {
+            throw new IllegalArgumentException("Fluid output ingredient must have rolls=1, but got rolls=" + rolls + " for key=" + key);
+        }
+        // ── Chance 校验：必须为有限值且在 [0, 1] ──
+        if (Double.isNaN(chance) || Double.isInfinite(chance)) {
+            throw new IllegalArgumentException("chance must be a finite value, got: " + chance);
+        }
+        if (chance < 0.0 || chance > 1.0) {
+            throw new IllegalArgumentException("chance must be in [0, 1], got: " + chance);
+        }
         var ing = new FormsCombinedIngredient();
         ing.form = form;
         ing.type = type;
         ing.amountOrCount = limit;
         ing.key = ResourceLocation.parse(key);
         ing.chance = chance;
+        ing.rolls = rolls;
         switch (form) {
             case "item" -> {
                 switch (type) {
@@ -227,6 +247,7 @@ public class FormsCombinedIngredient {
         buf.writeResourceLocation(key);
         buf.writeInt(amountOrCount);
         buf.writeDouble(chance);
+        buf.writeInt(rolls);
     }
 
     public static FormsCombinedIngredient parseFrom(RegistryFriendlyByteBuf buf) {
@@ -235,12 +256,46 @@ public class FormsCombinedIngredient {
         ResourceLocation rl = buf.readResourceLocation();
         int limit = buf.readInt();
         double chance = buf.readDouble();
-        return create(limit, form, type, rl.toString(), chance);
+        int rolls = buf.readInt();
+        return create(limit, form, type, rl.toString(), chance, rolls);
     }
 
     // Output helpers
     public ItemStack genItem() {
-        return Math.random() < chance ? symbolItem() : ItemStack.EMPTY;
+        return genItem(Math::random);
+    }
+
+    /**
+     * 生成一个带可控随机源的输出物品。
+     * 执行 {@code rolls} 次独立伯努利试验，每次成功概率 {@code chance}；
+     * 输出数量 = 成功次数 × {@code amountOrCount}（26.1.2 对齐）。
+     * 总数超过 {@link Item#ABSOLUTE_MAX_STACK_SIZE}（99）时 fail-fast 抛异常，
+     * 而非静默截断——配方定义必须修正以避免物品丢失。
+     *
+     * @param random 每次试验的 [0, 1) 双精度随机源
+     * @return 生成的 ItemStack（可能为空）
+     */
+    public ItemStack genItem(java.util.function.DoubleSupplier random) {
+        if (rolls <= 1) {
+            if (amountOrCount > Item.ABSOLUTE_MAX_STACK_SIZE) {
+                throw new IllegalStateException(
+                        "genItem: amountOrCount=" + amountOrCount + " exceeds ABSOLUTE_MAX_STACK_SIZE=" + Item.ABSOLUTE_MAX_STACK_SIZE + " for key=" + key);
+            }
+            return random.getAsDouble() < chance ? symbolItem() : ItemStack.EMPTY;
+        }
+        int successCount = 0;
+        for (int i = 0; i < rolls; i++) {
+            if (random.getAsDouble() < chance) successCount++;
+        }
+        if (successCount == 0) return ItemStack.EMPTY;
+        int totalCount = Math.multiplyExact(successCount, amountOrCount);
+        if (totalCount > Item.ABSOLUTE_MAX_STACK_SIZE) {
+            throw new IllegalStateException(
+                    "genItem: totalCount=" + totalCount + " (successCount=" + successCount + " × amountOrCount=" + amountOrCount + ") exceeds ABSOLUTE_MAX_STACK_SIZE=" + Item.ABSOLUTE_MAX_STACK_SIZE + " for key=" + key);
+        }
+        ItemStack result = symbolItem();
+        result.setCount(totalCount);
+        return result;
     }
 
     public ItemStack symbolItem() {
@@ -249,6 +304,10 @@ public class FormsCombinedIngredient {
     }
 
     public FluidStack genFluid() {
+        if (rolls > 1) {
+            throw new IllegalStateException(
+                    "genFluid: rolls must be 1 for fluid output, but got rolls=" + rolls + " for key=" + key);
+        }
         return Math.random() < chance ? symbolFluid() : FluidStack.EMPTY;
     }
 

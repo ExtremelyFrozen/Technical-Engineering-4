@@ -1,6 +1,7 @@
 package com.modularmc.ten.common.gui;
 
 import com.modularmc.ten.TEN;
+import com.modularmc.ten.TENConstants;
 import com.modularmc.ten.api.blockentity.CmMachineBlockEntity;
 import com.modularmc.ten.api.option.FaceOption;
 import com.modularmc.ten.api.option.MachineType;
@@ -24,6 +25,7 @@ import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
 import com.lowdragmc.lowdraglib2.gui.ui.UI;
 import com.lowdragmc.lowdraglib2.gui.ui.UIElement;
 import com.lowdragmc.lowdraglib2.gui.ui.data.FillDirection;
+import com.lowdragmc.lowdraglib2.gui.ui.elements.Button;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.FluidSlot;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.ItemSlot;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.Label;
@@ -32,7 +34,6 @@ import com.lowdragmc.lowdraglib2.gui.ui.elements.inventory.InventorySlots;
 import com.lowdragmc.lowdraglib2.gui.ui.event.HoverTooltips;
 import com.lowdragmc.lowdraglib2.gui.ui.event.UIEvents;
 import com.lowdragmc.lowdraglib2.gui.ui.style.StylesheetManager;
-import com.lowdragmc.lowdraglib2.syncdata.rpc.RPCSender;
 import dev.vfyjxf.taffy.style.TaffyPosition;
 import org.jetbrains.annotations.Nullable;
 
@@ -79,7 +80,9 @@ public final class TENMachineBlockUIFactory {
     }
 
     public static void addPlayerInventory(UIElement root) {
-        var inventory = absolute(new InventorySlots(), 8, 83, 162, 58);
+        // 26.1.2 对齐：容器左缘 7（背包栏槽位左移 1px），hotbar 上边距 4（快捷栏槽位上移 1px，左移同源）
+        var inventory = absolute(new InventorySlots(), 7, 83, 162, 58);
+        inventory.hotbar.getLayout().marginTop(4.0f);
         inventory.apply(slot -> {
             slot.style(style -> style.backgroundTexture(IGuiTexture.EMPTY));
             slot.slotStyle(style -> style.slotOverlay(IGuiTexture.EMPTY).showSlotOverlayOnlyEmpty(false));
@@ -87,21 +90,56 @@ public final class TENMachineBlockUIFactory {
         root.addChild(inventory);
     }
 
-    public static void addUpgradeSlots(UIElement root, CmMachineBlockEntity machine) {
-        root.addChild(textureElement(23, -37, 131, 36, sprite(HANDLER, 0, 211, 131, 36), null, null, null, null));
-        int[] xs = { 32, 51, 70, 89, 108, 127 };
-        for (int i = 0; i < xs.length; i++) {
-            final int slotIndex = i;
-            root.addChild(upgradeSlot(machine, i, xs[i], -28));
-            root.addChild(textureElement(
-                    xs[slotIndex], -28, 18, 18,
-                    sprite(HANDLER, 227, 0, 18, 18),
-                    () -> upgradeTooltip(machine, slotIndex),
-                    null,
-                    null,
-                    null));
-        }
-    }
+    /** 右缘配置 tab 头尺寸（与左缘图标列 26×26 一致）。 */
+    private static final int CONFIG_TAB_SIZE = 26;
+    /** 九宫格源图固定尺寸（panel.png 本体）；角 4×4 固定，边/心源区随之确定。 */
+    private static final int PANEL_SRC_SIZE = 128;
+    /** 九宫格边框厚度：四角 4×4 固定，边/心拉伸适配任意目标宽高。 */
+    private static final int CONFIG_PANEL_BORDER = 4;
+    /** 面板展开/收起速度（px/tick）：底图九宫格与内容同由 panelWidth 驱动，速度一致；80px 约 27tick（1.35s）。 */
+    private static final int CONFIG_PANEL_SPEED = 3;
+    /** 主 GUI 宽 176，tab 邻主 GUI 间隙 1px → tab 左缘 177。 */
+    private static final int CONFIG_TAB_X = 176 + 1;
+    /** 面板左缘锚定 x = tab 左缘（左→右生长，覆盖主 GUI 右半）。 */
+    private static final int CONFIG_PANEL_LEFT_X = CONFIG_TAB_X;
+    /** 面板锚定 y：与功率 tab（左缘 -27,27）平齐。 */
+    private static final int CONFIG_PANEL_Y = 27;
+    /** 低于此宽度不绘制面板（边角 4px×2 + 中缝最小可见宽）。 */
+    private static final int CONFIG_PANEL_MIN_VISIBLE = 2 * CONFIG_PANEL_BORDER;
+    /** 层1 覆盖层（panel_control_legacy.png 布局图）与层0 底图九宫格内边框的恒等间距（四边一致）。 */
+    private static final int CONFIG_OVERLAY_GAP = 6;
+    /** 层1 覆盖层原点：容器 border(4) + gap(6) = 10；legacy 布局图 60x85 原尺寸不拉伸。 */
+    private static final int CONFIG_OVERLAY_XY = CONFIG_PANEL_BORDER + CONFIG_OVERLAY_GAP;
+    /** 覆盖层纹理尺寸（panel_control_legacy.png 60x85，配置项的布局图/默认状态）。 */
+    private static final int OVERLAY_TEX_W = 60;
+    private static final int OVERLAY_TEX_H = 85;
+    /**
+     * 展开面板目标尺寸：由 legacy 布局图 + 四边 (gap 6 + border 4) 反推，非固定 128。
+     * 容器 = 60+2×10=80 × 85+2×10=105；四边间距：容器内边框(border 4 内沿)到 legacy 纹理边缘恒等 6px。
+     */
+    private static final int CONFIG_PANEL_WIDTH = OVERLAY_TEX_W + 2 * CONFIG_OVERLAY_XY;
+    private static final int CONFIG_PANEL_HEIGHT = OVERLAY_TEX_H + 2 * CONFIG_OVERLAY_XY;
+
+    // ───── 升级槽 tab（右缘、配置 tab 上侧，与左缘机器信息 tab 对齐 y=0）─────
+    /** 升级槽尺寸（ITEM_SLOT_SMALL 18x18）。 */
+    private static final int UPGRADE_SLOT_SIZE = 18;
+    /** 升级槽 2x3 网格：槽间距/行距 2px。 */
+    private static final int UPGRADE_SLOT_GAP = 2;
+    /** 升级槽列数。 */
+    private static final int UPGRADE_COLS = 2;
+    /** 升级槽行数。 */
+    private static final int UPGRADE_ROWS = 3;
+    /** 升级面板内容区宽：2×18 + 列间 2 = 38。 */
+    private static final int UPGRADE_CONTENT_W = UPGRADE_COLS * UPGRADE_SLOT_SIZE + (UPGRADE_COLS - 1) * UPGRADE_SLOT_GAP;
+    /** 升级面板内容区高：3×18 + 行间 2×2 = 58。 */
+    private static final int UPGRADE_CONTENT_H = UPGRADE_ROWS * UPGRADE_SLOT_SIZE + (UPGRADE_ROWS - 1) * UPGRADE_SLOT_GAP;
+    /** 升级面板目标尺寸：内容区 + 四边 (gap 6 + border 4)，与配置面板同基准。 */
+    private static final int UPGRADE_PANEL_WIDTH = UPGRADE_CONTENT_W + 2 * CONFIG_OVERLAY_XY;
+    private static final int UPGRADE_PANEL_HEIGHT = UPGRADE_CONTENT_H + 2 * CONFIG_OVERLAY_XY;
+    /** 升级槽 tab 头 y：与左缘机器信息 tab（y=0）平齐，位于配置 tab（y=27）上侧。 */
+    private static final int UPGRADE_TAB_Y = 0;
+    /** 升级面板锚定 y = tab 头 y。 */
+    private static final int UPGRADE_PANEL_Y = UPGRADE_TAB_Y;
 
     public static void addCommonSidebar(UIElement root, BlockUIMenuType.BlockUIHolder holder, CmMachineBlockEntity machine, UIState uiState) {
         root.addChild(textureElement(-27, 0, 26, 26, sprite(HANDLER, 159, 211, 26, 26), () -> ideaTooltips(holder), null, null, null));
@@ -115,30 +153,68 @@ public final class TENMachineBlockUIFactory {
                 () -> cycleRedstone(machine),
                 null));
 
-        var controlButton = textureElement(-27, 81, 26, 26, sprite(HANDLER, 152, 40, 26, 26), () -> controlTooltip(), () -> uiState.setControlOpen(true), null, null);
-        var controlPanel = textureElement(-61, 81, 60, 85, sprite(HANDLER, 91, 40, 60, 85), null, null, null, null);
-        var closeButton = textureElement(-11, 81, 10, 10, IGuiTexture.EMPTY, () -> controlTooltip(), () -> uiState.setControlOpen(false), null, null);
+        // ───── 配置 tab（右缘）：常显 tab 头 + 平滑展开面板（尺寸见 CONFIG_PANEL_WIDTH/HEIGHT，九宫格拼接）─────
+        // tab 邻主 GUI 1px（x=177）且与功率 tab 平齐（y=27）；面板左缘钉住 x=177，从左往右生长。
+        // 展开动画期间九宫格拼接：四角 4×4 固定，边/心随目标宽高拉伸填充（可适配任意目标尺寸）。
+        // NOTE: 改 CONFIG_PANEL_HEIGHT 需同步 syncSidebar 动画逻辑（当前仅横轴生长）。
+        var configButton = textureElement(CONFIG_TAB_X, 27, CONFIG_TAB_SIZE, CONFIG_TAB_SIZE,
+                sprite(HANDLER, 152, 40, 26, 26),
+                () -> controlTooltip(),
+                () -> {
+                    // 互斥：开配置面板先关升级面板
+                    uiState.setUpgradeOpen(false);
+                    uiState.setControlOpen(!uiState.isControlOpen());
+                },
+                null, null);
 
-        var energyModeButton = dynamicTextureElement(-54, 145, 14, 14,
+        var configPanel = absolute(new UIElement(), CONFIG_PANEL_LEFT_X, CONFIG_PANEL_Y, CONFIG_PANEL_WIDTH, CONFIG_PANEL_HEIGHT);
+        configPanel.setDisplay(false);
+        // 拉伸底图（panel.png 九宫格）：先加入 → 下层
+        List<PanelSlice> configPanelSlices = List.of(
+                slice(0, 0, CONFIG_PANEL_BORDER, CONFIG_PANEL_BORDER, 0, 0),
+                slice(PANEL_SRC_SIZE - CONFIG_PANEL_BORDER, 0, CONFIG_PANEL_BORDER, CONFIG_PANEL_BORDER, 2, 0),
+                slice(0, PANEL_SRC_SIZE - CONFIG_PANEL_BORDER, CONFIG_PANEL_BORDER, CONFIG_PANEL_BORDER, 0, 2),
+                slice(PANEL_SRC_SIZE - CONFIG_PANEL_BORDER, PANEL_SRC_SIZE - CONFIG_PANEL_BORDER, CONFIG_PANEL_BORDER, CONFIG_PANEL_BORDER, 2, 2),
+                slice(CONFIG_PANEL_BORDER, 0, PANEL_SRC_SIZE - 2 * CONFIG_PANEL_BORDER, CONFIG_PANEL_BORDER, 1, 0),
+                slice(CONFIG_PANEL_BORDER, PANEL_SRC_SIZE - CONFIG_PANEL_BORDER, PANEL_SRC_SIZE - 2 * CONFIG_PANEL_BORDER, CONFIG_PANEL_BORDER, 1, 2),
+                slice(0, CONFIG_PANEL_BORDER, CONFIG_PANEL_BORDER, PANEL_SRC_SIZE - 2 * CONFIG_PANEL_BORDER, 0, 1),
+                slice(PANEL_SRC_SIZE - CONFIG_PANEL_BORDER, CONFIG_PANEL_BORDER, CONFIG_PANEL_BORDER, PANEL_SRC_SIZE - 2 * CONFIG_PANEL_BORDER, 2, 1),
+                slice(CONFIG_PANEL_BORDER, CONFIG_PANEL_BORDER, PANEL_SRC_SIZE - 2 * CONFIG_PANEL_BORDER, PANEL_SRC_SIZE - 2 * CONFIG_PANEL_BORDER, 1, 1));
+        for (PanelSlice s : configPanelSlices) {
+            configPanel.addChild(s.element());
+        }
+        // 层2+ 内容钮：坐标 = 覆盖层原点 (10,10) + legacy 原布局相对坐标；仅 fullyOpen 后可交互
+        int overlayOriginX = CONFIG_PANEL_LEFT_X + CONFIG_OVERLAY_XY;
+        int overlayOriginY = CONFIG_PANEL_Y + CONFIG_OVERLAY_XY;
+
+        var energyModeButton = dynamicTextureElement(overlayOriginX + 7, overlayOriginY + 64, 14, 14,
                 () -> sprite(HANDLER, 91, 126 + (uiState.getSelectedTransferMode() == 0 ? 14 : 0), 14, 14),
                 () -> energyModeTooltip(), () -> uiState.setSelectedTransferMode(0), null, null);
-        var itemModeButton = dynamicTextureElement(-38, 145, 14, 14,
+        var itemModeButton = dynamicTextureElement(overlayOriginX + 23, overlayOriginY + 64, 14, 14,
                 () -> sprite(HANDLER, 106, 126 + (uiState.getSelectedTransferMode() == 1 ? 14 : 0), 14, 14),
                 () -> itemModeTooltip(), () -> uiState.setSelectedTransferMode(1), null, null);
-        var fluidModeButton = dynamicTextureElement(-22, 145, 14, 14,
+        var fluidModeButton = dynamicTextureElement(overlayOriginX + 39, overlayOriginY + 64, 14, 14,
                 () -> sprite(HANDLER, 76, 126 + (uiState.getSelectedTransferMode() == 2 ? 14 : 0), 14, 14),
                 () -> fluidModeTooltip(), () -> uiState.setSelectedTransferMode(2), null, null);
 
-        var frontButton = faceModeElement(machine, uiState, -39, 103, 0, "kenergyengineering.info.front");
-        var backButton = faceModeElement(machine, uiState, -25, 117, 1, "kenergyengineering.info.back");
-        var leftButton = faceModeElement(machine, uiState, -53, 103, 2, "kenergyengineering.info.left");
-        var rightButton = faceModeElement(machine, uiState, -25, 103, 3, "kenergyengineering.info.right");
-        var upButton = faceModeElement(machine, uiState, -39, 89, 4, "kenergyengineering.info.up");
-        var downButton = faceModeElement(machine, uiState, -39, 117, 5, "kenergyengineering.info.down");
+        var frontButton = faceModeElement(machine, uiState, overlayOriginX + 24, overlayOriginY + 22, 0, "kenergyengineering.info.front");
+        var backButton = faceModeElement(machine, uiState, overlayOriginX + 38, overlayOriginY + 36, 1, "kenergyengineering.info.back");
+        var leftButton = faceModeElement(machine, uiState, overlayOriginX + 10, overlayOriginY + 22, 2, "kenergyengineering.info.left");
+        var rightButton = faceModeElement(machine, uiState, overlayOriginX + 38, overlayOriginY + 22, 3, "kenergyengineering.info.right");
+        var upButton = faceModeElement(machine, uiState, overlayOriginX + 24, overlayOriginY + 8, 4, "kenergyengineering.info.up");
+        var downButton = faceModeElement(machine, uiState, overlayOriginX + 24, overlayOriginY + 36, 5, "kenergyengineering.info.down");
+        var closeButton = textureElement(overlayOriginX + 54, overlayOriginY - 6, 10, 10, IGuiTexture.EMPTY,
+                () -> controlTooltip(), () -> uiState.setControlOpen(false), null, null);
 
-        root.addChild(controlButton);
-        root.addChild(controlPanel);
-        root.addChild(closeButton);
+        root.addChild(configPanel);
+        // 点击面板背景空白处收起面板：CLICK target 为面板子树内背景元素（切片/overlay），
+        // 冒泡路径含 configPanel；内容钮/槽位是 root 直接子元素，点击不经过 panel 子树，不会误触发
+        configPanel.addEventListener(UIEvents.CLICK, event -> {
+            if (event.button == 0) {
+                uiState.setControlOpen(false);
+            }
+        });
+        root.addChild(configButton);
         root.addChild(energyModeButton);
         root.addChild(itemModeButton);
         root.addChild(fluidModeButton);
@@ -148,27 +224,308 @@ public final class TENMachineBlockUIFactory {
         root.addChild(rightButton);
         root.addChild(upButton);
         root.addChild(downButton);
+        root.addChild(closeButton);
+
+        List<UIElement> configContents = new ArrayList<>(List.of(energyModeButton, itemModeButton, fluidModeButton,
+                frontButton, backButton, leftButton, rightButton, upButton, downButton, closeButton));
+
+        // 展开状态：-1 收起完成；0..目标宽展开中；目标宽展开完成（fullyOpen 以 >=CONFIG_PANEL_WIDTH 判定，复用终值）
+        int[] panelWidth = { uiState.isControlOpen() ? -1 : 0 };
 
         Runnable syncSidebar = () -> {
             boolean open = uiState.isControlOpen();
-            controlButton.setDisplay(!open);
-            controlPanel.setDisplay(open);
-            closeButton.setDisplay(open);
-            energyModeButton.setDisplay(open);
-            itemModeButton.setDisplay(open);
-            fluidModeButton.setDisplay(open);
-            frontButton.setDisplay(open);
-            backButton.setDisplay(open);
-            leftButton.setDisplay(open);
-            rightButton.setDisplay(open);
-            upButton.setDisplay(open);
-            downButton.setDisplay(open);
+            int w = panelWidth[0];
+            if (open) {
+                // 收起→展开：面板显示并从 tab 左上角对角生长（宽高按比例同步）；收起完成瞬间（-1）面板隐藏
+                if (w < 0) {
+                    panelWidth[0] = 0;
+                    configPanel.setDisplay(false);
+                    for (UIElement content : configContents) {
+                        content.setDisplay(false);
+                    }
+                    applyPanelSlices(configPanelSlices, 0, 0);
+                } else if (w < CONFIG_PANEL_WIDTH) {
+                    int next = Math.min(w + CONFIG_PANEL_SPEED, CONFIG_PANEL_WIDTH);
+                    panelWidth[0] = next;
+                    configPanel.setDisplay(next >= CONFIG_PANEL_MIN_VISIBLE);
+                    applyPanelSlices(configPanelSlices, next, panelHeightFor(next, CONFIG_PANEL_WIDTH, CONFIG_PANEL_HEIGHT));
+                } else {
+                    configPanel.setDisplay(true);
+                    applyPanelSlices(configPanelSlices, CONFIG_PANEL_WIDTH, CONFIG_PANEL_HEIGHT);
+                }
+                boolean fullyOpen = panelWidth[0] >= CONFIG_PANEL_WIDTH;
+                uiState.setPanelFullyOpen(fullyOpen);
+                for (UIElement content : configContents) {
+                    content.setDisplay(fullyOpen);
+                }
+            } else {
+                // 展开→收起：内容先隐藏，面板向 tab 左上角对角收窄至 0 后隐藏
+                for (UIElement content : configContents) {
+                    content.setDisplay(false);
+                }
+                if (w > 0) {
+                    int next = Math.max(w - CONFIG_PANEL_SPEED, 0);
+                    panelWidth[0] = next;
+                    configPanel.setDisplay(next >= CONFIG_PANEL_MIN_VISIBLE);
+                    applyPanelSlices(configPanelSlices, next, panelHeightFor(next, CONFIG_PANEL_WIDTH, CONFIG_PANEL_HEIGHT));
+                } else {
+                    panelWidth[0] = -1;
+                    configPanel.setDisplay(false);
+                }
+            }
+            // tab 显隐与动画协调：面板宽度尚未盖住 tab 区域（<26px）时保持可见，
+            // 面板盖过后隐藏；升级面板展开期间其矩形会覆盖本 tab，一并隐藏
+            configButton.setDisplay(!uiState.isUpgradeOpen() && panelWidth[0] < CONFIG_TAB_SIZE);
         };
         syncSidebar.run();
         root.addEventListener(UIEvents.TICK, event -> syncSidebar.run());
     }
 
+    /** 对角展开的高度插值：宽度按比例折算高度（从 tab 左上角向右下生长/收回）。 */
+    private static int panelHeightFor(int width, int fullWidth, int fullHeight) {
+        if (width <= 0) {
+            return 0;
+        }
+        return Math.min(fullHeight, width * fullHeight / fullWidth);
+    }
+
+    /**
+     * 升级槽 tab（右缘，配置 tab 上侧，与左缘机器信息 tab y=0 对齐）：
+     * 面板内容 2×3 六升级槽（ITEM_SLOT_SMALL 18×18，间距 2px），内容区与九宫格底图内边框间距恒等 6px
+     * （面板尺寸由内容区 + 四边 border4+gap6 反推，见 UPGRADE_PANEL_WIDTH/HEIGHT）。
+     * 由 buildMachineUI 在 supportsUpgradeSlots() 时挂载（替代原顶部 -28 常显条）。
+     */
+    public static void addUpgradeSlotsTab(UIElement root, CmMachineBlockEntity machine, UIState uiState) {
+        var upgradeButton = textureElement(CONFIG_TAB_X, UPGRADE_TAB_Y, CONFIG_TAB_SIZE, CONFIG_TAB_SIZE,
+                fullTexture(TENConstants.ICON_CONTROL, CONFIG_TAB_SIZE, CONFIG_TAB_SIZE),
+                () -> List.of(ComponentHelper.translated("kenergyengineering.info.bar_upgrade")),
+                () -> {
+                    // 互斥：开升级面板先关配置面板
+                    uiState.setControlOpen(false);
+                    uiState.setUpgradeOpen(!uiState.isUpgradeOpen());
+                },
+                null, null).style(style -> style.zIndex(1));
+
+        // zIndex=1：配置面板系在 root 层后画于本面板——
+        // 互斥切换动画期间其残影会以 painter's algorithm 盖住槽内 z=-200 物品，提升本面板系绘制层级
+        var upgradePanel = absolute(new UIElement(), CONFIG_PANEL_LEFT_X, UPGRADE_PANEL_Y, UPGRADE_PANEL_WIDTH, UPGRADE_PANEL_HEIGHT)
+                .style(style -> style.zIndex(1));
+        upgradePanel.setDisplay(false);
+        List<PanelSlice> upgradePanelSlices = panelSlices(UPGRADE_PANEL_WIDTH, UPGRADE_PANEL_HEIGHT);
+        for (PanelSlice s : upgradePanelSlices) {
+            upgradePanel.addChild(s.element());
+        }
+
+        // 层2+ 六升级槽：挂在面板子树内（内容区原点 = 面板原点 + (border4+gap6)=10；2×3 网格步长 18+2）
+        // NOTE: 1.21.1 管线物品渲染层（z=-200）低于兄弟背景——槽作 root 兄弟时物品会被面板底图盖住
+        // （仓库旧注释同源坑）；作为面板子元素则同元素内先背景后物品，物品可见。
+        int slotBaseX = CONFIG_OVERLAY_XY;
+        int slotBaseY = CONFIG_OVERLAY_XY;
+        int upgradeSlots = machine.upgradeHandler.getSlots();
+        List<UIElement> upgradeContents = new ArrayList<>();
+
+        upgradePanel.addEventListener(UIEvents.CLICK, event -> {
+            // 排除槽点击：槽在 panel 子树内，CLICK 冒泡必经 panel，不排除则点槽放取物品会误收起
+            if (event.button == 0 && !(event.target instanceof ItemSlot)) {
+                uiState.setUpgradeOpen(false);
+            }
+        });
+
+        for (int i = 0; i < upgradeSlots; i++) {
+            int col = i % UPGRADE_COLS;
+            int row = i / UPGRADE_COLS;
+            int sx = slotBaseX + col * (UPGRADE_SLOT_SIZE + UPGRADE_SLOT_GAP);
+            int sy = slotBaseY + row * (UPGRADE_SLOT_SIZE + UPGRADE_SLOT_GAP);
+            ItemSlot slot = upgradePanelSlot(machine, i, sx, sy);
+            upgradePanel.addChild(slot);
+            upgradeContents.add(slot);
+        }
+
+        root.addChild(upgradePanel);
+        root.addChild(upgradeButton);
+        // 升级面板 close 钮（右上角，仿配置面板）：面板原点 + (面板宽-14, 0)，贴顶避开与 2×3 槽区重叠
+        var upgradeCloseButton = textureElement(CONFIG_PANEL_LEFT_X + UPGRADE_PANEL_WIDTH - 14, UPGRADE_PANEL_Y, 10, 10,
+                IGuiTexture.EMPTY, () -> List.of(ComponentHelper.translated("kenergyengineering.info.bar_upgrade")),
+                () -> uiState.setUpgradeOpen(false), null, null).style(style -> style.zIndex(1));
+        root.addChild(upgradeCloseButton);
+        upgradeContents.add(upgradeCloseButton);
+
+        // 与配置面板同构的动画状态机：-1 收起完成；0..目标宽 展开中；目标宽 展开完成（从 tab 左上角对角生长）
+        int[] panelWidth = { uiState.isUpgradeOpen() ? -1 : 0 };
+        Runnable syncUpgrade = () -> {
+            boolean open = uiState.isUpgradeOpen();
+            int w = panelWidth[0];
+            if (open) {
+                if (w < 0) {
+                    panelWidth[0] = 0;
+                    upgradePanel.setDisplay(false);
+                    for (UIElement content : upgradeContents) {
+                        content.setDisplay(false);
+                    }
+                    applyPanelSlices(upgradePanelSlices, 0, 0);
+                } else if (w < UPGRADE_PANEL_WIDTH) {
+                    int next = Math.min(w + CONFIG_PANEL_SPEED, UPGRADE_PANEL_WIDTH);
+                    panelWidth[0] = next;
+                    upgradePanel.setDisplay(next >= CONFIG_PANEL_MIN_VISIBLE);
+                    applyPanelSlices(upgradePanelSlices, next, panelHeightFor(next, UPGRADE_PANEL_WIDTH, UPGRADE_PANEL_HEIGHT));
+                } else {
+                    upgradePanel.setDisplay(true);
+                    applyPanelSlices(upgradePanelSlices, UPGRADE_PANEL_WIDTH, UPGRADE_PANEL_HEIGHT);
+                }
+                boolean fullyOpen = panelWidth[0] >= UPGRADE_PANEL_WIDTH;
+                uiState.setUpgradePanelFullyOpen(fullyOpen);
+                for (UIElement content : upgradeContents) {
+                    content.setDisplay(fullyOpen);
+                }
+            } else {
+                for (UIElement content : upgradeContents) {
+                    content.setDisplay(false);
+                }
+                if (w > 0) {
+                    int next = Math.max(w - CONFIG_PANEL_SPEED, 0);
+                    panelWidth[0] = next;
+                    upgradePanel.setDisplay(next >= CONFIG_PANEL_MIN_VISIBLE);
+                    applyPanelSlices(upgradePanelSlices, next, panelHeightFor(next, UPGRADE_PANEL_WIDTH, UPGRADE_PANEL_HEIGHT));
+                } else {
+                    panelWidth[0] = -1;
+                    upgradePanel.setDisplay(false);
+                }
+            }
+            // tab 显隐与动画协调：面板宽度尚未盖住 tab 区域（<26px）时保持可见
+            upgradeButton.setDisplay(panelWidth[0] < CONFIG_TAB_SIZE);
+        };
+        syncUpgrade.run();
+        root.addEventListener(UIEvents.TICK, event -> syncUpgrade.run());
+    }
+
+    private static List<PanelSlice> panelSlices(int width, int height) {
+        return List.of(
+                slice(0, 0, CONFIG_PANEL_BORDER, CONFIG_PANEL_BORDER, 0, 0),
+                slice(PANEL_SRC_SIZE - CONFIG_PANEL_BORDER, 0, CONFIG_PANEL_BORDER, CONFIG_PANEL_BORDER, 2, 0),
+                slice(0, PANEL_SRC_SIZE - CONFIG_PANEL_BORDER, CONFIG_PANEL_BORDER, CONFIG_PANEL_BORDER, 0, 2),
+                slice(PANEL_SRC_SIZE - CONFIG_PANEL_BORDER, PANEL_SRC_SIZE - CONFIG_PANEL_BORDER, CONFIG_PANEL_BORDER, CONFIG_PANEL_BORDER, 2, 2),
+                slice(CONFIG_PANEL_BORDER, 0, PANEL_SRC_SIZE - 2 * CONFIG_PANEL_BORDER, CONFIG_PANEL_BORDER, 1, 0),
+                slice(CONFIG_PANEL_BORDER, PANEL_SRC_SIZE - CONFIG_PANEL_BORDER, PANEL_SRC_SIZE - 2 * CONFIG_PANEL_BORDER, CONFIG_PANEL_BORDER, 1, 2),
+                slice(0, CONFIG_PANEL_BORDER, CONFIG_PANEL_BORDER, PANEL_SRC_SIZE - 2 * CONFIG_PANEL_BORDER, 0, 1),
+                slice(PANEL_SRC_SIZE - CONFIG_PANEL_BORDER, CONFIG_PANEL_BORDER, CONFIG_PANEL_BORDER, PANEL_SRC_SIZE - 2 * CONFIG_PANEL_BORDER, 2, 1),
+                slice(CONFIG_PANEL_BORDER, CONFIG_PANEL_BORDER, PANEL_SRC_SIZE - 2 * CONFIG_PANEL_BORDER, PANEL_SRC_SIZE - 2 * CONFIG_PANEL_BORDER, 1, 1));
+    }
+
+    /** 升级面板内 18×18 槽：modular 小槽底图 + quickMovePriority(1000) + 空槽 tooltip。 */
+    private static ItemSlot upgradePanelSlot(CmMachineBlockEntity machine, int index, int x, int y) {
+        SlotItemHandler slot = new SlotItemHandler(machine.upgradeHandler, index, 0, 0);
+        var itemSlot = itemSlot(slot, x, y, false, UPGRADE_SLOT_SIZE, fullTexture(TENConstants.ITEM_SLOT_SMALL, UPGRADE_SLOT_SIZE, UPGRADE_SLOT_SIZE));
+        itemSlot.slotStyle(style -> style.quickMovePriority(1000));
+        itemSlot.addEventListener(UIEvents.HOVER_TOOLTIPS, event -> {
+            if (slot.getItem().isEmpty()) {
+                event.hoverTooltips = new HoverTooltips(List.of(emptyUpgradeSlotTooltip()), null, null, null);
+            }
+        });
+        return itemSlot;
+    }
+
+    /**
+     * 九宫格切片：源矩形（panel.png 内）+ 列/行角色。
+     * colRole: 0=左列（固定宽）、1=中列（伸缩）、2=右列（固定宽）；rowRole 同理。
+     */
+    private record PanelSlice(UIElement element, SpriteTexture texture, int srcU, int srcV, int srcW, int srcH,
+                              int colRole, int rowRole) {}
+
+    private static PanelSlice slice(int srcU, int srcV, int srcW, int srcH, int colRole, int rowRole) {
+        var tex = SpriteTexture.of(TENConstants.PANEL).setSprite(srcU, srcV, srcW, srcH);
+        var element = new UIElement().style(style -> style.backgroundTexture(tex));
+        return new PanelSlice(element, tex, srcU, srcV, srcW, srcH, colRole, rowRole);
+    }
+
+    /**
+     * 应用面板尺寸（左缘钉住，左→右生长）：标准拉伸式九宫格，可适配任意目标宽高。
+     * 四角 srcW×srcH 固定 1:1；边/心源区固定（srcU/srcV/srcW/srcH 不变），
+     * 目标列宽 = width-2b / 行高 = height-2b，由背景纹理拉伸绘制填充。
+     */
+    private static void applyPanelSlices(List<PanelSlice> slices, int width, int height) {
+        int b = CONFIG_PANEL_BORDER;
+        int midW = Math.max(width - 2 * b, 0);
+        int midH = Math.max(height - 2 * b, 0);
+        for (PanelSlice s : slices) {
+            int x = switch (s.colRole()) {
+                case 0 -> 0;
+                case 1 -> b;
+                default -> width - b;
+            };
+            int w = s.colRole() == 1 ? midW : b;
+            int y = switch (s.rowRole()) {
+                case 0 -> 0;
+                case 1 -> b;
+                default -> height - b;
+            };
+            int h = s.rowRole() == 1 ? midH : b;
+            s.element().layout(layout -> {
+                layout.positionType(TaffyPosition.ABSOLUTE);
+                layout.left(x);
+                layout.top(y);
+                layout.width(w);
+                layout.height(h);
+            });
+        }
+    }
+
+    /** 18x18 槽无底图（旧版背景 PNG 自绘槽框的机器专用）。 */
     public static ItemSlot machineSlot(CmMachineBlockEntity machine, int index, int x, int y) {
+        return machineSlot(machine, index, x, y, 18, IGuiTexture.EMPTY);
+    }
+
+    /**
+     * 18x18 机器槽 + modular 小槽底图（ITEM_SLOT_SMALL）。
+     * 背景为 MACHINE_GUI 空面板的机器（翻新机）必须用此变体，否则槽框缺失。
+     */
+    public static ItemSlot machineSlotModular(CmMachineBlockEntity machine, int index, int x, int y) {
+        return machineSlot(machine, index, x, y, 18, fullTexture(TENConstants.ITEM_SLOT_SMALL, 18, 18));
+    }
+
+    /**
+     * 26x26 大槽（ITEM_SLOT_LARGE）：26x26 区域可交互，5px padding 使 16x16 内容居中。
+     */
+    public static ItemSlot machineSlotLarge(CmMachineBlockEntity machine, int index, int x, int y) {
+        return machineSlot(machine, index, x, y, 26, fullTexture(TENConstants.ITEM_SLOT_LARGE, 26, 26));
+    }
+
+    /**
+     * 18x18 充/放电槽（modular 素材族）：chargeIn=true 用 ITEM_SLOT_SMALL_CHARGE（绿流入），
+     * false 用 ITEM_SLOT_SMALL_DISCHARGE（红流出）。
+     */
+    public static ItemSlot machineSlotPower(CmMachineBlockEntity machine, int index, int x, int y, boolean chargeIn) {
+        var texture = chargeIn ? TENConstants.ITEM_SLOT_SMALL_CHARGE : TENConstants.ITEM_SLOT_SMALL_DISCHARGE;
+        return machineSlot(machine, index, x, y, 18, fullTexture(texture, 18, 18));
+    }
+
+    /** 任意 Slot 的 18x18 modular 小槽背景槽（如 Pipe filterContainer 来源）。 */
+    public static ItemSlot itemSlotModular(Slot slot, int x, int y) {
+        return itemSlot(slot, x, y, false, 18, fullTexture(TENConstants.ITEM_SLOT_SMALL, 18, 18));
+    }
+
+    /**
+     * 18x18 频道物品槽：绑定 ChannelItemHandlerFacade（接入后动态指向共享存储），
+     * ITEM_SLOT_SMALL 底图，末影箱动态堆叠上限（26.1.2 T003 对齐）。
+     */
+    public static ItemSlot channelItemSlot(com.modularmc.ten.common.blockentity.channel.AbstractChannelBlockEntity channel, int index, int x, int y) {
+        Slot slot = new SlotItemHandler(channel.getChannelItemFacade(), index, 0, 0) {
+
+            @Override
+            public boolean mayPlace(net.minecraft.world.item.ItemStack stack) {
+                var type = channel.slotType(getSlotIndex());
+                return type.canIn() && channel.valid(getSlotIndex(), stack) && super.mayPlace(stack);
+            }
+
+            @Override
+            public int getMaxStackSize(net.minecraft.world.item.ItemStack stack) {
+                // 末影箱动态堆叠：上限=共享槽位上限（64×成员数），不按物品原版 64 封顶
+                return getMaxStackSize();
+            }
+        };
+        return itemSlot(slot, x, y, false, 18, fullTexture(TENConstants.ITEM_SLOT_SMALL, 18, 18));
+    }
+
+    private static ItemSlot machineSlot(CmMachineBlockEntity machine, int index, int x, int y, int size, IGuiTexture background) {
         Slot slot = new SlotItemHandler(machine.itemHandler, index, 0, 0) {
 
             @Override
@@ -176,21 +533,41 @@ public final class TENMachineBlockUIFactory {
                 var type = machine.slotType(getSlotIndex());
                 return type.canIn() && machine.valid(getSlotIndex(), stack) && super.mayPlace(stack);
             }
+
+            @Override
+            public int getMaxStackSize(net.minecraft.world.item.ItemStack stack) {
+                // 26.1.2 对齐：上限=底层 itemHandler 槽位上限（动态容量），不按物品原版 64 封顶
+                return getMaxStackSize();
+            }
         };
-        return itemSlot(slot, x, y, false);
+        return itemSlot(slot, x, y, false, size, background);
     }
 
-    private static ItemSlot upgradeSlot(CmMachineBlockEntity machine, int index, int x, int y) {
-        return itemSlot(new SlotItemHandler(machine.upgradeHandler, index, 0, 0), x, y, false);
+    /**
+     * 26.1.2 对齐：升级槽自带 HANDLER 227,0,18,18 底图 + quickMovePriority(1000)。
+     * 空槽显示 upgrade_slot 本地化 tooltip；非空保留原生物品 tooltip（不覆写事件）。
+     * 旧版叠加 textureElement 拦截鼠标导致不可交互，已移除。
+     */
+    /** 空升级槽本地化 tooltip（kenergyengineering.upgrade_slot）。 */
+    private static Component emptyUpgradeSlotTooltip() {
+        return ComponentHelper.translated("kenergyengineering.upgrade_slot");
     }
 
     private static ItemSlot itemSlot(Slot slot, int x, int y, boolean isPlayerSlot) {
-        var itemSlot = absolute(new ItemSlot(slot), x, y, 18, 18);
-        itemSlot.style(style -> style.backgroundTexture(IGuiTexture.EMPTY));
+        return itemSlot(slot, x, y, isPlayerSlot, 18, IGuiTexture.EMPTY);
+    }
+
+    private static ItemSlot itemSlot(Slot slot, int x, int y, boolean isPlayerSlot, int size, IGuiTexture background) {
+        var itemSlot = absolute(new ItemSlot(slot), x, y, size, size);
+        itemSlot.style(style -> style.backgroundTexture(background));
         itemSlot.slotStyle(style -> style
                 .slotOverlay(IGuiTexture.EMPTY)
                 .showSlotOverlayOnlyEmpty(false)
                 .isPlayerSlot(isPlayerSlot));
+        if (size == 26) {
+            // 26x26 大槽：padding 5px → 内容 16x16 居中
+            itemSlot.layout(layout -> layout.paddingAll(5));
+        }
         return itemSlot;
     }
 
@@ -205,10 +582,10 @@ public final class TENMachineBlockUIFactory {
                 () -> {
                     Direction direction = logicalDirection(machine, logicalSide);
                     if (direction != null) {
-                        machine.rpcCycleFaceMode(RPCSender.ofServer(), uiState.getSelectedTransferMode(), direction.get3DDataValue());
+                        machine.rpcToServer("rpcCycleFaceMode", uiState.getSelectedTransferMode(), direction.get3DDataValue());
                     }
                 },
-                uiState::isControlOpen);
+                uiState::isPanelFullyOpen);
     }
 
     public static ProgressBar energyGauge(CmMachineBlockEntity machine, int x, int y, int width, int height, int xOff, int yOff, boolean displayValue) {
@@ -216,6 +593,19 @@ public final class TENMachineBlockUIFactory {
     }
 
     public static ProgressBar fuelGauge(CmMachineBlockEntity machine, int x, int y, int width, int height, int xOff, int yOff, boolean displayValue) {
+        return verticalGauge(machine, x, y, width, height, xOff, yOff, TENMachineBlockUIFactory::fuelPercent, fuelTooltip(machine, displayValue), displayValue);
+    }
+
+    /**
+     * 非 modular 机器的渐显能量条：HANDLER 素材（26 线原版坐标）+ Reveal 渐显。
+     * 供保留原素材风格的机器（如光合引擎）使用——仅借渐显，不换 modular 素材。
+     */
+    public static ProgressBar energyGaugeReveal(CmMachineBlockEntity machine, int x, int y, int width, int height, int xOff, int yOff, boolean displayValue) {
+        return verticalGauge(machine, x, y, width, height, xOff, yOff, TENMachineBlockUIFactory::energyPercent, energyGaugeTooltip(machine, displayValue), displayValue);
+    }
+
+    /** 非 modular 机器的渐显燃料条：HANDLER 素材 + Reveal 渐显。 */
+    public static ProgressBar fuelGaugeReveal(CmMachineBlockEntity machine, int x, int y, int width, int height, int xOff, int yOff, boolean displayValue) {
         return verticalGauge(machine, x, y, width, height, xOff, yOff, TENMachineBlockUIFactory::fuelPercent, fuelTooltip(machine, displayValue), displayValue);
     }
 
@@ -244,17 +634,73 @@ public final class TENMachineBlockUIFactory {
                 com.modularmc.ten.TENConstants.PROGRESS_BAR_WIDE_BG, com.modularmc.ten.TENConstants.PROGRESS_BAR_WIDE_FILL, showPercent);
     }
 
+    /**
+     * 范围显示切换按钮（默认位置 (2,66)）：点击经 rpcToServer 发包，服务端切换 rangeVisible。
+     * 需 BE 侧 rpcToggleRangeVisible 支持（未移植该 RPC 的机器误用会在服务端静默忽略）。
+     */
+    public static Button rangeDisplayToggleButton(CmMachineBlockEntity machine) {
+        return rangeDisplayToggleButton(machine, 2, 66);
+    }
+
+    public static Button rangeDisplayToggleButton(CmMachineBlockEntity machine, int x, int y) {
+        Button button = new Button();
+        button.textStyle(style -> style.textShadow(false));
+        button.setOnClick(event -> machine.rpcToServer("rpcToggleRangeVisible"));
+        Runnable refresh = () -> button.setText(machine.rangeVisible ? ComponentHelper.translated("kenergyengineering.info.range_display_on") : ComponentHelper.translated("kenergyengineering.info.range_display_off"));
+        refresh.run();
+        button.addEventListener(UIEvents.TICK, event -> refresh.run());
+        button.addEventListener(UIEvents.HOVER_TOOLTIPS, event -> event.hoverTooltips = new HoverTooltips(
+                List.of(
+                        ComponentHelper.translated(ComponentHelper.GOLD, "kenergyengineering.info.range_display"),
+                        machine.rangeVisible ? ComponentHelper.translated("kenergyengineering.info.range_display_on_tip") : ComponentHelper.translated("kenergyengineering.info.range_display_off_tip"),
+                        ComponentHelper.translated("kenergyengineering.info.range_display_click")),
+                null, null, null));
+        button.layout(layout -> {
+            layout.positionType(TaffyPosition.ABSOLUTE);
+            layout.left(x);
+            layout.top(y);
+            layout.width(44);
+            layout.height(16);
+        });
+        return button;
+    }
+
+    /** 应用工具/武器附魔切换按钮：点击经 rpcToServer 发包，服务端切换 useEnchantments。 */
+    public static Button useEnchantmentsToggleButton(CmMachineBlockEntity machine, int x, int y) {
+        Button button = new Button();
+        button.textStyle(style -> style.textShadow(false));
+        button.setOnClick(event -> machine.rpcToServer("rpcToggleUseEnchantments"));
+        Runnable refresh = () -> button.setText(machine.useEnchantments ? ComponentHelper.translated("kenergyengineering.info.use_enchantments_on") : ComponentHelper.translated("kenergyengineering.info.use_enchantments_off"));
+        refresh.run();
+        button.addEventListener(UIEvents.TICK, event -> refresh.run());
+        button.addEventListener(UIEvents.HOVER_TOOLTIPS, event -> event.hoverTooltips = new HoverTooltips(
+                List.of(
+                        ComponentHelper.translated(ComponentHelper.GOLD, "kenergyengineering.info.use_enchantments"),
+                        machine.useEnchantments ? ComponentHelper.translated("kenergyengineering.info.use_enchantments_on_tip") : ComponentHelper.translated("kenergyengineering.info.use_enchantments_off_tip"),
+                        ComponentHelper.translated("kenergyengineering.info.use_enchantments_click")),
+                null, null, null));
+        button.layout(layout -> {
+            layout.positionType(TaffyPosition.ABSOLUTE);
+            layout.left(x);
+            layout.top(y);
+            layout.width(44);
+            layout.height(16);
+        });
+        return button;
+    }
+
     private static ProgressBar verticalGauge(CmMachineBlockEntity machine,
                                              int x, int y, int width, int height,
                                              int xOff, int yOff,
                                              java.util.function.ToDoubleFunction<CmMachineBlockEntity> percent,
                                              Supplier<List<Component>> tooltipSupplier,
                                              boolean displayValue) {
-        var progress = absolute(new ProgressBar(), x, y, width, height);
+        // 渐显组件（RevealProgressBar）：UV 裁切代替 flex 拉伸，部分填充时纹理不变形
+        var filled = SpriteTexture.of(HANDLER).setSprite(xOff, yOff + height, width, height);
+        var progress = absolute(new RevealProgressBar(filled), x, y, width, height);
         progress.barContainer(container -> container.style(style -> style.backgroundTexture(sprite(HANDLER, xOff, yOff, width, height)))
                 .layout(layout -> layout.paddingAll(0)));
         progress.barBackground.style(style -> style.backgroundTexture(IGuiTexture.EMPTY));
-        progress.bar(bar -> bar.style(style -> style.backgroundTexture(sprite(HANDLER, xOff, yOff + height, width, height))));
         progress.label.setDisplay(false);
         progress.progressBarStyle(style -> style.fillDirection(FillDirection.DOWN_TO_UP).interpolate(false));
         progress.bindDataSource(SupplierDataSource.of(() -> (float) percent.applyAsDouble(machine)));
@@ -263,11 +709,11 @@ public final class TENMachineBlockUIFactory {
     }
 
     public static ProgressBar progressGauge(CmMachineBlockEntity machine, int x, int y, int width, int height, int xOff, int yOff, boolean showPercent) {
-        var progress = absolute(new ProgressBar(), x, y, width, height);
+        var filled = SpriteTexture.of(HANDLER).setSprite(xOff, yOff + height, width, height);
+        var progress = absolute(new RevealProgressBar(filled), x, y, width, height);
         progress.barContainer(container -> container.style(style -> style.backgroundTexture(sprite(HANDLER, xOff, yOff, width, height)))
                 .layout(layout -> layout.paddingAll(0)));
         progress.barBackground.style(style -> style.backgroundTexture(IGuiTexture.EMPTY));
-        progress.bar(bar -> bar.style(style -> style.backgroundTexture(sprite(HANDLER, xOff, yOff + height, width, height))));
         progress.label.setDisplay(false);
         progress.progressBarStyle(style -> style.fillDirection(FillDirection.LEFT_TO_RIGHT).interpolate(false));
         progress.bindDataSource(SupplierDataSource.of(() -> (float) progressPercent(machine)));
@@ -283,12 +729,13 @@ public final class TENMachineBlockUIFactory {
                                                     java.util.function.ToDoubleFunction<CmMachineBlockEntity> percent,
                                                     Supplier<List<Component>> tooltipSupplier,
                                                     boolean displayValue) {
+        // 底图/覆盖层位置审计：bg（barContainer 背景）与 fill（bar 纹理）同为 0,0 起、同 width/height、
+        // 同一 absolute 锚点（x,y），层叠坐标完全重合；填充可见区域由 RevealProgressBar UV 裁切保证。
         var filled = SpriteTexture.of(fillTexture).setSprite(0, 0, width, height);
-        var progress = absolute(new ProgressBar(), x, y, width, height);
+        var progress = absolute(new RevealProgressBar(filled), x, y, width, height);
         progress.barContainer(container -> container.style(style -> style.backgroundTexture(SpriteTexture.of(bgTexture).setSprite(0, 0, width, height)))
                 .layout(layout -> layout.paddingAll(0)));
         progress.barBackground.style(style -> style.backgroundTexture(IGuiTexture.EMPTY));
-        progress.bar(bar -> bar.style(style -> style.backgroundTexture(filled)));
         progress.label.setDisplay(false);
         progress.progressBarStyle(style -> style.fillDirection(FillDirection.DOWN_TO_UP).interpolate(false));
         progress.bindDataSource(SupplierDataSource.of(() -> (float) percent.applyAsDouble(machine)));
@@ -301,11 +748,10 @@ public final class TENMachineBlockUIFactory {
                                                          ResourceLocation bgTexture, ResourceLocation fillTexture,
                                                          boolean showPercent) {
         var filled = SpriteTexture.of(fillTexture).setSprite(0, 0, width, height);
-        var progress = absolute(new ProgressBar(), x, y, width, height);
+        var progress = absolute(new RevealProgressBar(filled), x, y, width, height);
         progress.barContainer(container -> container.style(style -> style.backgroundTexture(SpriteTexture.of(bgTexture).setSprite(0, 0, width, height)))
                 .layout(layout -> layout.paddingAll(0)));
         progress.barBackground.style(style -> style.backgroundTexture(IGuiTexture.EMPTY));
-        progress.bar(bar -> bar.style(style -> style.backgroundTexture(filled)));
         progress.label.setDisplay(false);
         progress.progressBarStyle(style -> style.fillDirection(FillDirection.LEFT_TO_RIGHT).interpolate(false));
         progress.bindDataSource(SupplierDataSource.of(() -> (float) progressPercent(machine)));
@@ -355,15 +801,40 @@ public final class TENMachineBlockUIFactory {
     }
 
     /**
+     * 18x50 modular 流体槽（FLUID_SLOT 底图）：背景 MACHINE_GUI 空面板的机器用。
+     * TENFluidSlot 隐藏温度/气液态行（26.1.2 fluidGaugeBase 对齐）。
+     */
+    public static FluidSlot fluidGaugeModular(CmMachineBlockEntity machine, int x, int y, int width, int height, int tankIndex) {
+        var slot = absolute(new TENFluidSlot(), x, y, width, height);
+        slot.style(style -> style.backgroundTexture(fullTexture(TENConstants.FLUID_SLOT, 18, 50)));
+        slot.slotStyle(style -> style
+                .slotOverlay(IGuiTexture.EMPTY)
+                .showSlotOverlayOnlyEmpty(false)
+                .fillDirection(FillDirection.DOWN_TO_UP)
+                .showFluidTooltips(true));
+        slot.amountLabel.setDisplay(false);
+        var handler = machine.getFluidHandler(null);
+        if (handler == null) {
+            throw new IllegalStateException("fluidGauge on machine with no tanks: " + machine);
+        }
+        slot.bind(handler, tankIndex);
+        return slot;
+    }
+
+    /** 熔炼机 XP 流体输出槽（固定可见，modular FLUID_SLOT 底图，tank 0）。 */
+    public static FluidSlot createXpFluidSlot(CmMachineBlockEntity machine, int x, int y, int width, int height) {
+        return fluidGaugeModular(machine, x, y, width, height, 0);
+    }
+
+    /**
      * 冷却剂消耗进度栏（P2-1）：绑定冷却器的冷却剂剩余比例，素材 progress_bar_wide_coolant。
      */
     public static ProgressBar coolantProgressBar(com.modularmc.ten.common.blockentity.machine.CoolerBlockEntity cooler, int x, int y) {
         var filled = SpriteTexture.of(com.modularmc.ten.TENConstants.PROGRESS_BAR_WIDE_COOLANT).setSprite(0, 0, 80, 5);
-        var progress = absolute(new ProgressBar(), x, y, 80, 5);
+        var progress = absolute(new RevealProgressBar(filled), x, y, 80, 5);
         progress.barContainer(container -> container.style(style -> style.backgroundTexture(SpriteTexture.of(com.modularmc.ten.TENConstants.PROGRESS_BAR_WIDE_BG).setSprite(0, 0, 80, 5)))
                 .layout(layout -> layout.paddingAll(0)));
         progress.barBackground.style(style -> style.backgroundTexture(IGuiTexture.EMPTY));
-        progress.bar(bar -> bar.style(style -> style.backgroundTexture(filled)));
         progress.label.setDisplay(false);
         progress.progressBarStyle(style -> style.fillDirection(FillDirection.LEFT_TO_RIGHT).interpolate(false));
         progress.bindDataSource(SupplierDataSource.of(() -> (float) cooler.getCoolantPercent()));
@@ -455,21 +926,9 @@ public final class TENMachineBlockUIFactory {
 
     public static ResourceLocation backgroundFor(int machineType) {
         return switch (machineType) {
-            case MachineType.FURNACE -> TEN.id("textures/gui/one_to_one.png");
-            case MachineType.PULVERIZER -> TEN.id("textures/gui/pulverizer.png");
-            case MachineType.COMPRESSOR -> TEN.id("textures/gui/compressor.png");
-            case MachineType.REFINER -> TEN.id("textures/gui/one_to_one_fluid.png");
-            case MachineType.INDUCTION_FURNACE -> TEN.id("textures/gui/three_to_one.png");
-            case MachineType.PSIONICANT -> TEN.id("textures/gui/two_to_one.png");
-            case MachineType.MATTER_CONDENSER -> TEN.id("textures/gui/matter_condenser.png");
-            case MachineType.ENCHANTMENT_FLUSHER -> TEN.id("textures/gui/enchantment_flusher.png");
-            case MachineType.BEACON -> TEN.id("textures/gui/beacon_simulator.png");
-            case MachineType.MOB_RIPPER -> TEN.id("textures/gui/mob_ripper.png");
-            case MachineType.QUARRY -> TEN.id("textures/gui/quarry.png");
-            case MachineType.FARM -> TEN.id("textures/gui/farm_manager.png");
-            case MachineType.CELL, MachineType.CREATIVE_CELL -> TEN.id("textures/gui/energy_cell.png");
-            case MachineType.ENGINE_SOLAR -> TEN.id("textures/gui/engine_solar.png");
-            case MachineType.ENGINE_EXTRACTION, MachineType.ENGINE_METAL, MachineType.ENGINE_BIOMASS -> TEN.id("textures/gui/engine.png");
+            // 26.1.2 对齐（D1/P3+翻新 002）：全部机器统一 MACHINE_GUI 空面板，
+            // 槽框/仪表由 modular 素材族绘制；专属背景 PNG 保留作回退素材不删。
+            case MachineType.FURNACE, MachineType.PULVERIZER, MachineType.COMPRESSOR, MachineType.REFINER, MachineType.INDUCTION_FURNACE, MachineType.PSIONICANT, MachineType.ENCHANTMENT_FLUSHER, MachineType.MATTER_CONDENSER, MachineType.BEACON, MachineType.MOB_RIPPER, MachineType.QUARRY, MachineType.FARM, MachineType.CELL, MachineType.CREATIVE_CELL, MachineType.ENGINE_SOLAR, MachineType.ENGINE_EXTRACTION, MachineType.ENGINE_METAL, MachineType.ENGINE_BIOMASS, MachineType.BLOCK_BREAKER, MachineType.BLOCK_FORMER, MachineType.COOLER -> TENConstants.MACHINE_GUI;
             default -> HANDLER;
         };
     }
@@ -499,7 +958,7 @@ public final class TENMachineBlockUIFactory {
         if (mode >= RedstoneMode.size()) {
             mode = RedstoneMode.OFF;
         }
-        machine.rpcSetRedstoneMode(RPCSender.ofServer(), mode);
+        machine.rpcToServer("rpcSetRedstoneMode", mode);
     }
 
     private static int faceMode(CmMachineBlockEntity machine, int selectedMode, int logicalSide) {
@@ -614,10 +1073,6 @@ public final class TENMachineBlockUIFactory {
         return List.of(ComponentHelper.translated(ComponentHelper.GOLD, "kenergyengineering.info.bar_mode", "kenergyengineering.info.fluid"));
     }
 
-    private static List<Component> upgradeTooltip(CmMachineBlockEntity machine, int slotIndex) {
-        return slotIndex >= machine.upgSize ? List.of(ComponentHelper.translated(ComponentHelper.RED, "kenergyengineering.locked_slot")) : List.of();
-    }
-
     public static final class UIState {
 
         private static final Map<String, Snapshot> CACHE = new ConcurrentHashMap<>();
@@ -625,12 +1080,20 @@ public final class TENMachineBlockUIFactory {
         private final String key;
         private int selectedTransferMode;
         private boolean controlOpen;
+        private boolean upgradeOpen;
+        /** 视图态（不入快照）：展开面板动画是否已到全开；仅供 faceModeElement 等内部 syncDisplay 联动查询。 */
+        private boolean panelFullyOpen;
+        /** 视图态（不入快照）：升级槽面板动画是否已全开。 */
+        private boolean upgradePanelFullyOpen;
 
         public UIState(BlockUIMenuType.BlockUIHolder holder) {
             this.key = holder.player.getUUID() + "@" + holder.pos.asLong();
             Snapshot snapshot = CACHE.computeIfAbsent(key, ignored -> new Snapshot());
             this.selectedTransferMode = snapshot.selectedTransferMode;
             this.controlOpen = snapshot.controlOpen;
+            this.upgradeOpen = snapshot.upgradeOpen;
+            this.panelFullyOpen = false;
+            this.upgradePanelFullyOpen = false;
         }
 
         public int getSelectedTransferMode() {
@@ -649,6 +1112,39 @@ public final class TENMachineBlockUIFactory {
         public void setControlOpen(boolean controlOpen) {
             this.controlOpen = controlOpen;
             snapshot().controlOpen = controlOpen;
+            if (!controlOpen) {
+                panelFullyOpen = false;
+            }
+        }
+
+        public boolean isUpgradeOpen() {
+            return upgradeOpen;
+        }
+
+        public void setUpgradeOpen(boolean upgradeOpen) {
+            this.upgradeOpen = upgradeOpen;
+            snapshot().upgradeOpen = upgradeOpen;
+            if (!upgradeOpen) {
+                upgradePanelFullyOpen = false;
+            }
+        }
+
+        /** 展开面板动画是否已全开（视图态，仅当前帧有效）。 */
+        public boolean isPanelFullyOpen() {
+            return panelFullyOpen;
+        }
+
+        private void setPanelFullyOpen(boolean panelFullyOpen) {
+            this.panelFullyOpen = panelFullyOpen;
+        }
+
+        /** 升级槽面板动画是否已全开（视图态）。 */
+        public boolean isUpgradePanelFullyOpen() {
+            return upgradePanelFullyOpen;
+        }
+
+        private void setUpgradePanelFullyOpen(boolean upgradePanelFullyOpen) {
+            this.upgradePanelFullyOpen = upgradePanelFullyOpen;
         }
 
         private Snapshot snapshot() {
@@ -660,5 +1156,6 @@ public final class TENMachineBlockUIFactory {
 
         private int selectedTransferMode;
         private boolean controlOpen;
+        private boolean upgradeOpen;
     }
 }

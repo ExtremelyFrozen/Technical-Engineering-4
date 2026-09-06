@@ -106,6 +106,21 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
     @DescSynced
     public boolean active = false;
 
+    /**
+     * 范围显示开关（采矿场/啃噬者等）：开启时客户端渲染工作范围线框（getRangeBoxes）。
+     * 持久化 + 客户端同步（@DescSynced），经 rpcToggleRangeVisible 切换（26.1.2 对齐）。
+     */
+    @Persisted
+    @DescSynced
+    public boolean rangeVisible = false;
+
+    /**
+     * 应用工具/武器附魔开关（采矿场/破坏器/啂噬者）：默认开启，经 rpcToggleUseEnchantments 切换。
+     */
+    @Persisted
+    @DescSynced
+    public boolean useEnchantments = true;
+
     // Face config for client display — server-authoritative mirror, rebuilt from faceMode
     // maps in readTileData/doBaseData. NOT @Persisted (derived data; persistence lives in the
     // faceMode maps via dire* keys). NOT @DescSynced: int[] sync is unreliable (initial sync
@@ -267,8 +282,19 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         super.loadAdditional(tag, registries);
     }
 
-    public boolean hasUpgrade() {
+    /**
+     * 是否支持升级槽 UI（26.1.2 对齐）：Cell/CreativeCell/Channel 等不支持，覆写返回 false。
+     */
+    public boolean supportsUpgradeSlots() {
         return true;
+    }
+
+    public boolean hasUpgrade() {
+        if (upgradeHandler == null) return false;
+        for (int i = 0; i < upgradeHandler.getSlots(); i++) {
+            if (!upgradeHandler.getStackInSlot(i).isEmpty()) return true;
+        }
+        return false;
     }
 
     public boolean hasUpgrade(Class<? extends UpgradeItem> upgradeClass) {
@@ -328,7 +354,23 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         markDirty();
     }
 
+    /**
+     * 机器朝向：优先读方块状态的 FACING 属性（与方块实际朝向一致，权威，26.1.2 对齐）。
+     * 无 FACING 属性时回退到 {@link #facingVal}（持久化镜像，供 GUI/恢复使用）。
+     * 同步镜像字段，保持 GUI/持久化一致。
+     */
     public Direction getFacing() {
+        BlockState state = getBlockState();
+        if (state.hasProperty(com.modularmc.ten.common.block.machine.HorizontalMachineBlock.FACING)) {
+            Direction d = state.getValue(com.modularmc.ten.common.block.machine.HorizontalMachineBlock.FACING);
+            facingVal = d.get3DDataValue();
+            return d;
+        }
+        if (state.hasProperty(com.modularmc.ten.common.block.machine.DirectionalMachineBlock.FACING)) {
+            Direction d = state.getValue(com.modularmc.ten.common.block.machine.DirectionalMachineBlock.FACING);
+            facingVal = d.get3DDataValue();
+            return d;
+        }
         return Direction.from3DDataValue(facingVal);
     }
 
@@ -487,11 +529,35 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         return (int) Math.min(result, Integer.MAX_VALUE);
     }
 
+    /** C→S：切换范围显示（服务端执行，sender 为 ofClient(player)）。 */
+    @RPCMethod
+    public void rpcToggleRangeVisible(RPCSender sender) {
+        if (sender.isRemote()) {
+            rangeVisible = !rangeVisible;
+            setChanged();
+        }
+    }
+
+    /** C→S：切换是否应用工具/武器附魔（服务端执行）。 */
+    @RPCMethod
+    public void rpcToggleUseEnchantments(RPCSender sender) {
+        if (sender.isRemote()) {
+            useEnchantments = !useEnchantments;
+            setChanged();
+        }
+    }
+
     protected ItemStack effectiveToolForDrops(ItemStack tool) {
         if (tool.isEmpty()) {
             return tool;
         }
-        // 1.21.1 简化版：不移除附魔（与 26.1.2 useEnchantments toggle 等价的开状态）
+        // 开关关闭时移除全部附魔组件（时运/精准等不生效），保留工具本体；开启时原样返回
+        if (!useEnchantments) {
+            ItemStack copy = tool.copy();
+            copy.set(net.minecraft.core.component.DataComponents.ENCHANTMENTS,
+                    net.minecraft.world.item.enchantment.ItemEnchantments.EMPTY);
+            return copy;
+        }
         return tool;
     }
 
@@ -534,19 +600,43 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         initMachine();
         if (energyStorage == null) return;
         resetUpgradeEffects();
+        // ── 单次 apply：每 doBaseData 周期重置后仅应用一次（26.1.2 对齐；旧版双重 apply
+        // 使乘子升级效果平方化、radius/batch 每 tick 累加）──
         applyUpgradeEffects();
-        maxStorageEnergy = initialEnergyStorage;
-        maxReceiveEnergy = initialEnergyReceive;
-        maxExtractEnergy = initialEnergyExtract;
+
+        // ── 理论 B 批量缩放能量基础设施（26.1.2 对齐）：批量升级后处理速率 fePerTick =
+        // efficientIn × lockedB，储能/吞吐不随 B 放大将导致 extractEnergy 永久不足 → 全机停滞 ──
+        int theoreticalB = getTheoreticalBatchSize();
+        int effectiveStorage = safeMultiply(initialEnergyStorage, theoreticalB);
+        int effectiveReceive = safeMultiply(initialEnergyReceive, theoreticalB);
+        int effectiveExtract = Math.max(
+                safeMultiply(initialEnergyExtract, theoreticalB),
+                safeMultiply(efficientIn, theoreticalB));
+
+        // setCapacity 会在存量超出新容量时截断；batch 只增不减，不缩容
+        energyStorage.setCapacity(effectiveStorage);
+        energyStorage.setMaxReceive(effectiveReceive);
+        energyStorage.setMaxExtract(effectiveExtract);
+
+        maxStorageEnergy = effectiveStorage;
+        maxReceiveEnergy = effectiveReceive;
+        maxExtractEnergy = effectiveExtract;
         maxReceiveItem = initialItemReceive;
         maxExtractItem = initialItemExtract;
         maxReceiveFluid = initialFluidReceive;
         maxExtractFluid = initialFluidExtract;
 
-        applyUpgradeEffects();
-
-        energyStorage.setMaxReceive(maxReceiveEnergy);
-        energyStorage.setMaxExtract(maxExtractEnergy);
+        // ── P0-4 Stream: Unlimited energy transfer overrides rate limits ──
+        // LevelupStream 安装时 maxReceive/maxExtract 设为 MAX_VALUE 解除速率限制。
+        // 必须在 @DescSynced 写入段之前执行，否则客户端同步的 energyRec/energyExt
+        // 永远是 override 前的 effective 值（26.1.2 对齐：override 在镜像写入前）。
+        // 容量、面配置、canExternalExtract 与方向门控保持不变。
+        if (hasUnlimitedEnergyTransfer()) {
+            maxReceiveEnergy = Integer.MAX_VALUE;
+            maxExtractEnergy = Integer.MAX_VALUE;
+            energyStorage.setMaxReceive(Integer.MAX_VALUE);
+            energyStorage.setMaxExtract(Integer.MAX_VALUE);
+        }
 
         // ── Write to ldlib2 @DescSynced fields ──
         progress = Math.max(progress, 0);
@@ -560,6 +650,13 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         fluidRec = maxReceiveFluid;
         fluidExt = maxExtractFluid;
         upgSize = upgradeSize;
+        // ── 流体容量批量缩放（26.1.2 对齐）：每 tank 按构造初始容量 × theoreticalB 独立缩放 ──
+        if (!tanks.isEmpty()) {
+            for (var tank : tanks) {
+                int effectiveFluidCapacity = safeMultiply(tank.getInitialCapacity(), theoreticalB);
+                tank.setCapacity(Math.max(effectiveFluidCapacity, tank.getFluidAmount()));
+            }
+        }
 
         if (energyStorage.getEnergyStored() > maxStorageEnergy) {
             energyStorage.setEnergy(maxStorageEnergy);
@@ -567,16 +664,6 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         effAuc = efficientIn;
         if (getAliveTime() % 4 == 0) {
             effAuc = efficientIn;
-        }
-
-        // ── P0-4 Stream: Unlimited energy transfer overrides rate limits ──
-        // LevelupStream 安装时 maxReceive/maxExtract 设为 MAX_VALUE 解除速率限制。
-        // 容量、面配置、canExternalExtract 与方向门控保持不变。
-        if (hasUnlimitedEnergyTransfer()) {
-            maxReceiveEnergy = Integer.MAX_VALUE;
-            maxExtractEnergy = Integer.MAX_VALUE;
-            energyStorage.setMaxReceive(Integer.MAX_VALUE);
-            energyStorage.setMaxExtract(Integer.MAX_VALUE);
         }
 
         // ── 主动物品 IO：面配置 IN=机器主动拉取 / OUT=机器主动推出（64/tick）──
@@ -600,6 +687,7 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
 
     public boolean validUpgrade(int slot, ItemStack stack) {
         // Slots 0..MAX_UPGRADE_SLOTS-1 (0..5) are always valid for compatible upgrades
+        if (!supportsUpgradeSlots()) return false;
         if (slot < 0 || slot >= MAX_UPGRADE_SLOTS) return false;
         if (!(stack.getItem() instanceof UpgradeItem upgradeItem)) return false;
         // LevelupSyn: max 1 per machine (enforced at install time)
@@ -725,14 +813,16 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
             @Override
             public int receiveEnergy(int maxReceive, boolean simulate) {
                 if (!signalAllowRun() || !canReceiveEnergy(side)) return 0;
-                return energyStorage.receiveEnergy(Math.min(maxReceive, maxReceiveEnergy), simulate);
+                // 限流只用 storage 实例自身 maxReceive（doBaseData 每 tick 与容量同源设置）；
+                // maxReceiveEnergy 是 @DescSynced 显示镜像，作二次钳制存在与容量脱节的时序风险
+                return energyStorage.receiveEnergy(maxReceive, simulate);
             }
 
             @Override
             public int extractEnergy(int maxExtract, boolean simulate) {
                 if (!canExternalExtract()) return 0;
                 if (!signalAllowRun() || !canExtractEnergy(side)) return 0;
-                return energyStorage.extractEnergy(Math.min(maxExtract, maxExtractEnergy), simulate);
+                return energyStorage.extractEnergy(maxExtract, simulate);
             }
 
             @Override
@@ -851,8 +941,16 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         if (energyStorage != null) energyStorage.setEnergy(tag.getInt("energy"));
         if (itemHandler != null) {
             CompoundTag invTag = tag.getCompound("inventory");
-            if (!invTag.isEmpty() && invTag.getInt("Size") == itemHandler.getSlots()) {
+            int savedSize = invTag.contains("Size") ? invTag.getInt("Size") : 0;
+            if (!invTag.isEmpty() && savedSize == itemHandler.getSlots()) {
                 itemHandler.deserializeNBT(registries, invTag);
+            } else if (!invTag.isEmpty() && savedSize > 0 && savedSize < itemHandler.getSlots()) {
+                // 扩容迁移（如 MobRip 1→13 槽）：旧档逐槽读入前 savedSize 槽，
+                // 不直接 deserializeNBT——NeoForge 按旧 Size 重建数组会缩回旧槽数复发越界。
+                var list = invTag.getList("Items", net.minecraft.nbt.Tag.TAG_COMPOUND);
+                for (int i = 0; i < savedSize && i < list.size(); i++) {
+                    itemHandler.setStackInSlot(i, ItemStack.parseOptional(registries, list.getCompound(i)));
+                }
             }
         }
         if (upgradeHandler != null) upgradeHandler.deserializeNBT(registries, tag.getCompound("upgrades"));
@@ -862,7 +960,17 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
             itemFaceMode.put(direction, tag.getInt("direItem" + direction.get3DDataValue()));
             fluidFaceMode.put(direction, tag.getInt("direFluid" + direction.get3DDataValue()));
         }
+        // 读档后立即重建 faceData 镜像（26.1.2 P5-T1 对齐），服务端状态即时正确
+        rebuildFaceData();
         loadSerializedHandlers(tag, registries);
+
+        // ── P5-T1 旧档兼容：读档时无条件清零进度与运行锁 ──
+        // 旧 NBT 存的 progress 语义不明（旧版存累计 FE）；无条件清零最安全，
+        // 下周期 conditionStart() 会重建基于 tick 的值。库存/能量/升级/面配置均保留。
+        progress = 0;
+        maxProgress = 0;
+        lockedB = 0;
+        lockedMaxProgress = 0;
     }
 
     @Override
@@ -883,24 +991,22 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
     /** C→S: 切换红石模式 */
     @RPCMethod
     public void rpcSetRedstoneMode(RPCSender sender, int mode) {
-        if (sender.isServer()) {
+        // C→S 包在服务端执行时 sender 为 ofClient(player)，仅 isRemote() 为 true
+        if (sender.isRemote()) {
             redstoneMode = mode;
             setChanged();
-            // 转发 face info 给所有追踪玩家
-            for (Direction direction : Direction.values()) {
-                int idx = direction.get3DDataValue();
-                rpcToTracking("rpcSyncFaceInfo", idx,
-                        energyFaceMode.getOrDefault(direction, 0),
-                        itemFaceMode.getOrDefault(direction, 0),
-                        fluidFaceMode.getOrDefault(direction, 0));
-            }
+            // faceData 同步由 doBaseData 的 rebuildFaceData() 变更检测覆盖，不在此重复推送
         }
+    }
+
+    private static boolean isValidFaceIndex(int dirIndex) {
+        return dirIndex >= 0 && dirIndex < 6;
     }
 
     /** C→S: 切换面配置 */
     @RPCMethod
     public void rpcCycleFaceMode(RPCSender sender, int changeType, int dirIndex) {
-        if (sender.isServer()) {
+        if (sender.isRemote() && isValidFaceIndex(dirIndex)) {
             Direction direction = Direction.from3DDataValue(dirIndex);
             Map<Direction, Integer> map;
             switch (changeType) {
@@ -924,7 +1030,8 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
     /** S→C: 同步面配置到客户端 */
     @RPCMethod
     public void rpcSyncFaceInfo(RPCSender sender, int dirIndex, int energyMode, int itemMode, int fluidMode) {
-        if (!sender.isServer()) {
+        // S→C 包在客户端执行时 sender 为 ofServer()（isServer()=true）；校验 dirIndex 防越界写数组
+        if (sender.isServer() && isValidFaceIndex(dirIndex)) {
             energyFaceData[dirIndex] = energyMode;
             itemFaceData[dirIndex] = itemMode;
             fluidFaceData[dirIndex] = fluidMode;
@@ -1115,6 +1222,7 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
                                              Consumer<UIElement> contentBuilder) {
         initMachine();
         var root = TENMachineBlockUIFactory.createRoot(background);
+        var uiState = new TENMachineBlockUIFactory.UIState(holder);
         // Machine name label at top-left
         root.addChild(new Label()
                 .setText(holder.blockState.getBlock().getName())
@@ -1126,11 +1234,11 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
                     layout.height(10);
                 }));
         inventoryBuilder.accept(root);
-        if (hasUpgrade()) {
-            TENMachineBlockUIFactory.addUpgradeSlots(root, this);
+        if (supportsUpgradeSlots()) {
+            TENMachineBlockUIFactory.addUpgradeSlotsTab(root, this, uiState);
         }
         TENMachineBlockUIFactory.addPlayerInventory(root);
-        TENMachineBlockUIFactory.addCommonSidebar(root, holder, this, new TENMachineBlockUIFactory.UIState(holder));
+        TENMachineBlockUIFactory.addCommonSidebar(root, holder, this, uiState);
         // GUI 打开（服务端 createUI 构建）时推送完整 faceData 到客户端：
         // faceData 是 int[]，@DescSynced 初始同步不可靠（客户端保持默认直到首次手动同步），
         // 改为打开 GUI 即推送真实配置，避免「进入世界显示默认、首次点击才跳变」。
@@ -1267,10 +1375,10 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
     public boolean isType(String type) {
         return switch (type) {
             case "MACHINE_PROCESS" -> machineType() == MachineType.MACHINE_PROCESS || machineType() == MachineType.FURNACE || machineType() == MachineType.PULVERIZER || machineType() == MachineType.COMPRESSOR || machineType() == MachineType.REFINER || machineType() == MachineType.INDUCTION_FURNACE || machineType() == MachineType.PSIONICANT || machineType() == MachineType.MATTER_CONDENSER || machineType() == MachineType.ENCHANTMENT_FLUSHER;
-            case "MACHINE_EFFECT" -> machineType() == MachineType.MACHINE_EFFECT || machineType() == MachineType.BEACON || machineType() == MachineType.MOB_RIPPER || machineType() == MachineType.FARM;
+            case "MACHINE_EFFECT" -> machineType() == MachineType.MACHINE_EFFECT || machineType() == MachineType.BEACON || machineType() == MachineType.MOB_RIPPER || machineType() == MachineType.FARM || machineType() == MachineType.BLOCK_BREAKER || machineType() == MachineType.BLOCK_FORMER || machineType() == MachineType.COOLER;
             case "FURNACE" -> machineType() == MachineType.FURNACE;
             case "BEACON" -> machineType() == MachineType.BEACON;
-            case "QUARRY" -> machineType() == MachineType.QUARRY || machineType() == MachineType.FARM;
+            case "QUARRY" -> machineType() == MachineType.QUARRY;
             default -> false;
         };
     }

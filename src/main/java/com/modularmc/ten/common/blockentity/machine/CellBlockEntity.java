@@ -32,7 +32,9 @@ public class CellBlockEntity extends CmMachineBlockEntity {
 
     @Override
     public IngredientType slotType(int slot) {
-        return IngredientType.IGNORE;
+        // 能量单元两个槽都需要玩家放入带 FE 的电池/物品（充放电），必须可进可出（BOTH）。
+        // 修复：原 IGNORE 的 canIn()/canOut() 均为 false，导致 GUI 无法放入物品（26.1.2 对齐）。
+        return IngredientType.BOTH;
     }
 
     @Override
@@ -51,9 +53,9 @@ public class CellBlockEntity extends CmMachineBlockEntity {
     @Override
     public ModularUI createUI(BlockUIMenuType.BlockUIHolder holder) {
         return buildMachineUI(holder, TENMachineBlockUIFactory.backgroundFor(machineType()), root -> {
-            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 0, 42, 32));
-            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 1, 115, 32));
-        }, root -> root.addChild(TENMachineBlockUIFactory.energyGauge(this, 81, 18, 14, 46, 0, 0, true)));
+            root.addChild(TENMachineBlockUIFactory.machineSlotPower(this, 0, 42, 32, false));
+            root.addChild(TENMachineBlockUIFactory.machineSlotPower(this, 1, 115, 32, true));
+        }, root -> root.addChild(TENMachineBlockUIFactory.energyGaugeModular(this, 81, 18, true)));
     }
 
     @Override
@@ -96,7 +98,7 @@ public class CellBlockEntity extends CmMachineBlockEntity {
     }
 
     @Override
-    public boolean hasUpgrade() {
+    public boolean supportsUpgradeSlots() {
         return false;
     }
 }

@@ -73,20 +73,61 @@ public final class TENConfig {
             builder.pop();
         }
 
-        public double energyMultiplier() { return energyMultiplier.get(); }
-        public int baseEnergyCapacity() { return baseEnergyCapacity.get(); }
-        public boolean enableSmelter() { return enableSmelter.get(); }
-        public boolean enablePulverizer() { return enablePulverizer.get(); }
-        public boolean enableCompressor() { return enableCompressor.get(); }
-        public boolean enableRefiner() { return enableRefiner.get(); }
-        public boolean enableInductionFurnace() { return enableInductionFurnace.get(); }
-        public boolean enablePsionicant() { return enablePsionicant.get(); }
-        public boolean enableBeacon() { return enableBeacon.get(); }
-        public boolean enableMobRipper() { return enableMobRipper.get(); }
-        public boolean enableQuarry() { return enableQuarry.get(); }
-        public boolean enableEnchantmentFlusher() { return enableEnchantmentFlusher.get(); }
-        public boolean enableCondenser() { return enableCondenser.get(); }
-        public boolean enableFarmManager() { return enableFarmManager.get(); }
+        public double energyMultiplier() {
+            return energyMultiplier.get();
+        }
+
+        public int baseEnergyCapacity() {
+            return baseEnergyCapacity.get();
+        }
+
+        public boolean enableSmelter() {
+            return enableSmelter.get();
+        }
+
+        public boolean enablePulverizer() {
+            return enablePulverizer.get();
+        }
+
+        public boolean enableCompressor() {
+            return enableCompressor.get();
+        }
+
+        public boolean enableRefiner() {
+            return enableRefiner.get();
+        }
+
+        public boolean enableInductionFurnace() {
+            return enableInductionFurnace.get();
+        }
+
+        public boolean enablePsionicant() {
+            return enablePsionicant.get();
+        }
+
+        public boolean enableBeacon() {
+            return enableBeacon.get();
+        }
+
+        public boolean enableMobRipper() {
+            return enableMobRipper.get();
+        }
+
+        public boolean enableQuarry() {
+            return enableQuarry.get();
+        }
+
+        public boolean enableEnchantmentFlusher() {
+            return enableEnchantmentFlusher.get();
+        }
+
+        public boolean enableCondenser() {
+            return enableCondenser.get();
+        }
+
+        public boolean enableFarmManager() {
+            return enableFarmManager.get();
+        }
     }
 
     public static final class EnergyUnitConfig {
@@ -109,11 +150,25 @@ public final class TENConfig {
             builder.pop();
         }
 
-        public int maxEnergy() { return maxEnergy.get(); }
-        public int chargeRate() { return chargeRate.get(); }
-        public int inputRate() { return inputRate.get(); }
-        public int outputRate() { return outputRate.get(); }
-        public boolean chargingDefault() { return chargingDefault.get(); }
+        public int maxEnergy() {
+            return maxEnergy.get();
+        }
+
+        public int chargeRate() {
+            return chargeRate.get();
+        }
+
+        public int inputRate() {
+            return inputRate.get();
+        }
+
+        public int outputRate() {
+            return outputRate.get();
+        }
+
+        public boolean chargingDefault() {
+            return chargingDefault.get();
+        }
     }
 
     public static final class FarmConfig {
@@ -148,7 +203,12 @@ public final class TENConfig {
             builder.pop();
         }
 
-        public boolean showMachineHUD() { return showMachineHUD.get(); }
-        public boolean showCableHUD() { return showCableHUD.get(); }
+        public boolean showMachineHUD() {
+            return showMachineHUD.get();
+        }
+
+        public boolean showCableHUD() {
+            return showCableHUD.get();
+        }
     }
 }

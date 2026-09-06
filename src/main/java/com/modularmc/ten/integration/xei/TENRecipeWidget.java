@@ -29,8 +29,7 @@ public final class TENRecipeWidget {
     }
 
     public enum DecorationKind {
-        PROGRESS,
-        BURN_LEFT
+        PROGRESS
     }
 
     public record SlotSpec(SlotKind kind, SlotRole role, int recipeIndex, int x, int y, int width, int height) {
@@ -44,91 +43,117 @@ public final class TENRecipeWidget {
         }
     }
 
-    public record DecorationSpec(DecorationKind kind, int x, int y, int width, int height, int u, int v) {
+    public record DecorationSpec(DecorationKind kind, int x, int y, int width, int height, ResourceLocation bgTexture, ResourceLocation fillTexture) {
 
-        public static DecorationSpec progress(int x, int y) {
-            return new DecorationSpec(DecorationKind.PROGRESS, x, y, 22, 16, 27, 0);
-        }
-
-        public static DecorationSpec burnLeft(int x, int y, int width, int height, int u, int v) {
-            return new DecorationSpec(DecorationKind.BURN_LEFT, x, y, width, height, u, v);
+        /** 进度箭头：独立背景/填充素材（26.1.2 modular 素材族）。 */
+        public static DecorationSpec progress(int x, int y, ResourceLocation bgTexture, ResourceLocation fillTexture) {
+            return new DecorationSpec(DecorationKind.PROGRESS, x, y, 22, 16, bgTexture, fillTexture);
         }
     }
 
     public record Layout(ResourceLocation background, int u, int v, int width, int height,
                          List<SlotSpec> slots, List<DecorationSpec> decorations) {}
 
-    private static final int DEFAULT_ENERGY_PER_TICK = 15;
     private static final long PROGRESS_CYCLE_MS = 10_000L;
-    private static final long BURN_CYCLE_MS = 25_000L;
 
+    /**
+     * 左下角工作时长标签位置（150×50 面板，对齐熔炼机 TEXT(25,38)）：
+     * 默认 (25,38)；compressor/refiner 底部左侧被槽位（25..43 列 / fluid 竖槽 16..34）占用，
+     * 右移至槽位边界之后。引擎兼容层不调用本位置表（用户设定：引擎不显示时间）。
+     */
+    private static final Map<String, int[]> TIME_LABEL_POS = Map.of(
+            "compressor", new int[] { 46, 38 },
+            "refiner", new int[] { 46, 38 });
+    private static final int[] DEFAULT_TIME_POS = { 25, 38 };
+
+    /** 指定分类的左下角时间标签位置 {x, y}。 */
+    public static int[] timeLabelPos(String categoryPath) {
+        return TIME_LABEL_POS.getOrDefault(categoryPath, DEFAULT_TIME_POS);
+    }
+
+    /**
+     * 左下角工作消耗时间文本（对齐熔炼机兼容层：duration_short lang 键、深灰 0xFF404040、无阴影）。
+     * 由 JEI（TENJeiCategory.draw）与 EMI（TENEmiRecipe addDrawable）共用；引擎兼容层不调用。
+     */
+    public static void drawDurationText(GuiGraphics graphics, int x, int y, int ticks) {
+        Font font = Minecraft.getInstance().font;
+        graphics.drawString(font,
+                Component.translatable("kenergyengineering.jei.duration_short", ticks),
+                x, y, 0xFF404040, false);
+    }
+
+    /**
+     * 布局规则 v5（26.1.2 重构对齐：移除能量条，组件群居中 + 间距自适应）：
+     * <ol>
+     * <li>不再绘制能量条（ENERGY_GAUGE 已从 xei 界面移除）</li>
+     * <li>组件群中心 = 75 = 面板中心（150×50），左右对称</li>
+     * <li>固定宽 = 输入组宽 + 箭头22 + 输出组宽；间隔总量均分到 2 个间隔</li>
+     * <li>连续同种槽（多输入/多输出组）算一个整体：组内紧贴</li>
+     * <li>垂直方向组件组在面板 50 高内居中：18×18 槽 y=16、箭头 y=17、竖排/2×2 组 y=7、fluid y=0</li>
+     * </ol>
+     * 底图统一 JEI_HANDLER_MODULAR（LDLib2 modular 素材族），进度箭头按机器映射独立背景/填充素材。
+     */
     private static final Layout DEFAULT_LAYOUT = new Layout(
-            TENConstants.JEI_HANDLER_2, 0, 0, 160, 80,
+            TENConstants.JEI_HANDLER_MODULAR, 0, 0, 150, 50,
             List.of(
-                    SlotSpec.item(SlotRole.INPUT, 0, 10, 10),
-                    SlotSpec.item(SlotRole.OUTPUT, 0, 90, 10),
-                    SlotSpec.item(SlotRole.OUTPUT, 1, 112, 10),
-                    SlotSpec.item(SlotRole.OUTPUT, 2, 90, 32),
-                    SlotSpec.item(SlotRole.OUTPUT, 3, 112, 32)),
+                    SlotSpec.item(SlotRole.INPUT, 0, 22, 16),
+                    SlotSpec.item(SlotRole.OUTPUT, 0, 92, 7),
+                    SlotSpec.item(SlotRole.OUTPUT, 1, 110, 7),
+                    SlotSpec.item(SlotRole.OUTPUT, 2, 92, 25),
+                    SlotSpec.item(SlotRole.OUTPUT, 3, 110, 25)),
             List.of(
-                    DecorationSpec.progress(65, 30),
-                    DecorationSpec.burnLeft(5, 12, 14, 46, 0, 0)));
+                    DecorationSpec.progress(55, 17, TENConstants.PROGRESS_ARROW_SMELTER_BG, TENConstants.PROGRESS_ARROW_SMELTER_FILL)));
 
-    private static final Map<String, Layout> LAYOUTS = Map.of(
-            "pulverizer", new Layout(
-                    TENConstants.JEI_HANDLER_1, 0, 161, 150, 50,
-                    List.of(
-                            SlotSpec.item(SlotRole.INPUT, 0, 40, 4),
-                            SlotSpec.item(SlotRole.OUTPUT, 0, 109, 9),
-                            SlotSpec.item(SlotRole.OUTPUT, 1, 127, 9),
-                            SlotSpec.item(SlotRole.OUTPUT, 2, 109, 27),
-                            SlotSpec.item(SlotRole.OUTPUT, 3, 127, 27)),
-                    List.of(
-                            DecorationSpec.progress(73, 19),
-                            DecorationSpec.burnLeft(6, 2, 14, 46, 0, 0),
-                            DecorationSpec.burnLeft(42, 32, 13, 13, 14, 0))),
-            "compressor", new Layout(
-                    TENConstants.JEI_HANDLER_1, 0, 102, 150, 58,
-                    List.of(
-                            SlotSpec.item(SlotRole.INPUT, 0, 40, 2),
-                            SlotSpec.item(SlotRole.INPUT, 1, 40, 38),
-                            SlotSpec.item(SlotRole.OUTPUT, 0, 112, 21)),
-                    List.of(
-                            DecorationSpec.progress(73, 22),
-                            DecorationSpec.burnLeft(6, 5, 14, 46, 0, 0),
-                            DecorationSpec.burnLeft(42, 23, 13, 13, 14, 0))),
-            "refiner", new Layout(
-                    TENConstants.JEI_HANDLER_2, 0, 51, 170, 54,
-                    List.of(
-                            SlotSpec.fluid(SlotRole.INPUT, 0, 34, 1),
-                            SlotSpec.item(SlotRole.INPUT, 0, 55, 18),
-                            SlotSpec.item(SlotRole.OUTPUT, 0, 114, 18),
-                            SlotSpec.fluid(SlotRole.OUTPUT, 0, 140, 1)),
-                    List.of(
-                            DecorationSpec.progress(81, 19),
-                            DecorationSpec.burnLeft(6, 2, 14, 46, 0, 0),
-                            DecorationSpec.burnLeft(57, 40, 13, 13, 14, 0))),
-            "induction_furnace", new Layout(
-                    TENConstants.JEI_HANDLER_2, 0, 0, 150, 50,
-                    List.of(
-                            SlotSpec.item(SlotRole.INPUT, 0, 30, 4),
-                            SlotSpec.item(SlotRole.INPUT, 1, 48, 4),
-                            SlotSpec.item(SlotRole.INPUT, 2, 66, 4),
-                            SlotSpec.item(SlotRole.OUTPUT, 0, 124, 18)),
-                    List.of(
-                            DecorationSpec.progress(90, 19),
-                            DecorationSpec.burnLeft(6, 2, 14, 46, 0, 0),
-                            DecorationSpec.burnLeft(51, 32, 13, 13, 14, 0))),
-            "psionicant", new Layout(
-                    TENConstants.JEI_HANDLER_1, 0, 51, 150, 50,
-                    List.of(
-                            SlotSpec.item(SlotRole.INPUT, 0, 31, 4),
-                            SlotSpec.item(SlotRole.INPUT, 1, 49, 4),
-                            SlotSpec.item(SlotRole.OUTPUT, 0, 112, 18)),
-                    List.of(
-                            DecorationSpec.progress(73, 19),
-                            DecorationSpec.burnLeft(6, 2, 14, 46, 0, 0),
-                            DecorationSpec.burnLeft(42, 32, 13, 13, 14, 0))));
+    private static final Map<String, Layout> LAYOUTS = buildLayouts();
+
+    private static Map<String, Layout> buildLayouts() {
+        // 布局规则 v5：与 26.1.2 逐坐标对齐（150×50 JEI_HANDLER_MODULAR，无能量条，组件居中）
+        return Map.of(
+                "pulverizer", new Layout(
+                        TENConstants.JEI_HANDLER_MODULAR, 0, 0, 150, 50,
+                        List.of(
+                                SlotSpec.item(SlotRole.INPUT, 0, 22, 16),
+                                SlotSpec.item(SlotRole.OUTPUT, 0, 92, 7),
+                                SlotSpec.item(SlotRole.OUTPUT, 1, 110, 7),
+                                SlotSpec.item(SlotRole.OUTPUT, 2, 92, 25),
+                                SlotSpec.item(SlotRole.OUTPUT, 3, 110, 25)),
+                        List.of(
+                                DecorationSpec.progress(55, 17, TENConstants.PROGRESS_ARROW_PULVERIZER_BG, TENConstants.PROGRESS_ARROW_PULVERIZER_FILL))),
+                "compressor", new Layout(
+                        TENConstants.JEI_HANDLER_MODULAR, 0, 0, 150, 50,
+                        List.of(
+                                SlotSpec.item(SlotRole.INPUT, 0, 25, 7),
+                                SlotSpec.item(SlotRole.INPUT, 1, 25, 25),
+                                SlotSpec.item(SlotRole.OUTPUT, 0, 107, 16)),
+                        List.of(
+                                DecorationSpec.progress(64, 17, TENConstants.PROGRESS_ARROW_COMPRESSOR_BG, TENConstants.PROGRESS_ARROW_COMPRESSOR_FILL))),
+                "refiner", new Layout(
+                        TENConstants.JEI_HANDLER_MODULAR, 0, 0, 150, 50,
+                        List.of(
+                                SlotSpec.fluid(SlotRole.INPUT, 0, 16, 0),
+                                SlotSpec.item(SlotRole.INPUT, 0, 38, 16),
+                                SlotSpec.item(SlotRole.OUTPUT, 0, 94, 16),
+                                SlotSpec.fluid(SlotRole.OUTPUT, 0, 116, 0)),
+                        List.of(
+                                DecorationSpec.progress(64, 17, TENConstants.PROGRESS_ARROW_REFINER_BG, TENConstants.PROGRESS_ARROW_REFINER_FILL))),
+                "induction_furnace", new Layout(
+                        TENConstants.JEI_HANDLER_MODULAR, 0, 0, 150, 50,
+                        List.of(
+                                SlotSpec.item(SlotRole.INPUT, 0, 20, 16),
+                                SlotSpec.item(SlotRole.INPUT, 1, 38, 16),
+                                SlotSpec.item(SlotRole.INPUT, 2, 56, 16),
+                                SlotSpec.item(SlotRole.OUTPUT, 0, 112, 16)),
+                        List.of(
+                                DecorationSpec.progress(82, 17, TENConstants.PROGRESS_ARROW_INDUCTION_FURNACE_BG, TENConstants.PROGRESS_ARROW_INDUCTION_FURNACE_FILL))),
+                "psionicant", new Layout(
+                        TENConstants.JEI_HANDLER_MODULAR, 0, 0, 150, 50,
+                        List.of(
+                                SlotSpec.item(SlotRole.INPUT, 0, 23, 16),
+                                SlotSpec.item(SlotRole.INPUT, 1, 41, 16),
+                                SlotSpec.item(SlotRole.OUTPUT, 0, 109, 16)),
+                        List.of(
+                                DecorationSpec.progress(73, 17, TENConstants.PROGRESS_ARROW_PSIONICANT_BG, TENConstants.PROGRESS_ARROW_PSIONICANT_FILL))));
+    }
 
     private TENRecipeWidget() {}
 
@@ -148,6 +173,58 @@ public final class TENRecipeWidget {
         drawDecorations(graphics, layout);
     }
 
+    /**
+     * 在配方布局的所有 ITEM+OUTPUT 槽位上绘制概率/掷骰覆盖层（26.1.2 对齐）。
+     * <ul>
+     * <li>左上：概率百分比（如 "40%"，chance &lt; 1 时显示）</li>
+     * <li>左下：掷骰次数（如 "R9"，rolls &gt; 1 时显示）</li>
+     * </ul>
+     * JEI 侧经 TENJeiSlotOverlay 由 JEI 槽位管线绘制（物品之后，z 序正确）；
+     * EMI 侧无槽位 overlay 管线，由 TENEmiRecipe 经 addDrawable 调本方法。
+     * EMI 渲染机制（1.1.22 源码）：widget 按插入顺序绘制，层级由 Z 深度裁决——
+     * DrawableWidget 默认 Z=0 且深度测试可能被关闭，退化为插入顺序时文本先于后绘物品。
+     * 对齐 EMI 官方 overlay 惯例（EmiRenderHelper.renderAmount）：绘制内 translate(0,0,300)
+     * + enableDepthTest，确保覆盖层稳定位于物品（Z≈150）之上。
+     * 视觉坐标对齐 JEI 挂载（X_OFFSET=-1/Y_OFFSET=-1 + CHANCE=-1/ROLLS=11）：
+     * chance 绝对 slot.y-2、rolls 绝对 slot.y+10。
+     */
+    public static void drawSlotOverlays(FormsCombinedRecipe recipe, GuiGraphics graphics, Layout layout) {
+        Font font = Minecraft.getInstance().font;
+        var pose = graphics.pose();
+        pose.pushPose();
+        pose.translate(0, 0, 300);
+        com.mojang.blaze3d.systems.RenderSystem.enableDepthTest();
+        for (var slot : layout.slots()) {
+            if (slot.kind() != SlotKind.ITEM || slot.role() != SlotRole.OUTPUT) continue;
+            var ingredient = ingredientFor(recipe, slot);
+            if (ingredient == null) continue;
+
+            String chanceText = ingredient.chanceOverlayText();
+            String rollsText = ingredient.rollsOverlayText();
+
+            // Top-left: chance percentage (e.g., "40%") at 75% scale
+            if (chanceText != null) {
+                drawScaledText(graphics, font, chanceText, slot.x() + 1, slot.y() - 2);
+            }
+            // Bottom-left: rolls (e.g., "R9") at 75% scale
+            if (rollsText != null) {
+                drawScaledText(graphics, font, rollsText, slot.x() + 1, slot.y() + 10);
+            }
+        }
+        com.mojang.blaze3d.systems.RenderSystem.disableDepthTest();
+        pose.popPose();
+    }
+
+    /** 75% 缩放文本绘制（对齐 TENJeiSlotOverlay.TEXT_SCALE，"100%"/"R999" 限宽 18px 槽内）。 */
+    private static void drawScaledText(GuiGraphics graphics, Font font, String text, int x, int y) {
+        var pose = graphics.pose();
+        pose.pushPose();
+        pose.translate(x, y, 0);
+        pose.scale(0.75f, 0.75f, 1.0f);
+        graphics.drawString(font, text, 0, 0, 0xFFFFFFFF, true);
+        pose.popPose();
+    }
+
     public static void drawSlot(GuiGraphics graphics, int x, int y, boolean isOutput) {
         graphics.blit(TENConstants.GUI_HANDLER, x, y, isOutput ? 24 : 0, 0, 24, 24, 256, 256);
     }
@@ -156,7 +233,6 @@ public final class TENRecipeWidget {
         for (var decoration : layout.decorations()) {
             switch (decoration.kind()) {
                 case PROGRESS -> drawProgressDecoration(graphics, decoration, progressPercent());
-                case BURN_LEFT -> drawBurnLeftDecoration(graphics, decoration, burnPercent());
             }
         }
     }
@@ -172,7 +248,6 @@ public final class TENRecipeWidget {
                     tooltips.add(Component.literal((int) (progressPercent() * 100.0d) + "%"));
                     tooltips.add(Component.literal(String.format("%.1fs", recipe.time() / 20.0d)));
                 }
-                case BURN_LEFT -> tooltips.add(Component.literal(DEFAULT_ENERGY_PER_TICK + " FE/t"));
             }
         }
         return tooltips;
@@ -217,39 +292,19 @@ public final class TENRecipeWidget {
         return (int) Math.round(chance * 100.0d);
     }
 
+    /**
+     * 进度箭头：独立背景/填充素材（26.1.2 modular 族），填充从左到右裁切。
+     */
     private static void drawProgressDecoration(GuiGraphics graphics, DecorationSpec decoration, double percent) {
-        RenderHelper.render(graphics, decoration.x(), decoration.y(), decoration.width(), decoration.height(), 256, 256, decoration.u(), decoration.v(), TENConstants.GUI_HANDLER);
+        RenderHelper.render(graphics, decoration.x(), decoration.y(), decoration.width(), decoration.height(), decoration.width(), decoration.height(), 0, 0, decoration.bgTexture());
         int filledWidth = (int) (percent * decoration.width());
         if (filledWidth > 0) {
-            RenderHelper.render(graphics, decoration.x(), decoration.y(), filledWidth, decoration.height(), 256, 256, decoration.u(), decoration.v() + decoration.height(), TENConstants.GUI_HANDLER);
-        }
-    }
-
-    private static void drawBurnLeftDecoration(GuiGraphics graphics, DecorationSpec decoration, double percent) {
-        RenderHelper.render(graphics, decoration.x(), decoration.y(), decoration.width(), decoration.height(), 256, 256, decoration.u(), decoration.v(), TENConstants.GUI_HANDLER);
-        int hiddenHeight = (int) (decoration.height() * (1.0d - percent));
-        int visibleHeight = decoration.height() - hiddenHeight;
-        if (visibleHeight > 0) {
-            RenderHelper.render(
-                    graphics,
-                    decoration.x(),
-                    decoration.y() + hiddenHeight,
-                    decoration.width(),
-                    visibleHeight,
-                    256,
-                    256,
-                    decoration.u(),
-                    decoration.v() + decoration.height() + hiddenHeight,
-                    TENConstants.GUI_HANDLER);
+            RenderHelper.render(graphics, decoration.x(), decoration.y(), filledWidth, decoration.height(), decoration.width(), decoration.height(), 0, 0, decoration.fillTexture());
         }
     }
 
     private static double progressPercent() {
         return (System.currentTimeMillis() % PROGRESS_CYCLE_MS) / (double) PROGRESS_CYCLE_MS;
-    }
-
-    private static double burnPercent() {
-        return 1.0d - ((System.currentTimeMillis() % BURN_CYCLE_MS) / (double) BURN_CYCLE_MS);
     }
 
     private static boolean contains(int x, int y, int width, int height, int mouseX, int mouseY) {

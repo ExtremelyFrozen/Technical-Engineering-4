@@ -154,6 +154,28 @@ public enum Mat {
         return "c:" + category + "/" + id;
     }
 
+    /**
+     * Whether this material has a raw storage block suitable for pulverizer
+     * processing（26.1.2 对齐）。与 {@link #hasRaw} 分离——vanilla 铁/金/铜的原矿块
+     * 为 minecraft 命名空间，即使本 mod 不注册其原矿物品也存在。
+     */
+    public boolean hasRawBlock() {
+        return this == IRON || this == GOLD || this == COPPER || this == TIN || this == NICKEL;
+    }
+
+    /** Raw storage block 的资源位置（vanilla 材料用 minecraft 命名空间）。 */
+    public String rawBlockId() {
+        if (this == IRON) return "minecraft:raw_iron_block";
+        if (this == GOLD) return "minecraft:raw_gold_block";
+        if (this == COPPER) return "minecraft:raw_copper_block";
+        return TEN.MOD_ID + ":raw_" + id + "_block";
+    }
+
+    /** Raw storage block 的通用标签："c:storage_blocks/raw_tin"。 */
+    public String rawBlockTag() {
+        return "c:storage_blocks/raw_" + id;
+    }
+
     /** Recipe resource location: "kenergyengineering:compressor/tin_plate". */
     public ResourceLocation recipeId(String prefix, String suffix) {
         return TEN.id(prefix + "/" + id + "_" + suffix);

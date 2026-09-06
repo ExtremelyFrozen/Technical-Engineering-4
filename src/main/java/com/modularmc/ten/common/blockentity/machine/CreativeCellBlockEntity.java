@@ -33,7 +33,8 @@ public class CreativeCellBlockEntity extends CmMachineBlockEntity {
 
     @Override
     public IngredientType slotType(int slot) {
-        return IngredientType.IGNORE;
+        // 创造单元槽位需可放入电池物品（充电），必须可进可出（BOTH，26.1.2 对齐）。
+        return IngredientType.BOTH;
     }
 
     @Override
@@ -61,10 +62,10 @@ public class CreativeCellBlockEntity extends CmMachineBlockEntity {
     @Override
     public ModularUI createUI(BlockUIMenuType.BlockUIHolder holder) {
         return buildMachineUI(holder, TENMachineBlockUIFactory.backgroundFor(machineType()), root -> {
-            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 0, 42, 32));
-            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 1, 115, 32));
+            root.addChild(TENMachineBlockUIFactory.machineSlotPower(this, 0, 42, 32, true));
+            root.addChild(TENMachineBlockUIFactory.machineSlotPower(this, 1, 115, 32, true));
         }, root -> {
-            root.addChild(TENMachineBlockUIFactory.energyGauge(this, 81, 18, 14, 46, 0, 0, true));
+            root.addChild(TENMachineBlockUIFactory.energyGaugeModular(this, 81, 18, true));
         });
     }
 
@@ -91,5 +92,10 @@ public class CreativeCellBlockEntity extends CmMachineBlockEntity {
 
         // 主动能量输出：向相邻能量接收方推送能量（P0-3：创造单元无限供电相邻机器）
         doActiveEnergyIo();
+    }
+
+    @Override
+    public boolean supportsUpgradeSlots() {
+        return false;
     }
 }

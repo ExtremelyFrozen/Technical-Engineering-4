@@ -30,8 +30,12 @@ public class HorizontalMachineBlock extends BaseMachineBlock {
 
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
+        // 右键放置：正面朝向玩家（FACING 指向玩家视线反向，同原版熔炉惯例）；
+        // Shift+右键放置：背面朝向玩家（FACING = 玩家视线方向，工作区朝前延伸，便于背贴墙布置）。
+        var player = context.getPlayer();
+        Direction facing = player != null && player.isShiftKeyDown() ? context.getHorizontalDirection() : context.getHorizontalDirection().getOpposite();
         return defaultBlockState()
-                .setValue(FACING, context.getHorizontalDirection().getOpposite())
+                .setValue(FACING, facing)
                 .setValue(ACTIVE, false);
     }
 }

@@ -7,8 +7,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.RecipeType;
 
-import java.util.Objects;
-
 public class MatchFuel {
 
     // ════════════════════════════════════════════════════════════════

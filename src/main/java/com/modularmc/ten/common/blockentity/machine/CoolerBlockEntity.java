@@ -1,6 +1,5 @@
 package com.modularmc.ten.common.blockentity.machine;
 
-import com.modularmc.ten.TEN;
 import com.modularmc.ten.api.blockentity.CmMachineBlockEntity;
 import com.modularmc.ten.api.blockentity.EffectMachineBlockEntity;
 import com.modularmc.ten.api.option.Coolant;
@@ -45,12 +44,35 @@ public class CoolerBlockEntity extends EffectMachineBlockEntity {
         setEfficiency(10);
     }
 
-    @Override public int machineType() { return MachineType.COOLER; }
-    @Override public int inventorySize() { return 1; }
-    @Override public IngredientType slotType(int slot) { return IngredientType.INPUT; }
-    @Override public boolean valid(int slot, ItemStack stack) { return Coolants.isCoolant(stack); }
-    @Override public IngredientType tankType(int tank) { return IngredientType.IGNORE; }
-    @Override public boolean valid(int slot, FluidStack stack) { return true; }
+    @Override
+    public int machineType() {
+        return MachineType.COOLER;
+    }
+
+    @Override
+    public int inventorySize() {
+        return 1;
+    }
+
+    @Override
+    public IngredientType slotType(int slot) {
+        return IngredientType.INPUT;
+    }
+
+    @Override
+    public boolean valid(int slot, ItemStack stack) {
+        return Coolants.isCoolant(stack);
+    }
+
+    @Override
+    public IngredientType tankType(int tank) {
+        return IngredientType.IGNORE;
+    }
+
+    @Override
+    public boolean valid(int slot, FluidStack stack) {
+        return true;
+    }
 
     @Override
     public List<net.minecraft.world.phys.AABB> getRangeBoxes() {
@@ -58,24 +80,54 @@ public class CoolerBlockEntity extends EffectMachineBlockEntity {
         int mx = worldPosition.getX(), my = worldPosition.getY(), mz = worldPosition.getZ();
         int x1, y1, z1, x2, y2, z2;
         switch (facing) {
-            case NORTH -> { x1 = mx; x2 = mx + 1; y1 = my; y2 = my + 1; z1 = mz - 1; z2 = mz; }
-            case SOUTH -> { x1 = mx; x2 = mx + 1; y1 = my; y2 = my + 1; z1 = mz + 1; z2 = mz + 2; }
-            case EAST  -> { x1 = mx + 1; x2 = mx + 2; y1 = my; y2 = my + 1; z1 = mz; z2 = mz + 1; }
-            default    -> { x1 = mx - 1; x2 = mx; y1 = my; y2 = my + 1; z1 = mz; z2 = mz + 1; }
+            case NORTH -> {
+                x1 = mx;
+                x2 = mx + 1;
+                y1 = my;
+                y2 = my + 1;
+                z1 = mz - 1;
+                z2 = mz;
+            }
+            case SOUTH -> {
+                x1 = mx;
+                x2 = mx + 1;
+                y1 = my;
+                y2 = my + 1;
+                z1 = mz + 1;
+                z2 = mz + 2;
+            }
+            case EAST -> {
+                x1 = mx + 1;
+                x2 = mx + 2;
+                y1 = my;
+                y2 = my + 1;
+                z1 = mz;
+                z2 = mz + 1;
+            }
+            default -> {
+                x1 = mx - 1;
+                x2 = mx;
+                y1 = my;
+                y2 = my + 1;
+                z1 = mz;
+                z2 = mz + 1;
+            }
         }
         return List.of(new net.minecraft.world.phys.AABB(x1, y1, z1, x2, y2, z2));
     }
 
     @Override
     public ModularUI createUI(BlockUIMenuType.BlockUIHolder holder) {
-        return buildMachineUI(holder, TEN.id("textures/gui/machine_gui.png"), root -> {
-            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 0, 79, 32));
+        return buildMachineUI(holder, TENMachineBlockUIFactory.backgroundFor(machineType()), root -> {
+            // 输入槽（冷却剂）居中，同模拟信标
+            root.addChild(TENMachineBlockUIFactory.machineSlotModular(this, 0, 79, 32));
         }, root -> {
-            root.addChild(TENMachineBlockUIFactory.energyGauge(this, 8, 18, 14, 46, 0, 0, true));
+            root.addChild(TENMachineBlockUIFactory.energyGaugeModular(this, 8, 18, true));
             // 冷却剂消耗进度栏：主进度条上方平行布置（progress_bar_wide_coolant）
             root.addChild(TENMachineBlockUIFactory.coolantProgressBar(this, 48, 50));
-            // 主进度条（冷却周期）同模拟信标位置
-            root.addChild(TENMachineBlockUIFactory.progressGaugeWide(this, 48, 57, false));
+            // 主进度条（冷却周期）：同模拟信标位置
+            root.addChild(TENMachineBlockUIFactory.progressGaugeWide(this, 48, 57, true));
+            root.addChild(TENMachineBlockUIFactory.rangeDisplayToggleButton(this));
         });
     }
 

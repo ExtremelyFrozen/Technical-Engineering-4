@@ -11,7 +11,6 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -33,10 +32,10 @@ public final class WrenchDismantleService {
     private WrenchDismantleService() {}
 
     private record MachineSnapshot(
-            BlockState state, List<ItemStack> inventorySnap, List<ItemStack> upgradeSnap,
-            int energy, List<FluidStack> tanks,
-            int[] energyFaceData, int[] itemFaceData, int[] fluidFaceData,
-            int redstoneMode, int facingVal, boolean active, int upgradeSize) {}
+                                   BlockState state, List<ItemStack> inventorySnap, List<ItemStack> upgradeSnap,
+                                   int energy, List<FluidStack> tanks,
+                                   int[] energyFaceData, int[] itemFaceData, int[] fluidFaceData,
+                                   int redstoneMode, int facingVal, boolean active, int upgradeSize) {}
 
     public static boolean dismantle(Level level, BlockPos pos, ServerPlayer player) {
         if (level.isClientSide()) return false;
@@ -173,7 +172,9 @@ public final class WrenchDismantleService {
             ItemStack source = stack.copy();
             if (!source.isStackable()) {
                 for (int i = 0; i < source.getCount(); i++) {
-                    ItemStack single = source.copy(); single.setCount(1); result.add(single);
+                    ItemStack single = source.copy();
+                    single.setCount(1);
+                    result.add(single);
                 }
                 continue;
             }
@@ -190,10 +191,13 @@ public final class WrenchDismantleService {
                 }
                 if (source.isEmpty()) break;
                 if (source.getCount() > source.getMaxStackSize()) {
-                    ItemStack full = source.copy(); full.setCount(source.getMaxStackSize());
-                    result.add(full); source.setCount(source.getCount() - source.getMaxStackSize());
+                    ItemStack full = source.copy();
+                    full.setCount(source.getMaxStackSize());
+                    result.add(full);
+                    source.setCount(source.getCount() - source.getMaxStackSize());
                 } else {
-                    result.add(source); break;
+                    result.add(source);
+                    break;
                 }
             }
         }

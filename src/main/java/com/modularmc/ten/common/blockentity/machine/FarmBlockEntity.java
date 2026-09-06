@@ -85,42 +85,102 @@ public class FarmBlockEntity extends RadiusMachineBlockEntity {
     @Override
     public ModularUI createUI(BlockUIMenuType.BlockUIHolder holder) {
         return buildMachineUI(holder, TENMachineBlockUIFactory.backgroundFor(machineType()), root -> {
-            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 0, 43, 16));
-            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 1, 61, 16));
-            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 2, 43, 34));
-            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 3, 61, 34));
-            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 4, 43, 52));
-            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 5, 61, 52));
-            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 6, 97, 16));
-            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 7, 115, 16));
-            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 8, 97, 34));
-            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 9, 115, 34));
-            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 10, 97, 52));
-            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 11, 115, 52));
+            root.addChild(TENMachineBlockUIFactory.machineSlotModular(this, 0, 43, 16));
+            root.addChild(TENMachineBlockUIFactory.machineSlotModular(this, 1, 61, 16));
+            root.addChild(TENMachineBlockUIFactory.machineSlotModular(this, 2, 43, 34));
+            root.addChild(TENMachineBlockUIFactory.machineSlotModular(this, 3, 61, 34));
+            root.addChild(TENMachineBlockUIFactory.machineSlotModular(this, 4, 43, 52));
+            root.addChild(TENMachineBlockUIFactory.machineSlotModular(this, 5, 61, 52));
+            root.addChild(TENMachineBlockUIFactory.machineSlotModular(this, 6, 97, 16));
+            root.addChild(TENMachineBlockUIFactory.machineSlotModular(this, 7, 115, 16));
+            root.addChild(TENMachineBlockUIFactory.machineSlotModular(this, 8, 97, 34));
+            root.addChild(TENMachineBlockUIFactory.machineSlotModular(this, 9, 115, 34));
+            root.addChild(TENMachineBlockUIFactory.machineSlotModular(this, 10, 97, 52));
+            root.addChild(TENMachineBlockUIFactory.machineSlotModular(this, 11, 115, 52));
         }, root -> {
-            root.addChild(TENMachineBlockUIFactory.energyGauge(this, 9, 18, 14, 46, 0, 0, true));
-            root.addChild(TENMachineBlockUIFactory.progressGauge(this, 48, 73, 80, 5, 97, 0, true));
+            root.addChild(TENMachineBlockUIFactory.energyGaugeModular(this, 8, 18, true));
+            root.addChild(TENMachineBlockUIFactory.progressGaugeWide(this, 48, 74, true));
+            root.addChild(TENMachineBlockUIFactory.rangeDisplayToggleButton(this));
         });
     }
 
     @Override
     public boolean cooking() {
-        // P0-5 纯容量谓词：输出槽（6..11）无法容纳本周期收割产出时停滞（保留 progress）。
-        // 每周期处理 1 行；单格最多 2 件（1 种子 + 1 产物），阈值 2 保证单格产出放得下。
+        // 纯容量谓词：输出槽（6..11）无法容纳本周期收割产出时停滞（保留 progress）。
+        // 每周期扫描 B 行；单格最多 2 件（1 种子 + 1 产物），阈值 2*B 保证产出放得下。
         if (itemHandler == null) {
             return false;
         }
+        int B = getLockedBatchSize();
         int units = 0;
         for (int i = 6; i < itemHandler.getSlots(); i++) {
             ItemStack existing = itemHandler.getStackInSlot(i);
             units += existing.isEmpty() ? itemHandler.getSlotLimit(i) : Math.max(0, itemHandler.getSlotLimit(i) - existing.getCount());
         }
-        return units < 2;
+        return units < 2L * B;
+    }
+
+    /**
+     * 批量升级时按 lockedB 动态扩展输出槽上限（6..11），保留既有超堆叠（26.1.2 对齐）。
+     * 在每个 applyEffect 周期开始时调用。
+     */
+    private void installDynamicOutputLimit() {
+        if (itemHandler == null) return;
+        int B = getLockedBatchSize();
+        int cap = (int) Math.min(64L * Math.max(1, B), Integer.MAX_VALUE);
+        itemHandler.setDynamicSlotLimit((slot, candidate) -> {
+            if (slot < 6 || slot >= inventorySize()) return 64; // 非输出槽
+            ItemStack existing = itemHandler.getStackInSlot(slot);
+            return existing.isEmpty() ? cap : Math.max(cap, existing.getCount());
+        });
+    }
+
+    /**
+     * 生效范围：机器背面（2*radius+1)²（宽轴 ±radius、深轴从背面第一格起，
+     * Y=自身一层），与 buildXOffsets/scanRow 的动态列数 × 动态深度一致（26.1.2 对齐）。
+     */
+    @Override
+    public List<net.minecraft.world.phys.AABB> getRangeBoxes() {
+        int r = Math.max(0, radius);
+        Direction facing = getFacing();
+        int mx = worldPosition.getX(), my = worldPosition.getY(), mz = worldPosition.getZ();
+        int depth = 2 * r + 1;
+        int minX, maxX, minZ, maxZ;
+        switch (facing) {
+            case NORTH -> {
+                minX = mx - r;
+                maxX = mx + r + 1;
+                minZ = mz + 1;
+                maxZ = mz + 1 + depth;
+            } // 背面=+Z
+            case SOUTH -> {
+                minX = mx - r;
+                maxX = mx + r + 1;
+                minZ = mz - depth;
+                maxZ = mz;
+            }      // 背面=-Z
+            case EAST -> {
+                minX = mx - depth;
+                maxX = mx;
+                minZ = mz - r;
+                maxZ = mz + r + 1;
+            }      // 背面=-X
+            default -> {
+                minX = mx + 1;
+                maxX = mx + 1 + depth;
+                minZ = mz - r;
+                maxZ = mz + r + 1;
+            } // 背面=+X (WEST)
+        }
+        return List.of(new net.minecraft.world.phys.AABB(minX, my, minZ, maxX, my + 1, maxZ));
     }
 
     @Override
     public void applyEffect() {
         if (level == null) return;
+
+        // 批量升级时按 B 动态扩展输出槽上限（26.1.2 对齐）
+        installDynamicOutputLimit();
 
         // Build X offsets for current radius
         int[] allOffsets = buildXOffsets();
@@ -137,12 +197,15 @@ public class FarmBlockEntity extends RadiusMachineBlockEntity {
             currentRowIndex = 0;
         }
 
-        // Process current X-row
-        int xOffset = xRowOrder[currentRowIndex];
-        int maturityCount = scanRow(xOffset);
-        xRowMaturity[currentRowIndex] = maturityCount;
+        // P3-T1c 对齐：每周期连续扫描 B 行（能耗已按 B 放大，产出必须同步兑现）
+        int B = getLockedBatchSize();
 
-        currentRowIndex++;
+        for (int i = 0; i < B && currentRowIndex < xRowOrder.length; i++) {
+            int xOffset = xRowOrder[currentRowIndex];
+            int maturityCount = scanRow(xOffset);
+            xRowMaturity[currentRowIndex] = maturityCount;
+            currentRowIndex++;
+        }
 
         // If all rows processed, sort by maturity and restart
         if (currentRowIndex >= xRowOrder.length) {
@@ -152,10 +215,11 @@ public class FarmBlockEntity extends RadiusMachineBlockEntity {
     }
 
     private int[] buildXOffsets() {
-        // 9x9 square: 9 positions along the width axis (perpendicular to facing)
-        int[] offsets = new int[9];
-        for (int i = 0; i < 9; i++) {
-            offsets[i] = -4 + i;
+        // 动态方形：宽度轴 2*radius+1 列（-radius..+radius），随范围升级（LevelupRg）扩展（26.1.2 对齐）
+        int size = 2 * radius + 1;
+        int[] offsets = new int[size];
+        for (int i = 0; i < size; i++) {
+            offsets[i] = -radius + i;
         }
         return offsets;
     }
@@ -186,8 +250,9 @@ public class FarmBlockEntity extends RadiusMachineBlockEntity {
         int mz = worldPosition.getZ();
         int maturity = 0;
 
-        // Scan 9 blocks along the depth axis (back direction)
-        for (int d = 0; d < 9; d++) {
+        // 背面方形：深轴从背面第一格起 2*radius+1 格（不含机器所在行，26.1.2 对齐）
+        int depth = 2 * radius + 1;
+        for (int d = 1; d <= depth; d++) {
             int dx, dz;
             // widthOffset: axis perpendicular to facing
             // d: depth axis (opposite of facing = behind)
@@ -304,36 +369,71 @@ public class FarmBlockEntity extends RadiusMachineBlockEntity {
     }
 
     private boolean canFitAll(List<ItemStack> drops) {
-        for (ItemStack drop : drops) {
-            boolean fit = false;
-            for (int i = 6; i < itemHandler.getSlots(); i++) {
-                ItemStack existing = itemHandler.getStackInSlot(i);
-                if (existing.isEmpty()) {
-                    fit = true;
-                    break;
-                }
-                if (ItemStack.isSameItem(existing, drop) && existing.getCount() + drop.getCount() <= existing.getMaxStackSize()) {
-                    fit = true;
-                    break;
-                }
+        // 快照模拟：与 fitAll 提交逻辑完全一致，多件掉落不竞争同一空槽（26.1.2 对齐）
+        int outputStart = 6;
+        int slotCount = itemHandler.getSlots() - outputStart;
+        ItemStack[] simulated = copyOutputSlots(outputStart, slotCount);
+        for (ItemStack stack : drops) {
+            ItemStack remaining = simulateInsert(simulated, stack.copy(), outputStart);
+            if (!remaining.isEmpty()) {
+                return false;
             }
-            if (!fit) return false;
         }
         return true;
     }
 
-    private void fitAll(List<ItemStack> drops) {
-        for (ItemStack drop : drops) {
-            for (int i = 6; i < itemHandler.getSlots(); i++) {
-                ItemStack existing = itemHandler.getStackInSlot(i);
-                if (existing.isEmpty()) {
-                    itemHandler.setStackInSlot(i, drop.copy());
-                    break;
-                } else if (ItemStack.isSameItem(existing, drop)) {
-                    existing.grow(drop.getCount());
-                    break;
+    private ItemStack[] copyOutputSlots(int start, int count) {
+        ItemStack[] copy = new ItemStack[count];
+        for (int i = 0; i < count; i++) {
+            ItemStack s = itemHandler.getStackInSlot(start + i);
+            copy[i] = s.isEmpty() ? ItemStack.EMPTY : s.copy();
+        }
+        return copy;
+    }
+
+    /** 模拟向槽位数组插入单组物品，就地更新；返回剩余（空=全部插入）。逻辑与 fitAll 提交阶段一致。 */
+    private ItemStack simulateInsert(ItemStack[] slots, ItemStack stack, int outputStart) {
+        for (int j = 0; j < slots.length && !stack.isEmpty(); j++) {
+            if (slots[j].isEmpty()) {
+                int slotLimit = itemHandler.getSlotLimit(outputStart + j);
+                if (stack.getCount() <= slotLimit) {
+                    slots[j] = stack;
+                    stack = ItemStack.EMPTY;
+                } else {
+                    ItemStack fill = stack.copy();
+                    fill.setCount(slotLimit);
+                    slots[j] = fill;
+                    stack.shrink(slotLimit);
+                }
+            } else if (ItemStack.isSameItem(slots[j], stack)) {
+                int slotLimit = itemHandler.getSlotLimit(outputStart + j);
+                int room = slotLimit - slots[j].getCount();
+                int moved = Math.min(room, stack.getCount());
+                if (moved > 0) {
+                    slots[j].grow(moved);
+                    stack.shrink(moved);
                 }
             }
+        }
+        return stack;
+    }
+
+    private void fitAll(List<ItemStack> drops) {
+        // 快照 + 模拟 + 原子提交（26.1.2 对齐）：模拟失败 fail-fast，绝不部分写入
+        int outputStart = 6;
+        int slotCount = itemHandler.getSlots() - outputStart;
+        ItemStack[] snapshot = copyOutputSlots(outputStart, slotCount);
+
+        for (ItemStack stack : drops) {
+            ItemStack remaining = simulateInsert(snapshot, stack.copy(), outputStart);
+            if (!remaining.isEmpty()) {
+                throw new IllegalStateException(
+                        "Farm cannot fit all drops: " + stack + " has " + remaining.getCount() + " remaining. " + "canFitAll pre-check should have prevented this.");
+            }
+        }
+
+        for (int i = 0; i < slotCount; i++) {
+            itemHandler.setStackInSlot(outputStart + i, snapshot[i]);
         }
     }
 

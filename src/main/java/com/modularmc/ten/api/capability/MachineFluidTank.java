@@ -9,12 +9,21 @@ public class MachineFluidTank extends FluidTank {
 
     private Runnable changeListener = () -> {};
 
+    /** 构造时记录的初始容量，用于批处理（B）批量缩放时恢复基准（26.1.2 对齐）。 */
+    private final int initialCapacity;
+
     public MachineFluidTank(int capacity) {
         super(capacity);
+        this.initialCapacity = capacity;
     }
 
     public MachineFluidTank(int capacity, Predicate<FluidStack> validator) {
         super(capacity, validator);
+        this.initialCapacity = capacity;
+    }
+
+    public int getInitialCapacity() {
+        return initialCapacity;
     }
 
     public void setChangeListener(Runnable changeListener) {

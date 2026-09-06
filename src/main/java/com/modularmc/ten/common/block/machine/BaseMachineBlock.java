@@ -5,6 +5,8 @@ import com.modularmc.ten.api.blockentity.CmMachineBlockEntity;
 import com.modularmc.ten.common.blockentity.CableBlockEntity;
 import com.modularmc.ten.common.blockentity.PipeBlockEntity;
 import com.modularmc.ten.common.gui.TENMachineBlockUIFactory;
+import com.modularmc.ten.common.item.upgrades.UpgradeInstallHelper;
+import com.modularmc.ten.common.item.upgrades.UpgradeItem;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -102,6 +104,30 @@ public class BaseMachineBlock extends Block implements EntityBlock, BlockUIMenuT
     @Override
     protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         BlockEntity be = level.getBlockEntity(pos);
+        // 潜行+右键快捷安装：手持升级插件对准支持升级槽的机器，插入第一个空槽（无空位/不兼容则提示并阻止）
+        if (be instanceof CmMachineBlockEntity machine && player.isShiftKeyDown() && stack.getItem() instanceof UpgradeItem && machine.supportsUpgradeSlots()) {
+            if (level.isClientSide()) {
+                return ItemInteractionResult.SUCCESS;
+            }
+            if (machine.upgradeHandler == null) {
+                return ItemInteractionResult.CONSUME;
+            }
+            if (UpgradeInstallHelper.tryInstall(machine.upgradeHandler, stack, machine::validUpgrade)) {
+                // 消耗手持 1 个（副本插入 + 原物 shrink 成对，防复制漏洞；创造不消耗对齐原版惯例）
+                if (!player.getAbilities().instabuild) {
+                    stack.shrink(1);
+                }
+                player.displayClientMessage(net.minecraft.network.chat.Component.empty()
+                        .append(stack.getHoverName())
+                        .append(net.minecraft.network.chat.Component.translatable("kenergyengineering.info.upgrade_successfully")), true);
+            } else {
+                // 无空位 → 槽满提示；兼容性拒绝（互斥/canApply/不支持） → 不支持提示；均阻止放入与开 UI
+                boolean noEmptySlot = UpgradeInstallHelper.findFirstEmptySlot(machine.upgradeHandler) < 0;
+                String key = noEmptySlot ? "kenergyengineering.info.too_much_upgrades" : "kenergyengineering.info.not_support_upgrade";
+                player.displayClientMessage(net.minecraft.network.chat.Component.translatable(key), true);
+            }
+            return ItemInteractionResult.CONSUME;
+        }
         if (be instanceof CmMachineBlockEntity machine && !player.isShiftKeyDown() && !machine.tanks.isEmpty()) {
             if (FluidUtil.interactWithFluidHandler(player, hand, machine.getFluidHandler(hit.getDirection()))) {
                 return ItemInteractionResult.sidedSuccess(level.isClientSide());

@@ -44,10 +44,14 @@ public final class EngineFuelRecipe {
     }
 
     /** Fuel budget in FE-equivalent units (from MatchFuel). */
-    public int fuelBudget() { return fuelBudget; }
+    public int fuelBudget() {
+        return fuelBudget;
+    }
 
     /** Base generation rate in FE/t for the engine consuming this fuel. */
-    public int baseRate() { return baseRate; }
+    public int baseRate() {
+        return baseRate;
+    }
 
     /** Duration in ticks: {@code ceil(fuelBudget / baseRate)}. */
     public int durationTicks() {
@@ -60,7 +64,9 @@ public final class EngineFuelRecipe {
     }
 
     /** Number of items consumed (always 1). */
-    public int count() { return count; }
+    public int count() {
+        return count;
+    }
 
     /**
      * Returns a freshly copied list of ingredient stacks.

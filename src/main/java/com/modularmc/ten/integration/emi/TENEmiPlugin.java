@@ -21,6 +21,7 @@ import dev.emi.emi.api.recipe.EmiRecipeCategory;
 import dev.emi.emi.api.stack.EmiStack;
 import dev.emi.emi.api.widget.Bounds;
 
+import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -43,15 +44,22 @@ public class TENEmiPlugin implements EmiPlugin {
     private static final class TENEmiCategory extends EmiRecipeCategory {
 
         private final ResourceLocation id;
+        private final Component titleOverride;
 
         private TENEmiCategory(ResourceLocation id, EmiStack icon) {
+            this(id, icon, null);
+        }
+
+        private TENEmiCategory(ResourceLocation id, EmiStack icon, Component titleOverride) {
             super(id, icon);
             this.id = id;
+            this.titleOverride = titleOverride;
         }
 
         @Override
         public Component getName() {
-            return TENRecipeWidget.titleEmi(id);
+            // smelter/engine 燃料类用 JEI 同源 lang 键（kenergyengineering.jei.category.<path>）
+            return titleOverride != null ? titleOverride : TENRecipeWidget.titleEmi(id);
         }
     }
 
@@ -87,6 +95,13 @@ public class TENEmiPlugin implements EmiPlugin {
         registry.addWorkstation(dev.emi.emi.api.recipe.VanillaEmiRecipeCategories.SMELTING,
                 dev.emi.emi.api.stack.EmiStack.of(com.modularmc.ten.common.data.TENBlocks.MACHINE_SMELTER));
 
+        registerMachineCategories(registry);
+        registerSmelterCategories(registry);
+        registerEngineFuelCategories(registry);
+    }
+
+    /** 5 个 FormsCombinedRecipe 机器类别（既有机型）。 */
+    private void registerMachineCategories(EmiRegistry registry) {
         TEN.LOGGER.debug("[EMI] Registering TEN EMI plugin with {} categories", CATEGORIES.size());
         for (var def : CATEGORIES) {
             var iconStack = def.iconStack().get();
@@ -126,6 +141,115 @@ public class TENEmiPlugin implements EmiPlugin {
             }
             TEN.LOGGER.debug("[EMI] Category {} finished registering {} recipes", def.id(), index);
         }
+    }
+
+    private void registerSmelterCategories(EmiRegistry registry) {
+        record SmelterDef(ResourceLocation id,
+                          net.minecraft.world.item.crafting.RecipeType<? extends net.minecraft.world.item.crafting.AbstractCookingRecipe> builtinType) {}
+
+        var defs = List.of(
+                new SmelterDef(TEN.id("smelter_smelting"), net.minecraft.world.item.crafting.RecipeType.SMELTING),
+                new SmelterDef(TEN.id("smelter_blasting"), net.minecraft.world.item.crafting.RecipeType.BLASTING),
+                new SmelterDef(TEN.id("smelter_smoking"), net.minecraft.world.item.crafting.RecipeType.SMOKING));
+
+        var icon = icon(com.modularmc.ten.common.data.TENBlocks.MACHINE_SMELTER.asStack());
+        for (var def : defs) {
+            // 标题复用 JEI 同源键 kenergyengineering.jei.category.smelter_*（TENLangHandler 已定义）
+            var category = new TENEmiCategory(def.id(), icon,
+                    Component.translatable(TEN.MOD_ID + ".jei.category." + def.id().getPath()));
+            registry.addCategory(category);
+            registry.addWorkstation(category, icon);
+
+            var recipes = collectSmelterRecipes(def.builtinType());
+            int index = 0;
+            for (var r : recipes) {
+                registry.addRecipe(new SmelterEmiRecipe(category, recipeId(def.id(), index++), r));
+            }
+            TEN.LOGGER.info("[EMI] Smelter category {} registered with {} recipes", def.id(), recipes.size());
+        }
+    }
+
+    private void registerEngineFuelCategories(EmiRegistry registry) {
+        record FuelDef(ResourceLocation id, ItemStack icon, Component title,
+                       java.util.function.ToIntFunction<net.minecraft.world.item.ItemStack> fuelValue, int baseRate) {}
+
+        var defs = List.of(
+                new FuelDef(TEN.id("extractor_fuel"), engineIcon("extraction"),
+                        com.modularmc.ten.common.data.TENBlocks.ENGINE_EXTRACTION.get().getName(),
+                        com.modularmc.ten.common.blockentity.MatchFuel::getExtractorFuelValue,
+                        com.modularmc.ten.common.blockentity.machine.ExtractorBlockEntity.BASE_GENERATION_RATE),
+                new FuelDef(TEN.id("metalizer_fuel"), engineIcon("metal"),
+                        com.modularmc.ten.common.data.TENBlocks.ENGINE_METAL.get().getName(),
+                        com.modularmc.ten.common.blockentity.MatchFuel::getMetalFuelValue,
+                        com.modularmc.ten.common.blockentity.machine.MetalizerBlockEntity.BASE_GENERATION_RATE),
+                new FuelDef(TEN.id("biomass_fuel"), engineIcon("biomass"),
+                        com.modularmc.ten.common.data.TENBlocks.ENGINE_BIOMASS.get().getName(),
+                        com.modularmc.ten.common.blockentity.MatchFuel::getBiomassFuelValue,
+                        com.modularmc.ten.common.blockentity.machine.BiomassBlockEntity.BASE_GENERATION_RATE));
+
+        for (var def : defs) {
+            // 标题与 JEI 同源（TENBlocks.ENGINE_*.getName()）；jei.category.fuel_* 键无 lang 定义
+            var category = new TENEmiCategory(def.id(), icon(def.icon()),
+                    def.title());
+            registry.addCategory(category);
+            registry.addWorkstation(category, icon(def.icon()));
+
+            var recipes = new java.util.ArrayList<com.modularmc.ten.common.blockentity.EngineFuelRecipe>();
+            for (var holder : net.minecraft.core.registries.BuiltInRegistries.ITEM) {
+                var stack = new net.minecraft.world.item.ItemStack(holder);
+                if (stack.isEmpty()) continue;
+                int value = def.fuelValue().applyAsInt(stack);
+                if (value > 0) {
+                    recipes.add(new com.modularmc.ten.common.blockentity.EngineFuelRecipe(stack, value, def.baseRate()));
+                }
+            }
+            recipes.sort(java.util.Comparator.comparing(r -> r.ingredients().get(0).getItem().toString()));
+
+            int index = 0;
+            com.modularmc.ten.common.blockentity.EngineFuelRecipe last = null;
+            for (var r : recipes) {
+                if (last != null && net.minecraft.world.item.ItemStack.isSameItemSameComponents(
+                        r.ingredients().get(0), last.ingredients().get(0)))
+                    continue;
+                registry.addRecipe(new EngineFuelEmiRecipe(category, recipeId(def.id(), index++), r));
+                last = r;
+            }
+            TEN.LOGGER.info("[EMI] Engine fuel category {} registered with {} recipes", def.id(), index);
+        }
+    }
+
+    /** 从 vanilla RecipeManager 采集烹饪配方为熔炼机 EMI 记录（与 JEI collectFromBuiltin 同源）。 */
+    private List<SmelterEmiRecipe.RecipeData> collectSmelterRecipes(
+                                                                    net.minecraft.world.item.crafting.RecipeType<? extends net.minecraft.world.item.crafting.AbstractCookingRecipe> builtinType) {
+        var level = net.minecraft.client.Minecraft.getInstance().level;
+        if (level == null) return List.of();
+        var registryAccess = level.registryAccess();
+        @SuppressWarnings({ "rawtypes", "unchecked" })
+        List<net.minecraft.world.item.crafting.RecipeHolder<net.minecraft.world.item.crafting.AbstractCookingRecipe>> all = (List) level.getRecipeManager().getAllRecipesFor((net.minecraft.world.item.crafting.RecipeType) builtinType);
+        return all.stream()
+                .map(net.minecraft.world.item.crafting.RecipeHolder::value)
+                .map(r -> {
+                    var ingredient = r.getIngredients().get(0);
+                    if (ingredient == null || ingredient.isEmpty()) return null;
+                    ItemStack output = r.getResultItem(registryAccess);
+                    if (output.isEmpty()) return null;
+                    return new SmelterEmiRecipe.RecipeData(
+                            java.util.Arrays.stream(ingredient.getItems()).filter(s -> !s.isEmpty()).toList(), output.copy(), r.getCookingTime());
+                })
+                .filter(java.util.Objects::nonNull)
+                // 边缘 modded Ingredient 过滤后可能为空列表：与 JEI Recipe.of 的 nonEmpty.isEmpty() 防御对齐
+                .filter(r -> !r.inputs().isEmpty())
+                .toList();
+    }
+
+    private static ItemStack engineIcon(String engineName) {
+        String blockId = "engine_" + engineName;
+        var item = net.minecraft.core.registries.BuiltInRegistries.ITEM.get(TEN.id(blockId));
+        return item != null ? new net.minecraft.world.item.ItemStack(item) : new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.FURNACE);
+    }
+
+    private static ResourceLocation recipeId(ResourceLocation categoryId, int index) {
+        return TEN.id(categoryId.getPath() + "/" + index);
     }
 
     private static void addModularExclusionArea(ModularUIContainerScreen screen, Consumer<Bounds> consumer) {

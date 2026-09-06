@@ -2,7 +2,6 @@ package com.modularmc.ten.common.data;
 
 import com.modularmc.ten.common.block.machine.CableBased;
 import com.modularmc.ten.common.block.machine.ChannelBlock;
-import com.modularmc.ten.common.block.machine.DirectionalMachineBlock;
 import com.modularmc.ten.common.block.machine.HorizontalMachineBlock;
 
 import net.minecraft.core.Direction;

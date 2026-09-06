@@ -1,0 +1,10 @@
+{
+	"replace": false,
+	"values": [
+		"kenergyengineering:mould_compressed_small",
+		"kenergyengineering:mould_compressed_large",
+		"kenergyengineering:mould_split",
+		"kenergyengineering:mould_coin",
+		"kenergyengineering:mould_dense_plate"
+	]
+}

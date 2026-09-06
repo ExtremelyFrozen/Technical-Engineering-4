@@ -60,14 +60,14 @@ public class IndfurBlockEntity extends RecipeMachineBlockEntity {
     @Override
     public ModularUI createUI(BlockUIMenuType.BlockUIHolder holder) {
         return buildMachineUI(holder, TENMachineBlockUIFactory.backgroundFor(machineType()), root -> {
-            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 0, 33, 20));
-            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 1, 51, 20));
-            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 2, 69, 20));
-            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 3, 127, 34));
+            // 3 输入横排（30/48/66，组宽 54），y=32 中线 41 与能量条对齐；输出大槽
+            root.addChild(TENMachineBlockUIFactory.machineSlotModular(this, 0, 30, 32));
+            root.addChild(TENMachineBlockUIFactory.machineSlotModular(this, 1, 48, 32));
+            root.addChild(TENMachineBlockUIFactory.machineSlotModular(this, 2, 66, 32));
+            root.addChild(TENMachineBlockUIFactory.machineSlotLarge(this, 3, 122, 28));
         }, root -> {
-            root.addChild(TENMachineBlockUIFactory.energyGauge(this, 9, 18, 14, 46, 0, 0, true));
-            root.addChild(TENMachineBlockUIFactory.fuelGauge(this, 54, 48, 13, 13, 14, 0, false));
-            root.addChild(TENMachineBlockUIFactory.progressGauge(this, 93, 35, 22, 16, 27, 0, false));
+            root.addChild(TENMachineBlockUIFactory.energyGaugeModular(this, 8, 18, true));
+            root.addChild(TENMachineBlockUIFactory.progressGaugeModular(this, 92, 33, false));
         });
     }
 
@@ -77,6 +77,8 @@ public class IndfurBlockEntity extends RecipeMachineBlockEntity {
         var recipes = level.getRecipeManager().getAllRecipesFor(TENRecipeTypes.INDUCTION_FURNACE_T.get());
         for (var holder : recipes) {
             var recipe = holder.value();
+            // 1.21.1 的 matches 已内联严格语义（occupied == required），与 26.1.2 的
+            // matchesExactInputs 等价（多余输入槽占用时不匹配）
             if (recipe instanceof FormsCombinedRecipe r && r.matches(itemHandler, tanks, this::slotType, this::tankType)) {
                 r.recipeType = TENRecipeTypes.INDUCTION_FURNACE_T.get();
                 r.serializer = TENRecipeTypes.INDUCTION_FURNACE_S.get();
@@ -84,5 +86,12 @@ public class IndfurBlockEntity extends RecipeMachineBlockEntity {
             }
         }
         return null;
+    }
+
+    @Override
+    protected boolean revalidateInputs() {
+        // Indfur 使用严格 exact-input 匹配重验（26.1.2 对齐，与 findRecipe 同源）
+        if (currentRecipe == null || itemHandler == null) return false;
+        return currentRecipe.matches(itemHandler, tanks, this::slotType, this::tankType);
     }
 }

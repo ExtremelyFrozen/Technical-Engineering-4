@@ -1,5 +1,6 @@
 package com.modularmc.ten.common.blockentity.machine;
 
+import com.modularmc.ten.TENConstants;
 import com.modularmc.ten.api.blockentity.RecipeMachineBlockEntity;
 import com.modularmc.ten.api.blockentity.SlotInfo;
 import com.modularmc.ten.api.option.IngredientType;
@@ -7,6 +8,7 @@ import com.modularmc.ten.api.option.MachineType;
 import com.modularmc.ten.api.recipe.FormsCombinedRecipe;
 import com.modularmc.ten.common.data.TENRecipeTypes;
 import com.modularmc.ten.common.gui.TENMachineBlockUIFactory;
+import com.modularmc.ten.utils.TagHelper;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.item.ItemStack;
@@ -44,7 +46,8 @@ public class CompressorBlockEntity extends RecipeMachineBlockEntity {
 
     @Override
     public boolean valid(int slot, ItemStack stack) {
-        boolean mould = stack.is(com.modularmc.ten.common.data.TENItems.MOULD_GEAR.get()) || stack.is(com.modularmc.ten.common.data.TENItems.MOULD_PLATE.get()) || stack.is(com.modularmc.ten.common.data.TENItems.MOULD_ROD.get()) || stack.is(com.modularmc.ten.common.data.TENItems.MOULD_STRING.get());
+        // 模具槽限定：c:moulds 通用标签（新增模具注册时加入标签即可，无需改此类）
+        boolean mould = TagHelper.containsItem(stack.getItem(), TagHelper.keyItem("c:moulds"));
         if (slot == 0) {
             return !mould;
         }
@@ -67,13 +70,16 @@ public class CompressorBlockEntity extends RecipeMachineBlockEntity {
     @Override
     public ModularUI createUI(BlockUIMenuType.BlockUIHolder holder) {
         return buildMachineUI(holder, TENMachineBlockUIFactory.backgroundFor(machineType()), root -> {
-            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 0, 43, 15));
-            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 1, 43, 51));
-            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 2, 115, 34));
+            // 2 输入竖排（39,14 / 39,50，块 14~68 中线 41 与能量条对齐），输出大槽
+            root.addChild(TENMachineBlockUIFactory.machineSlotModular(this, 0, 39, 14));
+            root.addChild(TENMachineBlockUIFactory.machineSlotModular(this, 1, 39, 50));
+            root.addChild(TENMachineBlockUIFactory.machineSlotLarge(this, 2, 113, 28));
         }, root -> {
-            root.addChild(TENMachineBlockUIFactory.energyGauge(this, 9, 18, 14, 46, 0, 0, true));
-            root.addChild(TENMachineBlockUIFactory.fuelGauge(this, 45, 36, 13, 13, 14, 0, false));
-            root.addChild(TENMachineBlockUIFactory.progressGauge(this, 76, 35, 22, 16, 27, 63, false));
+            root.addChild(TENMachineBlockUIFactory.energyGaugeModular(this, 8, 18, true));
+            // mini 装饰（静态整件 8x54）：紧贴输入槽右缘，标示上下输入槽流向（目标在上），不承载进度
+            root.addChild(TENMachineBlockUIFactory.verticalProgressMini(39, 14, 18, TENConstants.PROGRESS_ARROW_MINI_COMPRESSOR_BG, true));
+            // 进度箭头（modular 素材族 22x16）：进度显示由原进度条承担，与 mini 装饰水平错开
+            root.addChild(TENMachineBlockUIFactory.progressGaugeModular(this, 74, 33, false));
         });
     }
 

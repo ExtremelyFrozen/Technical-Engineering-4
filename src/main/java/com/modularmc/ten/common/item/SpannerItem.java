@@ -1,13 +1,10 @@
 package com.modularmc.ten.common.item;
 
-import com.modularmc.ten.common.blockentity.PipeBlockEntity;
 import com.modularmc.ten.common.data.TENTags;
 import com.modularmc.ten.common.data.WrenchDismantleService;
-import com.modularmc.ten.utils.ComponentHelper;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.context.UseOnContext;
@@ -81,8 +78,7 @@ public class SpannerItem extends TENBaseItem {
         if (state.hasProperty(BlockStateProperties.HORIZONTAL_FACING))
             return BlockStateProperties.HORIZONTAL_FACING;
         for (var prop : state.getProperties()) {
-            if (prop instanceof EnumProperty<?> ep && ep.getName().equals("facing")
-                    && ep.getPossibleValues().stream().allMatch(v -> v instanceof Direction)) {
+            if (prop instanceof EnumProperty<?> ep && ep.getName().equals("facing") && ep.getPossibleValues().stream().allMatch(v -> v instanceof Direction)) {
                 @SuppressWarnings("unchecked")
                 EnumProperty<Direction> dp = (EnumProperty<Direction>) ep;
                 return dp;

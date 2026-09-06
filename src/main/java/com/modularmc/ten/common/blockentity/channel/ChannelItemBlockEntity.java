@@ -154,15 +154,15 @@ public class ChannelItemBlockEntity extends AbstractChannelBlockEntity {
         return buildChannelUI(holder, TENConstants.MACHINE_GUI, root -> {
             // 3×3 槽群垂直居中（机器 GUI 布局规则 v4 内容区 y=5..77 中线 41）：
             // 群范围 14..68（行距 18px 不变），上下留白对称 9px，与列表容器中线对齐。
-            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 0, 7, 14));
-            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 1, 25, 14));
-            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 2, 43, 14));
-            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 3, 7, 32));
-            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 4, 25, 32));
-            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 5, 43, 32));
-            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 6, 7, 50));
-            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 7, 25, 50));
-            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 8, 43, 50));
+            root.addChild(TENMachineBlockUIFactory.channelItemSlot(this, 0, 7, 14));
+            root.addChild(TENMachineBlockUIFactory.channelItemSlot(this, 1, 25, 14));
+            root.addChild(TENMachineBlockUIFactory.channelItemSlot(this, 2, 43, 14));
+            root.addChild(TENMachineBlockUIFactory.channelItemSlot(this, 3, 7, 32));
+            root.addChild(TENMachineBlockUIFactory.channelItemSlot(this, 4, 25, 32));
+            root.addChild(TENMachineBlockUIFactory.channelItemSlot(this, 5, 43, 32));
+            root.addChild(TENMachineBlockUIFactory.channelItemSlot(this, 6, 7, 50));
+            root.addChild(TENMachineBlockUIFactory.channelItemSlot(this, 7, 25, 50));
+            root.addChild(TENMachineBlockUIFactory.channelItemSlot(this, 8, 43, 50));
         }, root -> {});
     }
 }

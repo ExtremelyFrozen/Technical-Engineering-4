@@ -29,16 +29,16 @@ public final class TENLangHandler {
     }
 
     private static void addDirections(RegistrateLangProvider provider) {
-        addRaw(provider, "dire.down", "Down", "底侧");
-        addRaw(provider, "dire.up", "Up", "顶侧");
-        addRaw(provider, "dire.north", "North", "北侧");
-        addRaw(provider, "dire.south", "South", "南侧");
-        addRaw(provider, "dire.west", "West", "西侧");
-        addRaw(provider, "dire.east", "East", "东侧");
-        addRaw(provider, "dire.front", "Front", "前侧");
-        addRaw(provider, "dire.back", "Back", "后侧");
-        addRaw(provider, "dire.left", "Left", "左侧");
-        addRaw(provider, "dire.right", "Right", "右侧");
+        addRaw(provider, "kenergyengineering.dire.down", "Down", "底侧");
+        addRaw(provider, "kenergyengineering.dire.up", "Up", "顶侧");
+        addRaw(provider, "kenergyengineering.dire.north", "North", "北侧");
+        addRaw(provider, "kenergyengineering.dire.south", "South", "南侧");
+        addRaw(provider, "kenergyengineering.dire.west", "West", "西侧");
+        addRaw(provider, "kenergyengineering.dire.east", "East", "东侧");
+        addRaw(provider, "kenergyengineering.dire.front", "Front", "前侧");
+        addRaw(provider, "kenergyengineering.dire.back", "Back", "后侧");
+        addRaw(provider, "kenergyengineering.dire.left", "Left", "左侧");
+        addRaw(provider, "kenergyengineering.dire.right", "Right", "右侧");
     }
 
     private static void addCommon(RegistrateLangProvider provider) {
@@ -55,7 +55,6 @@ public final class TENLangHandler {
         add(provider, "info.upgrade_successfully", " installed successfully.", " 安装成功。");
         add(provider, "key.c", "Change Holding Item Mode", "Change Holding Item Mode");
         add(provider, "locked_slot", "This slot has not been unlocked yet.", "未解锁槽位");
-        add(provider, "jei_addition_chance", "Additional Chance: ", "副产概率: ");
         add(provider, "energy_capacity.charging_on", "Charging enabled", "全身充能已开启");
         add(provider, "energy_capacity.charging_off", "Charging disabled", "全身充能已关闭");
         add(provider, "key.categories." + TEN.MOD_ID, "Kenergy Engineering", "Kenergy Engineering");
@@ -91,54 +90,40 @@ public final class TENLangHandler {
     }
 
     private static void addUpgradeTips(RegistrateLangProvider provider) {
-        // === 通用升级（槽位+百分比） ===
-        add(provider, "augmented_levelup.0",
-                "Machine: +1 upgrade slot\n      +20% throughput",
-                "机器：额外升级槽+1\n      全局性能+20%");
-        add(provider, "powered_levelup.0",
-                "Machine: +2 upgrade slots\n      +35% throughput",
-                "机器：额外升级槽+2\n      全局性能+35%");
-        add(provider, "relic_levelup.0",
-                "Machine: +3 upgrade slots\n      +75% throughput",
-                "机器：额外升级槽+3\n      全局性能+75%");
-        add(provider, "knowledge_levelup.0",
-                "Machine: +Max upgrade slots",
-                "机器：额外升级槽+Max");
-        add(provider, "stream_levelup.0",
-                "Machine: Infinite FE transfer",
-                "机器：无限 FE 传输");
-        add(provider, "photosyn_levelup.0",
-                "Machine: +1 upgrade slot\n      -10% throughput",
-                "机器：额外升级槽+1\n      全局性能-10%");
+        // 通用格式键（跨升级共享，UpgradeTooltipFormatter 消费）——26.1.2 重构版
+        add(provider, "upgrade_tip.duration.percent", "%s%% duration", "%s%%消耗时间");
+        add(provider, "upgrade_tip.power.multiplier", "x%s energy consumption", "x%s能量消耗");
+        add(provider, "upgrade_tip.batch.add", "%s batch.", "%s批处理。");
+        add(provider, "upgrade_tip.photosyn.fe", "%s FE/t photosynthetic power.", "%s FE/t光合供能。");
+        add(provider, "upgrade_tip.range.add", "%s%% initial range", "%s%%初始作用范围");
+        add(provider, "upgrade_tip.potion.amplifier", "%s potion effect level.", "%s药水效果等级。");
+        add(provider, "upgrade_tip.unknown.0", "Unknown upgrade", "未知升级组件");
+        add(provider, "upgrade_slot", "Upgrade Slot", "升级槽位");
 
-        // === 范围扩展 ===
-        add(provider, "range_levelup.0",
-                "Effect Machine: +50% range",
-                "效益机器：范围+50%");
-
-        // === 冶炼升级 ===
-        add(provider, "blast_levelup.0",
-                "Smelter: Blast furnace recipes only\n      Processing speed x2",
-                "冶炼机：限定高炉配方\n      处理速度x2");
-        add(provider, "smoke_levelup.0",
-                "Smelter: Smoker recipes only\n      Processing speed x2",
-                "冶炼机：限定烟熏配方\n      处理速度x2");
-
-        // === 采石场升级 ===
-        add(provider, "magma_levelup.0",
-                "Quarry: Magma production mode\n      Produces magma blocks & cream",
-                "采矿场：切换为岩浆产出模式\n      产出岩浆块与岩浆膏");
-        add(provider, "ice_levelup.0",
-                "Quarry: Ice production mode\n      Produces various ice blocks",
-                "采矿场：切换为冰块产出模式\n      产出各类冰块");
-        add(provider, "mineral_levelup.0",
-                "Quarry: Ore-only mining mode\n      Only mines c:ores blocks",
-                "采矿场：切换为矿物开采模式\n      仅挖掘矿物块");
-
-        // === 信标升级 ===
-        add(provider, "potion_levelup.0",
-                "Beacon Simulator: Buff level +1",
-                "信标模拟器：药水等级+1");
+        // === 各升级标题（.0）与纯文本行 ===
+        add(provider, "augmented_levelup.0", "In machines:", "在机器中：");
+        add(provider, "powered_levelup.0", "In machines:", "在机器中：");
+        add(provider, "relic_levelup.0", "In machines:", "在机器中：");
+        add(provider, "photosyn_levelup.0", "In machines:", "在机器中：");
+        add(provider, "photosyn_levelup.4", "Only generates in open sky, no rain, daytime", "仅在露天、无雨且昼间时供能");
+        add(provider, "photosyn_levelup.5", "Only 1 per machine", "每台机器仅可安装1个");
+        add(provider, "range_levelup.0", "In effect machines:", "在功能性机器中：");
+        add(provider, "blast_levelup.0", "In smelter:", "在熔炼机中：");
+        add(provider, "blast_levelup.1", "Enables Blast Furnace smelting (exclusive with Smoke)", "启用高炉冶炼（与烟熏互斥）");
+        add(provider, "smoke_levelup.0", "In smelter:", "在熔炼机中：");
+        add(provider, "smoke_levelup.1", "Enables Smoker smelting (exclusive with Blast)", "启用烟熏冶炼（与高炉互斥）");
+        add(provider, "potion_levelup.0", "In beacon simulator:", "在模拟信标中：");
+        add(provider, "ice_levelup.0", "In quarry:", "在采矿场中：");
+        add(provider, "ice_levelup.1", "Output mode: Ice", "产出模式修改为冰块");
+        add(provider, "magma_levelup.0", "In quarry:", "在采矿场中：");
+        add(provider, "magma_levelup.1", "Output mode: Magma", "产出模式修改为岩浆");
+        add(provider, "mineral_levelup.0", "In quarry:", "在采矿场中：");
+        add(provider, "mineral_levelup.1", "Mining mode: Mineral", "开采模式修改为矿物");
+        add(provider, "knowledge_levelup.0", "In smelter:", "在熔炼机中：");
+        add(provider, "knowledge_levelup.1", "Each recipe produces XP fluid based on cooking time", "每次处理配方按熔炼时间产出经验流体");
+        add(provider, "knowledge_levelup.2", "10 ticks → 1 mB Liquid XP (per unit)", "每10 tick产1 mB液态经验（每单位）");
+        add(provider, "stream_levelup.0", "In machines:", "在机器中：");
+        add(provider, "stream_levelup.1", "Energy transfer rate: Infinite", "能量传输速率修改为无限");
     }
 
     private static void addLevels(RegistrateLangProvider provider) {
@@ -163,6 +148,8 @@ public final class TENLangHandler {
         add(provider, "info.mode.2", "Redstone", "红石");
         add(provider, "info.mode.3", "Binding", "绑定");
         add(provider, "info.mode.4", "Destroy", "拆除");
+        add(provider, "spanner.0", "Right-click a machine to rotate it", "右键机器旋转");
+        add(provider, "spanner.1", "Sneak + right-click a machine to dismantle it", "潜行+右键机器拆卸");
     }
 
     private static void addMachineInfo(RegistrateLangProvider provider) {
@@ -198,6 +185,30 @@ public final class TENLangHandler {
         add(provider, "info.bar_item_out_max", "Maximum Item Output: ", "最大物品输出功率: ");
         add(provider, "info.bar_fluid_in_max", "Maximum Fluid Input: ", "最大流体输入功率: ");
         add(provider, "info.bar_fluid_out_max", "Maximum Fluid Output: ", "最大流体输出功率: ");
+        // 采石场扫描模式切换（GUI 按钮文案与 tooltip，供后续功能移植）
+        add(provider, "info.quarry.scan_mode", "Scan Mode", "扫描模式");
+        add(provider, "info.quarry.scan_normal", "Normal", "标准");
+        add(provider, "info.quarry.scan_fast", "Fast", "极速");
+        add(provider, "info.quarry.scan_normal_tip", "Digs layer by layer; stops automatically when the column is fully mined.", "逐层向下挖掘；整列挖尽后自动停机。");
+        add(provider, "info.quarry.scan_fast_tip", "Skips air layers to the nearest solid layer; faster progress.", "跳过空气层直达最近实心层，推进更快。");
+        add(provider, "info.quarry.scan_click", "Click to toggle scan mode", "点击切换扫描模式");
+        // 范围显示切换按钮（rangeDisplayToggleButton）
+        add(provider, "info.range_display", "Range Display", "范围显示");
+        add(provider, "info.range_display_on", "Range: On", "范围: 显示");
+        add(provider, "info.range_display_off", "Range: Off", "范围: 隐藏");
+        add(provider, "info.range_display_on_tip", "Showing the working range outline.", "正在显示工作范围线框。");
+        add(provider, "info.range_display_off_tip", "Working range outline is hidden.", "工作范围线框已隐藏。");
+        add(provider, "info.range_display_click", "Click to toggle range display", "点击切换范围显示");
+        // 应用工具/武器附魔切换按钮（useEnchantmentsToggleButton）
+        add(provider, "info.use_enchantments", "Use Enchantments", "应用附魔");
+        add(provider, "info.use_enchantments_on", "Enchants: On", "附魔: 开启");
+        add(provider, "info.use_enchantments_off", "Enchants: Off", "附魔: 关闭");
+        add(provider, "info.use_enchantments_on_tip", "Tool/weapon enchantments (fortune, silk touch, sharpness) are applied.", "应用工具/武器附魔（时运、精准、锋利等）。");
+        add(provider, "info.use_enchantments_off_tip", "Tool/weapon enchantments are ignored.", "忽略工具/武器附魔。");
+        add(provider, "info.use_enchantments_click", "Click to toggle enchantment application", "点击切换附魔应用");
+        // Jade 配置界面（Jade 约定 config.jade.plugin_<modid>.<uid>，不加 modid 前缀）
+        addRaw(provider, "config.jade.plugin_kenergyengineering.channel_status", "Channel Status", "频道状态");
+        addRaw(provider, "config.jade.plugin_kenergyengineering.pipe_status", "Pipe Status", "管道状态");
         add(provider, "info.smelter.0", "Turns energy into heat.", "使用能量加热，");
         add(provider, "info.smelter.1", "Provides higher speed than a Furnace.", "提供比熔炉更快的速度。");
         add(provider, "info.smelter.2", "The more energy it stores, the faster it works.", "储存的能量越多，熔炼速度越快。");
@@ -283,6 +294,8 @@ public final class TENLangHandler {
     }
 
     private static void addEmi(RegistrateLangProvider provider) {
+        // 注意：EMI 分类标题查找键为裸键 emi.category.<ns>.<path>（TENRecipeWidget.titleEmi），
+        // 不加 kenergyengineering 前缀；26.1.2 生成的双前缀键是其 add() 自动前缀的死键，勿照搬。
         addRaw(provider, "emi.category.kenergyengineering.pulverizer", "Pulverizer", "粉碎机");
         addRaw(provider, "emi.category.kenergyengineering.compressor", "Compressor", "压缩机");
         addRaw(provider, "emi.category.kenergyengineering.refiner", "Refiner", "精炼机");
@@ -304,7 +317,10 @@ public final class TENLangHandler {
         add(provider, "jei.category.smelter_blasting", "Smelter \u2014 Blasting", "熔炼机 \u2014 高炉");
         add(provider, "jei.category.smelter_smoking", "Smelter \u2014 Smoking", "熔炼机 \u2014 烟熏");
         // JEI 槽位覆盖（chance/rolls）
-        add(provider, "jei_addition_chance_rolls", "Additional Chance: %s%% × %s rolls", "附加几率: %s%% × %s 次");
+        // 位置参数：en_ud 由 Registrate 翻转 en_us 自动生成，翻转后 %s 视觉顺序颠倒，
+        // %1$s/%2$s 锚定参数语义，避免「附加几率: 9% × 40 rolls」式错乱
+        add(provider, "jei_addition_chance", "Additional Chance: %1$s%%", "副产概率: %s%%");
+        add(provider, "jei_addition_chance_rolls", "Additional Chance: %1$s%% × %2$s rolls", "附加几率: %s%% × %s 次");
     }
 
     private static void add(RegistrateLangProvider provider, String suffix, String en, String cn) {

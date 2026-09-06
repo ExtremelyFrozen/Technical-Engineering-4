@@ -44,6 +44,7 @@ public class TENJeiCategory implements IRecipeCategory<FormsCombinedRecipe> {
         this.layout = TENRecipeWidget.layout(categoryId);
         this.title = TENRecipeWidget.titleJei(categoryId);
         this.icon = helper.createDrawableItemStack(iconStack);
+        // 26.1.2 对齐：槽位底图用 LDLib2 modular 素材族（旧版手工 blit 已弃用）
         this.inputSlot = helper.drawableBuilder(TENConstants.ITEM_SLOT_SMALL, 0, 0, 18, 18).setTextureSize(18, 18).build();
         this.fluidSlot = helper.drawableBuilder(TENConstants.FLUID_SLOT, 0, 0, 18, 50).setTextureSize(18, 50).build();
     }
@@ -129,6 +130,9 @@ public class TENJeiCategory implements IRecipeCategory<FormsCombinedRecipe> {
     public void draw(FormsCombinedRecipe recipe, IRecipeSlotsView slotsView, GuiGraphics graphics, double mouseX, double mouseY) {
         RenderHelper.render(graphics, 0, 0, layout.width(), layout.height(), 256, 256, layout.u(), layout.v(), layout.background());
         TENRecipeWidget.drawJei(recipe, graphics, layout);
+        // 左下角工作消耗时间（对齐熔炼机兼容层样式；引擎兼容层不调用）
+        var timePos = TENRecipeWidget.timeLabelPos(recipeType.getUid().getPath());
+        TENRecipeWidget.drawDurationText(graphics, timePos[0], timePos[1], recipe.time());
     }
 
     private static RecipeIngredientRole toJeiRole(TENRecipeWidget.SlotRole role) {

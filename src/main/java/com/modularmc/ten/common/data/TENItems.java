@@ -97,15 +97,15 @@ public class TENItems {
                 .register();
     }
 
-    public static final ItemEntry<Item> MOULD_GEAR = mould("mould_gear", "Gear Mould", "模具-齿轮", "item/mold/model_gear");
-    public static final ItemEntry<Item> MOULD_PLATE = mould("mould_plate", "Plate Mould", "模具-板", "item/mold/model_plate");
-    public static final ItemEntry<Item> MOULD_ROD = mould("mould_rod", "Rod Mould", "模具-杆", "item/mold/model_rod");
-    public static final ItemEntry<Item> MOULD_STRING = mould("mould_string", "String Mould", "模具-线", "item/mold/model_string");
-    public static final ItemEntry<Item> MOULD_COMPRESSED_SMALL = mould("mould_compressed_small", "Compressed-small Mould", "模具-2x2压缩", "item/mold/compressed_small");
-    public static final ItemEntry<Item> MOULD_COMPRESSED_LARGE = mould("mould_compressed_large", "Compressed-large Mould", "模具-3x3压缩", "item/mold/compressed_large");
-    public static final ItemEntry<Item> MOULD_SPLIT = mould("mould_split", "Split Mould", "模具-解压缩", "item/mold/split");
-    public static final ItemEntry<Item> MOULD_COIN = mould("mould_coin", "Coin Mould", "模具-币", "item/mold/coin");
-    public static final ItemEntry<Item> MOULD_DENSE_PLATE = mould("mould_dense_plate", "Dense Plate Mould", "模具-致密板", "item/mold/dense_plate");
+    public static final ItemEntry<Item> MOULD_GEAR = mould("mould_gear", "Gear Mould", "齿轮模具", "item/mold/model_gear");
+    public static final ItemEntry<Item> MOULD_PLATE = mould("mould_plate", "Plate Mould", "板模具", "item/mold/model_plate");
+    public static final ItemEntry<Item> MOULD_ROD = mould("mould_rod", "Rod Mould", "杆模具", "item/mold/model_rod");
+    public static final ItemEntry<Item> MOULD_STRING = mould("mould_string", "String Mould", "线模具", "item/mold/model_string");
+    public static final ItemEntry<Item> MOULD_COMPRESSED_SMALL = mould("mould_compressed_small", "Compressed-small Mould", "2x2压缩模具", "item/mold/compressed_small");
+    public static final ItemEntry<Item> MOULD_COMPRESSED_LARGE = mould("mould_compressed_large", "Compressed-large Mould", "3x3压缩模具", "item/mold/compressed_large");
+    public static final ItemEntry<Item> MOULD_SPLIT = mould("mould_split", "Split Mould", "解压缩模具", "item/mold/split");
+    public static final ItemEntry<Item> MOULD_COIN = mould("mould_coin", "Coin Mould", "币模具", "item/mold/coin");
+    public static final ItemEntry<Item> MOULD_DENSE_PLATE = mould("mould_dense_plate", "Dense Plate Mould", "致密板模具", "item/mold/dense_plate");
 
     // === Tools ===
     private static <T extends Item> ItemEntry<T> tool(String name, String englishName, String cn,
