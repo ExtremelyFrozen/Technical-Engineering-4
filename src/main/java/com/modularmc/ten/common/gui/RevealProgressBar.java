@@ -5,6 +5,7 @@ import net.minecraft.util.Mth;
 import com.lowdragmc.lowdraglib2.gui.texture.SpriteTexture;
 import com.lowdragmc.lowdraglib2.gui.ui.data.FillDirection;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.ProgressBar;
+import com.modularmc.ten.TEN;
 import dev.vfyjxf.taffy.style.AlignContent;
 import dev.vfyjxf.taffy.style.AlignItems;
 import dev.vfyjxf.taffy.style.FlexDirection;
@@ -106,6 +107,24 @@ public class RevealProgressBar extends ProgressBar {
         // Then clamp to [0, 1] — prevent negative or overflow UV coordinates
         float progress = Float.isFinite(normalized) ? Mth.clamp(normalized, 0.0f, 1.0f) : 0.0f;
 
+        // 完成重置检测（插值模式）：目标值低于当前显示值 → 直接跳到目标。
+        // 背景：interpolate(true) 下配方完成时进度 100%→0 会被插值反向播放（倒放被误读为缩放），
+        // 且反向动画尾帧（lastValue≤step）无法完全检测，残留细条闪现——因此下行一律瞬移，
+        // 仅保留上行填充的插值平滑（与 26.1.2 参照的瞬时语义一致）。能量条连续下降
+        // 本身就是逐 tick 平滑变化的，瞬移后视觉无差异。已知取舍：大幅下行
+        // （燃料切换/能量骤降）从多 tick 下滑动画变为单帧瞬移——设计上接受，
+        // 若未来需要区分场景，需引入下行速率阈值判据。
+        var style = getProgressBarStyle();
+        if (style != null && style.interpolate()) {
+            Float targetValue = getValue();
+            if (targetValue != null) {
+                float target = Mth.clamp(getNormalizedValue(targetValue), 0.0f, 1.0f);
+                if (target < progress - 1e-4f) {
+                    progress = target;
+                }
+            }
+        }
+
         FillDirection dir = getProgressBarStyle().fillDirection();
 
         // ---- Step 1a: Mirror parent ProgressBar barBackground direction/alignment ----
@@ -150,10 +169,10 @@ public class RevealProgressBar extends ProgressBar {
 
         // ---- Step 1c: Set bar layout to absolute pixel dimensions ----
         // Uses the same quantized pixel values as UV — no sub-pixel re-layout each tick.
-        // 防御：0 填充时显式隐藏 bar（避免 0 宽 UV 与 SpriteTexture.drawInternal 的
-        // spriteSize<=0 → 整图 fallback 语义冲突，以及 super 构造期 widthPercent 残留歧义）；
-        // 有填充时强制可见。
-        bar.setDisplay(visibleWidth > 0 && visibleHeight > 0);
+        // 注：与 26.1.2 工作参照（另一 MC 版本分支的对照工程，该行为已长期验证正常）保持一致，不做 setDisplay 切换 —— progress=0 时 width(0)
+        // 已使 bar 不渲染（零尺寸元素无绘制），display:none→FLEX 的恢复转换在
+        // LDLIB2 2.2.37 运行时存在不恢复风险（曾导致进度条永久隐藏）。
+        // bar（填充）与 UV 采样同用整数像素值 —— 无亚像素错位
         bar.layout(layout -> {
             switch (dir) {
                 case LEFT_TO_RIGHT -> {

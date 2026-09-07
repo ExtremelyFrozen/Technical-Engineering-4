@@ -702,7 +702,7 @@ public final class TENMachineBlockUIFactory {
                 .layout(layout -> layout.paddingAll(0)));
         progress.barBackground.style(style -> style.backgroundTexture(IGuiTexture.EMPTY));
         progress.label.setDisplay(false);
-        progress.progressBarStyle(style -> style.fillDirection(FillDirection.DOWN_TO_UP).interpolate(false));
+        progress.progressBarStyle(style -> style.fillDirection(FillDirection.DOWN_TO_UP).interpolate(true).interpolateStep(0.1f));
         progress.bindDataSource(SupplierDataSource.of(() -> (float) percent.applyAsDouble(machine)));
         progress.addEventListener(UIEvents.HOVER_TOOLTIPS, event -> event.hoverTooltips = new HoverTooltips(tooltipSupplier.get(), null, null, null));
         return progress;
@@ -715,7 +715,7 @@ public final class TENMachineBlockUIFactory {
                 .layout(layout -> layout.paddingAll(0)));
         progress.barBackground.style(style -> style.backgroundTexture(IGuiTexture.EMPTY));
         progress.label.setDisplay(false);
-        progress.progressBarStyle(style -> style.fillDirection(FillDirection.LEFT_TO_RIGHT).interpolate(false));
+        progress.progressBarStyle(style -> style.fillDirection(FillDirection.LEFT_TO_RIGHT).interpolate(true).interpolateStep(0.1f));
         progress.bindDataSource(SupplierDataSource.of(() -> (float) progressPercent(machine)));
         if (showPercent) {
             progress.addEventListener(UIEvents.HOVER_TOOLTIPS, event -> event.hoverTooltips = new HoverTooltips(List.of(ComponentHelper.make((int) (progressPercent(machine) * 100) + "%")), null, null, null));
@@ -737,7 +737,7 @@ public final class TENMachineBlockUIFactory {
                 .layout(layout -> layout.paddingAll(0)));
         progress.barBackground.style(style -> style.backgroundTexture(IGuiTexture.EMPTY));
         progress.label.setDisplay(false);
-        progress.progressBarStyle(style -> style.fillDirection(FillDirection.DOWN_TO_UP).interpolate(false));
+        progress.progressBarStyle(style -> style.fillDirection(FillDirection.DOWN_TO_UP).interpolate(true).interpolateStep(0.1f));
         progress.bindDataSource(SupplierDataSource.of(() -> (float) percent.applyAsDouble(machine)));
         progress.addEventListener(UIEvents.HOVER_TOOLTIPS, event -> event.hoverTooltips = new HoverTooltips(tooltipSupplier.get(), null, null, null));
         return progress;
@@ -753,7 +753,7 @@ public final class TENMachineBlockUIFactory {
                 .layout(layout -> layout.paddingAll(0)));
         progress.barBackground.style(style -> style.backgroundTexture(IGuiTexture.EMPTY));
         progress.label.setDisplay(false);
-        progress.progressBarStyle(style -> style.fillDirection(FillDirection.LEFT_TO_RIGHT).interpolate(false));
+        progress.progressBarStyle(style -> style.fillDirection(FillDirection.LEFT_TO_RIGHT).interpolate(true).interpolateStep(0.1f));
         progress.bindDataSource(SupplierDataSource.of(() -> (float) progressPercent(machine)));
         if (showPercent) {
             progress.addEventListener(UIEvents.HOVER_TOOLTIPS, event -> event.hoverTooltips = new HoverTooltips(List.of(ComponentHelper.make((int) (progressPercent(machine) * 100) + "%")), null, null, null));
@@ -836,7 +836,7 @@ public final class TENMachineBlockUIFactory {
                 .layout(layout -> layout.paddingAll(0)));
         progress.barBackground.style(style -> style.backgroundTexture(IGuiTexture.EMPTY));
         progress.label.setDisplay(false);
-        progress.progressBarStyle(style -> style.fillDirection(FillDirection.LEFT_TO_RIGHT).interpolate(false));
+        progress.progressBarStyle(style -> style.fillDirection(FillDirection.LEFT_TO_RIGHT).interpolate(true).interpolateStep(0.1f));
         progress.bindDataSource(SupplierDataSource.of(() -> (float) cooler.getCoolantPercent()));
         progress.addEventListener(UIEvents.HOVER_TOOLTIPS, event -> event.hoverTooltips = new HoverTooltips(List.of(ComponentHelper.translated("kenergyengineering.info.coolant_progress")), null, null, null));
         return progress;

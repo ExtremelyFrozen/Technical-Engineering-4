@@ -640,6 +640,12 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
 
         // ── Write to ldlib2 @DescSynced fields ──
         progress = Math.max(progress, 0);
+        // 统一触发入口：@DescSynced 字段每 tick 写入后显式置脏，不依赖轮询值比较
+        // （背景：探针证实 progress 自增后客户端/服务端镜像树均读到恒 0，强制推送绕开值比较环节）
+        markDirty("progress");
+        markDirty("maxProgress");
+        markDirty("energyStored");
+        markDirty("maxEnergyStored");
         maxEnergyStored = maxStorageEnergy;
         energyStored = energyStorage.getEnergyStored();
         energyRec = maxReceiveEnergy;
