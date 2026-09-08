@@ -1,6 +1,5 @@
 package com.modularmc.ten.common.blockentity;
 
-import com.modularmc.ten.TEN;
 import com.modularmc.ten.TENConstants;
 import com.modularmc.ten.api.blockentity.CmBlockEntity;
 import com.modularmc.ten.api.capability.MachineItemHandler;

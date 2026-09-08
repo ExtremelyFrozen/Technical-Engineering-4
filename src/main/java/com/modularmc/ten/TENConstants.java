@@ -9,11 +9,11 @@ public class TENConstants {
 
     // ───── 频道 UI 素材（P0-8 移植自 26.1.2，modular 独立切片）─────
     public static final ResourceLocation CHANNEL_LIST_BG = TEN.id("textures/gui/channels/list_bg.png"); // 69x73
-                                                                                                               // 频道目录列表容器底图
+                                                                                                        // 频道目录列表容器底图
     public static final ResourceLocation CHANNEL_ENTRY_BG_HOVER = TEN.id("textures/gui/channels/entry_bg_hover.png"); // 46x13
-                                                                                                                          // 条目行悬停高亮
+                                                                                                                      // 条目行悬停高亮
     public static final ResourceLocation CHANNEL_ENTRY_BG_NORMAL = TEN.id("textures/gui/channels/entry_bg_normal.png"); // 46x13
-                                                                                                                            // 条目行普通背景
+                                                                                                                        // 条目行普通背景
     // 条目行右侧接入状态小按钮雪碧图：2列×2行，每格 10x15（列0=未接入/列1=已接入；行0=normal、行1=hover）
     public static final ResourceLocation CHANNEL_ENTRY_STATE = TEN.id("textures/gui/channels/entry_states.png"); // 20x30
     // 频道面板翻页/创建/删除/断开按钮雪碧图：5列×2行，每格 12x12（列0▲/列1▼/列2＋/列3✕/列4断连；行0=normal、行1=hover）
@@ -21,27 +21,30 @@ public class TENConstants {
 
     // ───── 进度条素材（P2-1 移植自 26.1.2）─────
     public static final ResourceLocation PROGRESS_BAR_WIDE_BG = TEN.id("textures/gui/progress/bar_wide_bg.png"); // 80x5
-                                                                                                                                 // 横向灰底槽
+                                                                                                                 // 横向灰底槽
     public static final ResourceLocation PROGRESS_BAR_WIDE_FILL = TEN.id("textures/gui/progress/bar_wide_fill.png"); // 80x5
-                                                                                                                             // 绿填充
+                                                                                                                     // 绿填充
     public static final ResourceLocation PROGRESS_PROGRESS_BAR_WIDE_COOLANT = TEN.id("textures/gui/progress/bar_wide_coolant.png"); // 80x5
-                                                                                                                                   // 冷却剂消耗进度栏
+    // 冷却剂消耗进度栏
     public static final ResourceLocation PROGRESS_ARROW_MINI_COMPRESSOR_BG = TEN.id("textures/gui/progress/arrow_mini_compressor_bg.png"); // 8x54
-                                                                                                                                                           // 顶尖朝上
+                                                                                                                                           // 顶尖朝上
     public static final ResourceLocation PROGRESS_ARROW_MINI_ENCFLU_BG = TEN.id("textures/gui/progress/arrow_mini_encflu_bg.png"); // 8x54
-                                                                                                                                                   // 尖朝下
+                                                                                                                                   // 尖朝下
 
     // ───── 机器 GUI 素材族（全量化对齐 26.1.2，modular 独立切片）─────
     public static final ResourceLocation ITEM_SLOT_SMALL = TEN.id("textures/gui/slots/item_slot_small.png"); // 18x18
     public static final ResourceLocation ITEM_SLOT_LARGE = TEN.id("textures/gui/slots/item_slot_large.png"); // 26x26
     public static final ResourceLocation ITEM_SLOT_SMALL_CHARGE = TEN.id("textures/gui/slots/item_slot_small_charge.png"); // 18x18
-                                                                                                                             // 充电动画
+                                                                                                                           // 充电动画
     public static final ResourceLocation ITEM_SLOT_SMALL_DISCHARGE = TEN.id("textures/gui/slots/item_slot_small_discharge.png"); // 18x18
-                                                                                                                                   // 放电动画
+                                                                                                                                 // 放电动画
     public static final ResourceLocation ENERGY_GAUGE_BG = TEN.id("textures/gui/gauges/energy_gauge_bg.png"); // 14x46
     public static final ResourceLocation ENERGY_GAUGE_FILL = TEN.id("textures/gui/gauges/energy_gauge_fill.png"); // 14x46
     public static final ResourceLocation FUEL_GAUGE_BG = TEN.id("textures/gui/gauges/fuel_gauge_bg.png"); // 13x13
     public static final ResourceLocation FUEL_GAUGE_FILL = TEN.id("textures/gui/gauges/fuel_gauge_fill.png"); // 13x13
+    /** 太阳能引擎专用燃料表（13x13，配色独立于通用燃料表） */
+    public static final ResourceLocation FUEL_GAUGE_SOLAR_BG = TEN.id("textures/gui/gauges/fuel_gauge_solar_bg.png");
+    public static final ResourceLocation FUEL_GAUGE_SOLAR_FILL = TEN.id("textures/gui/gauges/fuel_gauge_solar_fill.png");
     public static final ResourceLocation PROGRESS_ARROW_SMELTER_BG = TEN.id("textures/gui/progress/arrow_smelter_bg.png"); // 22x16
     public static final ResourceLocation PROGRESS_ARROW_SMELTER_FILL = TEN.id("textures/gui/progress/arrow_smelter_fill.png"); // 22x16
     public static final ResourceLocation PROGRESS_ARROW_PULVERIZER_BG = TEN.id("textures/gui/progress/arrow_pulverizer_bg.png"); // 22x16
@@ -60,9 +63,19 @@ public class TENConstants {
     public static final ResourceLocation FLUID_SLOT_OVERLAY = TEN.id("textures/gui/slots/fluid_slot_overlay.png");
 
     // ───── 侧边展开面板素材（分离式 tab：面板独立底图，九宫格源图）─────
-    public static final ResourceLocation PANEL_SLICED = TEN.id("textures/gui/panels/panel_sliced.png"); // 128x128，四角 4x4 固定
+    public static final ResourceLocation PANEL_SLICED = TEN.id("textures/gui/panels/panel_sliced.png"); // 128x128，四角
+                                                                                                        // 4x4 固定
     /** 齿轮图标（26x26，配置 tab 头） */
     public static final ResourceLocation ICON_CONFIG = TEN.id("textures/gui/icons/config.png");
+    /** 面朝向六态图标（12x12 整图，配置面板 front/back/left/right/up/down 按钮）：索引即 FaceOption 枚举值 */
+    public static final ResourceLocation ICON_FACE_OFF = TEN.id("textures/gui/icons/face_off.png");
+    public static final ResourceLocation ICON_FACE_IN = TEN.id("textures/gui/icons/face_in.png");
+    public static final ResourceLocation ICON_FACE_OUT = TEN.id("textures/gui/icons/face_out.png");
+    public static final ResourceLocation ICON_FACE_BOTH = TEN.id("textures/gui/icons/face_both.png");
+    public static final ResourceLocation ICON_FACE_BE_IN = TEN.id("textures/gui/icons/face_be_in.png");
+    public static final ResourceLocation ICON_FACE_BE_OUT = TEN.id("textures/gui/icons/face_be_out.png");
+    /** 配置面板传输模式按钮图集（42x56，格 14x14：列=能量/物品/流体，行=四态） */
+    public static final ResourceLocation CONFIG_MODE_BUTTONS = TEN.id("textures/gui/panels/config_mode_buttons.png");
     /** 配置面板附加底图（60x85）：介入九宫格底图与内容钮之间 */
     public static final ResourceLocation PANEL_CONFIG_LEGACY = TEN.id("textures/gui/panels/panel_config_legacy.png");
     /** 升级面板附加底图（42x62）：内容区 38x58 每边外扩 2px */

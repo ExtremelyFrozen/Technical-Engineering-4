@@ -1,6 +1,5 @@
 package com.modularmc.ten.common.gui;
 
-import com.modularmc.ten.TEN;
 import com.modularmc.ten.TENConstants;
 import com.modularmc.ten.api.blockentity.CmMachineBlockEntity;
 import com.modularmc.ten.api.option.FaceOption;
@@ -46,7 +45,7 @@ import java.util.function.Supplier;
 
 public final class TENMachineBlockUIFactory {
 
-    private static final ResourceLocation HANDLER = TEN.id("textures/gui/legacy/handler.png");
+    // 26 线旧图集（统一走 TENConstants.LEGACY_SHEET 注册，本类不再私持路径）
 
     private TENMachineBlockUIFactory() {}
 
@@ -72,7 +71,7 @@ public final class TENMachineBlockUIFactory {
                     layout.height(80);
                     layout.paddingAll(6);
                 })
-                .style(style -> style.backgroundTexture(fullTexture(HANDLER, 176, 80)));
+                .style(style -> style.backgroundTexture(fullTexture(TENConstants.LEGACY_SHEET, 176, 80)));
         root.addChild(new Label().setText(Component.literal("Missing block entity UI")));
         return new ModularUI(
                 UI.of(root, List.of(StylesheetManager.INSTANCE.getStylesheetSafe(StylesheetManager.MC))),
@@ -148,7 +147,7 @@ public final class TENMachineBlockUIFactory {
     private static final int UPGRADE_PANEL_BORDER = CONFIG_OVERLAY_XY - 2;
 
     public static void addCommonSidebar(UIElement root, BlockUIMenuType.BlockUIHolder holder, CmMachineBlockEntity machine, UIState uiState) {
-        // 侧栏 tab 全部引用独立 26×26 图标（modular/icon_*.png），不再切 HANDLER 图集
+        // 侧栏 tab 全部引用独立 26×26 图标（icons/*.png），不再切旧图集
         root.addChild(textureElement(-27, 0, 26, 26, fullTexture(TENConstants.ICON_INFO, 26, 26), () -> ideaTooltips(holder), null, null, null));
         root.addChild(textureElement(-27, 27, 26, 26, fullTexture(TENConstants.ICON_ENERGY_INFO, 26, 26), () -> energyInfoTooltips(machine), null, null, null));
 
@@ -216,10 +215,10 @@ public final class TENMachineBlockUIFactory {
         int overlayOriginX = CONFIG_PANEL_LEFT_X + CONFIG_OVERLAY_XY;
         int overlayOriginY = configTabY + CONFIG_OVERLAY_XY;
 
-        // 类型按钮（能量/物品/流体）：config_mode_buttons.png 12 格图集（42×56，格 14×14）——
+        // 类型按钮（能量/物品/流体）：CONFIG_MODE_BUTTONS 图集（42×56，格 14×14）——
         // 列=类型（左列流体 x=0 / 中列能量 x=14 / 右列物品 x=28）；行=状态：未悬停未选 y=0 / 悬停未选 y=14 /
         // 未悬停已选 y=28 / 悬停已选 y=42；syncTexture（TICK）实时刷新，hover 由 element.isHover() 取
-        var modeIconTex = TEN.id("textures/gui/panels/config_mode_buttons.png");
+        var modeIconTex = TENConstants.CONFIG_MODE_BUTTONS;
         var energyModeButton = textureElement(overlayOriginX + 7, overlayOriginY + 64, 14, 14,
                 IGuiTexture.EMPTY, () -> energyModeTooltip(), () -> uiState.setSelectedTransferMode(0), null, null)
                 .style(style -> style.zIndex(1));
@@ -640,14 +639,14 @@ public final class TENMachineBlockUIFactory {
         return itemSlot;
     }
 
-    /** 六态面配置图标（textures/gui/modular/face_*.png，12x12 整图）：索引即 FaceOption 枚举值。 */
+    /** 面朝向六态图标（TENConstants.ICON_FACE_*，12x12 整图）：索引即 FaceOption 枚举值。 */
     private static final IGuiTexture[] FACE_MODE_ICONS = {
-            fullTexture(TEN.id("textures/gui/icons/face_off.png"), 12, 12),    // OFF 禁用
-            fullTexture(TEN.id("textures/gui/icons/face_in.png"), 12, 12),     // IN 被动输入
-            fullTexture(TEN.id("textures/gui/icons/face_out.png"), 12, 12),    // OUT 被动输出
-            fullTexture(TEN.id("textures/gui/icons/face_be_in.png"), 12, 12),  // BE_IN 主动输入
-            fullTexture(TEN.id("textures/gui/icons/face_be_out.png"), 12, 12), // BE_OUT 主动输出
-            fullTexture(TEN.id("textures/gui/icons/face_both.png"), 12, 12),   // BOTH 被动双向
+            fullTexture(TENConstants.ICON_FACE_OFF, 12, 12),    // OFF 禁用
+            fullTexture(TENConstants.ICON_FACE_IN, 12, 12),     // IN 被动输入
+            fullTexture(TENConstants.ICON_FACE_OUT, 12, 12),    // OUT 被动输出
+            fullTexture(TENConstants.ICON_FACE_BE_IN, 12, 12),  // BE_IN 主动输入
+            fullTexture(TENConstants.ICON_FACE_BE_OUT, 12, 12), // BE_OUT 主动输出
+            fullTexture(TENConstants.ICON_FACE_BOTH, 12, 12),   // BOTH 被动双向
     };
 
     private static UIElement faceModeElement(CmMachineBlockEntity machine, UIState uiState, int x, int y, int logicalSide, String tooltipKey) {
@@ -671,7 +670,7 @@ public final class TENMachineBlockUIFactory {
     }
 
     // ───── Modular 素材族 gauge（全量化对齐 26.1.2）─────
-    // 注：HANDLER 图集版 energyGauge/fuelGauge/energyGaugeReveal/fuelGaugeReveal 已全量
+    // 注：旧图集版 energyGauge/fuelGauge/energyGaugeReveal/fuelGaugeReveal 已全量
     // 切换至 modular 独立纹理（energy_gauge_background/fill.png 等）后删除。
 
     public static ProgressBar energyGaugeModular(CmMachineBlockEntity machine, int x, int y, boolean displayValue) {
@@ -687,12 +686,12 @@ public final class TENMachineBlockUIFactory {
     }
 
     /**
-     * 光合引擎独立燃料表（gauge_fuel_bg/fill.png 13×13，DOWN_TO_UP 渐显）：
+     * 光合引擎独立燃料表（FUEL_GAUGE_SOLAR_BG/FILL.png 13×13，DOWN_TO_UP 渐显）：
      * 与通用 fuelGaugeModular 同构但引用独立图集，配色/视觉独立于通用燃料表。
      */
     public static ProgressBar fuelGaugeModular13(CmMachineBlockEntity machine, int x, int y, boolean displayValue) {
         return verticalGaugeModular(machine, x, y, 13, 13,
-                TEN.id("textures/gui/gauges/fuel_gauge_solar_bg.png"), TEN.id("textures/gui/gauges/fuel_gauge_solar_fill.png"),
+                TENConstants.FUEL_GAUGE_SOLAR_BG, TENConstants.FUEL_GAUGE_SOLAR_FILL,
                 TENMachineBlockUIFactory::fuelPercent, fuelTooltip(machine, displayValue), displayValue);
     }
 
@@ -958,7 +957,7 @@ public final class TENMachineBlockUIFactory {
             // 26.1.2 对齐（D1/P3+翻新 002）：全部机器统一 MACHINE_GUI 空面板，
             // 槽框/仪表由 modular 素材族绘制；专属背景 PNG 保留作回退素材不删。
             case MachineType.FURNACE, MachineType.PULVERIZER, MachineType.COMPRESSOR, MachineType.REFINER, MachineType.INDUCTION_FURNACE, MachineType.PSIONICANT, MachineType.ENCHANTMENT_FLUSHER, MachineType.MATTER_CONDENSER, MachineType.BEACON, MachineType.MOB_RIPPER, MachineType.QUARRY, MachineType.FARM, MachineType.CELL, MachineType.CREATIVE_CELL, MachineType.ENGINE_SOLAR, MachineType.ENGINE_EXTRACTION, MachineType.ENGINE_METAL, MachineType.ENGINE_BIOMASS, MachineType.BLOCK_BREAKER, MachineType.BLOCK_FORMER, MachineType.COOLER -> TENConstants.MACHINE_GUI;
-            default -> HANDLER;
+            default -> TENConstants.LEGACY_SHEET;
         };
     }
 
