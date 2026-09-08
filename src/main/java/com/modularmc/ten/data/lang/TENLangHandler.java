@@ -77,6 +77,8 @@ public final class TENLangHandler {
         add(provider, "pipe.filter.whitelist", "Whitelist", "白名单");
         add(provider, "pipe.filter.blacklist", "Blacklist", "黑名单");
         add(provider, "channel", "Channel", "频道");
+        // Jade 集成：管道自动抽取面（ker 体系连接面单一形态，Jade 辅助显示 PULL 面）
+        add(provider, "jade.auto_extract", "Output faces: %s", "输出面：%s");
 
         // 频道连接器（ChannelConnectorItem，配置复制/应用工具）
         add(provider, "channel_connector.copied", "Copied channel configuration", "已复制频道面配置");
@@ -150,6 +152,14 @@ public final class TENLangHandler {
         add(provider, "info.mode.4", "Destroy", "拆除");
         add(provider, "spanner.0", "Right-click a machine to rotate it", "右键机器旋转");
         add(provider, "spanner.1", "Sneak + right-click a machine to dismantle it", "潜行+右键机器拆卸");
+        add(provider, "connection_mode", "Connection mode", "连接模式");
+        add(provider, "connection_mode.none", "None", "断开");
+        // 设备边（容器视角）：pull=输出（主动从容器抽取）、normal=输入（被动向容器投放）
+        add(provider, "connection_mode.pull", "Output", "输出");
+        add(provider, "connection_mode.device_normal", "Input", "输入");
+        // 管道间边（连接视角）：与设备边分开，避免「输入」误导管道间显示
+        add(provider, "connection_mode.pipe_normal", "Connected", "连接");
+        add(provider, "connection_mode.push", "Push", "仅输出");
     }
 
     private static void addMachineInfo(RegistrateLangProvider provider) {
@@ -203,8 +213,8 @@ public final class TENLangHandler {
         add(provider, "info.use_enchantments", "Use Enchantments", "应用附魔");
         add(provider, "info.use_enchantments_on", "Enchants: On", "附魔: 开启");
         add(provider, "info.use_enchantments_off", "Enchants: Off", "附魔: 关闭");
-        add(provider, "info.use_enchantments_on_tip", "Tool/weapon enchantments (fortune, silk touch, sharpness) are applied.", "应用工具/武器附魔（时运、精准、锋利等）。");
-        add(provider, "info.use_enchantments_off_tip", "Tool/weapon enchantments are ignored.", "忽略工具/武器附魔。");
+        add(provider, "info.use_enchantments_on_tip", "Enchantments are applied.", "应用附魔。");
+        add(provider, "info.use_enchantments_off_tip", "Enchantments are ignored.", "忽略附魔。");
         add(provider, "info.use_enchantments_click", "Click to toggle enchantment application", "点击切换附魔应用");
         // Jade 配置界面（Jade 约定 config.jade.plugin_<modid>.<uid>，不加 modid 前缀）
         addRaw(provider, "config.jade.plugin_kenergyengineering.channel_status", "Channel Status", "频道状态");

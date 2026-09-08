@@ -167,7 +167,7 @@ public class ChannelEnergyBlockEntity extends AbstractChannelBlockEntity {
     @Override
     public ModularUI createUI(BlockUIMenuType.BlockUIHolder holder) {
         return buildChannelUI(holder, TENConstants.MACHINE_GUI, root -> {}, root -> {
-            root.addChild(TENMachineBlockUIFactory.energyGauge(this, 8, 18, 14, 46, 0, 0, true));
+            root.addChild(TENMachineBlockUIFactory.energyGaugeModular(this, 8, 18, true));
         });
     }
 }

@@ -324,7 +324,7 @@ public class QuarryBlockEntity extends RadiusMachineBlockEntity {
         int B = getLockedBatchSize();
         int cap = (int) Math.min(64L * Math.max(1, B), Integer.MAX_VALUE);
         itemHandler.setDynamicSlotLimit((slot, candidate) -> {
-            if (slot < OUTPUT_START || slot >= inventorySize()) return 64; // 非输出槽
+            if (slot < OUTPUT_START || slot >= inventorySize()) return 1; // 工具槽堆叠上限 1（用户调整）
             ItemStack existing = itemHandler.getStackInSlot(slot);
             return existing.isEmpty() ? cap : Math.max(cap, existing.getCount());
         });
@@ -553,9 +553,10 @@ public class QuarryBlockEntity extends RadiusMachineBlockEntity {
             return false;
         }
         if (mode == 0) {
-            // 标准模式宽泛名单（26.1.2 用户需求）：挖掘几乎所有无额外数据组件的方块。
-            // 仅排除含方块实体的方块（破坏会丢数据）；不再依赖 quarry_valids 标签。
-            return !state.hasBlockEntity() && tool.isCorrectToolForDrops(state);
+            // 标准模式（用户调整）：仅跳过带方块实体（组件信息）的方块；
+            // 挖掘等级受限于工具槽工具——需要正确工具的方块按工具 tier 判定，
+            // 无等级要求的方块（泥土/沙等）任意工具可挖。极速模式仅寻路不同，共用本判定。
+            return !state.hasBlockEntity() && (!state.requiresCorrectToolForDrops() || tool.isCorrectToolForDrops(state));
         }
         if (mode == 3) {
             // Mineral 矿石扫描：限定 c:ores 标签 + 工具正确

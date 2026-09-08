@@ -102,7 +102,6 @@ public class DataGenerators {
                 add("tag.kenergyengineering.mats.nickel", "镍材料");
                 add("tag.kenergyengineering.mats.powered_tin", "充能锡材料");
                 add("tag.kenergyengineering.mats.tin", "锡材料");
-                add("tag.kenergyengineering.moulds", "模具");
                 add("tag.kenergyengineering.uncommon_ingots", "稀有金属锭");
                 add("tag.kenergyengineering.valuable_ingots", "贵重金属锭");
 

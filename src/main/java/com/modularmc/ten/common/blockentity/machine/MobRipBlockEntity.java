@@ -9,10 +9,18 @@ import com.modularmc.ten.utils.SafeOperationHelper;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.ai.attributes.Attribute;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.ItemAttributeModifiers;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
@@ -21,6 +29,8 @@ import net.neoforged.neoforge.fluids.FluidStack;
 import com.lowdragmc.lowdraglib2.gui.factory.BlockUIMenuType;
 import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 public class MobRipBlockEntity extends RadiusMachineBlockEntity {
@@ -153,6 +163,8 @@ public class MobRipBlockEntity extends RadiusMachineBlockEntity {
     @Override
     public void applyEffect() {
         if (level == null) return;
+        // 武器槽堆叠上限 1（用户调整）：幂等设置，随 handler 动态限制机制生效
+        itemHandler.setDynamicSlotLimit((slot, candidate) -> slot == 0 ? 1 : 64);
         int B = getLockedBatchSize();
 
         // 记录周期开始时武器是否存在：若原本有而中途损坏/耗尽则停止剩余批次，
@@ -192,21 +204,13 @@ public class MobRipBlockEntity extends RadiusMachineBlockEntity {
         if (target instanceof Player p && p.isCreative()) return false;
 
         ItemStack weapon = itemHandler.getStackInSlot(0);
-        float damage = 0.5f;
-        if (!weapon.isEmpty() && weapon.has(DataComponents.TOOL)) {
-            damage = 1.0f;
-        }
-        // 应用武器附魔：开关开启时锋利（SHARPNESS）加成伤害；关闭时不应用。
-        if (useEnchantments && !weapon.isEmpty()) {
-            var enchantments = net.minecraft.world.item.enchantment.EnchantmentHelper.getEnchantmentsForCrafting(weapon);
-            for (var entry : enchantments.entrySet()) {
-                if (entry.getKey().is(net.minecraft.world.item.enchantment.Enchantments.SHARPNESS)) {
-                    int lvl = entry.getIntValue();
-                    // 锋利每级 +0.5 * level + 0.5（近似原版锋利加成）
-                    damage += 0.5f * lvl + 0.5f;
-                    break;
-                }
-            }
+        float damage = weaponDamage(weapon); // 无武器=玩家空手 1.0；有武器=ATTACK_DAMAGE 属性全量（基础+修饰符）
+        if (level instanceof ServerLevel serverLevel && useEnchantments && !weapon.isEmpty()) {
+            // 应用附魔伤害：直接套用原版附魔链（EnchantmentHelper.modifyDamage 执行数据驱动的附魔效果，
+            // 覆盖锋利/亡灵杀手/节肢杀手等全部攻击类附魔），而非硬穷举个别附魔；
+            // 1.21 锋利等 damage 效果仅按 slots: mainhand 作用，对任意 DamageSource 生效。
+            damage = EnchantmentHelper.modifyDamage(
+                    serverLevel, weapon, target, target.damageSources().cactus(), damage);
         }
         target.hurt(target.damageSources().cactus(), damage);
         // 仅在武器实际存在时消耗耐久
@@ -216,8 +220,69 @@ public class MobRipBlockEntity extends RadiusMachineBlockEntity {
         return true;
     }
 
+    /**
+     * 武器攻击伤害：取 ATTACK_DAMAGE 属性修饰符全量计算（玩家手持该武器时的真实伤害）。
+     * 无武器（或非武器物品）回落到玩家空手基础值 1.0；空手攻速基础 4.0。
+     */
+    /**
+     * 武器攻击伤害：取 ATTACK_DAMAGE 属性修饰符全量计算（玩家手持该武器时的真实伤害）。
+     * 无武器（或非武器物品）回落到玩家空手基础值 1.0；负值兜底到 0（防极端修饰符致 hurt 负伤）。
+     */
+    private float weaponDamage(ItemStack weapon) {
+        if (weapon.isEmpty() || !weapon.has(DataComponents.TOOL)) {
+            return 1.0f;
+        }
+        return (float) Math.max(0, computeAttributeValue(1.0, attributeModifiers(weapon, Attributes.ATTACK_DAMAGE)));
+    }
+
+    /**
+     * 武器攻击速度（每秒次数）：取 ATTACK_SPEED 属性修饰符（玩家手持该武器时的攻速），
+     * 无武器回落玩家空手基础值 4.0（每 0.25s 一次）；下限 0.1 防极端负修饰符除零/负间隔。
+     */
+    private double weaponAttackSpeed(ItemStack weapon) {
+        if (weapon.isEmpty() || !weapon.has(DataComponents.TOOL)) {
+            return 4.0;
+        }
+        return Math.max(0.1, computeAttributeValue(4.0, attributeModifiers(weapon, Attributes.ATTACK_SPEED)));
+    }
+
+    /** 读武器 ATTRIBUTE_MODIFIERS 组件中 MAINHAND 槽位指定属性的修饰符集合。 */
+    private static java.util.Collection<AttributeModifier> attributeModifiers(ItemStack weapon, Holder<Attribute> attribute) {
+        ItemAttributeModifiers component = weapon.getOrDefault(DataComponents.ATTRIBUTE_MODIFIERS, ItemAttributeModifiers.EMPTY);
+        List<AttributeModifier> result = new ArrayList<>();
+        for (ItemAttributeModifiers.Entry entry : component.modifiers()) {
+            if (entry.attribute().is(attribute) && entry.slot().test(EquipmentSlot.MAINHAND)) {
+                result.add(entry.modifier());
+            }
+        }
+        return result;
+    }
+
+    /** 按原版 AttributeMap.calculateValue 三阶段顺序（ADD_VALUE → ADD_MULTIPLIED_BASE → MULTIPLY_TOTAL）计算属性值。 */
+    private static double computeAttributeValue(double base, Collection<AttributeModifier> modifiers) {
+        double value = base;
+        for (var m : modifiers) {
+            if (m.operation() == AttributeModifier.Operation.ADD_VALUE) {
+                value += m.amount();
+            }
+        }
+        double afterAdd = value;
+        for (var m : modifiers) {
+            if (m.operation() == AttributeModifier.Operation.ADD_MULTIPLIED_BASE) {
+                value += afterAdd * m.amount();
+            }
+        }
+        for (var m : modifiers) {
+            if (m.operation() == AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL) {
+                value *= 1.0 + m.amount();
+            }
+        }
+        return value;
+    }
+
     @Override
     public double effectInterval() {
-        return 3;
+        // 工作周期与武器攻击速度相关：间隔 = 1/攻速 秒（攻速 4.0 → 每 0.25s 一次；无武器=玩家空手 4.0）
+        return 1.0 / weaponAttackSpeed(itemHandler.getStackInSlot(0));
     }
 }

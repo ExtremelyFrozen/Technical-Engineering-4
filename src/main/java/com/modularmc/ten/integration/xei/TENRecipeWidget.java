@@ -91,10 +91,10 @@ public final class TENRecipeWidget {
      * <li>连续同种槽（多输入/多输出组）算一个整体：组内紧贴</li>
      * <li>垂直方向组件组在面板 50 高内居中：18×18 槽 y=16、箭头 y=17、竖排/2×2 组 y=7、fluid y=0</li>
      * </ol>
-     * 底图统一 JEI_HANDLER_MODULAR（LDLib2 modular 素材族），进度箭头按机器映射独立背景/填充素材。
+     * 底图统一 JEI_RECIPE_BG（LDLib2 modular 素材族），进度箭头按机器映射独立背景/填充素材。
      */
     private static final Layout DEFAULT_LAYOUT = new Layout(
-            TENConstants.JEI_HANDLER_MODULAR, 0, 0, 150, 50,
+            TENConstants.JEI_RECIPE_BG, 0, 0, 150, 50,
             List.of(
                     SlotSpec.item(SlotRole.INPUT, 0, 22, 16),
                     SlotSpec.item(SlotRole.OUTPUT, 0, 92, 7),
@@ -107,10 +107,10 @@ public final class TENRecipeWidget {
     private static final Map<String, Layout> LAYOUTS = buildLayouts();
 
     private static Map<String, Layout> buildLayouts() {
-        // 布局规则 v5：与 26.1.2 逐坐标对齐（150×50 JEI_HANDLER_MODULAR，无能量条，组件居中）
+        // 布局规则 v5：与 26.1.2 逐坐标对齐（150×50 JEI_RECIPE_BG，无能量条，组件居中）
         return Map.of(
                 "pulverizer", new Layout(
-                        TENConstants.JEI_HANDLER_MODULAR, 0, 0, 150, 50,
+                        TENConstants.JEI_RECIPE_BG, 0, 0, 150, 50,
                         List.of(
                                 SlotSpec.item(SlotRole.INPUT, 0, 22, 16),
                                 SlotSpec.item(SlotRole.OUTPUT, 0, 92, 7),
@@ -120,7 +120,7 @@ public final class TENRecipeWidget {
                         List.of(
                                 DecorationSpec.progress(55, 17, TENConstants.PROGRESS_ARROW_PULVERIZER_BG, TENConstants.PROGRESS_ARROW_PULVERIZER_FILL))),
                 "compressor", new Layout(
-                        TENConstants.JEI_HANDLER_MODULAR, 0, 0, 150, 50,
+                        TENConstants.JEI_RECIPE_BG, 0, 0, 150, 50,
                         List.of(
                                 SlotSpec.item(SlotRole.INPUT, 0, 25, 7),
                                 SlotSpec.item(SlotRole.INPUT, 1, 25, 25),
@@ -128,7 +128,7 @@ public final class TENRecipeWidget {
                         List.of(
                                 DecorationSpec.progress(64, 17, TENConstants.PROGRESS_ARROW_COMPRESSOR_BG, TENConstants.PROGRESS_ARROW_COMPRESSOR_FILL))),
                 "refiner", new Layout(
-                        TENConstants.JEI_HANDLER_MODULAR, 0, 0, 150, 50,
+                        TENConstants.JEI_RECIPE_BG, 0, 0, 150, 50,
                         List.of(
                                 SlotSpec.fluid(SlotRole.INPUT, 0, 16, 0),
                                 SlotSpec.item(SlotRole.INPUT, 0, 38, 16),
@@ -137,7 +137,7 @@ public final class TENRecipeWidget {
                         List.of(
                                 DecorationSpec.progress(64, 17, TENConstants.PROGRESS_ARROW_REFINER_BG, TENConstants.PROGRESS_ARROW_REFINER_FILL))),
                 "induction_furnace", new Layout(
-                        TENConstants.JEI_HANDLER_MODULAR, 0, 0, 150, 50,
+                        TENConstants.JEI_RECIPE_BG, 0, 0, 150, 50,
                         List.of(
                                 SlotSpec.item(SlotRole.INPUT, 0, 20, 16),
                                 SlotSpec.item(SlotRole.INPUT, 1, 38, 16),
@@ -146,7 +146,7 @@ public final class TENRecipeWidget {
                         List.of(
                                 DecorationSpec.progress(82, 17, TENConstants.PROGRESS_ARROW_INDUCTION_FURNACE_BG, TENConstants.PROGRESS_ARROW_INDUCTION_FURNACE_FILL))),
                 "psionicant", new Layout(
-                        TENConstants.JEI_HANDLER_MODULAR, 0, 0, 150, 50,
+                        TENConstants.JEI_RECIPE_BG, 0, 0, 150, 50,
                         List.of(
                                 SlotSpec.item(SlotRole.INPUT, 0, 23, 16),
                                 SlotSpec.item(SlotRole.INPUT, 1, 41, 16),
@@ -226,7 +226,7 @@ public final class TENRecipeWidget {
     }
 
     public static void drawSlot(GuiGraphics graphics, int x, int y, boolean isOutput) {
-        graphics.blit(TENConstants.GUI_HANDLER, x, y, isOutput ? 24 : 0, 0, 24, 24, 256, 256);
+        graphics.blit(TENConstants.LEGACY_SHEET, x, y, isOutput ? 24 : 0, 0, 24, 24, 256, 256);
     }
 
     public static void drawDecorations(GuiGraphics graphics, Layout layout) {

@@ -4,6 +4,7 @@ import com.modularmc.ten.api.blockentity.CmBlockEntity;
 import com.modularmc.ten.api.blockentity.CmMachineBlockEntity;
 import com.modularmc.ten.common.blockentity.CableBlockEntity;
 import com.modularmc.ten.common.blockentity.PipeBlockEntity;
+import com.modularmc.ten.common.data.TENTags;
 import com.modularmc.ten.common.gui.TENMachineBlockUIFactory;
 import com.modularmc.ten.common.item.upgrades.UpgradeInstallHelper;
 import com.modularmc.ten.common.item.upgrades.UpgradeItem;
@@ -104,6 +105,12 @@ public class BaseMachineBlock extends Block implements EntityBlock, BlockUIMenuT
     @Override
     protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         BlockEntity be = level.getBlockEntity(pos);
+        // 扳手（SPANNER tag）右键：不打开机器 GUI——1.21.1 调用链 Block.useItemOn 先于 Item.useOn，
+        // 若此处 CONSUME（打开 GUI）则 SpannerItem.useOn（旋转/拆解）永不执行；
+        // 放行到 Item.useOn，由 SpannerItem 分流（管道连接模式切换在 CableBased.useItemOn 已处理）。
+        if (stack.is(TENTags.SPANNER)) {
+            return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+        }
         // 潜行+右键快捷安装：手持升级插件对准支持升级槽的机器，插入第一个空槽（无空位/不兼容则提示并阻止）
         if (be instanceof CmMachineBlockEntity machine && player.isShiftKeyDown() && stack.getItem() instanceof UpgradeItem && machine.supportsUpgradeSlots()) {
             if (level.isClientSide()) {

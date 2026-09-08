@@ -2,6 +2,7 @@ package com.modularmc.ten.common.data;
 
 import com.modularmc.ten.TEN;
 import com.modularmc.ten.api.blockentity.CmMachineBlockEntity;
+import com.modularmc.ten.common.blockentity.PipeBlockEntity;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -150,6 +151,15 @@ public final class WrenchDismantleService {
             drops.add(blockStack);
             drops.addAll(inventoryDrops);
             drops.addAll(upgradeDrops);
+        } else if (be instanceof PipeBlockEntity pipe) {
+            // 管道：拆解保留过滤标记（幽灵槽标记式配置）与连接模式，放置后由 readTileData 恢复
+            ItemStack blockStack = new ItemStack(block);
+            CompoundTag pipeNbt = new CompoundTag();
+            HolderLookup.Provider registries = level.registryAccess();
+            pipe.getTransmitter().write(registries, pipeNbt);
+            pipeNbt.put("filter", pipe.getFilterInventory().serializeNBT(registries));
+            BlockItem.setBlockEntityData(blockStack, pipe.getType(), pipeNbt);
+            drops.add(blockStack);
         } else {
             drops.add(new ItemStack(block));
         }

@@ -254,7 +254,7 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         } else {
             upgradeHandler.setValidator(this::validUpgrade);
         }
-        upgradeHandler.setChangeListener(this::markDirty);
+        upgradeHandler.setChangeListener(this::onUpgradeChanged);
 
         if (energyStorage == null) {
             energyStorage = new MachineEnergyStorage(maxStorageEnergy, maxReceiveEnergy, maxExtractEnergy);
@@ -672,7 +672,7 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
             effAuc = efficientIn;
         }
 
-        // ── 主动物品 IO：面配置 IN=机器主动拉取 / OUT=机器主动推出（64/tick）──
+        // ── 主动物品 IO：面配置 IN=机器主动拉取 / OUT=机器主动推出（无速率上限，尽力搬空）──
         doActiveItemIo();
 
         // ── Sync face maps to arrays for client (server-authoritative mirror) ──
@@ -942,6 +942,67 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
     }
 
     // ───── NBT ─────
+
+    /** 升级槽内容变化：同步客户端（RPC 广播）+ 存档通知。 */
+    private void onUpgradeChanged() {
+        syncUpgradesToClients();
+        markDirty();
+    }
+
+    /**
+     * 服务端：全量推送 6 升级槽到追踪客户端（对齐 syncAllFacesToClients 的 RPC 模式）。
+     * 背景：客户端 BE 的 readTileData 恒收到空 tag（探针实证，LDLib2 接管同步只走 @DescSynced/RPC），
+     * writeTileData 数据不经更新包到客户端，升级槽（非 @DescSynced 引用 handler）客户端恒空——
+     * 故用已验证的 rpcToTracking 通道推送 ItemStack（RPCMethodMeta 经 AccessorRegistries 序列化，支持 ItemStack）。
+     */
+    private void syncUpgradesToClients() {
+        if (level == null || level.isClientSide() || upgradeHandler == null) {
+            return;
+        }
+        int slots = upgradeHandler.getSlots();
+        rpcToTracking("rpcSyncUpgradeData",
+                upgradeHandler.getStackInSlot(0), upgradeHandler.getStackInSlot(1),
+                upgradeHandler.getStackInSlot(2), upgradeHandler.getStackInSlot(3),
+                upgradeHandler.getStackInSlot(4), slots > 5 ? upgradeHandler.getStackInSlot(5) : ItemStack.EMPTY);
+    }
+
+    /** C→S：GUI 打开时客户端请求全量面配置（服务端逐面单播 rpcSyncFaceInfo）。 */
+    @RPCMethod
+    public void rpcRequestFaceSync(RPCSender sender) {
+        if (sender.isRemote() && sender.asPlayer() != null) {
+            for (Direction d : Direction.values()) {
+                int idx = d.get3DDataValue();
+                rpcToPlayer(sender.asPlayer(), "rpcSyncFaceInfo", idx,
+                        energyFaceData[idx], itemFaceData[idx], fluidFaceData[idx]);
+            }
+        }
+    }
+
+    /** C→S：升级面板打开时客户端请求全量升级数据（服务端回复单播）。 */
+    @RPCMethod
+    public void rpcRequestUpgradeData(RPCSender sender) {
+        if (sender.isRemote() && sender.asPlayer() != null) {
+            syncUpgradesToClients();
+        }
+    }
+
+    /** S→C：客户端写回 upgradeHandler，使 GUI 升级槽（SlotItemHandler 绑定客户端 handler）渲染物品。 */
+    @RPCMethod
+    public void rpcSyncUpgradeData(RPCSender sender, ItemStack s0, ItemStack s1, ItemStack s2,
+                                   ItemStack s3, ItemStack s4, ItemStack s5) {
+        if (!sender.isServer() || upgradeHandler == null) {
+            return;
+        }
+        // setStackInSlot 会触发 onContentsChanged → onUpgradeChanged → 服务端广播；
+        // 客户端 markDirty 有 !isClientSide 守卫，syncUpgradesToClients 有 isClientSide 守卫，无回声环。
+        ItemStack[] stacks = { s0, s1, s2, s3, s4, s5 };
+        for (int i = 0; i < Math.min(6, upgradeHandler.getSlots()); i++) {
+            if (!ItemStack.matches(upgradeHandler.getStackInSlot(i), stacks[i])) {
+                upgradeHandler.setStackInSlot(i, stacks[i] == null ? ItemStack.EMPTY : stacks[i]);
+            }
+        }
+    }
+
     @Override
     protected void readTileData(CompoundTag tag, HolderLookup.Provider registries) {
         if (energyStorage != null) energyStorage.setEnergy(tag.getInt("energy"));
@@ -959,15 +1020,30 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
                 }
             }
         }
-        if (upgradeHandler != null) upgradeHandler.deserializeNBT(registries, tag.getCompound("upgrades"));
-        upgradeSize = tag.contains("upgrade_size") ? tag.getInt("upgrade_size") : initialUpgradeSize;
-        for (Direction direction : Direction.values()) {
-            energyFaceMode.put(direction, tag.getInt("direEnergy" + direction.get3DDataValue()));
-            itemFaceMode.put(direction, tag.getInt("direItem" + direction.get3DDataValue()));
-            fluidFaceMode.put(direction, tag.getInt("direFluid" + direction.get3DDataValue()));
+        if (upgradeHandler != null) {
+            // 空 tag 守卫：LDLib2 GUI 同步以空 tag 反复触发 readTileData，deserialize 空 tag
+            // 会清空客户端升级数据（RPC rpcSyncUpgradeData 刚推送的物品立即被抹掉，探针实证
+            // 21:07:58.324 推送生效 / .346 被清）；对齐上方 itemHandler 的 !invTag.isEmpty() 守卫
+            CompoundTag upgTag = tag.getCompound("upgrades");
+            if (!upgTag.isEmpty()) {
+                upgradeHandler.deserializeNBT(registries, upgTag);
+            }
         }
-        // 读档后立即重建 faceData 镜像（26.1.2 P5-T1 对齐），服务端状态即时正确
-        rebuildFaceData();
+        upgradeSize = tag.contains("upgrade_size") ? tag.getInt("upgrade_size") : initialUpgradeSize;
+        // 客户端空同步守卫：LDLib2 GUI 同步以空 tag 反复触发 readTileData，faceMode maps 缺键读 0
+        // 会重置 maps 并经 rebuildFaceData 抹掉 RPC 推送的真实 faceData（面配置按钮调整后闪烁显示
+        // 应有状态又回退默认——与升级槽 deserialize 空 tag 清空同构）；writeTileData 恒写全部面配置，
+        // 仅当 tag 含面配置键（真实存档/更新包）时才应用
+        boolean hasFaceConfig = tag.contains("direEnergy" + Direction.NORTH.get3DDataValue());
+        if (!level.isClientSide() || hasFaceConfig) {
+            for (Direction direction : Direction.values()) {
+                energyFaceMode.put(direction, tag.getInt("direEnergy" + direction.get3DDataValue()));
+                itemFaceMode.put(direction, tag.getInt("direItem" + direction.get3DDataValue()));
+                fluidFaceMode.put(direction, tag.getInt("direFluid" + direction.get3DDataValue()));
+            }
+            // 读档后立即重建 faceData 镜像（26.1.2 P5-T1 对齐），服务端状态即时正确
+            rebuildFaceData();
+        }
         loadSerializedHandlers(tag, registries);
 
         // ── P5-T1 旧档兼容：读档时无条件清零进度与运行锁 ──
@@ -1041,13 +1117,16 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
             energyFaceData[dirIndex] = energyMode;
             itemFaceData[dirIndex] = itemMode;
             fluidFaceData[dirIndex] = fluidMode;
+            Direction d = Direction.from3DDataValue(dirIndex);
+            // 同步 maps：客户端 rebuildFaceData 以 maps 为源重算，只写 faceData 不写 maps
+            // 会在后续 rebuild 时被回滚（回退默认按钮状态）
+            energyFaceMode.put(d, energyMode);
+            itemFaceMode.put(d, itemMode);
+            fluidFaceMode.put(d, fluidMode);
         }
     }
 
     // ───── 面配置同步（P0-3 移植）─────
-
-    /** 主动 IO 速率（每 tick 拉/推上限）。 */
-    private static final int ACTIVE_IO_RATE = 64;
 
     /**
      * 从 faceMode maps 重建客户端镜像 faceData（3 类型 × 6 面）。
@@ -1084,7 +1163,7 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         }
     }
 
-    // ───── 主动 IO（P0-3 移植：面配置 IN/OUT 由机器自拉/自推，64/tick）─────
+    // ───── 主动 IO（P0-3 移植：面配置 IN/OUT 由机器自拉/自推；用户决策：取消 64/tick 上限，每次尽力搬空）─────
 
     /**
      * 机器主动物品 IO：对每个面，itemFaceMode == IN → 主动拉取；OUT → 主动推出。
@@ -1103,7 +1182,7 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         }
     }
 
-    /** 主动拉取：从相邻容器（非管道）拉物品到输入槽，上限 ACTIVE_IO_RATE/tick。 */
+    /** 主动拉取：从相邻容器（非管道）拉物品到输入槽，尽力搬空源槽（无速率上限）。 */
     private void activePullItems(Direction direction) {
         BlockPos sourcePos = worldPosition.relative(direction);
         if (level.getBlockEntity(sourcePos) instanceof PipeBlockEntity) {
@@ -1113,7 +1192,7 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         if (source == null) {
             return;
         }
-        int remaining = ACTIVE_IO_RATE;
+        int remaining = Integer.MAX_VALUE; // 无速率上限：剩余预算取最大，每次拉取到源槽搬空/输入槽满为止
         for (int srcSlot = 0; srcSlot < source.getSlots() && remaining > 0; srcSlot++) {
             ItemStack simulated = source.extractItem(srcSlot, remaining, true);
             if (simulated.isEmpty()) {
@@ -1138,7 +1217,7 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         }
     }
 
-    /** 主动推出：从输出槽推物品到相邻容器（非管道），上限 ACTIVE_IO_RATE/tick。 */
+    /** 主动推出：从输出槽推物品到相邻容器（非管道），尽力搬空输出槽（无速率上限）。 */
     private void activePushItems(Direction direction) {
         BlockPos targetPos = worldPosition.relative(direction);
         if (level.getBlockEntity(targetPos) instanceof PipeBlockEntity) {
@@ -1148,7 +1227,7 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         if (sink == null) {
             return;
         }
-        int remaining = ACTIVE_IO_RATE;
+        int remaining = Integer.MAX_VALUE; // 无速率上限：每次推到输出槽搬空/目标满为止
         for (int slot = 0; slot < itemHandler.getSlots() && remaining > 0; slot++) {
             if (!slotType(slot).canOut()) {
                 continue; // 仅输出槽
@@ -1245,10 +1324,13 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         }
         TENMachineBlockUIFactory.addPlayerInventory(root);
         TENMachineBlockUIFactory.addCommonSidebar(root, holder, this, uiState);
-        // GUI 打开（服务端 createUI 构建）时推送完整 faceData 到客户端：
-        // faceData 是 int[]，@DescSynced 初始同步不可靠（客户端保持默认直到首次手动同步），
-        // 改为打开 GUI 即推送真实配置，避免「进入世界显示默认、首次点击才跳变」。
-        syncAllFacesToClients();
+        // 打开 GUI 时面配置初始同步：改为客户端请求 → 服务端 rpcToPlayer 单播（对齐升级槽/过滤槽模式）。
+        // 原 buildMachineUI 构建时 syncAllFacesToClients()（rpcToTracking）在 tracking 注册前调用
+        // 推送丢失，客户端面按钮以默认值起跳；rpcToServer 需客户端守卫（专用服务器上服务端 createUI
+        // 也执行，PacketDistributor.sendToServer 会抛 IllegalStateException）
+        if (holder.player.level().isClientSide()) {
+            rpcToServer("rpcRequestFaceSync");
+        }
         contentBuilder.accept(root);
         return TENMachineBlockUIFactory.buildModularUI(root, holder.player);
     }

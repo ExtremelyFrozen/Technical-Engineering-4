@@ -279,8 +279,8 @@ public class ChannelFluidBlockEntity extends AbstractChannelBlockEntity {
         return buildChannelUI(holder, TENConstants.MACHINE_GUI, root -> {}, root -> {
             // 2 tank 垂直居中（机器 GUI 布局规则 v4 内容区 y=5..77 中线 41）：
             // 50px 高 → 16..66，上下留白对称 11px，与列表容器中线对齐。
-            root.addChild(TENMachineBlockUIFactory.fluidGauge(this, 7, 16, 18, 50, 0, true));
-            root.addChild(TENMachineBlockUIFactory.fluidGauge(this, 25, 16, 18, 50, 1, true));
+            root.addChild(TENMachineBlockUIFactory.fluidGaugeModular(this, 7, 16, 18, 50, 0));
+            root.addChild(TENMachineBlockUIFactory.fluidGaugeModular(this, 25, 16, 18, 50, 1));
         });
     }
 }

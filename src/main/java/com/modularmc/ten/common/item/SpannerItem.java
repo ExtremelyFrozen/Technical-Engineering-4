@@ -1,5 +1,6 @@
 package com.modularmc.ten.common.item;
 
+import com.modularmc.ten.api.transmission.ITransmitterProvider;
 import com.modularmc.ten.common.data.TENTags;
 import com.modularmc.ten.common.data.WrenchDismantleService;
 
@@ -40,7 +41,12 @@ public class SpannerItem extends TENBaseItem {
             return dismantled ? InteractionResult.CONSUME : InteractionResult.PASS;
         }
 
-        // 右键：旋转机器（1.21.1 管道推拉配置已冻结，不移植）
+        // 右键管道/线缆（ITransmitterProvider）：连接模式切换由 CableBased.useItemOn（Block 侧）
+        // 处理，此处放行到 Block.useItemOn——管道/线缆亦在 MACHINES tag 内，若不提前分流会被旋转
+        if (level.getBlockEntity(pos) instanceof ITransmitterProvider) {
+            return InteractionResult.PASS;
+        }
+        // 右键：旋转机器（普通机器；管道连接模式切换已在上方分流）
         if (!state.is(TENTags.MACHINES)) {
             return InteractionResult.PASS;
         }
