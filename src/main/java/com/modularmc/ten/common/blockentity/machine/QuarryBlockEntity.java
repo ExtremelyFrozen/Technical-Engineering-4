@@ -153,18 +153,22 @@ public class QuarryBlockEntity extends RadiusMachineBlockEntity {
     }
 
     /**
-     * 生效范围：所属区块 16×16 全区（用户设定：区块边界大小，机器仅定位所属区块与 Y 高度，
-     * radius 不参与范围计算），任意模式下都位于机器自身 Y 之下
+     * 生效范围：以区块中心对称的正方形——基础为所属区块 16×16（基础半宽 8），
+     * 每件范围升级（LevelupRg）以区块中心向外扩 4 格（radius 超出 initialRadius 的
+     * 部分即外扩格数，由 {@link com.modularmc.ten.common.item.upgrades.LevelupRg} 累加）。
+     * 机器仅定位所属区块与 Y 高度，任意模式下都位于机器自身 Y 之下
      * （从机器下方一格向下到世界底，1.21.1 为 -64，用户裁决启用深层）。
      */
     @Override
     public List<net.minecraft.world.phys.AABB> getRangeBoxes() {
         int top = worldPosition.getY() - 1; // 机器下方一格
-        int minX = worldPosition.getX() & ~15;      // 区块西边界（含）
-        int minZ = worldPosition.getZ() & ~15;      // 区块北边界（含）
+        int e = Math.max(0, radius - initialRadius); // 外扩格数（无 Rg 时 0 → 原区块）
+        int minX = (worldPosition.getX() & ~15) - e;      // 区块西边界外扩（含）
+        int minZ = (worldPosition.getZ() & ~15) - e;      // 区块北边界外扩（含）
+        int span = 16 + 2 * e;
         return List.of(new net.minecraft.world.phys.AABB(
                 minX, TENConstants.WORLD_MIN, minZ,
-                minX + 16, Math.max(top, TENConstants.WORLD_MIN) + 1, minZ + 16));
+                minX + span, Math.max(top, TENConstants.WORLD_MIN) + 1, minZ + span));
     }
 
     @Override
@@ -373,14 +377,21 @@ public class QuarryBlockEntity extends RadiusMachineBlockEntity {
         if (scanY < TENConstants.WORLD_MIN) {
             return false; // 挖尽
         }
-        // 区块锚定扫描区（用户设定）：所属区块 16×16 全区，机器仅定位区块与 Y
-        int minX = worldPosition.getX() & ~15;
-        int minZ = worldPosition.getZ() & ~15;
+        // 扫描区锚定：以区块中心对称的正方形（基础区块 16×16，Rg 外扩 e 格）
+        int expand = Math.max(0, radius - initialRadius);
+        int minX = (worldPosition.getX() & ~15) - expand;
+        int minZ = (worldPosition.getZ() & ~15) - expand;
+        int span = 16 + 2 * expand;
+        // 游标越界防御：升级增减后范围收缩/旧存档游标超界时归位西北角，防死循环与漏扫
+        if (scanX < minX || scanX >= minX + span || scanZ < minZ || scanZ >= minZ + span) {
+            scanX = minX;
+            scanZ = minZ;
+        }
         // 层内 chunk 缓存：本层扫描只涉及 1 个 chunk，单槽缓存即可
         Map<Long, ChunkAccess> chunkCache = new HashMap<>(2);
         boolean layerHasBlock = false; // 本层是否存在非空气方块（空气层跳层标志）
-        // 单层栅格扫描（区块坐标序）：每调用只处理当前层，层扫完推进/跳层后返回
-        while (scanZ < minZ + 16) {
+        // 单层栅格扫描（扫描区坐标序）：每调用只处理当前层，层扫完推进/跳层后返回
+        while (scanZ < minZ + span) {
             int x = scanX;
             int z = scanZ;
             BlockState state = blockStateCached(chunkCache, x, scanY, z);
@@ -415,7 +426,7 @@ public class QuarryBlockEntity extends RadiusMachineBlockEntity {
             return true;
         }
         // 当前层扫完 → 推进下一层（每 tick 至多处理一层；全空气层整层跳过加速收敛）
-        // 游标为区块内绝对坐标，层推进时重置回区块西北角（旧 ±radius 偏移语义已废弃）
+        // 游标为扫描区内绝对坐标，层推进时重置回扫描区西北角（区块中心外扩后的边界）
         scanX = minX;
         scanZ = minZ;
         if (scanFast || !layerHasBlock) {
@@ -435,12 +446,16 @@ public class QuarryBlockEntity extends RadiusMachineBlockEntity {
     }
 
     /**
-     * 层内栅格游标推进：scanX 沿区块 X 边界递增，越界后 scanZ 进一行。
+     * 层内栅格游标推进：scanX 沿扫描区 X 边界递增，越界后 scanZ 进一行。
+     * 边界 = 区块中心外扩后的扫描区（与 {@link #scanMine()} 的 minX/span 派生同源）。
      */
     private void advanceCursorInLayer() {
+        int expand = Math.max(0, radius - initialRadius);
+        int scanMinX = (worldPosition.getX() & ~15) - expand;
+        int span = 16 + 2 * expand;
         scanX++;
-        if (scanX >= (worldPosition.getX() & ~15) + 16) {
-            scanX = worldPosition.getX() & ~15;
+        if (scanX >= scanMinX + span) {
+            scanX = scanMinX;
             scanZ++;
         }
     }
@@ -457,13 +472,15 @@ public class QuarryBlockEntity extends RadiusMachineBlockEntity {
         if (level == null) {
             return TENConstants.WORLD_MIN - 1;
         }
-        int minX = worldPosition.getX() & ~15;
-        int minZ = worldPosition.getZ() & ~15;
+        int expand = Math.max(0, radius - initialRadius);
+        int minX = (worldPosition.getX() & ~15) - expand;
+        int minZ = (worldPosition.getZ() & ~15) - expand;
+        int span = 16 + 2 * expand;
         Map<Long, ChunkAccess> cache = new HashMap<>(2);
         int limit = (maxLayers <= 0) ? TENConstants.WORLD_MIN : Math.max(fromY - maxLayers + 1, TENConstants.WORLD_MIN);
         for (int y = fromY; y >= limit; y--) {
-            for (int dx = 0; dx < 16; dx++) {
-                for (int dz = 0; dz < 16; dz++) {
+            for (int dx = 0; dx < span; dx++) {
+                for (int dz = 0; dz < span; dz++) {
                     BlockState s = blockStateCached(cache, minX + dx, y, minZ + dz);
                     if (s != null && !s.isAir()) {
                         return y;
@@ -498,9 +515,10 @@ public class QuarryBlockEntity extends RadiusMachineBlockEntity {
      * 复位游标（模式变化/挖尽后恢复）：从区块西北角、machineY-1 层起点重新扫描。
      */
     private void resetScanCursor() {
+        int expand = Math.max(0, radius - initialRadius);
         scanY = worldPosition.getY() - 1;
-        scanX = worldPosition.getX() & ~15;
-        scanZ = worldPosition.getZ() & ~15;
+        scanX = (worldPosition.getX() & ~15) - expand;
+        scanZ = (worldPosition.getZ() & ~15) - expand;
     }
 
     /**
@@ -509,6 +527,9 @@ public class QuarryBlockEntity extends RadiusMachineBlockEntity {
      * 由 scanExhausted 判定停机）。
      */
     private void initScanCursor() {
+        int expand = Math.max(0, radius - initialRadius);
+        int startX = (worldPosition.getX() & ~15) - expand;
+        int startZ = (worldPosition.getZ() & ~15) - expand;
         int startY = worldPosition.getY() - 1;
         if (scanY < TENConstants.WORLD_MIN || scanY > startY) {
             scanY = startY;
@@ -518,8 +539,9 @@ public class QuarryBlockEntity extends RadiusMachineBlockEntity {
             // 哨兵（WORLD_MIN - 1）= 全空气世界 → scanY 置为哨兵值本身，scanExhausted 判定停机
             scanY = y;
         }
-        scanX = worldPosition.getX() & ~15;
-        scanZ = worldPosition.getZ() & ~15;
+        // 游标水平位置一律回到扫描区西北角（防御旧存档游标越界：升级增减后范围可能变化）
+        scanX = startX;
+        scanZ = startZ;
     }
 
     /**

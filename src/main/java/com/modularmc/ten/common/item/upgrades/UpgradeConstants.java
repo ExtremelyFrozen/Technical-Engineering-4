@@ -37,6 +37,12 @@ public final class UpgradeConstants {
     /** Fraction of initial radius added per Range upgrade. */
     public static final double RG_RANGE_FRACTION = 0.50;
 
+    /**
+     * 采矿场范围升级外扩步长（格/件）：范围 = 所属区块 16×16 以区块中心对称外扩
+     * QUARRY_RANGE_STEP × Rg件数（等效半径 8×RG_RANGE_FRACTION 对齐信标 50% 规则）。
+     */
+    public static final int QUARRY_RANGE_STEP = 4;
+
     // ── LevelupPotion ───────────────────────────────────────────────
     /** Potion effect amplifier boost. */
     public static final int POTION_AMPLIFIER = 1;
