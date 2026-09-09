@@ -136,7 +136,7 @@ public class TENEmiPlugin implements EmiPlugin {
                             recipe.allOutputFluids().size(),
                             recipe.time());
                 }
-                registry.addRecipe(new TENEmiRecipe(def.id(), category, recipe));
+                registry.addRecipe(new TENEmiRecipe(def.id(), category, recipe, entry.id()));
                 index++;
             }
             TEN.LOGGER.debug("[EMI] Category {} finished registering {} recipes", def.id(), index);

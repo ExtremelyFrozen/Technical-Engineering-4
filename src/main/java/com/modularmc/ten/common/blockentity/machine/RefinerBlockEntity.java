@@ -84,7 +84,7 @@ public class RefinerBlockEntity extends RecipeMachineBlockEntity {
             if (recipe instanceof FormsCombinedRecipe r && r.matches(itemHandler, tanks, this::slotType, this::tankType)) {
                 r.recipeType = TENRecipeTypes.REFINER_T.get();
                 r.serializer = TENRecipeTypes.REFINER_S.get();
-                return r;
+                return r.assignId(holder.id());
             }
         }
         return null;

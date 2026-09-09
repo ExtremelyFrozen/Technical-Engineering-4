@@ -29,10 +29,12 @@ public class TENEmiRecipe implements EmiRecipe {
     private final List<EmiIngredient> inputs;
     private final List<EmiStack> outputs;
 
-    public TENEmiRecipe(ResourceLocation categoryId, EmiRecipeCategory category, FormsCombinedRecipe recipe) {
+    public TENEmiRecipe(ResourceLocation categoryId, EmiRecipeCategory category, FormsCombinedRecipe recipe, ResourceLocation holderId) {
         this.category = category;
         this.recipe = recipe;
-        this.id = recipe.getId();
+        // id 用 RecipeHolder 的注册 id：serializer Codec 解码不携带 id，recipe.getId() 本身为 null
+        // （见 FormsCombinedRecipe.assignId 注释）；机器侧 findRecipe 已回填，此处不再依赖它
+        this.id = holderId != null ? holderId : recipe.getId();
         this.categoryId = categoryId;
         this.layout = TENRecipeWidget.layout(categoryId);
         this.inputs = emiInputs(recipe);

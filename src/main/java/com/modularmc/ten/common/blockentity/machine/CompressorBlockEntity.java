@@ -92,7 +92,7 @@ public class CompressorBlockEntity extends RecipeMachineBlockEntity {
             if (recipe instanceof FormsCombinedRecipe r && r.matches(itemHandler, tanks, this::slotType, this::tankType)) {
                 r.recipeType = TENRecipeTypes.COMPRESSOR_T.get();
                 r.serializer = TENRecipeTypes.COMPRESSOR_S.get();
-                return r;
+                return r.assignId(holder.id());
             }
         }
         return null;

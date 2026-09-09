@@ -155,6 +155,17 @@ public class FormsCombinedRecipe implements RandRecipe {
         return id;
     }
 
+    /**
+     * 回填配方 id：1.21 Codec 体系下 serializer 解码时拿不到 id（由 RecipeManager 经
+     * RecipeHolder 从文件路径提供）→ {@link FormsCombinedRecipeSerializer} 只能传 null。
+     * 所有从 RecipeManager 取出本类配方的调用侧（findRecipe/EMI 集成）须以 holder.id() 回填，
+     * 否则 {@link #getId()} 为 null → 机器配方身份变更检测失效（切配方不重置进度）、EMI id 缺失。
+     */
+    public FormsCombinedRecipe assignId(ResourceLocation holderId) {
+        this.id = holderId;
+        return this;
+    }
+
     public RecipeType<?> getType() {
         return recipeType;
     }

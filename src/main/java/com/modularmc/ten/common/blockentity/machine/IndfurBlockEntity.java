@@ -82,7 +82,7 @@ public class IndfurBlockEntity extends RecipeMachineBlockEntity {
             if (recipe instanceof FormsCombinedRecipe r && r.matches(itemHandler, tanks, this::slotType, this::tankType)) {
                 r.recipeType = TENRecipeTypes.INDUCTION_FURNACE_T.get();
                 r.serializer = TENRecipeTypes.INDUCTION_FURNACE_S.get();
-                return r;
+                return r.assignId(holder.id());
             }
         }
         return null;

@@ -79,7 +79,7 @@ public class PsionicantBlockEntity extends RecipeMachineBlockEntity {
             if (recipe instanceof FormsCombinedRecipe r && r.matches(itemHandler, tanks, this::slotType, this::tankType)) {
                 r.recipeType = TENRecipeTypes.PSIONICANT_T.get();
                 r.serializer = TENRecipeTypes.PSIONICANT_S.get();
-                return r;
+                return r.assignId(holder.id());
             }
         }
         return null;
