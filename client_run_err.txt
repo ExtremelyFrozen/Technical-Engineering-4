@@ -1,2 +1,4 @@
-9�� 09, 2026 5:46:54 ���� guideme.internal.shaded.lucene.internal.vectorization.VectorizationProvider lookup
+注: E:\GitHub\Technical-Engineering-4\Technical-Engineering-4-1.21.1\src\client\java\com\modularmc\ten\client\TENClientRecipeCache.java使用了未经检查或不安全的操作。
+注: 有关详细信息, 请使用 -Xlint:unchecked 重新编译。
+9�� 09, 2026 6:01:29 ���� guideme.internal.shaded.lucene.internal.vectorization.VectorizationProvider lookup
 ����: You are running with unsupported Java 21. To make full use of the Vector API, please update Apache Lucene.

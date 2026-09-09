@@ -37,7 +37,8 @@ public abstract class ProcessingMachineBlockEntity extends CmMachineBlockEntity 
         // 即使 conditionStart() == false（无任务），有光向本机补能也应允许注入。
         tryInjectPhotosynEnergy();
 
-        if (conditionStart() && signalAllowRun() && energyAllowRun()) {
+        boolean start = conditionStart();
+        if (start && signalAllowRun() && energyAllowRun()) {
             setActive(true);
 
             // ── Step 1: 期望总 FE/t（fePerTick = 实际效率 × 锁定批处理 B）──
@@ -98,7 +99,16 @@ public abstract class ProcessingMachineBlockEntity extends CmMachineBlockEntity 
             }
         } else {
             setActive(false);
-            // P0-1 停滞语义：条件/信号/能量不满足时保留当前 progress 等待恢复（旧版归零已废弃）
+            // 原料消失守卫（对齐 EffectMachineBlockEntity）：仅当任务条件不满足
+            // （conditionStart()==false，如输入被取出/配方失配）且信号/能量未阻断时，
+            // 进行中的进度作废归零——进度条立即清空，不保留半途进度。
+            // 信号关闭/能量不足/输出满时 start 仍 true（或早于 else 提前 return），
+            // 不进此分支，仍走 P0-5 停滞语义保留 progress 等待恢复。
+            if (!start && progress > 0) {
+                progress = 0;
+                clearLockedBatch();
+                markDirty("progress");
+            }
         }
     }
 
