@@ -146,10 +146,10 @@ public final class TENMachineBlockUIFactory {
     private static final int PANEL_UPGRADE_UNDERLAY_H = 62;
     /** 升级面板附加底图内边距：内容区原点 10 外扩 2px → (8,8)（右/下缘对称至 50，面板 58/78 内居中）。 */
     private static final int UPGRADE_PANEL_BORDER = CONFIG_OVERLAY_XY - 2;
-    /** 中间叠加层外扩量：叠加层在内容区原点基础上每边外扩 2px（升级/配置面板同款，对齐升级面板间距观感）。 */
-    private static final int CONFIG_UNDERLAY_OUTSET = 2;
-    /** 中间叠加层原点：内容区原点 10 - 外扩 2 = 8。 */
-    private static final int CONFIG_UNDERLAY_XY = CONFIG_OVERLAY_XY - CONFIG_UNDERLAY_OUTSET;
+    /** 中间叠加层外扩量：legacy 纹理自带 5px 留白（拉伸后 ≈6px），叠加层贴内边框(4,4) 起绘。 */
+    private static final int CONFIG_UNDERLAY_OUTSET = 6;
+    /** 中间叠加层原点：贴九宫格内边框内沿 = CONFIG_PANEL_BORDER。 */
+    private static final int CONFIG_UNDERLAY_XY = CONFIG_PANEL_BORDER;
 
     public static void addCommonSidebar(UIElement root, BlockUIMenuType.BlockUIHolder holder, CmMachineBlockEntity machine, UIState uiState) {
         // 侧栏 tab 全部引用独立 26×26 图标（icons/*.png），不再切旧图集
@@ -203,8 +203,9 @@ public final class TENMachineBlockUIFactory {
         // 附加底图（用户需求）：介入九宫格底图与内容钮之间——legacy 布局图 60×85 精确覆盖内容区
         // （10 + 60 + 10 = 80 宽 / 10 + 85 + 10 = 105 高）；后 addChild → 同 zIndex(0) 下后画于切片，
         // 内容钮 zIndex=1（root 子级）仍在其上
-        // [间距对齐 2026-09] 中间叠加层与九宫格内边框间距 6→4px（与升级面板同款外扩 2px 模式）：
-        // 叠加层移至 (8,8) 并外扩至 64×89，内容钮仍按 overlayOrigin(10,10) 定位不迁移
+        // [间距对齐 2026-09 v2] legacy 纹理自带 5px 留白（与九宫格内边框间另有代码间距，
+        // 叠加后视觉 ≈9.3px > 6px 要求）。改为叠加层贴内边框 (4,4) 起绘、每边外扩 6px
+        // → 拉伸后纹理留白 5×1.2=6px = 精确视觉间距 6px；内容钮仍按 overlayOrigin(10,10) 不迁移
         var configUnderlay = new UIElement().style(style -> style.backgroundTexture(
                 fullTexture(TENConstants.PANEL_CONFIG_LEGACY, OVERLAY_TEX_W + 2 * CONFIG_UNDERLAY_OUTSET,
                         OVERLAY_TEX_H + 2 * CONFIG_UNDERLAY_OUTSET)));
