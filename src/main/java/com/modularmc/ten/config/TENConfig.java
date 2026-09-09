@@ -193,12 +193,37 @@ public final class TENConfig {
 
         public final ModConfigSpec.BooleanValue showMachineHUD;
         public final ModConfigSpec.BooleanValue showCableHUD;
+        public final ModConfigSpec.BooleanValue panelAnimationEnabled;
+        public final ModConfigSpec.IntValue panelAnimationSpeed;
+        public final ModConfigSpec.IntValue upgradePanelAnimationSpeed;
 
         ClientConfig(ModConfigSpec.Builder builder) {
-            builder.push("client").comment("Client-side HUD configuration");
+            builder.push("client").comment("Client-side HUD configuration")
+                    .translation("kenergyengineering.configuration.client");
 
-            showMachineHUD = builder.comment("Show machine HUD overlay").define("showMachineHUD", true);
-            showCableHUD = builder.comment("Show cable HUD overlay").define("showCableHUD", true);
+            showMachineHUD = builder.comment("Show machine HUD overlay")
+                    .translation("kenergyengineering.configuration.client.showMachineHUD")
+                    .define("showMachineHUD", true);
+            showCableHUD = builder.comment("Show cable HUD overlay")
+                    .translation("kenergyengineering.configuration.client.showCableHUD")
+                    .define("showCableHUD", true);
+
+            builder.pop();
+
+            // ── 展开面板动画（用户需求 2026-09）：反馈展开过慢 → 可动态调速/关闭 ──
+            builder.push("panelAnimation").comment("Expandable panel animation")
+                    .translation("kenergyengineering.configuration.panelAnimation");
+
+            panelAnimationEnabled = builder.comment("Enable expand/collapse animation for config & upgrade panels. False = instant toggle")
+                    .translation("kenergyengineering.configuration.panelAnimation.enabled")
+                    .define("enabled", true);
+            // 统一速度（px/tick）：两面板共用；独立项覆盖统一值（独立函数部分）
+            panelAnimationSpeed = builder.comment("Common panel expand speed (px per tick). Higher = faster. Applies when per-panel override is 0")
+                    .translation("kenergyengineering.configuration.panelAnimation.speed")
+                    .defineInRange("speed", 6, 1, 100);
+            upgradePanelAnimationSpeed = builder.comment("Upgrade panel expand speed override (px per tick). 0 = use common speed")
+                    .translation("kenergyengineering.configuration.panelAnimation.upgradeSpeed")
+                    .defineInRange("upgradeSpeed", 0, 0, 100);
 
             builder.pop();
         }
@@ -209,6 +234,17 @@ public final class TENConfig {
 
         public boolean showCableHUD() {
             return showCableHUD.get();
+        }
+
+        /** 统一函数+独立函数混合：独立项 0 = 回退统一速度。 */
+        public int panelAnimationSpeed(String panel) {
+            if (!panelAnimationEnabled.get()) {
+                return Integer.MAX_VALUE; // 动画关闭 → 单 tick 直达目标宽
+            }
+            if ("upgrade".equals(panel) && upgradePanelAnimationSpeed.get() > 0) {
+                return upgradePanelAnimationSpeed.get();
+            }
+            return panelAnimationSpeed.get();
         }
     }
 }

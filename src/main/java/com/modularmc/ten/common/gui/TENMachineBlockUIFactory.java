@@ -5,6 +5,7 @@ import com.modularmc.ten.api.blockentity.CmMachineBlockEntity;
 import com.modularmc.ten.api.option.FaceOption;
 import com.modularmc.ten.api.option.MachineType;
 import com.modularmc.ten.api.option.RedstoneMode;
+import com.modularmc.ten.config.TENConfig;
 import com.modularmc.ten.utils.ComponentHelper;
 import com.modularmc.ten.utils.DisplayHelper;
 
@@ -95,7 +96,7 @@ public final class TENMachineBlockUIFactory {
     private static final int PANEL_SRC_SIZE = 128;
     /** 九宫格边框厚度：四角 4×4 固定，边/心拉伸适配任意目标宽高。 */
     private static final int CONFIG_PANEL_BORDER = 4;
-    /** 面板展开/收起速度（px/tick）：底图九宫格与内容同由 panelWidth 驱动，速度一致；80px 约 14tick（0.7s）、升级面板 58px 约 10tick（0.5s）。 */
+    /** 面板展开/收起基准速度：现在由 CLIENT 配置 panelAnimation 组控制（统一+独立混合），保留常量作回退基准值。 */
     private static final int CONFIG_PANEL_SPEED = 6;
     /** 主 GUI 宽 176，tab 邻主 GUI 间隙 1px → tab 左缘 177。 */
     private static final int CONFIG_TAB_X = 176 + 1;
@@ -145,6 +146,10 @@ public final class TENMachineBlockUIFactory {
     private static final int PANEL_UPGRADE_UNDERLAY_H = 62;
     /** 升级面板附加底图内边距：内容区原点 10 外扩 2px → (8,8)（右/下缘对称至 50，面板 58/78 内居中）。 */
     private static final int UPGRADE_PANEL_BORDER = CONFIG_OVERLAY_XY - 2;
+    /** 中间叠加层外扩量：叠加层在内容区原点基础上每边外扩 2px（升级/配置面板同款，对齐升级面板间距观感）。 */
+    private static final int CONFIG_UNDERLAY_OUTSET = 2;
+    /** 中间叠加层原点：内容区原点 10 - 外扩 2 = 8。 */
+    private static final int CONFIG_UNDERLAY_XY = CONFIG_OVERLAY_XY - CONFIG_UNDERLAY_OUTSET;
 
     public static void addCommonSidebar(UIElement root, BlockUIMenuType.BlockUIHolder holder, CmMachineBlockEntity machine, UIState uiState) {
         // 侧栏 tab 全部引用独立 26×26 图标（icons/*.png），不再切旧图集
@@ -198,14 +203,17 @@ public final class TENMachineBlockUIFactory {
         // 附加底图（用户需求）：介入九宫格底图与内容钮之间——legacy 布局图 60×85 精确覆盖内容区
         // （10 + 60 + 10 = 80 宽 / 10 + 85 + 10 = 105 高）；后 addChild → 同 zIndex(0) 下后画于切片，
         // 内容钮 zIndex=1（root 子级）仍在其上
+        // [间距对齐 2026-09] 中间叠加层与九宫格内边框间距 6→4px（与升级面板同款外扩 2px 模式）：
+        // 叠加层移至 (8,8) 并外扩至 64×89，内容钮仍按 overlayOrigin(10,10) 定位不迁移
         var configUnderlay = new UIElement().style(style -> style.backgroundTexture(
-                fullTexture(TENConstants.PANEL_CONFIG_LEGACY, OVERLAY_TEX_W, OVERLAY_TEX_H)));
+                fullTexture(TENConstants.PANEL_CONFIG_LEGACY, OVERLAY_TEX_W + 2 * CONFIG_UNDERLAY_OUTSET,
+                        OVERLAY_TEX_H + 2 * CONFIG_UNDERLAY_OUTSET)));
         configUnderlay.layout(layout -> {
             layout.positionType(TaffyPosition.ABSOLUTE);
-            layout.left(CONFIG_OVERLAY_XY);
-            layout.top(CONFIG_OVERLAY_XY);
-            layout.width(OVERLAY_TEX_W);
-            layout.height(OVERLAY_TEX_H);
+            layout.left(CONFIG_UNDERLAY_XY);
+            layout.top(CONFIG_UNDERLAY_XY);
+            layout.width(OVERLAY_TEX_W + 2 * CONFIG_UNDERLAY_OUTSET);
+            layout.height(OVERLAY_TEX_H + 2 * CONFIG_UNDERLAY_OUTSET);
         });
         configPanel.addChild(configUnderlay);
         // 层2+ 内容钮：坐标 = 覆盖层原点 (10,10) + legacy 原布局相对坐标；仅 fullyOpen 后可交互。
@@ -246,10 +254,12 @@ public final class TENMachineBlockUIFactory {
                 .style(style -> style.zIndex(1));
 
         root.addChild(configPanel);
-        // 点击面板背景空白处收起面板：CLICK target 为面板子树内背景元素（切片/overlay），
-        // 冒泡路径含 configPanel；内容钮/槽位是 root 直接子元素，点击不经过 panel 子树，不会误触发
+        // 点击面板空白处收起面板：CLICK target 为面板子树内背景元素（切片/underlay），
+        // 冒泡路径含 configPanel；内容钮/槽位是 root 直接子元素，点击不经过 panel 子树，不会误触发。
+        // [收敛] 空位定义 = 面板子树内非交互背景，但中间叠加层区域排除（用户需求）：
+        // 点九宫格切片/overlay 空白收起，点叠加层（configUnderlay）不收起
         configPanel.addEventListener(UIEvents.CLICK, event -> {
-            if (event.button == 0) {
+            if (event.button == 0 && !isUnderlayTarget(event.target, configUnderlay)) {
                 uiState.setControlOpen(false);
             }
         });
@@ -286,7 +296,7 @@ public final class TENMachineBlockUIFactory {
                     }
                     applyPanelSlices(configPanelSlices, 0, 0);
                 } else if (w < CONFIG_PANEL_WIDTH) {
-                    int next = Math.min(w + CONFIG_PANEL_SPEED, CONFIG_PANEL_WIDTH);
+                    int next = Math.min(w + TENConfig.CLIENT.panelAnimationSpeed("config"), CONFIG_PANEL_WIDTH);
                     panelWidth[0] = next;
                     configPanel.setDisplay(next >= CONFIG_PANEL_MIN_VISIBLE);
                     applyPanelSlices(configPanelSlices, next, panelHeightFor(next, CONFIG_PANEL_WIDTH, CONFIG_PANEL_HEIGHT));
@@ -305,7 +315,7 @@ public final class TENMachineBlockUIFactory {
                     content.setDisplay(false);
                 }
                 if (w > 0) {
-                    int next = Math.max(w - CONFIG_PANEL_SPEED, 0);
+                    int next = Math.max(w - TENConfig.CLIENT.panelAnimationSpeed("config"), 0);
                     panelWidth[0] = next;
                     configPanel.setDisplay(next >= CONFIG_PANEL_MIN_VISIBLE);
                     applyPanelSlices(configPanelSlices, next, panelHeightFor(next, CONFIG_PANEL_WIDTH, CONFIG_PANEL_HEIGHT));
@@ -320,6 +330,19 @@ public final class TENMachineBlockUIFactory {
         };
         syncSidebar.run();
         root.addEventListener(UIEvents.TICK, event -> syncSidebar.run());
+    }
+
+    /**
+     * 空位收敛判定：event.target 是否位于中间叠加层元素上（自身或其子元素）。
+     * 叠加层为非交互背景，命中它或其子树时不算「点空白」，不触发收起。
+     */
+    private static boolean isUnderlayTarget(UIElement target, UIElement underlay) {
+        for (UIElement e = target; e != null; e = e.getParent()) {
+            if (e == underlay) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /** 对角展开的高度插值：宽度按比例折算高度（从 tab 左上角向右下生长/收回）。 */
@@ -383,8 +406,10 @@ public final class TENMachineBlockUIFactory {
         List<UIElement> upgradeContents = new ArrayList<>();
 
         upgradePanel.addEventListener(UIEvents.CLICK, event -> {
-            // 排除槽点击：槽在 panel 子树内，CLICK 冒泡必经 panel，不排除则点槽放取物品会误收起
-            if (event.button == 0 && !(event.target instanceof ItemSlot)) {
+            // 空位收敛（用户需求）：点槽放取物品不收起；点中间叠加层（upgradeUnderlay）
+            // 区域也不收起——叠加层为非交互背景，但用户期望其范围与九宫格切片同样排除收起。
+            // target 命中判定：槽实例 / 叠加层元素（子树冒泡 target 不变）
+            if (event.button == 0 && !(event.target instanceof ItemSlot) && !isUnderlayTarget(event.target, upgradeUnderlay)) {
                 uiState.setUpgradeOpen(false);
             }
         });
@@ -427,7 +452,7 @@ public final class TENMachineBlockUIFactory {
                     }
                     applyPanelSlices(upgradePanelSlices, 0, 0);
                 } else if (w < UPGRADE_PANEL_WIDTH) {
-                    int next = Math.min(w + CONFIG_PANEL_SPEED, UPGRADE_PANEL_WIDTH);
+                    int next = Math.min(w + TENConfig.CLIENT.panelAnimationSpeed("upgrade"), UPGRADE_PANEL_WIDTH);
                     panelWidth[0] = next;
                     upgradePanel.setDisplay(next >= CONFIG_PANEL_MIN_VISIBLE);
                     applyPanelSlices(upgradePanelSlices, next, panelHeightFor(next, UPGRADE_PANEL_WIDTH, UPGRADE_PANEL_HEIGHT));
@@ -453,7 +478,7 @@ public final class TENMachineBlockUIFactory {
                     content.setDisplay(false);
                 }
                 if (w > 0) {
-                    int next = Math.max(w - CONFIG_PANEL_SPEED, 0);
+                    int next = Math.max(w - TENConfig.CLIENT.panelAnimationSpeed("upgrade"), 0);
                     panelWidth[0] = next;
                     upgradePanel.setDisplay(next >= CONFIG_PANEL_MIN_VISIBLE);
                     applyPanelSlices(upgradePanelSlices, next, panelHeightFor(next, UPGRADE_PANEL_WIDTH, UPGRADE_PANEL_HEIGHT));

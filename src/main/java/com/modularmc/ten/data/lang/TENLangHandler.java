@@ -26,6 +26,7 @@ public final class TENLangHandler {
         addAdvancements(provider);
         addEmi(provider);
         addJei(provider);
+        addConfig(provider);
     }
 
     private static void addDirections(RegistrateLangProvider provider) {
@@ -336,6 +337,19 @@ public final class TENLangHandler {
 
     private static void add(RegistrateLangProvider provider, String suffix, String en, String cn) {
         addRaw(provider, TEN.MOD_ID + "." + suffix, en, cn);
+    }
+
+    private static void addConfig(RegistrateLangProvider provider) {
+        addRaw(provider, "kenergyengineering.configuration.client", "Client", "客户端");
+        addRaw(provider, "kenergyengineering.configuration.client.showMachineHUD", "Show machine HUD", "显示机器 HUD");
+        addRaw(provider, "kenergyengineering.configuration.client.showCableHUD", "Show cable HUD", "显示管道 HUD");
+        addRaw(provider, "kenergyengineering.configuration.panelAnimation", "Panel Animation", "面板动画");
+        addRaw(provider, "kenergyengineering.configuration.panelAnimation.enabled", "Enable panel animation", "启用面板展开动画");
+        addRaw(provider, "kenergyengineering.configuration.panelAnimation.enabled.tooltip", "Animate the config & upgrade panels expanding/collapsing. Disable for instant toggle.", "配置面板与升级面板展开/收起时播放动画。关闭后立即展开/收起（无动画）。");
+        addRaw(provider, "kenergyengineering.configuration.panelAnimation.speed", "Common panel speed (px/tick)", "通用面板速度（像素/刻）");
+        addRaw(provider, "kenergyengineering.configuration.panelAnimation.speed.tooltip", "Expand/collapse speed shared by all panels. Higher = faster. Per-panel override takes precedence when nonzero.", "所有展开面板共用的展开/收起速度，数值越大越快。面板独立速度非 0 时优先生效。");
+        addRaw(provider, "kenergyengineering.configuration.panelAnimation.upgradeSpeed", "Upgrade panel speed override (px/tick)", "升级面板独立速度（像素/刻）");
+        addRaw(provider, "kenergyengineering.configuration.panelAnimation.upgradeSpeed.tooltip", "Speed override for the upgrade panel only. 0 = use common speed.", "仅升级面板使用的独立展开/收起速度，0 = 使用通用面板速度。");
     }
 
     private static void addRaw(RegistrateLangProvider provider, String key, String en, String cn) {
