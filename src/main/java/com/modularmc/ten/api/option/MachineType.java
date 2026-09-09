@@ -1,5 +1,10 @@
 package com.modularmc.ten.api.option;
 
+/**
+ * 机器类型常量表：0-3 为形态大类（产能/逐 tick 加工/周期效果/范围型），
+ * 10+ 具体机器、20+ 功能方块（破坏器/成型器/冷却器）、30+ 引擎、40+ 储能单元；
+ * 供 UI 背景选择与行为分支。
+ */
 public class MachineType {
 
     public static final int GENERATOR = 0;

@@ -1,5 +1,6 @@
 package com.modularmc.ten.api.blockentity;
 
+import com.modularmc.ten.TEN;
 import com.modularmc.ten.api.capability.MachineFluidTank;
 import com.modularmc.ten.api.capability.MachineItemHandler;
 import com.modularmc.ten.api.recipe.FormsCombinedIngredient;
@@ -20,11 +21,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.ToIntBiFunction;
-import java.util.logging.Logger;
 
+/**
+ * 配方机器基类：负责配方查找/身份检测（配方变化重置进度）、四维 B_actual
+ * 锁定（物品/流体/概率输出/储能取最小）、动态槽位堆叠上限与
+ * 七阶段原子产出（快照-模拟-提交，失败回滚）。
+ */
 public abstract class RecipeMachineBlockEntity extends ProcessingMachineBlockEntity {
 
-    private static final Logger LOG = Logger.getLogger("RecipeMachineBlockEntity");
     private static final int ABSOLUTE_MAX_STACK = 99;
 
     public SlotInfo slotInfo;
@@ -58,7 +62,7 @@ public abstract class RecipeMachineBlockEntity extends ProcessingMachineBlockEnt
         boolean identityChanged = !Objects.equals(prevId, nextId);
         if (identityChanged) {
             progress = 0;
-            clearLockedBatch(); // P2-T6: Clear B lock when recipe identity changes
+            clearLockedBatch(); // 配方身份变化时清批处理锁
         }
 
         currentRecipe = nextRecipe;
@@ -77,7 +81,7 @@ public abstract class RecipeMachineBlockEntity extends ProcessingMachineBlockEnt
             lockMaxProgressForNewOperation(maxProgress);
         }
 
-        // ───── P2-T6: Batch B locking ─────
+        // ───── 批处理 B 锁定（四维计算）─────
         if (identityChanged || !hasLockedBatch()) {
             // New operation or no lock: calculate B_actual from all dimensions
             int B_theory = Math.max(1, 1 + batch);
@@ -112,7 +116,7 @@ public abstract class RecipeMachineBlockEntity extends ProcessingMachineBlockEnt
         return true;
     }
 
-    // ───── P2-T6: Batch B dimension helpers ─────
+    // ───── 批处理 B 维度计算辅助 ─────
 
     /**
      * Computes B_byItems: maximum batch size constrained by item input availability.
@@ -472,7 +476,7 @@ public abstract class RecipeMachineBlockEntity extends ProcessingMachineBlockEnt
     public boolean cooking() {
         if (currentRecipe == null) return true;
 
-        // P2-T6: For B > 1, use batch-aware cooking check
+        // B > 1 时使用批处理感知的 cooking 检查
         if (getLockedBatchSize() > 1) {
             return checkBatchCooking();
         }
@@ -656,7 +660,7 @@ public abstract class RecipeMachineBlockEntity extends ProcessingMachineBlockEnt
         // ── Phase 5: Execute consumption (plan.execute has internal rollback) ──
         if (!plan.execute(itemHandler, tanks)) {
             // Consumption failed internally — already rolled back by plan
-            LOG.severe("InputConsumptionPlan.execute failed for recipe=" + currentRecipe.getId());
+            TEN.LOGGER.error("InputConsumptionPlan.execute failed for recipe=" + currentRecipe.getId());
             return;
         }
 
@@ -666,7 +670,7 @@ public abstract class RecipeMachineBlockEntity extends ProcessingMachineBlockEnt
             plan.restore(itemHandler, tanks);
             restoreOutputSlots(outputSlotSnapshots);
             restoreOutputTanks(outputTankSnapshots);
-            LOG.severe("Output commit failed for recipe=" + currentRecipe.getId() + " — inputs and outputs rolled back");
+            TEN.LOGGER.error("Output commit failed for recipe=" + currentRecipe.getId() + " — inputs and outputs rolled back");
             return;
         }
 
@@ -1132,7 +1136,7 @@ public abstract class RecipeMachineBlockEntity extends ProcessingMachineBlockEnt
                 return true;
 
             } catch (Exception e) {
-                LOG.severe("InputConsumptionPlan execution failed: " + e.getMessage());
+                TEN.LOGGER.error("InputConsumptionPlan execution failed: " + e.getMessage());
                 rollback(itemHandler, tanks);
                 return false;
             }
@@ -1228,7 +1232,7 @@ public abstract class RecipeMachineBlockEntity extends ProcessingMachineBlockEnt
         }
 
         if (remaining > 0) {
-            LOG.severe("giveOutput: " + remaining + " items of " + stack.getCount() + " could not be placed for item=" + item + " in outputs [" + start + "," + end + "]");
+            TEN.LOGGER.error("giveOutput: " + remaining + " items of " + stack.getCount() + " could not be placed for item=" + item + " in outputs [" + start + "," + end + "]");
             onRemainingOutput(stack.copyWithCount(remaining));
         }
     }

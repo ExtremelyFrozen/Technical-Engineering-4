@@ -15,7 +15,7 @@ import dev.emi.emi.api.widget.WidgetHolder;
 import java.util.List;
 
 /**
- * 引擎燃料三类（extractor/metalizer/biomass）的 EMI 配方包装（26.1.2 JEI 对齐）：
+ * 引擎燃料三类（extractor/metalizer/biomass）的 EMI 配方包装：
  * 燃料输入槽（ITEM_SLOT_SMALL 底图）+ 燃料表（FUEL_GAUGE_BG/FILL）+ 右侧三行信息文本。
  * 布局常量与 {@code EngineFuelCategory} 逐坐标一致。
  */

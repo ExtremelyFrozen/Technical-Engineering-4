@@ -1,6 +1,7 @@
 package com.modularmc.ten.common.item.upgrades;
 
 import com.modularmc.ten.api.blockentity.CmMachineBlockEntity;
+import com.modularmc.ten.api.blockentity.IUpgradableMachine;
 
 public class LevelupShulker extends UpgradeItem {
 

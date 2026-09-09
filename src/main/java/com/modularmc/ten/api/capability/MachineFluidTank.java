@@ -5,11 +5,15 @@ import net.neoforged.neoforge.fluids.capability.templates.FluidTank;
 
 import java.util.function.Predicate;
 
+/**
+ * 机器流体罐能力：记录构造初始容量供批处理 B 缩放恢复基准，
+ * 容量运行时可调且不缩存量（stored 超出新容量保持至耗）。
+ */
 public class MachineFluidTank extends FluidTank {
 
     private Runnable changeListener = () -> {};
 
-    /** 构造时记录的初始容量，用于批处理（B）批量缩放时恢复基准（26.1.2 对齐）。 */
+    /** 构造时记录的初始容量，用于批处理（B）批量缩放时恢复基准。 */
     private final int initialCapacity;
 
     public MachineFluidTank(int capacity) {

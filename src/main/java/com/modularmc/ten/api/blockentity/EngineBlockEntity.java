@@ -13,6 +13,10 @@ import net.minecraft.world.level.block.state.BlockState;
 import com.lowdragmc.lowdraglib2.gui.factory.BlockUIMenuType;
 import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
 
+/**
+ * 引擎基类：由燃料匹配（MatchFuel）或天空光照驱动产能，
+ * 能量面强制 OUT 主动向相邻机器推送。
+ */
 public abstract class EngineBlockEntity extends CmMachineBlockEntity {
 
     public EngineBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {

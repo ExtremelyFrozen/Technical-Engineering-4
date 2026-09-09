@@ -2,6 +2,10 @@ package com.modularmc.ten.api.capability;
 
 import net.neoforged.neoforge.energy.EnergyStorage;
 
+/**
+ * 机器储能能力：容量与收发速率可在运行时调整
+ * （批处理 B 缩放、Stream 无限传输解除限流），存量超容时截断。
+ */
 public class MachineEnergyStorage extends EnergyStorage {
 
     private Runnable changeListener = () -> {};

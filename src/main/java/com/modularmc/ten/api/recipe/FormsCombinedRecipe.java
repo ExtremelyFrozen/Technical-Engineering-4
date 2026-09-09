@@ -18,6 +18,10 @@ import net.neoforged.neoforge.items.IItemHandler;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * 基于 FormsCombinedIngredient 的通用配方实现：输入/输出条目列表 +
+ * 加工时长；提供按槽位/罐类型重载的 matches 匹配（不依赖原版 RecipeInput）。
+ */
 public class FormsCombinedRecipe implements RandRecipe {
 
     protected ResourceLocation regName;

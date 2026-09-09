@@ -317,7 +317,7 @@ public class PipeBlockEntity extends CmBlockEntity implements ITransmitterProvid
     public ModularUI createUI(BlockUIMenuType.BlockUIHolder holder) {
         UIElement root = TENMachineBlockUIFactory.createRoot(TENConstants.MACHINE_GUI);
         if (isFiltered()) {
-            // 白/黑名单模式标题（对齐 26.1.2 参照）
+            // 白/黑名单模式标题
             String modeKey = isWhitelist() ? "kenergyengineering.pipe.filter.whitelist" : "kenergyengineering.pipe.filter.blacklist";
             Label modeLabel = new Label();
             modeLabel.setText(ComponentHelper.translated(modeKey));

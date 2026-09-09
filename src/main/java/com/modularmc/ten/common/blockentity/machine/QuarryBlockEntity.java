@@ -43,7 +43,7 @@ public class QuarryBlockEntity extends RadiusMachineBlockEntity {
 
     private int mode;
 
-    // ── 游标扫描状态（26.1.2 对齐：核心算法 + 恢复路径）──
+    // ── 游标扫描状态（核心算法 + 跨重启恢复路径）──
 
     /** 当前层栅格游标 X（世界块坐标，区块边界内）。 */
     @Persisted
@@ -136,7 +136,7 @@ public class QuarryBlockEntity extends RadiusMachineBlockEntity {
     @Override
     public boolean valid(int slot, ItemStack stack) {
         if (slot < TOOL_SLOTS) {
-            // 工具槽：任何带 TOOL 组件的物品（26.1.2 对齐，原 TieredItem 判定过窄）
+            // 工具槽：任何带 TOOL 组件的物品（原 TieredItem 判定过窄）
             return stack.has(DataComponents.TOOL);
         }
         return true;
@@ -203,7 +203,7 @@ public class QuarryBlockEntity extends RadiusMachineBlockEntity {
     }
 
     /**
-     * 标准/极速扫描模式切换按钮（26.1.2 对齐，逐坐标）。
+     * 标准/极速扫描模式切换按钮（逐坐标）。
      * 位置 (2,66) 44x16：能量条正下方空余带；与进度条 (48,74)、玩家物品栏 (7,83) 无重叠。
      * 点击经 rpcToServer 显式发包，服务端执行 {@link #rpcToggleScanFast}。
      */
@@ -281,7 +281,7 @@ public class QuarryBlockEntity extends RadiusMachineBlockEntity {
             clearLockedBatch();
             return;
         }
-        // 批量升级时按 lockedB 动态扩展输出槽上限（26.1.2 对齐）
+        // 批量升级时按 lockedB 动态扩展输出槽上限
         installDynamicOutputLimit();
         // 只有真正致命条件 break：工具损坏（空）/周期中途挖尽。
         // 单次未命中（无掉落/挖不动/容量满）→ continue（QuarryLoopMissVsBreak 契约）。
@@ -321,7 +321,7 @@ public class QuarryBlockEntity extends RadiusMachineBlockEntity {
     }
 
     /**
-     * 批量升级时按 lockedB 动态扩展输出槽上限（1..12），保留既有超堆叠（26.1.2 对齐）。
+     * 批量升级时按 lockedB 动态扩展输出槽上限（1..12），保留既有超堆叠。
      */
     private void installDynamicOutputLimit() {
         if (itemHandler == null) return;
@@ -352,7 +352,7 @@ public class QuarryBlockEntity extends RadiusMachineBlockEntity {
     }
 
     /**
-     * 游标栅格扫描挖掘（mode 0 常规 / mode 3 Mineral 矿石共用，26.1.2 对齐）。
+     * 游标栅格扫描挖掘（mode 0 常规 / mode 3 Mineral 矿石共用）。
      * 从 machineY-1 层起栅格顺序扫描当前层（±radius 内），跳过空气/不可挖/空掉落，
      * 挖第一个可挖方块；当前层扫完推进下一层。
      * <p>
@@ -611,7 +611,7 @@ public class QuarryBlockEntity extends RadiusMachineBlockEntity {
     }
 
     /**
-     * 快照模拟预检：与 fitAll 提交逻辑完全一致，多件掉落不竞争同一空槽（26.1.2 对齐）。
+     * 快照模拟预检：与 fitAll 提交逻辑完全一致，多件掉落不竞争同一空槽。
      */
     private boolean canFitAll(List<ItemStack> stacks) {
         int outputStart = OUTPUT_START;
@@ -663,7 +663,7 @@ public class QuarryBlockEntity extends RadiusMachineBlockEntity {
     }
 
     /**
-     * 快照 + 模拟 + 原子提交（26.1.2 对齐）：模拟失败 fail-fast，绝不部分写入。
+     * 快照 + 模拟 + 原子提交：模拟失败 fail-fast，绝不部分写入。
      */
     private void fitAll(List<ItemStack> stacks) {
         int outputStart = OUTPUT_START;

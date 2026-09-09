@@ -16,7 +16,7 @@ import snownee.jade.api.config.IPluginConfig;
 /**
  * Jade 管道状态 provider：对准管道方块（pipe/pipe_white/pipe_black）时显示过滤模式。
  * <p>
- * 1.21.1 适配：管道为旧 root 撮合模型（P0-7 冻结），无 isPullSide/getBuffer，
+ * 1.21.1 适配：管道为旧 root 撮合模型（冻结维护，不重构），无 isPullSide/getBuffer，
  * 仅显示过滤模式（白/黑名单）。
  */
 public class PipeJadeProvider implements IBlockComponentProvider {

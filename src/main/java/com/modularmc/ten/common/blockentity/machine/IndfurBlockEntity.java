@@ -90,7 +90,7 @@ public class IndfurBlockEntity extends RecipeMachineBlockEntity {
 
     @Override
     protected boolean revalidateInputs() {
-        // Indfur 使用严格 exact-input 匹配重验（26.1.2 对齐，与 findRecipe 同源）
+        // Indfur 使用严格 exact-input 匹配重验（与 findRecipe 同源）
         if (currentRecipe == null || itemHandler == null) return false;
         return currentRecipe.matches(itemHandler, tanks, this::slotType, this::tankType);
     }

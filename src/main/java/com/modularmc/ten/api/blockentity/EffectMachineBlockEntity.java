@@ -6,6 +6,10 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 
+/**
+ * 周期效果型机器基类：按 effectInterval 周期触发一次 {@code applyEffect}
+ * （施加药水/伤害/冷却/收割/破坏/放置等），不走逐 tick 配方流程。
+ */
 public abstract class EffectMachineBlockEntity extends CmMachineBlockEntity {
 
     public EffectMachineBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
@@ -105,7 +109,7 @@ public abstract class EffectMachineBlockEntity extends CmMachineBlockEntity {
             // 原料消失守卫：仅当任务条件不满足（conditionStart()==false，如输入被取出/耗尽）
             // 且信号放行时，进行中的进度作废归零——进度条立即清空，不保留半途进度。
             // 信号关闭（start 仍 true，等待恢复）与能量不足（Step 3 内 return）不受影响，
-            // 仍走 P0-5 停滞语义保留 progress 等待恢复。
+            // 仍走停滞语义保留 progress 等待恢复。
             if (!start && progress > 0) {
                 progress = 0;
                 clearLockedBatch();

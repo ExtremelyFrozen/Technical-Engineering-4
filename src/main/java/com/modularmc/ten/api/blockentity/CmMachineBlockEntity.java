@@ -10,7 +10,6 @@ import com.modularmc.ten.api.option.RedstoneMode;
 import com.modularmc.ten.common.blockentity.PipeBlockEntity;
 import com.modularmc.ten.common.blockentity.TransferNetworks;
 import com.modularmc.ten.common.gui.TENMachineBlockUIFactory;
-import com.modularmc.ten.common.item.upgrades.IUpgradableMachine;
 import com.modularmc.ten.common.item.upgrades.LevelupBlast;
 import com.modularmc.ten.common.item.upgrades.LevelupSmoke;
 import com.modularmc.ten.common.item.upgrades.LevelupSyn;
@@ -48,6 +47,11 @@ import org.jetbrains.annotations.Nullable;
 import java.util.*;
 import java.util.function.Consumer;
 
+/**
+ * 机器方块实体总基类：聚合能量/物品/流体三能力与升级、面配置、批处理锁、
+ * 主动 IO、范围显示等横切机制；子类按机器形态选择下级抽象基类，
+ * 不直接继承本类。
+ */
 public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpgradableMachine {
 
     // ───── ldlib2 自动同步/持久化字段（由 FieldManagedStorage 管理）─────
@@ -108,7 +112,7 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
 
     /**
      * 范围显示开关（采矿场/啃噬者等）：开启时客户端渲染工作范围线框（getRangeBoxes）。
-     * 持久化 + 客户端同步（@DescSynced），经 rpcToggleRangeVisible 切换（26.1.2 对齐）。
+     * 持久化 + 客户端同步（@DescSynced），经 rpcToggleRangeVisible 切换。
      */
     @Persisted
     @DescSynced
@@ -130,8 +134,8 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
     public int[] itemFaceData = new int[6];
     public int[] fluidFaceData = new int[6];
 
-    // ───── 乘法模型与批处理字段（P0-1 能量模型移植引入）─────
-    /** 时长乘子（26.1.2 乘法模型；P0-4 升级系统接入，当前恒 1.0）。 */
+    // ───── 乘法模型与批处理字段 ─────
+    /** 时长乘子（升级叠加；未装时长类升级时恒 1.0）。 */
     public double durationMultiplier = 1.0;
     /** 是否已安装 LevelupSyn（光合注能）。 */
     public boolean photosynInstalled = false;
@@ -144,7 +148,7 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
     public int batch = 0;
 
     /**
-     * Locked batch size B_actual（P0-1 基础字段；P0-2 批处理锁补四维计算）。
+     * Locked batch size B_actual（批处理锁定的实际批量，四维取最小值）。
      * 0 = 未锁定（无批处理）；处理中 {@link #getLockedBatchSize()} 返回至少 1。
      */
     public int lockedB = 0;
@@ -155,7 +159,7 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
      */
     public int lockedMaxProgress = 0;
 
-    /** 功率乘子（P0-4 乘法模型，升级叠加；初始 1.0）。 */
+    /** 功率乘子（升级叠加；未装功率类升级时恒 1.0）。 */
     public double powerMultiplier = 1.0;
     /** 配方模式（Blast/Smoke 升级切换；默认熔炼）。 */
     public int recipeMode = IUpgradableMachine.RECIPE_MODE_SMELTING;
@@ -283,7 +287,7 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
     }
 
     /**
-     * 是否支持升级槽 UI（26.1.2 对齐）：Cell/CreativeCell/Channel 等不支持，覆写返回 false。
+     * 是否支持升级槽 UI：Cell/CreativeCell/Channel 等不支持，覆写返回 false。
      */
     public boolean supportsUpgradeSlots() {
         return true;
@@ -311,7 +315,7 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
     }
 
     public int getActualEfficiency() {
-        // P0-4: 乘法模型——实际效率 = initialEfficientIn × powerMultiplier（升级乘子叠加）
+        // 乘法模型——实际效率 = initialEfficientIn × powerMultiplier（升级乘子叠加）
         return Math.max(1, (int) Math.round(initialEfficientIn * powerMultiplier));
     }
 
@@ -359,7 +363,7 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
     }
 
     /**
-     * 机器朝向：优先读方块状态的 FACING 属性（与方块实际朝向一致，权威，26.1.2 对齐）。
+     * 机器朝向：优先读方块状态的 FACING 属性（与方块实际朝向一致，权威）。
      * 无 FACING 属性时回退到 {@link #facingVal}（持久化镜像，供 GUI/恢复使用）。
      * 同步镜像字段，保持 GUI/持久化一致。
      */
@@ -470,7 +474,7 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
 
     public boolean energyAllowRun() {
         if (energyStorage == null) return false;
-        // P0-1: 批处理锁感知——锁定时按总 FE/t（baseFe × lockedB）检查，
+        // 批处理锁感知——锁定时按总 FE/t（baseFe × lockedB）检查，
         // 防止 stored >= baseFe 但 < totalFe 时 active 闪烁。
         int baseFe = getActualEfficiency();
         int checkFe = hasLockedBatch() ? (int) Math.round((double) baseFe * getLockedBatchSize()) : baseFe;
@@ -481,7 +485,7 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
     }
 
     /**
-     * Syn 光合注能（P0-1 移植）：在有光条件下向本机储能注入固定 FE/t，
+     * Syn 光合注能：在有光条件下向本机储能注入固定 FE/t，
      * 不向相邻 capability 或网络推送能量。仅在已装 LevelupSyn 且机器为
      * PROCESS/EFFECT 类型时生效。
      *
@@ -497,7 +501,7 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         return energyStorage.receiveEnergy(UpgradeConstants.SYN_PHOTOSYN_FE, false);
     }
 
-    // ───── 批处理锁定接口（P0-1 基础；P0-2 补四维计算与 validateAndLockB）─────
+    // ───── 批处理锁定接口（含四维 B_actual 计算与 validateAndLockB）─────
 
     public boolean hasLockedBatch() {
         return lockedB != 0;
@@ -614,11 +618,11 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         initMachine();
         if (energyStorage == null) return;
         resetUpgradeEffects();
-        // ── 单次 apply：每 doBaseData 周期重置后仅应用一次（26.1.2 对齐；旧版双重 apply
+        // ── 单次 apply：每 doBaseData 周期重置后仅应用一次（旧版双重 apply
         // 使乘子升级效果平方化、radius/batch 每 tick 累加）──
         applyUpgradeEffects();
 
-        // ── 理论 B 批量缩放能量基础设施（26.1.2 对齐）：批量升级后处理速率 fePerTick =
+        // ── 理论 B 批量缩放能量基础设施：批量升级后处理速率 fePerTick =
         // efficientIn × lockedB，储能/吞吐不随 B 放大将导致 extractEnergy 永久不足 → 全机停滞 ──
         int theoreticalB = getTheoreticalBatchSize();
         int effectiveStorage = safeMultiply(initialEnergyStorage, theoreticalB);
@@ -640,10 +644,10 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         maxReceiveFluid = initialFluidReceive;
         maxExtractFluid = initialFluidExtract;
 
-        // ── P0-4 Stream: Unlimited energy transfer overrides rate limits ──
+        // ── Stream: Unlimited energy transfer overrides rate limits ──
         // LevelupStream 安装时 maxReceive/maxExtract 设为 MAX_VALUE 解除速率限制。
         // 必须在 @DescSynced 写入段之前执行，否则客户端同步的 energyRec/energyExt
-        // 永远是 override 前的 effective 值（26.1.2 对齐：override 在镜像写入前）。
+        // 永远是 override 前的 effective 值（override 必须在镜像写入前）。
         // 容量、面配置、canExternalExtract 与方向门控保持不变。
         if (hasUnlimitedEnergyTransfer()) {
             maxReceiveEnergy = Integer.MAX_VALUE;
@@ -670,7 +674,7 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         fluidRec = maxReceiveFluid;
         fluidExt = maxExtractFluid;
         upgSize = upgradeSize;
-        // ── 流体容量批量缩放（26.1.2 对齐）：每 tank 按构造初始容量 × theoreticalB 独立缩放 ──
+        // ── 流体容量批量缩放：每 tank 按构造初始容量 × theoreticalB 独立缩放 ──
         if (!tanks.isEmpty()) {
             for (var tank : tanks) {
                 int effectiveFluidCapacity = safeMultiply(tank.getInitialCapacity(), theoreticalB);
@@ -719,7 +723,7 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         if (!(stack.getItem() instanceof UpgradeItem upgradeItem)) return false;
         // LevelupSyn: max 1 per machine (enforced at install time)
         if (stack.getItem() instanceof LevelupSyn && hasUpgrade(LevelupSyn.class)) return false;
-        // P3: Blast ↔ Smoke mutual exclusion — they cannot coexist.
+        // Blast ↔ Smoke 互斥——不可共存
         if (stack.getItem() instanceof LevelupBlast && hasUpgrade(LevelupSmoke.class)) return false;
         if (stack.getItem() instanceof LevelupSmoke && hasUpgrade(LevelupBlast.class)) return false;
         return upgradeItem.canApply(this);
@@ -743,7 +747,7 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         maxReceiveFluid = initialFluidReceive;
         maxExtractFluid = initialFluidExtract;
         upgradeSize = MAX_UPGRADE_SLOTS;
-        // P0-4: 重置乘法模型字段
+        // 重置乘法模型字段
         durationMultiplier = 1.0;
         powerMultiplier = 1.0;
         batch = 0;
@@ -771,7 +775,7 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         efficientIn = Math.max(1, (int) Math.round(initialEfficientIn * powerMultiplier));
     }
 
-    // ───── P0-4 乘法模型 API 实现 (T1-T5) ─────
+    // ───── 乘法模型 API 实现（IUpgradableMachine）─────
 
     @Override
     public void applyDurationMultiplier(double factor) {
@@ -807,7 +811,7 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
 
     @Override
     public void setRecipeMode(int mode) {
-        // P3: First-wins semantics — only allow transition from SMELTING.
+        // First-wins 语义——仅允许从 SMELTING 切出
         if (this.recipeMode == IUpgradableMachine.RECIPE_MODE_SMELTING) {
             this.recipeMode = mode;
         }
@@ -1055,7 +1059,6 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         // 会重置 maps 并经 rebuildFaceData 抹掉 RPC 推送的真实 faceData（面配置按钮调整后闪烁显示
         // 应有状态又回退默认——与升级槽 deserialize 空 tag 清空同构）；writeTileData 恒写全部面配置，
         // 仅当 tag 含面配置键（真实存档/更新包）时才应用
-        // 读档后立即重建 faceData 镜像（26.1.2 P5-T1 对齐），服务端状态即时正确
         boolean hasFaceConfig = tag.contains("direEnergy" + Direction.NORTH.get3DDataValue());
         // level null-safe：loadAdditional（存档加载）阶段 Minecraft 尚未 setLevel（level==null），
         // 原直接解引用会在每次存档加载时 NPE → MC 吞错并 skip 整批 BE（数据丢失）→
@@ -1068,12 +1071,12 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
                 itemFaceMode.put(direction, tag.getInt("direItem" + direction.get3DDataValue()));
                 fluidFaceMode.put(direction, tag.getInt("direFluid" + direction.get3DDataValue()));
             }
-            // 读档后立即重建 faceData 镜像（26.1.2 P5-T1 对齐），服务端状态即时正确
+            // 读档后立即重建 faceData 镜像，服务端状态即时正确
             rebuildFaceData();
         }
         loadSerializedHandlers(tag, registries);
 
-        // ── P5-T1 旧档兼容：读档时无条件清零进度与运行锁 ──
+        // ── 旧档兼容：读档时无条件清零进度与运行锁 ──
         // 旧 NBT 存的 progress 语义不明（旧版存累计 FE）；无条件清零最安全，
         // 下周期 conditionStart() 会重建基于 tick 的值。库存/能量/升级/面配置均保留。
         progress = 0;
@@ -1153,7 +1156,7 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         }
     }
 
-    // ───── 面配置同步（P0-3 移植）─────
+    // ───── 面配置同步 ─────
 
     /**
      * 从 faceMode maps 重建客户端镜像 faceData（3 类型 × 6 面）。
@@ -1190,7 +1193,7 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         }
     }
 
-    // ───── 主动 IO（P0-3 移植：面配置 IN/OUT 由机器自拉/自推；用户决策：取消 64/tick 上限，每次尽力搬空）─────
+    // ───── 主动 IO（面配置 IN/OUT 由机器自拉/自推；取消 64/tick 上限，每次尽力搬空）─────
 
     /**
      * 机器主动物品 IO：对每个面，itemFaceMode == IN → 主动拉取；OUT/BE_OUT → 主动推出

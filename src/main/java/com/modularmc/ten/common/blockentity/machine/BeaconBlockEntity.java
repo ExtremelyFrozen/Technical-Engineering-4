@@ -99,7 +99,7 @@ public class BeaconBlockEntity extends RadiusMachineBlockEntity {
 
         for (Player player : players) {
             effects.forEach(effect -> {
-                // 时长 × B：long 中间量 + int 安全钳位（26.1.2 对齐，能耗×B 时长兑现）
+                // 时长 × B：long 中间量 + int 安全钳位（能耗×B 时长兑现）
                 long durationLong = 400L * B;
                 int durationClamped = (int) Math.min(durationLong, Integer.MAX_VALUE);
                 player.addEffect(new MobEffectInstance(effect.getEffect(), durationClamped, amplifier, true, true));

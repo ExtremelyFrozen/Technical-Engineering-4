@@ -73,7 +73,7 @@ public class TENEmiRecipe implements EmiRecipe {
 
     @Override
     public void addWidgets(WidgetHolder widgets) {
-        // 26.1.2 对齐：底图为 modular 素材族 jei_handler.png（256×256 画布，上 150×50 面板），按 UV 归一化裁切
+        // 底图为 modular 素材族 jei_handler.png（256×256 画布，上 150×50 面板），按 UV 归一化裁切
         widgets.addTexture(
                 layout.background(),
                 0,
@@ -154,7 +154,7 @@ public class TENEmiRecipe implements EmiRecipe {
 
     /**
      * 按 {@link FormsCombinedIngredient#tooltipKind(boolean)} 分类注册槽位 tooltip
-     * （对齐 26.1.2 JEI registerSlotTooltips：CHANCE_ONLY / CHANCE_WITH_ROLLS / NOT_CONSUMED）。
+     * （与 JEI registerSlotTooltips 三态一致：CHANCE_ONLY / CHANCE_WITH_ROLLS / NOT_CONSUMED）。
      * 与 JEI 侧共用同一 lang 键（jei_addition_chance / jei_addition_chance_rolls / not_consumed）。
      */
     private void attachSlotTooltips(dev.emi.emi.api.widget.SlotWidget slot,

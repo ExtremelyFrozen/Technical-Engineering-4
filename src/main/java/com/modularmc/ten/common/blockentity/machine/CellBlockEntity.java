@@ -33,7 +33,7 @@ public class CellBlockEntity extends CmMachineBlockEntity {
     @Override
     public IngredientType slotType(int slot) {
         // 能量单元两个槽都需要玩家放入带 FE 的电池/物品（充放电），必须可进可出（BOTH）。
-        // 修复：原 IGNORE 的 canIn()/canOut() 均为 false，导致 GUI 无法放入物品（26.1.2 对齐）。
+        // 修复：原 IGNORE 的 canIn()/canOut() 均为 false，导致 GUI 无法放入物品。
         return IngredientType.BOTH;
     }
 

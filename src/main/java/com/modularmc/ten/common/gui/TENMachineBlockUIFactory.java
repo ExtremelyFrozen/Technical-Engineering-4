@@ -80,7 +80,7 @@ public final class TENMachineBlockUIFactory {
     }
 
     public static void addPlayerInventory(UIElement root) {
-        // 26.1.2 对齐：容器左缘 7（背包栏槽位左移 1px），hotbar 上边距 4（快捷栏槽位上移 1px，左移同源）
+        // 容器左缘 7（背包栏槽位左移 1px），hotbar 上边距 4（快捷栏槽位上移 1px，左移同源）
         var inventory = absolute(new InventorySlots(), 7, 83, 162, 58);
         inventory.hotbar.getLayout().marginTop(4.0f);
         inventory.apply(slot -> {
@@ -603,7 +603,7 @@ public final class TENMachineBlockUIFactory {
 
     /**
      * 18x18 频道物品槽：绑定 ChannelItemHandlerFacade（接入后动态指向共享存储），
-     * ITEM_SLOT_SMALL 底图，末影箱动态堆叠上限（26.1.2 T003 对齐）。
+     * ITEM_SLOT_SMALL 底图，末影箱动态堆叠上限。
      */
     public static ItemSlot channelItemSlot(com.modularmc.ten.common.blockentity.channel.AbstractChannelBlockEntity channel, int index, int x, int y) {
         Slot slot = new SlotItemHandler(channel.getChannelItemFacade(), index, 0, 0) {
@@ -634,7 +634,7 @@ public final class TENMachineBlockUIFactory {
 
             @Override
             public int getMaxStackSize(net.minecraft.world.item.ItemStack stack) {
-                // 26.1.2 对齐：上限=底层 itemHandler 槽位上限（动态容量），不按物品原版 64 封顶
+                // 上限=底层 itemHandler 槽位上限（动态容量），不按物品原版 64 封顶
                 return getMaxStackSize();
             }
         };
@@ -642,7 +642,7 @@ public final class TENMachineBlockUIFactory {
     }
 
     /**
-     * 26.1.2 对齐：升级槽专用底图（modular/slots/upgrade_slot.png 18×18）+ quickMovePriority(1000)。
+     * 升级槽专用底图（modular/slots/upgrade_slot.png 18×18）+ quickMovePriority(1000)。
      * 空槽显示 upgrade_slot 本地化 tooltip；非空保留原生物品 tooltip（不覆写事件）。
      * 旧版叠加 textureElement 拦截鼠标导致不可交互，已移除。
      */
@@ -704,7 +704,7 @@ public final class TENMachineBlockUIFactory {
                 uiState::isPanelFullyOpen);
     }
 
-    // ───── Modular 素材族 gauge（全量化对齐 26.1.2）─────
+    // ───── Modular 素材族 gauge ─────
     // 注：旧图集版 energyGauge/fuelGauge/energyGaugeReveal/fuelGaugeReveal 已全量
     // 切换至 modular 独立纹理（energy_gauge_background/fill.png 等）后删除。
 
@@ -864,7 +864,7 @@ public final class TENMachineBlockUIFactory {
     // fluidGaugeModular（FLUID_SLOT 独立纹理 18×50）后删除。
     /**
      * 18x50 modular 流体槽（FLUID_SLOT 底图 + FLUID_SLOT_OVERLAY 覆盖层）：背景 MACHINE_GUI 空面板的机器用。
-     * TENFluidSlot 隐藏温度/气液态行（26.1.2 fluidGaugeBase 对齐）。
+     * TENFluidSlot 隐藏温度/气液态行。
      * 层序（TENFluidSlot 覆写渲染顺序）：底图（流体下方）→ 流体柱 → 覆盖层（空槽时叠槽、
      * 有流体时叠流体）→ hover 高亮。ldlib2 原生顺序是覆盖层先于流体（有流体时被完全遮住）。
      */
@@ -894,7 +894,7 @@ public final class TENMachineBlockUIFactory {
     }
 
     /**
-     * 冷却剂消耗进度栏（P2-1）：绑定冷却器的冷却剂剩余比例，素材 progress_bar_wide_coolant。
+     * 冷却剂消耗进度栏：绑定冷却器的冷却剂剩余比例，素材 progress_bar_wide_coolant。
      */
     public static ProgressBar coolantProgressBar(com.modularmc.ten.common.blockentity.machine.CoolerBlockEntity cooler, int x, int y) {
         var filled = SpriteTexture.of(com.modularmc.ten.TENConstants.PROGRESS_PROGRESS_BAR_WIDE_COOLANT).setSprite(0, 0, 80, 5);
@@ -910,7 +910,7 @@ public final class TENMachineBlockUIFactory {
     }
 
     /**
-     * 迷你垂直进度箭头（P2-1）：输入槽右侧 8x54 素材（顶尖朝上/朝下），非动态（仅背景）。
+     * 迷你垂直进度箭头：输入槽右侧 8x54 素材（顶尖朝上/朝下），非动态（仅背景）。
      */
     public static UIElement verticalProgressMini(int inputX, int inputTopY, int slotSize,
                                                  ResourceLocation texture, boolean targetOnTop) {
@@ -993,7 +993,7 @@ public final class TENMachineBlockUIFactory {
 
     public static ResourceLocation backgroundFor(int machineType) {
         return switch (machineType) {
-            // 26.1.2 对齐（D1/P3+翻新 002）：全部机器统一 MACHINE_GUI 空面板，
+            // 全部机器统一 MACHINE_GUI 空面板，
             // 槽框/仪表由 modular 素材族绘制；专属背景 PNG 保留作回退素材不删。
             case MachineType.FURNACE, MachineType.PULVERIZER, MachineType.COMPRESSOR, MachineType.REFINER, MachineType.INDUCTION_FURNACE, MachineType.PSIONICANT, MachineType.ENCHANTMENT_FLUSHER, MachineType.MATTER_CONDENSER, MachineType.BEACON, MachineType.MOB_RIPPER, MachineType.QUARRY, MachineType.FARM, MachineType.CELL, MachineType.CREATIVE_CELL, MachineType.ENGINE_SOLAR, MachineType.ENGINE_EXTRACTION, MachineType.ENGINE_METAL, MachineType.ENGINE_BIOMASS, MachineType.BLOCK_BREAKER, MachineType.BLOCK_FORMER, MachineType.COOLER -> TENConstants.MACHINE_GUI;
             default -> TENConstants.LEGACY_SHEET;

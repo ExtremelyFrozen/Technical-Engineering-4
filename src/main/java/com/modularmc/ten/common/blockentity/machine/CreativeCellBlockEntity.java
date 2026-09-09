@@ -33,7 +33,7 @@ public class CreativeCellBlockEntity extends CmMachineBlockEntity {
 
     @Override
     public IngredientType slotType(int slot) {
-        // 创造单元槽位需可放入电池物品（充电），必须可进可出（BOTH，26.1.2 对齐）。
+        // 创造单元槽位需可放入电池物品（充电），必须可进可出（BOTH）。
         return IngredientType.BOTH;
     }
 

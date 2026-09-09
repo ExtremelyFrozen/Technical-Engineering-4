@@ -106,7 +106,7 @@ public class EncfluBlockEntity extends ProcessingMachineBlockEntity {
         ItemStack target = itemHandler.getStackInSlot(1);
         ItemStack output = itemHandler.getStackInSlot(2);
 
-        // 基础输入校验——无效则清锁停机（26.1.2 对齐）
+        // 基础输入校验——无效则清锁停机
         if (!tool.isEnchanted() || !(target.isEnchantable() || target.is(Items.BOOK)) || !output.isEmpty()) {
             clearLockedBatch();
             return false;
@@ -149,7 +149,7 @@ public class EncfluBlockEntity extends ProcessingMachineBlockEntity {
 
     @Override
     public boolean cooking() {
-        // 进度推进前检查输出槽与罐容量（26.1.2 对齐：罐满时停滞，不消耗目标空转）
+        // 进度推进前检查输出槽与罐容量（罐满时停滞，不消耗目标空转）
         ItemStack output = itemHandler.getStackInSlot(2);
         if (!output.isEmpty()) return true; // 输出槽被占 → 阻塞
 
@@ -212,11 +212,6 @@ public class EncfluBlockEntity extends ProcessingMachineBlockEntity {
         ItemStack strippedTool = tool.copy();
         strippedTool.set(DataComponents.ENCHANTMENTS, ItemEnchantments.EMPTY);
 
-        // [EncfluDiag] 祛魔组件取证：定位附魔性丢失边界（内存/槽位写入）
-        diagComponents("tool-before", tool);
-        diagComponents("stripped-mem", strippedTool);
-        diagComponents("stripped-isEnchantable=" + strippedTool.isEnchantable() + " isEnchanted=" + strippedTool.isEnchanted(), ItemStack.EMPTY);
-
         // 消耗 B 个目标后的数量
         ItemStack targetAfter = target.copy();
         targetAfter.shrink(B);
@@ -255,9 +250,6 @@ public class EncfluBlockEntity extends ProcessingMachineBlockEntity {
             }
 
             clearLockedBatch();
-            // [EncfluDiag] 写槽后回读：验证槽位往返后组件是否保真
-            diagComponents("slot0-after-set", itemHandler.getStackInSlot(0));
-            diagComponents("slot0-after-isEnchantable=" + itemHandler.getStackInSlot(0).isEnchantable() + " isEnchanted=" + itemHandler.getStackInSlot(0).isEnchanted(), ItemStack.EMPTY);
         } catch (Exception e) {
             // ── 任一异常回滚 ──
             itemHandler.setStackInSlot(0, slot0Snapshot);
@@ -273,17 +265,4 @@ public class EncfluBlockEntity extends ProcessingMachineBlockEntity {
         }
     }
 
-    /** [EncfluDiag] 打印物品全量组件明细（type id 列表，空栈跳过） */
-    private static void diagComponents(String tag, ItemStack stack) {
-        if (stack.isEmpty()) {
-            System.out.println("[EncfluDiag] " + tag + " → (empty)");
-            return;
-        }
-        var ids = new java.util.ArrayList<String>();
-        for (var typed : stack.getComponents()) {
-            ids.add(net.minecraft.core.registries.BuiltInRegistries.DATA_COMPONENT_TYPE.getKey(typed.type()) + "");
-        }
-        java.util.Collections.sort(ids);
-        System.out.println("[EncfluDiag] " + tag + " → count=" + ids.size() + " " + ids);
-    }
 }

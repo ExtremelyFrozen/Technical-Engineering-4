@@ -57,7 +57,7 @@ public class TENRecipeGen implements DataProvider {
                     futures.add(saveJson(cache, recipeDir.resolve("pulverizer/metal/" + mat.id + r.suffix() + ".json"), buildPulv(mat, r)));
             }
 
-            // Raw block → 9 dust + 9×40% bonus dust（26.1.2 对齐，roll 掷骰配方）
+            // Raw block → 9 dust + 9×40% bonus dust（roll 掷骰配方）
             if (mat.hasRawBlock()) {
                 futures.add(saveJson(cache, recipeDir.resolve("pulverizer/metal/" + mat.id + "_raw_block.json"), buildRawBlockPulv(mat)));
             }
@@ -307,7 +307,7 @@ public class TENRecipeGen implements DataProvider {
     // JSON helpers
     // ══════════════════════════════════════════════════════════════════
 
-    /** Raw block → 9 dust with 9×40% bonus dust（roll 掷骰配方，26.1.2 对齐）。 */
+    /** Raw block → 9 dust with 9×40% bonus dust（roll 掷骰配方）。 */
     private JsonObject buildRawBlockPulv(Mat mat) {
         var j = new JsonObject();
         j.addProperty("type", TEN.MOD_ID + ":pulverizer");

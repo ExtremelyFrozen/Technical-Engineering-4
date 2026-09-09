@@ -34,7 +34,7 @@ Technical-Engineering 4 是一个 **NeoForge 1.21.1** 科技模组，继承自 T
 - **语言**: Java 21（部分工具脚本使用 Kotlin）
 - **构建系统**: Gradle + ModDevGradle
 - **注册框架**: Registrate（通过自定义 `TENRegistrate` 封装）
-- **代码简化**: Lombok
+- **代码简化**: Lombok（仅少量 @Getter/@Setter，不强制）
 - **代码格式化**: Spotless（Eclipse 格式化配置）
 
 ---
@@ -87,26 +87,25 @@ src/main/java/com/modularmc/ten/
 ├── TEN.java                        # Mod 主入口
 ├── TENConstants.java               # 常量定义
 ├── api/
-│   ├── blockentity/                # API 层 BlockEntity 接口与抽象（CmBlockEntity, CmMachineBlockEntity）
-│   ├── capability/                 # 能力（Capability）封装
-│   ├── option/                     # 机器配置选项
-│   ├── recipe/                     # 配方 API
+│   ├── blockentity/                # BlockEntity 抽象体系（CmBlockEntity → CmMachineBlockEntity → 处理/效果/范围/配方/引擎）+ IUpgradableMachine
+│   ├── capability/                 # 能力（Capability）封装（能量/物品/流体）
+│   ├── option/                     # 机器配置选项（面配置/机器类型/红石模式/冷却剂）
+│   ├── recipe/                     # 配方 API（FormsCombinedRecipe 体系）
 │   ├── registry/registrate/        # TENRegistrate（Registrate 自定义子类）
+│   ├── transmission/               # 线缆/管道传输网络（能量+物品，冻结维护）
 │   └── wrapper/                    # 包装器
-├── client/
-│   └── gui/                        # 客户端 GUI
-│       ├── element/                # GUI 元素组件
-│       └── screen/                 # Screen 实现
+├── client/                         # main 源集内的 client 侧类（TENKeybinds/TENKeyHandler，@EventBusSubscriber(Dist.CLIENT) 防护）
 ├── common/
 │   ├── block/                      # 方块类
 │   │   └── machine/                # 机器方块继承体系
 │   ├── blockentity/                # 方块实体
+│   │   ├── channel/                # 频道 BE（物品/流体/能量共享存储）
 │   │   └── machine/                # 各机器 BE 实现
+│   ├── channel/                    # 频道系统（ChannelKey/ChannelRegistry/SharedStorage）
 │   ├── data/                       # 注册声明（TENBlocks, TENItems, TENBlockEntities 等）
+│   ├── gui/                        # 机器 UI 工厂（TENMachineBlockUIFactory 等）
 │   ├── item/                       # 物品
 │   │   └── upgrades/               # 升级组件物品
-│   ├── network/                    # 网络
-│   │   └── packet/                 # 网络包
 │   └── registry/                   # 注册入口
 │       └── Registration.java       # TENRegistrate 单例
 ├── config/                         # 配置
@@ -118,14 +117,15 @@ src/main/java/com/modularmc/ten/
 │   ├── TENDataGen.java             # DataGen 初始化
 │   └── lang/                       # 语言提供器
 │       └── TENLangHandler.java     # 中英文翻译入口
-├── integration/                    # 模组集成
+├── integration/                    # 模组集成（main 源集：EMI/XEI；JEI/Jade 在 src/client 源集）
 │   ├── emi/                        # EMI 配方集成
-│   ├── jei/                        # JEI 配方集成
-│   └── xei/                        # 通用跨平台 REI 集成（TODO）
+│   └── xei/                        # JEI/EMI 共享绘制组件（TENRecipeWidget）
 └── utils/                          # 工具类
 ```
 
 `src/generated/resources/` 包含 Registrate 自动产出的资源文件——**不要手动编辑**。
+
+`src/client/java/`（独立源集）存放 client-only 代码：客户端初始化（TENClientSetup）、渲染器（RangeDisplayBER）、JEI/Jade 集成。`src/test/java/` 为 GameTest（网络逻辑与机器 UI）。网络包位于顶层 `network/`（CustomPacketPayload）。
 
 ---
 
@@ -319,7 +319,7 @@ REGISTRATE.addDataGenerator(ProviderType.LANG, TENLangHandler::init);
 | 文件 | 内容 |
 |---|---|
 | `gradle/libs.versions.toml` | 核心依赖：Minecraft、NeoForge、ModDevGradle、Spotless、Lombok、Mixin |
-| `gradle/forge.versions.toml` | NeoForge 生态依赖：Registrate、Configuration、JEI、EMI、Jade、Sodium、Iris、ModernFix、Spark |
+| `gradle/forge.versions.toml` | NeoForge 生态依赖：Registrate、JEI、EMI、Jade、Sodium、Iris、ModernFix、Spark |
 
 `settings.gradle` 中注册了 `forge` catalog：
 

@@ -7,6 +7,10 @@ import net.minecraft.world.level.block.state.BlockState;
 import com.lowdragmc.lowdraglib2.syncdata.annotation.DescSynced;
 import com.lowdragmc.lowdraglib2.syncdata.annotation.Persisted;
 
+/**
+ * 范围型机器基类：维护 radius（随 LevelupRg 升级扩展）与客户端预览半径，
+ * 配合 RangeDisplayBER 渲染工作范围线框。
+ */
 public abstract class RadiusMachineBlockEntity extends EffectMachineBlockEntity {
 
     @Persisted
@@ -64,7 +68,7 @@ public abstract class RadiusMachineBlockEntity extends EffectMachineBlockEntity 
     }
 
     /**
-     * 每轮升级 apply 前重置 radius 到 initialRadius（26.1.2 对齐），
+     * 每轮升级 apply 前重置 radius 到 initialRadius，
      * 防止 {@link com.modularmc.ten.common.item.upgrades.LevelupRg#effect}
      * 的累加语义在每 tick doBaseData 中无界增长。
      * 由 {@link CmMachineBlockEntity#doBaseData()} 在单次

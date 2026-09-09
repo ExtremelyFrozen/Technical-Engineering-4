@@ -17,7 +17,7 @@ import java.util.List;
 /**
  * 范围显示（Range Display）客户端渲染器。
  * <p>
- * 参考 just-dire-things 的 {@code AreaAffectingBER}（26.1.2 同款参照）：
+ * 参考 just-dire-things 的 {@code AreaAffectingBER}：
  * 用客户端 BlockEntityRenderer 每帧绘制工作范围线框，而非服务端粒子
  * （更稳定、不受粒子寿命/距离限制）。
  * <p>
@@ -30,7 +30,7 @@ import java.util.List;
  */
 public class RangeDisplayBER implements BlockEntityRenderer<CmMachineBlockEntity> {
 
-    /** 范围边框颜色（ARGB，26.1.2 同色蓝，alpha 取 1.0F 渲染）。 */
+    /** 范围边框颜色（ARGB 蓝，alpha 取 1.0F 渲染）。 */
     private static final int LINE_COLOR_ARGB = 0xFF4A90D9;
 
     public RangeDisplayBER(BlockEntityRendererProvider.Context context) {

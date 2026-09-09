@@ -45,7 +45,7 @@ public class TENJeiCategory implements IRecipeCategory<FormsCombinedRecipe> {
         this.layout = TENRecipeWidget.layout(categoryId);
         this.title = TENRecipeWidget.titleJei(categoryId);
         this.icon = helper.createDrawableItemStack(iconStack);
-        // 26.1.2 对齐：槽位底图用 LDLib2 modular 素材族（旧版手工 blit 已弃用）
+        // 槽位底图用 LDLib2 modular 素材族（旧版手工 blit 已弃用）
         this.inputSlot = helper.drawableBuilder(TENConstants.ITEM_SLOT_SMALL, 0, 0, 18, 18).setTextureSize(18, 18).build();
         this.fluidSlot = helper.drawableBuilder(TENConstants.FLUID_SLOT, 0, 0, 18, 50).setTextureSize(18, 50).build();
         // 流体槽覆盖层（与 GUI 侧 fluidGaugeModular 同款）：JEI setOverlay 绘制在流体之上——

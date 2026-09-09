@@ -23,6 +23,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+/**
+ * 多形态配方材料条目：统一描述物品/流体/标签材料及其数量、概率、
+ * 掷骰次数（rolls）；同时用于配方输入与输出。
+ */
 public class FormsCombinedIngredient {
 
     boolean ALLOW_ALL;
@@ -197,7 +201,7 @@ public class FormsCombinedIngredient {
     }
 
     public static FormsCombinedIngredient create(int limit, String form, String type, String key, double chance, int rolls) {
-        // ── Rolls 校验（26.1.2 对齐）：仅输出物品允许掷骰 ──
+        // ── Rolls 校验：仅输出物品允许掷骰 ──
         if (rolls < 1) throw new IllegalArgumentException("rolls must be >= 1, got: " + rolls);
         if ("fluid".equals(form) && rolls > 1) {
             throw new IllegalArgumentException("Fluid output ingredient must have rolls=1, but got rolls=" + rolls + " for key=" + key);
@@ -268,7 +272,7 @@ public class FormsCombinedIngredient {
     /**
      * 生成一个带可控随机源的输出物品。
      * 执行 {@code rolls} 次独立伯努利试验，每次成功概率 {@code chance}；
-     * 输出数量 = 成功次数 × {@code amountOrCount}（26.1.2 对齐）。
+     * 输出数量 = 成功次数 × {@code amountOrCount}。
      * 总数超过 {@link Item#ABSOLUTE_MAX_STACK_SIZE}（99）时 fail-fast 抛异常，
      * 而非静默截断——配方定义必须修正以避免物品丢失。
      *

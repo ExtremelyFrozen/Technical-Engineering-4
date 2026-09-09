@@ -7,7 +7,7 @@ public class TENConstants {
     public static final ResourceLocation LEGACY_SHEET = TEN.id("textures/gui/legacy/handler.png");
     public static final ResourceLocation MACHINE_GUI = TEN.id("textures/gui/panels/machine_gui.png");
 
-    // ───── 频道 UI 素材（P0-8 移植自 26.1.2，modular 独立切片）─────
+    // ───── 频道 UI 素材（modular 独立切片）─────
     public static final ResourceLocation CHANNEL_LIST_BG = TEN.id("textures/gui/channels/list_bg.png"); // 69x73
                                                                                                         // 频道目录列表容器底图
     public static final ResourceLocation CHANNEL_ENTRY_BG_HOVER = TEN.id("textures/gui/channels/entry_bg_hover.png"); // 46x13
@@ -19,7 +19,7 @@ public class TENConstants {
     // 频道面板翻页/创建/删除/断开按钮雪碧图：5列×2行，每格 12x12（列0▲/列1▼/列2＋/列3✕/列4断连；行0=normal、行1=hover）
     public static final ResourceLocation CHANNEL_BUTTONS = TEN.id("textures/gui/channels/buttons.png"); // 60x24
 
-    // ───── 进度条素材（P2-1 移植自 26.1.2）─────
+    // ───── 进度条素材 ─────
     public static final ResourceLocation PROGRESS_BAR_WIDE_BG = TEN.id("textures/gui/progress/bar_wide_bg.png"); // 80x5
                                                                                                                  // 横向灰底槽
     public static final ResourceLocation PROGRESS_BAR_WIDE_FILL = TEN.id("textures/gui/progress/bar_wide_fill.png"); // 80x5
@@ -31,7 +31,7 @@ public class TENConstants {
     public static final ResourceLocation PROGRESS_ARROW_MINI_ENCFLU_BG = TEN.id("textures/gui/progress/arrow_mini_encflu_bg.png"); // 8x54
                                                                                                                                    // 尖朝下
 
-    // ───── 机器 GUI 素材族（全量化对齐 26.1.2，modular 独立切片）─────
+    // ───── 机器 GUI 素材族（modular 独立切片）─────
     public static final ResourceLocation ITEM_SLOT_SMALL = TEN.id("textures/gui/slots/item_slot_small.png"); // 18x18
     public static final ResourceLocation ITEM_SLOT_LARGE = TEN.id("textures/gui/slots/item_slot_large.png"); // 26x26
     public static final ResourceLocation ITEM_SLOT_SMALL_CHARGE = TEN.id("textures/gui/slots/item_slot_small_charge.png"); // 18x18

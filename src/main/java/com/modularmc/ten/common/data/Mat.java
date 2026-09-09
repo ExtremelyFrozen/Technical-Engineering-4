@@ -156,7 +156,7 @@ public enum Mat {
 
     /**
      * Whether this material has a raw storage block suitable for pulverizer
-     * processing（26.1.2 对齐）。与 {@link #hasRaw} 分离——vanilla 铁/金/铜的原矿块
+     * processing。与 {@link #hasRaw} 分离——vanilla 铁/金/铜的原矿块
      * 为 minecraft 命名空间，即使本 mod 不注册其原矿物品也存在。
      */
     public boolean hasRawBlock() {

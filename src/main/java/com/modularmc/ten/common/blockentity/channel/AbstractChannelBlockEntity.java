@@ -47,7 +47,7 @@ import java.util.regex.Pattern;
  * 共享存储，不再有逐 tick 轮询搬运。退出（{@link #leave}）时本地缓冲内容
  * 优先回流频道共享存储，频道满则留本地缓冲。
  * <p>
- * P0-8 移植说明：RPC 语义与 26.1.2 一致——C→S 经 {@code rpcToServer} 发起，服务端
+ * RPC 语义（移植自 26.1.2，保持一致）：C→S 经 {@code rpcToServer} 发起，服务端
  * 处理器以 {@code sender.isRemote()} 守卫；S→C 单播经 {@code rpcToPlayer}、广播经
  * {@code rpcToTracking}，客户端处理器以 {@code sender.isServer()} 守卫。
  * 26.1.2 的 Identifier 在 1.21.1 以 {@link ResourceLocation} 替代。

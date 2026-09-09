@@ -45,7 +45,7 @@ public final class TENRecipeWidget {
 
     public record DecorationSpec(DecorationKind kind, int x, int y, int width, int height, ResourceLocation bgTexture, ResourceLocation fillTexture) {
 
-        /** 进度箭头：独立背景/填充素材（26.1.2 modular 素材族）。 */
+        /** 进度箭头：独立背景/填充素材（modular 素材族）。 */
         public static DecorationSpec progress(int x, int y, ResourceLocation bgTexture, ResourceLocation fillTexture) {
             return new DecorationSpec(DecorationKind.PROGRESS, x, y, 22, 16, bgTexture, fillTexture);
         }
@@ -83,7 +83,7 @@ public final class TENRecipeWidget {
     }
 
     /**
-     * 布局规则 v5（26.1.2 重构对齐：移除能量条，组件群居中 + 间距自适应）：
+     * 布局规则 v5（移除能量条，组件群居中 + 间距自适应）：
      * <ol>
      * <li>不再绘制能量条（ENERGY_GAUGE 已从 xei 界面移除）</li>
      * <li>组件群中心 = 75 = 面板中心（150×50），左右对称</li>
@@ -107,7 +107,7 @@ public final class TENRecipeWidget {
     private static final Map<String, Layout> LAYOUTS = buildLayouts();
 
     private static Map<String, Layout> buildLayouts() {
-        // 布局规则 v5：与 26.1.2 逐坐标对齐（150×50 JEI_RECIPE_BG，无能量条，组件居中）
+        // 布局规则 v5：150×50 JEI_RECIPE_BG，无能量条，组件居中
         return Map.of(
                 "pulverizer", new Layout(
                         TENConstants.JEI_RECIPE_BG, 0, 0, 150, 50,
@@ -174,7 +174,7 @@ public final class TENRecipeWidget {
     }
 
     /**
-     * 在配方布局的所有 ITEM+OUTPUT 槽位上绘制概率/掷骰覆盖层（26.1.2 对齐）。
+     * 在配方布局的所有 ITEM+OUTPUT 槽位上绘制概率/掷骰覆盖层。
      * <ul>
      * <li>左上：概率百分比（如 "40%"，chance &lt; 1 时显示）</li>
      * <li>左下：掷骰次数（如 "R9"，rolls &gt; 1 时显示）</li>
@@ -293,7 +293,7 @@ public final class TENRecipeWidget {
     }
 
     /**
-     * 进度箭头：独立背景/填充素材（26.1.2 modular 族），填充从左到右裁切。
+     * 进度箭头：独立背景/填充素材（modular 族），填充从左到右裁切。
      */
     private static void drawProgressDecoration(GuiGraphics graphics, DecorationSpec decoration, double percent) {
         RenderHelper.render(graphics, decoration.x(), decoration.y(), decoration.width(), decoration.height(), decoration.width(), decoration.height(), 0, 0, decoration.bgTexture());

@@ -121,7 +121,7 @@ public class FarmBlockEntity extends RadiusMachineBlockEntity {
     }
 
     /**
-     * 批量升级时按 lockedB 动态扩展输出槽上限（6..11），保留既有超堆叠（26.1.2 对齐）。
+     * 批量升级时按 lockedB 动态扩展输出槽上限（6..11），保留既有超堆叠。
      * 在每个 applyEffect 周期开始时调用。
      */
     private void installDynamicOutputLimit() {
@@ -137,7 +137,7 @@ public class FarmBlockEntity extends RadiusMachineBlockEntity {
 
     /**
      * 生效范围：机器背面（2*radius+1)²（宽轴 ±radius、深轴从背面第一格起，
-     * Y=自身一层），与 buildXOffsets/scanRow 的动态列数 × 动态深度一致（26.1.2 对齐）。
+     * Y=自身一层），与 buildXOffsets/scanRow 的动态列数 × 动态深度一致。
      */
     @Override
     public List<net.minecraft.world.phys.AABB> getRangeBoxes() {
@@ -179,7 +179,7 @@ public class FarmBlockEntity extends RadiusMachineBlockEntity {
     public void applyEffect() {
         if (level == null) return;
 
-        // 批量升级时按 B 动态扩展输出槽上限（26.1.2 对齐）
+        // 批量升级时按 B 动态扩展输出槽上限
         installDynamicOutputLimit();
 
         // Build X offsets for current radius
@@ -197,7 +197,7 @@ public class FarmBlockEntity extends RadiusMachineBlockEntity {
             currentRowIndex = 0;
         }
 
-        // P3-T1c 对齐：每周期连续扫描 B 行（能耗已按 B 放大，产出必须同步兑现）
+        // 每周期连续扫描 B 行（能耗已按 B 放大，产出必须同步兑现）
         int B = getLockedBatchSize();
 
         for (int i = 0; i < B && currentRowIndex < xRowOrder.length; i++) {
@@ -215,7 +215,7 @@ public class FarmBlockEntity extends RadiusMachineBlockEntity {
     }
 
     private int[] buildXOffsets() {
-        // 动态方形：宽度轴 2*radius+1 列（-radius..+radius），随范围升级（LevelupRg）扩展（26.1.2 对齐）
+        // 动态方形：宽度轴 2*radius+1 列（-radius..+radius），随范围升级（LevelupRg）扩展
         int size = 2 * radius + 1;
         int[] offsets = new int[size];
         for (int i = 0; i < size; i++) {
@@ -250,7 +250,7 @@ public class FarmBlockEntity extends RadiusMachineBlockEntity {
         int mz = worldPosition.getZ();
         int maturity = 0;
 
-        // 背面方形：深轴从背面第一格起 2*radius+1 格（不含机器所在行，26.1.2 对齐）
+        // 背面方形：深轴从背面第一格起 2*radius+1 格（不含机器所在行）
         int depth = 2 * radius + 1;
         for (int d = 1; d <= depth; d++) {
             int dx, dz;
@@ -369,7 +369,7 @@ public class FarmBlockEntity extends RadiusMachineBlockEntity {
     }
 
     private boolean canFitAll(List<ItemStack> drops) {
-        // 快照模拟：与 fitAll 提交逻辑完全一致，多件掉落不竞争同一空槽（26.1.2 对齐）
+        // 快照模拟：与 fitAll 提交逻辑完全一致，多件掉落不竞争同一空槽
         int outputStart = 6;
         int slotCount = itemHandler.getSlots() - outputStart;
         ItemStack[] simulated = copyOutputSlots(outputStart, slotCount);
@@ -419,7 +419,7 @@ public class FarmBlockEntity extends RadiusMachineBlockEntity {
     }
 
     private void fitAll(List<ItemStack> drops) {
-        // 快照 + 模拟 + 原子提交（26.1.2 对齐）：模拟失败 fail-fast，绝不部分写入
+        // 快照 + 模拟 + 原子提交：模拟失败 fail-fast，绝不部分写入
         int outputStart = 6;
         int slotCount = itemHandler.getSlots() - outputStart;
         ItemStack[] snapshot = copyOutputSlots(outputStart, slotCount);

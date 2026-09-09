@@ -6,6 +6,11 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 
+/**
+ * 逐 tick 加工机器基类：实现 process() 主循环（门禁检查 → Syn 注能 →
+ * maxProgress 锁定 → 能量扣减 → 进度推进 → 完成钩子）与停滞语义，
+ * 配方查找/产出等细节留给子类。
+ */
 public abstract class ProcessingMachineBlockEntity extends CmMachineBlockEntity {
 
     public ProcessingMachineBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
@@ -33,7 +38,7 @@ public abstract class ProcessingMachineBlockEntity extends CmMachineBlockEntity 
         // Client guard — process/injection runs only on the server logical side
         if (level != null && level.isClientSide()) return;
 
-        // P0-1: Syn 光合注能在所有 condition/signal/energyAllowRun 门禁之前执行。
+        // Syn 光合注能在所有 condition/signal/energyAllowRun 门禁之前执行。
         // 即使 conditionStart() == false（无任务），有光向本机补能也应允许注入。
         tryInjectPhotosynEnergy();
 
@@ -63,7 +68,7 @@ public abstract class ProcessingMachineBlockEntity extends CmMachineBlockEntity 
                 return;
             }
 
-            // ── Step 4.5: maxProgress 兜底锁定（P0-1 简化；P0-2 迁移到子类 conditionStart 带四维 B 锁定）──
+            // ── Step 4.5: maxProgress 兜底锁定 ──
             // 能量模型重构核心：maxProgress = baseTickTime × durationMultiplier（配方决定处理时间），
             // 不再 = baseTickTime × initialEfficientIn（解除配方与总能耗绑定）。
             if (!hasLockedMaxProgress()) {
@@ -93,7 +98,7 @@ public abstract class ProcessingMachineBlockEntity extends CmMachineBlockEntity 
             // ── Step 7: 完成判断——>= maxProgress ──
             if (progress >= maxProgress) {
                 onCookFinish();
-                // P0-1: 完成后清批处理锁（lockedB + lockedMaxProgress），下周期重新锁定
+                // 完成后清批处理锁（lockedB + lockedMaxProgress），下周期重新锁定
                 clearLockedBatch();
                 progress = 0;
             }
@@ -103,7 +108,7 @@ public abstract class ProcessingMachineBlockEntity extends CmMachineBlockEntity 
             // （conditionStart()==false，如输入被取出/配方失配）且信号/能量未阻断时，
             // 进行中的进度作废归零——进度条立即清空，不保留半途进度。
             // 信号关闭/能量不足/输出满时 start 仍 true（或早于 else 提前 return），
-            // 不进此分支，仍走 P0-5 停滞语义保留 progress 等待恢复。
+            // 不进此分支，仍走停滞语义保留 progress 等待恢复。
             if (!start && progress > 0) {
                 progress = 0;
                 clearLockedBatch();

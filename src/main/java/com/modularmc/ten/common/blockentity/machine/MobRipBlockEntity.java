@@ -39,7 +39,7 @@ public class MobRipBlockEntity extends RadiusMachineBlockEntity {
         super(type, pos, state);
         setCapacity(kFE(20));
         setEfficiency(15);
-        initialRadius = 4; // 9x9 基础（同种植站），radius 升级在此基础上扩展（26.1.2 对齐）
+        initialRadius = 4; // 9x9 基础（同种植站），radius 升级在此基础上扩展
         radius = 4;
     }
 
@@ -50,7 +50,7 @@ public class MobRipBlockEntity extends RadiusMachineBlockEntity {
 
     @Override
     public int inventorySize() {
-        // 26.1.2 对齐：槽 0 武器输入、槽 1..12 掉落输出（与 createUI 13 槽布局配套）
+        // 槽 0 武器输入、槽 1..12 掉落输出（与 createUI 13 槽布局配套）
         return 13;
     }
 
@@ -61,7 +61,7 @@ public class MobRipBlockEntity extends RadiusMachineBlockEntity {
 
     @Override
     public boolean valid(int slot, ItemStack stack) {
-        // 槽 0 为武器输入：任何带 TOOL 组件的物品（26.1.2 对齐，原 TieredItem/SwordItem 判定过窄）
+        // 槽 0 为武器输入：任何带 TOOL 组件的物品（原 TieredItem/SwordItem 判定过窄）
         if (slot == 0) {
             return stack.has(DataComponents.TOOL);
         }

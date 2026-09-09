@@ -9,6 +9,10 @@ import java.util.Objects;
 import java.util.function.BiPredicate;
 import java.util.function.ToIntBiFunction;
 
+/**
+ * 机器物品槽能力：槽位级插入/提取校验（回调注入），并支持
+ * 批处理动态堆叠上限（setDynamicSlotLimit，输出槽 64×B 超堆叠）。
+ */
 @Setter
 public class MachineItemHandler extends ItemStackHandler {
 

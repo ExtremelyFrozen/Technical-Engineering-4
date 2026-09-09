@@ -1,5 +1,10 @@
 package com.modularmc.ten.api.option;
 
+/**
+ * 机器面交互模式常量与判定：NONE(-1) 哨兵（无效/未初始化面）；OFF 关闭；
+ * IN/OUT 机器主动拉/推（不对第三方 capability 开放）；BE_IN/BE_OUT/BOTH
+ * 面向外部管道/设备开放。size() 返回 6，不含 NONE 哨兵。
+ */
 public class FaceOption {
 
     public static final int NONE = -1;

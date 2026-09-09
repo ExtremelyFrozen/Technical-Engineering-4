@@ -6,7 +6,7 @@ import com.modularmc.ten.api.option.IngredientType;
 import com.modularmc.ten.api.option.MachineType;
 import com.modularmc.ten.common.data.TENFluids;
 import com.modularmc.ten.common.gui.TENMachineBlockUIFactory;
-import com.modularmc.ten.common.item.upgrades.IUpgradableMachine;
+import com.modularmc.ten.api.blockentity.IUpgradableMachine;
 import com.modularmc.ten.common.item.upgrades.LevelupKnow;
 
 import net.minecraft.core.BlockPos;
@@ -29,7 +29,7 @@ import java.util.Optional;
 
 public class FurnaceBlockEntity extends ProcessingMachineBlockEntity {
 
-    /** XP 流体输出罐容量（26.1.2 对齐，恒存在）。 */
+    /** XP 流体输出罐容量（恒存在）。 */
     private static final int XP_TANK_CAPACITY = 4000;
 
     /**
@@ -45,7 +45,7 @@ public class FurnaceBlockEntity extends ProcessingMachineBlockEntity {
         super(type, pos, state);
         setCapacity(kFE(20));
         setEfficiency(15);
-        tanks.add(new MachineFluidTank(XP_TANK_CAPACITY)); // XP 输出罐（恒存在，26.1.2 对齐）
+        tanks.add(new MachineFluidTank(XP_TANK_CAPACITY)); // XP 输出罐（恒存在）
     }
 
     @Override
@@ -67,13 +67,13 @@ public class FurnaceBlockEntity extends ProcessingMachineBlockEntity {
         };
     }
 
-    /** XP 输出罐：可经桶/管道取出（canOut），禁注入（canIn）——26.1.2 对齐。 */
+    /** XP 输出罐：可经桶/管道取出（canOut），禁注入（canIn）。 */
     @Override
     public IngredientType tankType(int tank) {
         return IngredientType.OUTPUT;
     }
 
-    /** 基础周期 tick：配方 cookingTime 全值（26.1.2 对齐；旧移植版误除 2，处理速度差 2 倍）。 */
+    /** 基础周期 tick：配方 cookingTime 全值（旧版误除 2 导致处理速度快一倍，勿回退）。 */
     @Override
     public int baseTickTime() {
         var recipe = getCurrentRecipe();
@@ -94,7 +94,7 @@ public class FurnaceBlockEntity extends ProcessingMachineBlockEntity {
     }
 
     /**
-     * 按当前配方模式取配方（26.1.2 对齐）：
+     * 按当前配方模式取配方：
      * recipeMode 由 LevelupBlast/LevelupSmoke 升级决定（First-wins 语义，见 setRecipeMode）：
      * SMELTING（默认）/ BLASTING / SMOKING。
      */
@@ -279,7 +279,7 @@ public class FurnaceBlockEntity extends ProcessingMachineBlockEntity {
             }
         }
 
-        // ── 原子执行 + 回滚（26.1.2 对齐）──
+        // ── 原子执行 + 回滚 ──
         ItemStack inputSnapshot = itemHandler.getStackInSlot(0).copy();
         ItemStack outputSnapshot = itemHandler.getStackInSlot(1).copy();
         FluidStack tankSnapshot = (hasKnowledge && !tanks.isEmpty()) ? tanks.get(0).getFluid().copy() : FluidStack.EMPTY;
@@ -313,7 +313,7 @@ public class FurnaceBlockEntity extends ProcessingMachineBlockEntity {
         clearLockedBatch();
     }
 
-    /** 每单位产物产出的 XP mB：max(1, round(cookingTime / 10))（26.1.2 公式）。 */
+    /** 每单位产物产出的 XP mB：max(1, round(cookingTime / 10))。 */
     private static int calculateXpFluidPerUnit(int cookingTime) {
         if (cookingTime <= 0) return 0;
         return Math.max(1, (int) Math.round((double) cookingTime / XP_FLUID_TICKS_PER_MB));
@@ -326,7 +326,7 @@ public class FurnaceBlockEntity extends ProcessingMachineBlockEntity {
     @Override
     public boolean hasFaceCapabilityFluid(net.minecraft.core.Direction side) {
         // 罐与 capability 恒存在——Knowledge 仅门控生产逻辑。
-        // 保证卸下 Knowledge 后残留 XP 流体仍可取出（26.1.2 对齐）。
+        // 保证卸下 Knowledge 后残留 XP 流体仍可取出。
         return true;
     }
 }

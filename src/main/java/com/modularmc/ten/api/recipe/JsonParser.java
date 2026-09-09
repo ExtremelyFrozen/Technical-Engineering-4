@@ -3,6 +3,10 @@ package com.modularmc.ten.api.recipe;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
+/**
+ * 配方 JSON 字段宽容读取工具：缺键/空值回退默认值，
+ * 供数据包配方解析使用。
+ */
 public class JsonParser {
 
     public static String getStringOr(JsonObject json, String n, String fb) {

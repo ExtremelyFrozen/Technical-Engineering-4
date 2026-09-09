@@ -5,6 +5,10 @@ import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeInput;
 import net.neoforged.neoforge.fluids.FluidStack;
 
+/**
+ * TEN 配方根基接口：声明 time() 与输入上限 inputLimit()，
+ * 并为原版 Recipe 的网格/特殊性检查提供恒真默认实现。
+ */
 public interface IBaseRecipeCm extends Recipe<RecipeInput> {
 
     int time();

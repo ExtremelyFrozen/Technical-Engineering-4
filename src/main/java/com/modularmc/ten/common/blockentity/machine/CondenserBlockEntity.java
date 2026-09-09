@@ -131,7 +131,7 @@ public class CondenserBlockEntity extends ProcessingMachineBlockEntity {
     @Override
     public boolean cooking() {
         // 纯容量谓词：只检查输出罐能否容纳 B×5mB。
-        // 无 progress 读写、无催化剂消耗、无副作用——输出满时保留 progress（P0-5 停滞语义）。
+        // 无 progress 读写、无催化剂消耗、无副作用——输出满时保留 progress（停滞语义）。
         int B = getLockedBatchSize();
         FluidStack produced = new FluidStack((net.minecraft.world.level.material.Fluid) TENFluids.LIQUID_BIZARRERIE.getSource(), 5 * B);
         if (tanks.isEmpty() || tanks.get(0).fill(produced, IFluidHandler.FluidAction.SIMULATE) < produced.getAmount()) {

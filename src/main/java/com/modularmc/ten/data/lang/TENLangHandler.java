@@ -92,7 +92,7 @@ public final class TENLangHandler {
     }
 
     private static void addUpgradeTips(RegistrateLangProvider provider) {
-        // 通用格式键（跨升级共享，UpgradeTooltipFormatter 消费）——26.1.2 重构版
+        // 通用格式键（跨升级共享，UpgradeTooltipFormatter 消费）
         add(provider, "upgrade_tip.duration.percent", "%s%% duration", "%s%%消耗时间");
         add(provider, "upgrade_tip.power.multiplier", "x%s energy consumption", "x%s能量消耗");
         add(provider, "upgrade_tip.batch.add", "%s batch.", "%s批处理。");
@@ -257,7 +257,7 @@ public final class TENLangHandler {
         // Legacy cell keys (kept for compatibility)
         add(provider, "info.cell.0", "Stores plenty of energy.", "可以存储大量能量。");
         add(provider, "info.cell.1", "It can also charge items.", "另外，它还有能力充能物品。");
-        // P1-1 新机器
+        // 新机器信息文案
         add(provider, "info.block_breaker.0", "Breaks the block in front of it.", "破坏机器正面一格的方块。");
         add(provider, "info.block_breaker.1", "Place a tool in the left slot; it consumes durability.", "将工具放入左侧槽位，破坏会消耗耐久。");
         add(provider, "info.block_former.0", "Places the block in front of it.", "放置机器正面一格的方块。");

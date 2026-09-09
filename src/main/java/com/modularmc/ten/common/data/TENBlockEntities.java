@@ -90,7 +90,7 @@ public class TENBlockEntities {
             .validBlocks(TENBlocks.MACHINE_QUARRY)
             .register();
 
-    // P1-1 新增三台机器
+    // 三台环境作业机器
     public static final BlockEntityEntry<BlockBreakerBlockEntity> BLOCK_BREAKER = REGISTRATE
             .blockEntity("machine_block_breaker", BlockBreakerBlockEntity::new)
             .validBlocks(TENBlocks.MACHINE_BLOCK_BREAKER)

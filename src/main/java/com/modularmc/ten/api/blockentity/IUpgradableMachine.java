@@ -1,5 +1,12 @@
-package com.modularmc.ten.common.item.upgrades;
+package com.modularmc.ten.api.blockentity;
 
+/**
+ * 可升级机器 SPI：升级物品（UpgradeItem/Levelup*）经此接口向机器施加效果。
+ * <p>
+ * 旧百分比接口 {@code onUpgradeApply} 保留兼容；乘法模型 API 采用乘子叠加
+ * （total = Π factor_i），批量增量直接累加；全部 default no-op 保证未实现方不炸。
+ * 仅 {@link CmMachineBlockEntity} 实现。
+ */
 public interface IUpgradableMachine {
 
     boolean onUpgradeApply(double percent, int slotIncrease);
@@ -12,7 +19,7 @@ public interface IUpgradableMachine {
 
     int getInitialRadius();
 
-    // ───── P2 乘法模型 API (T1-T5) ─────
+    // ───── 乘法模型 API ─────
 
     /**
      * Apply a duration multiplier to the machine's processing time.

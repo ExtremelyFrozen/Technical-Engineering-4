@@ -12,6 +12,10 @@ import com.lowdragmc.lowdraglib2.syncdata.holder.blockentity.ISyncPersistRPCBloc
 import com.lowdragmc.lowdraglib2.syncdata.storage.FieldManagedStorage;
 import lombok.Getter;
 
+/**
+ * 全部方块实体的同步/持久化基座：桥接 LDLib2 的字段同步（FieldManagedStorage）、
+ * NBT 持久化与 RPC 通道，并提供主线程守卫的被动同步（passivelySync）。
+ */
 public abstract class CmBlockEntity extends BlockEntity implements ISyncPersistRPCBlockEntity {
 
     @Getter

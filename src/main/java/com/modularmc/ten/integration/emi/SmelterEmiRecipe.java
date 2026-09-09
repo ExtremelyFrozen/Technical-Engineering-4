@@ -15,7 +15,7 @@ import dev.emi.emi.api.widget.WidgetHolder;
 import java.util.List;
 
 /**
- * 熔炼机三页（smelting/blasting/smoking）的 EMI 配方包装（26.1.2 JEI 对齐）：
+ * 熔炼机三页（smelting/blasting/smoking）的 EMI 配方包装：
  * 输入槽 + 输出槽（ITEM_SLOT_SMALL 底图）+ 进度箭头动画 + 熔炼时间文本。
  * <p>
  * 布局常量与 {@code SmelterJeiCategory} v5 逐坐标一致。自持 {@link RecipeData}

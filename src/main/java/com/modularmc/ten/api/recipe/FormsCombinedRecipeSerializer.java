@@ -17,6 +17,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
 
+/**
+ * FormsCombinedRecipe 的序列化器：Codec（数据包）与 JSON（兼容旧读法）
+ * 双路径解析，含输出掷骰约束与兜底校验。
+ */
 public class FormsCombinedRecipeSerializer<T extends FormsCombinedRecipe> implements RecipeSerializer<T> {
 
     private record IngredientData(String form, String type, ResourceLocation key, int count, int amount, double chance, int rolls) {}
@@ -100,7 +104,7 @@ public class FormsCombinedRecipeSerializer<T extends FormsCombinedRecipe> implem
         JsonArray arr = json.getAsJsonArray("inputs");
         for (JsonElement e : arr) {
             FormsCombinedIngredient ing = FormsCombinedIngredient.parseFrom(e.getAsJsonObject());
-            // 输入/流体配方不允许掷骰（26.1.2 对齐）
+            // 输入/流体配方不允许掷骰
             if (ing.rolls() > 1) {
                 throw new IllegalArgumentException(
                         "Input/fluid ingredients must have rolls=1, but got rolls=" + ing.rolls() + " for key=" + ing.key());
@@ -140,7 +144,7 @@ public class FormsCombinedRecipeSerializer<T extends FormsCombinedRecipe> implem
 
     private T createRecipe(ResourceLocation regName, ResourceLocation id, List<FormsCombinedIngredient> ip,
                            List<FormsCombinedIngredient> op, int time) {
-        // codec 路径兑底校验（26.1.2 L152-167 对齐，fromJson 路径已另行拦截）：
+        // codec 路径兑底校验（fromJson 路径已另行拦截）：
         // 输入/流体输入不允许掷骰；流体输出必须 rolls=1
         for (FormsCombinedIngredient ing : ip) {
             if (!ing.ALLOW_ALL && ing.rolls() > 1) {
