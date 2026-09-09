@@ -402,15 +402,17 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         if (!hasFaceCapabilityEnergy(side)) return false;
         if (side == null) return true;
         int mode = energyFaceMode.getOrDefault(side, FaceOption.OFF);
-        // [用户需求 2026-09] 主动输出（BE_OUT）面同时允许被动输入：外部可向该面充能
-        // （引擎/单元主动推给网络的同时，也能被网络/电池反向充能）
-        return FaceOption.isIn(mode) || mode == FaceOption.BOTH || mode == FaceOption.BE_OUT;
+        // 语义（GUI 标签）：被动输入(BE_IN)/被动双向(BOTH)可被外部塞入；
+        // [用户需求] 主动输出(OUT)面同时允许被动输入；被动输出(BE_OUT)纯输出不收
+        return mode == FaceOption.BE_IN || mode == FaceOption.BOTH || mode == FaceOption.OUT;
     }
 
     protected boolean canExtractEnergy(@Nullable Direction side) {
         if (!hasFaceCapabilityEnergy(side)) return false;
         if (side == null) return true;
-        return FaceOption.isOut(energyFaceMode.getOrDefault(side, FaceOption.OFF)) || energyFaceMode.getOrDefault(side, FaceOption.OFF) == FaceOption.BOTH;
+        int mode = energyFaceMode.getOrDefault(side, FaceOption.OFF);
+        // 被动输出(BE_OUT)/被动双向(BOTH)可被外部拉取；主动输出(OUT)由机器推，不开放外部拉
+        return mode == FaceOption.BE_OUT || mode == FaceOption.BOTH;
     }
 
     /**
@@ -421,8 +423,8 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         if (!hasFaceCapabilityItem(side)) return false;
         if (side == null) return true;
         int mode = itemFaceMode.getOrDefault(side, FaceOption.OFF);
-        // [用户需求 2026-09] 主动输出（BE_OUT）面同时允许被动输入（三 IO 统一）
-        return mode == FaceOption.BE_IN || mode == FaceOption.BOTH || mode == FaceOption.BE_OUT;
+        // 语义（GUI 标签）：被动输入(BE_IN)/被动双向(BOTH)可被外部塞入；主动输出(OUT)面也可被塞
+        return mode == FaceOption.BE_IN || mode == FaceOption.BOTH || mode == FaceOption.OUT;
     }
 
     /**
@@ -440,14 +442,16 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         if (!hasFaceCapabilityFluid(side)) return false;
         if (side == null) return true;
         int mode = fluidFaceMode.getOrDefault(side, FaceOption.OFF);
-        // [用户需求 2026-09] 主动输出（BE_OUT）面同时允许被动输入（三 IO 统一）
-        return FaceOption.isIn(mode) || mode == FaceOption.BOTH || mode == FaceOption.BE_OUT;
+        // 语义（GUI 标签）：被动输入(BE_IN)/被动双向(BOTH)可被外部塞入；主动输出(OUT)面也可被塞
+        return mode == FaceOption.BE_IN || mode == FaceOption.BOTH || mode == FaceOption.OUT;
     }
 
     protected boolean canExtractFluid(@Nullable Direction side) {
         if (!hasFaceCapabilityFluid(side)) return false;
         if (side == null) return true;
-        return FaceOption.isOut(fluidFaceMode.getOrDefault(side, FaceOption.OFF)) || fluidFaceMode.getOrDefault(side, FaceOption.OFF) == FaceOption.BOTH;
+        int mode = fluidFaceMode.getOrDefault(side, FaceOption.OFF);
+        // 被动输出(BE_OUT)/被动双向(BOTH)可被外部拉取；主动输出(OUT)由机器推，不开放外部拉
+        return mode == FaceOption.BE_OUT || mode == FaceOption.BOTH;
     }
 
     public boolean signalAllowRun() {
@@ -1290,7 +1294,7 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         }
         for (Direction direction : Direction.values()) {
             int mode = fluidFaceMode.getOrDefault(direction, initialFaceModeFluid());
-            if (mode != FaceOption.OUT && mode != FaceOption.BE_OUT && mode != FaceOption.BOTH) {
+            if (mode != FaceOption.OUT && mode != FaceOption.BOTH) {  // 主动输出(OUT)/被动双向(BOTH)推；BE_OUT 仅外部拉
                 continue;
             }
             if (level.getBlockEntity(worldPosition.relative(direction)) instanceof PipeBlockEntity) {
@@ -1328,7 +1332,7 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         }
         for (Direction direction : Direction.values()) {
             int mode = energyFaceMode.getOrDefault(direction, initialFaceModeEnergy());
-            if (mode != FaceOption.OUT && mode != FaceOption.BOTH && mode != FaceOption.BE_OUT) {
+            if (mode != FaceOption.OUT && mode != FaceOption.BOTH) {  // 主动输出(OUT)/被动双向(BOTH)推；BE_OUT 仅外部拉
                 continue; // [修复] 原：漏 BE_OUT——主动输出面完全不推送
             }
             IEnergyStorage sink = TransferNetworks.getEnergy(level, worldPosition.relative(direction), direction.getOpposite());
