@@ -27,3 +27,6 @@ src/generated/resources/.cache/
 *.patch
 *.DS_Store
 run_client.bat
+
+# 运行日志重定向产物
+client_run_*.txt
