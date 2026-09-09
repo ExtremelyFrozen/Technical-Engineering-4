@@ -1109,6 +1109,8 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
             if (mode >= FaceOption.size()) mode = 0;
             map.put(direction, mode);
             setChanged();
+            // [FaceDiag] 服务端：记录收到的类型页与写入结果
+            System.out.println("[FaceDiag] server-recv changeType=" + changeType + " dir=" + direction + " newMode=" + mode + " (isRemote=" + sender.isRemote() + ")");
             // 全量同步（int[] 元素变更不触发 @DescSynced；单面推送会导致其他面/类型保持旧值）
             rebuildFaceData();
             syncAllFacesToClients();
@@ -1123,6 +1125,8 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
             energyFaceData[dirIndex] = energyMode;
             itemFaceData[dirIndex] = itemMode;
             fluidFaceData[dirIndex] = fluidMode;
+            // [FaceDiag] 客户端回写：验证推送到达与三类写入
+            System.out.println("[FaceDiag] client-sync idx=" + dirIndex + " e=" + energyMode + " i=" + itemMode + " f=" + fluidMode);
             Direction d = Direction.from3DDataValue(dirIndex);
             // 同步 maps：客户端 rebuildFaceData 以 maps 为源重算，只写 faceData 不写 maps
             // 会在后续 rebuild 时被回滚（回退默认按钮状态）

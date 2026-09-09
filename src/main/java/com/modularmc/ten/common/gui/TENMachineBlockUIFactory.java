@@ -667,9 +667,16 @@ public final class TENMachineBlockUIFactory {
                 () -> {
                     Direction direction = logicalDirection(machine, logicalSide);
                     if (direction != null) {
+                        // [修复] 调节改由客户端发起：serverClick 在服务端 UI 树执行，其
+                        // UIState.selectedTransferMode 停留在面板打开时的快照页（类型按钮切页是
+                        // localClick，仅更新客户端实例）→ 服务端永远调节打开时那页。
+                        // localClick 在客户端树执行读到实时页，经 rpcToServer 标准 C→S 发包
+                        // （同 rpcRequestFaceSync 模式）。26.1.2 参照实现同样带病，未照抄。
                         machine.rpcToServer("rpcCycleFaceMode", uiState.getSelectedTransferMode(), direction.get3DDataValue());
+                        System.out.println("[FaceDiag] local-click sent mode=" + uiState.getSelectedTransferMode() + " dir=" + direction);
                     }
                 },
+                null,
                 uiState::isPanelFullyOpen);
     }
 
