@@ -486,3 +486,81 @@ Things may not work well.
 [21:46:20] [Server thread/WARN] [minecraft/MinecraftServer]: Can't keep up! Is the server overloaded? Running 2185ms or 43 ticks behind
 [21:47:16] [Server thread/WARN] [minecraft/MinecraftServer]: Can't keep up! Is the server overloaded? Running 40741ms or 814 ticks behind
 [21:47:34] [Server thread/WARN] [minecraft/MinecraftServer]: Can't keep up! Is the server overloaded? Running 3570ms or 71 ticks behind
+[21:48:28] [Render thread/ERROR] [ne.ne.ne.ne.ha.ClientPayloadHandler/]: Failed to handle advanced open screen from server.
+java.lang.IllegalStateException: Unable to get Y-rotated facing of down
+	at TRANSFORMER/minecraft@1.21.1/net.minecraft.core.Direction.getClockWise(Direction.java:195) ~[neoforge-21.1.219.jar%23187!/:?] {re:mixin,re:classloading,pl:mixin:APP:sodium-common.mixins.json:features.render.immediate.DirectionMixin from mod sodium,pl:mixin:A}
+	at TRANSFORMER/kenergyengineering@4.1.0/com.modularmc.ten.common.gui.TENMachineBlockUIFactory.logicalDirection(TENMachineBlockUIFactory.java:1012) ~[%23189!/:?] {re:classloading}
+	at TRANSFORMER/kenergyengineering@4.1.0/com.modularmc.ten.common.gui.TENMachineBlockUIFactory.faceMode(TENMachineBlockUIFactory.java:1002) ~[%23189!/:?] {re:classloading}
+	at TRANSFORMER/kenergyengineering@4.1.0/com.modularmc.ten.common.gui.TENMachineBlockUIFactory.lambda$faceModeElement$59(TENMachineBlockUIFactory.java:660) ~[%23189!/:?] {re:classloading}
+	at TRANSFORMER/kenergyengineering@4.1.0/com.modularmc.ten.common.gui.TENMachineBlockUIFactory.lambda$syncTexture$102(TENMachineBlockUIFactory.java:938) ~[%23189!/:?] {re:classloading}
+	at TRANSFORMER/ldlib2@2.2.37/com.lowdragmc.lowdraglib2.gui.ui.UIElement.style(UIElement.java:1095) ~[ldlib2-neoforge-1.21.1-2.2.37-all.jar%23195!/:?] {re:mixin,re:classloading}
+	at TRANSFORMER/kenergyengineering@4.1.0/com.modularmc.ten.common.gui.TENMachineBlockUIFactory.lambda$syncTexture$103(TENMachineBlockUIFactory.java:938) ~[%23189!/:?] {re:classloading}
+	at TRANSFORMER/kenergyengineering@4.1.0/com.modularmc.ten.common.gui.TENMachineBlockUIFactory.syncTexture(TENMachineBlockUIFactory.java:939) ~[%23189!/:?] {re:classloading}
+	at TRANSFORMER/kenergyengineering@4.1.0/com.modularmc.ten.common.gui.TENMachineBlockUIFactory.dynamicTextureElement(TENMachineBlockUIFactory.java:933) ~[%23189!/:?] {re:classloading}
+	at TRANSFORMER/kenergyengineering@4.1.0/com.modularmc.ten.common.gui.TENMachineBlockUIFactory.faceModeElement(TENMachineBlockUIFactory.java:657) ~[%23189!/:?] {re:classloading}
+	at TRANSFORMER/kenergyengineering@4.1.0/com.modularmc.ten.common.gui.TENMachineBlockUIFactory.addCommonSidebar(TENMachineBlockUIFactory.java:240) ~[%23189!/:?] {re:classloading}
+	at TRANSFORMER/kenergyengineering@4.1.0/com.modularmc.ten.api.blockentity.CmMachineBlockEntity.buildMachineUI(CmMachineBlockEntity.java:1337) ~[%23189!/:?] {re:classloading}
+	at TRANSFORMER/kenergyengineering@4.1.0/com.modularmc.ten.common.blockentity.channel.AbstractChannelBlockEntity.buildChannelUI(AbstractChannelBlockEntity.java:444) ~[%23189!/:?] {re:classloading}
+	at TRANSFORMER/kenergyengineering@4.1.0/com.modularmc.ten.common.blockentity.channel.ChannelEnergyBlockEntity.createUI(ChannelEnergyBlockEntity.java:169) ~[%23189!/:?] {re:classloading}
+	at TRANSFORMER/kenergyengineering@4.1.0/com.modularmc.ten.common.block.machine.BaseMachineBlock.createUI(BaseMachineBlock.java:168) ~[%23189!/:?] {re:classloading}
+	at TRANSFORMER/ldlib2@2.2.37/com.lowdragmc.lowdraglib2.gui.factory.BlockUIMenuType$BlockUIHolder.createUI(BlockUIMenuType.java:131) ~[ldlib2-neoforge-1.21.1-2.2.37-all.jar%23195!/:?] {re:classloading}
+	at TRANSFORMER/ldlib2@2.2.37/com.lowdragmc.lowdraglib2.gui.holder.ModularUIContainerMenu.<init>(ModularUIContainerMenu.java:30) ~[ldlib2-neoforge-1.21.1-2.2.37-all.jar%23195!/:?] {re:classloading}
+	at TRANSFORMER/ldlib2@2.2.37/com.lowdragmc.lowdraglib2.gui.factory.BlockUIMenuType.create(BlockUIMenuType.java:47) ~[ldlib2-neoforge-1.21.1-2.2.37-all.jar%23195!/:?] {re:classloading}
+	at TRANSFORMER/minecraft@1.21.1/net.minecraft.world.inventory.MenuType.create(MenuType.java:60) ~[neoforge-21.1.219.jar%23187!/:?] {re:mixin,pl:accesstransformer:B,re:classloading,pl:accesstransformer:B,pl:mixin:APP:ldlib2.mixins.json:ui.MenuTypeMixin from mod ldlib2,pl:mixin:A}
+	at TRANSFORMER/neoforge@21.1.219/net.neoforged.neoforge.network.handlers.ClientPayloadHandler.lambda$createMenuScreen$0(ClientPayloadHandler.java:130) ~[neoforge-21.1.219.jar%23188!/:?] {re:classloading}
+	at java.base/java.util.Optional.ifPresent(Optional.java:178) ~[?:?] {re:mixin}
+	at TRANSFORMER/neoforge@21.1.219/net.neoforged.neoforge.network.handlers.ClientPayloadHandler.createMenuScreen(ClientPayloadHandler.java:129) ~[neoforge-21.1.219.jar%23188!/:?] {re:classloading}
+	at TRANSFORMER/neoforge@21.1.219/net.neoforged.neoforge.network.handlers.ClientPayloadHandler.handle(ClientPayloadHandler.java:118) ~[neoforge-21.1.219.jar%23188!/:?] {re:classloading}
+	at TRANSFORMER/neoforge@21.1.219/net.neoforged.neoforge.network.handling.MainThreadPayloadHandler.lambda$handle$0(MainThreadPayloadHandler.java:16) ~[neoforge-21.1.219.jar%23188!/:?] {re:classloading}
+	at TRANSFORMER/minecraft@1.21.1/net.minecraft.util.thread.BlockableEventLoop.lambda$submitAsync$0(BlockableEventLoop.java:60) ~[neoforge-21.1.219.jar%23187!/:?] {re:mixin,pl:accesstransformer:B,re:computing_frames,pl:accesstransformer:B,re:classloading,pl:accesstransformer:B}
+	at java.base/java.util.concurrent.CompletableFuture$AsyncSupply.run(CompletableFuture.java:1768) ~[?:?] {}
+	at TRANSFORMER/minecraft@1.21.1/net.minecraft.util.thread.BlockableEventLoop.doRunTask(BlockableEventLoop.java:151) ~[neoforge-21.1.219.jar%23187!/:?] {re:mixin,pl:accesstransformer:B,re:computing_frames,pl:accesstransformer:B,re:classloading,pl:accesstransformer:B}
+	at TRANSFORMER/minecraft@1.21.1/net.minecraft.util.thread.ReentrantBlockableEventLoop.doRunTask(ReentrantBlockableEventLoop.java:24) ~[neoforge-21.1.219.jar%23187!/:?] {re:mixin,re:computing_frames,re:classloading}
+	at TRANSFORMER/minecraft@1.21.1/net.minecraft.util.thread.BlockableEventLoop.pollTask(BlockableEventLoop.java:122) ~[neoforge-21.1.219.jar%23187!/:?] {re:mixin,pl:accesstransformer:B,re:computing_frames,pl:accesstransformer:B,re:classloading,pl:accesstransformer:B}
+	at TRANSFORMER/minecraft@1.21.1/net.minecraft.util.thread.BlockableEventLoop.runAllTasks(BlockableEventLoop.java:111) ~[neoforge-21.1.219.jar%23187!/:?] {re:mixin,pl:accesstransformer:B,re:computing_frames,pl:accesstransformer:B,re:classloading,pl:accesstransformer:B}
+	at TRANSFORMER/minecraft@1.21.1/net.minecraft.client.Minecraft.runTick(Minecraft.java:1161) ~[neoforge-21.1.219.jar%23187!/:?] {re:mixin,pl:accesstransformer:B,pl:runtimedistcleaner:A,re:classloading,pl:accesstransformer:B,pl:mixin:A,pl:runtimedistcleaner:A}
+	at TRANSFORMER/minecraft@1.21.1/net.minecraft.client.Minecraft.run(Minecraft.java:813) ~[neoforge-21.1.219.jar%23187!/:?] {re:mixin,pl:accesstransformer:B,pl:runtimedistcleaner:A,re:classloading,pl:accesstransformer:B,pl:mixin:A,pl:runtimedistcleaner:A}
+	at TRANSFORMER/minecraft@1.21.1/net.minecraft.client.main.Main.main(Main.java:230) ~[neoforge-21.1.219.jar%23187!/:?] {re:classloading,pl:runtimedistcleaner:A}
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103) ~[?:?] {}
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580) ~[?:?] {}
+	at MC-BOOTSTRAP/fml_loader@4.0.42/net.neoforged.fml.loading.targets.CommonLaunchHandler.runTarget(CommonLaunchHandler.java:136) ~[loader-4.0.42.jar%23144!/:4.0] {}
+	at MC-BOOTSTRAP/fml_loader@4.0.42/net.neoforged.fml.loading.targets.CommonLaunchHandler.clientService(CommonLaunchHandler.java:124) ~[loader-4.0.42.jar%23144!/:4.0] {}
+	at MC-BOOTSTRAP/fml_loader@4.0.42/net.neoforged.fml.loading.targets.NeoForgeClientDevLaunchHandler.runService(NeoForgeClientDevLaunchHandler.java:23) ~[loader-4.0.42.jar%23144!/:4.0] {}
+	at MC-BOOTSTRAP/fml_loader@4.0.42/net.neoforged.fml.loading.targets.CommonLaunchHandler.lambda$launchService$4(CommonLaunchHandler.java:118) ~[loader-4.0.42.jar%23144!/:4.0] {}
+	at MC-BOOTSTRAP/cpw.mods.modlauncher@11.0.5/cpw.mods.modlauncher.LaunchServiceHandlerDecorator.launch(LaunchServiceHandlerDecorator.java:30) [modlauncher-11.0.5.jar%23126!/:?] {}
+	at MC-BOOTSTRAP/cpw.mods.modlauncher@11.0.5/cpw.mods.modlauncher.LaunchServiceHandler.launch(LaunchServiceHandler.java:53) [modlauncher-11.0.5.jar%23126!/:?] {}
+	at MC-BOOTSTRAP/cpw.mods.modlauncher@11.0.5/cpw.mods.modlauncher.LaunchServiceHandler.launch(LaunchServiceHandler.java:71) [modlauncher-11.0.5.jar%23126!/:?] {}
+	at MC-BOOTSTRAP/cpw.mods.modlauncher@11.0.5/cpw.mods.modlauncher.Launcher.run(Launcher.java:103) [modlauncher-11.0.5.jar%23126!/:?] {}
+	at MC-BOOTSTRAP/cpw.mods.modlauncher@11.0.5/cpw.mods.modlauncher.Launcher.main(Launcher.java:74) [modlauncher-11.0.5.jar%23126!/:?] {}
+	at MC-BOOTSTRAP/cpw.mods.modlauncher@11.0.5/cpw.mods.modlauncher.BootstrapLaunchConsumer.accept(BootstrapLaunchConsumer.java:26) [modlauncher-11.0.5.jar%23126!/:?] {}
+	at MC-BOOTSTRAP/cpw.mods.modlauncher@11.0.5/cpw.mods.modlauncher.BootstrapLaunchConsumer.accept(BootstrapLaunchConsumer.java:23) [modlauncher-11.0.5.jar%23126!/:?] {}
+	at cpw.mods.bootstraplauncher@2.0.2/cpw.mods.bootstraplauncher.BootstrapLauncher.run(BootstrapLauncher.java:210) [bootstraplauncher-2.0.2.jar:?] {}
+	at cpw.mods.bootstraplauncher@2.0.2/cpw.mods.bootstraplauncher.BootstrapLauncher.main(BootstrapLauncher.java:69) [bootstraplauncher-2.0.2.jar:?] {}
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103) ~[?:?] {}
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580) ~[?:?] {}
+	at net.neoforged.devlaunch.Main.main(Main.java:57) [DevLaunch-1.0.2.jar:?] {}
+[21:48:28] [Server thread/INFO] [minecraft/ServerGamePacketListenerImpl]: Dev lost connection: 连接中断
+[21:48:28] [Server thread/INFO] [minecraft/MinecraftServer]: Dev退出了游戏
+[21:48:28] [Render thread/INFO] [me.je.li.st.JeiStarter/]: Stopping JEI
+[21:48:28] [Render thread/INFO] [me.je.li.lo.PluginCaller/]: Sending Runtime Unavailable...
+[21:48:28] [Render thread/INFO] [me.je.ne.pl.ne.NeoForgeGuiPlugin/]: Stopping JEI GUI
+[21:48:28] [Render thread/INFO] [me.je.li.lo.PluginCallerTimerRunnable/]: Sending Runtime Unavailable: jei:neoforge_gui took 44.86 milliseconds
+[21:48:28] [Render thread/INFO] [me.je.li.lo.PluginCaller/]: Sending Runtime Unavailable took 80.20 milliseconds
+[21:48:28] [Server thread/INFO] [minecraft/ServerCommonPacketListenerImpl]: Stopping singleplayer server as player logged out
+[21:48:28] [Server thread/INFO] [minecraft/MinecraftServer]: Stopping server
+[21:48:28] [Server thread/INFO] [minecraft/MinecraftServer]: Saving players
+[21:48:28] [Server thread/INFO] [minecraft/MinecraftServer]: Saving worlds
+[21:48:29] [Server thread/INFO] [minecraft/MinecraftServer]: Saving chunks for level 'ServerLevel[新的世界]'/minecraft:overworld
+[21:48:29] [Server thread/INFO] [minecraft/MinecraftServer]: Saving chunks for level 'ServerLevel[新的世界]'/minecraft:the_nether
+[21:48:29] [Server thread/INFO] [minecraft/MinecraftServer]: Saving chunks for level 'ServerLevel[新的世界]'/minecraft:the_end
+[21:48:29] [Server thread/INFO] [minecraft/MinecraftServer]: ThreadedAnvilChunkStorage (新的世界): All chunks are saved
+[21:48:29] [Server thread/INFO] [minecraft/MinecraftServer]: ThreadedAnvilChunkStorage (DIM-1): All chunks are saved
+[21:48:29] [Server thread/INFO] [minecraft/MinecraftServer]: ThreadedAnvilChunkStorage (DIM1): All chunks are saved
+[21:48:29] [Server thread/INFO] [minecraft/MinecraftServer]: ThreadedAnvilChunkStorage: All dimensions are saved
+[21:48:29] [Render thread/INFO] [ChunkBuilder/]: Stopping worker threads
+[21:48:29] [Render thread/WARN] [minecraft/ClientCommonPacketListenerImpl]: Client disconnected with reason: 打开带有高级数据的屏幕失败：java.lang.IllegalStateException: Unable to get Y-rotated facing of down
+[21:49:27] [Render thread/INFO] [minecraft/Minecraft]: Stopping!
+
+BUILD SUCCESSFUL in 34m 38s
+18 actionable tasks: 2 executed, 16 up-to-date
+Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.5.0/userguide/configuration_cache_enabling.html
