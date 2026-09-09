@@ -1,2 +1,0 @@
-9�� 09, 2026 4:35:04 ���� guideme.internal.shaded.lucene.internal.vectorization.VectorizationProvider lookup
-����: You are running with unsupported Java 21. To make full use of the Vector API, please update Apache Lucene.

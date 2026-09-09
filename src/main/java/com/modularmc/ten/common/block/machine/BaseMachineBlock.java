@@ -86,6 +86,12 @@ public class BaseMachineBlock extends Block implements EntityBlock, BlockUIMenuT
 
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        // 扳手守卫（用户需求）：useItemOn 对扳手返回 PASS_TO_DEFAULT_BLOCK_INTERACTION 后
+        // 1.21.1 会继续调用本方法（空手默认行为）→ GUI 被打开，与 SpannerItem 的旋转/拆解冲突。
+        // 同手判定：usedItemHand 在交互包处理时已设置，与 useItemOn 的 hand 一致。
+        if (player.getItemInHand(player.getUsedItemHand()).is(TENTags.SPANNER)) {
+            return InteractionResult.PASS;
+        }
         BlockEntity be = level.getBlockEntity(pos);
         if (be instanceof PipeBlockEntity pipe && !pipe.hasUi()) {
             return InteractionResult.PASS;
