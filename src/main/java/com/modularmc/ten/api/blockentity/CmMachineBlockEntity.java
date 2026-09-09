@@ -401,7 +401,10 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
     protected boolean canReceiveEnergy(@Nullable Direction side) {
         if (!hasFaceCapabilityEnergy(side)) return false;
         if (side == null) return true;
-        return FaceOption.isIn(energyFaceMode.getOrDefault(side, FaceOption.OFF)) || energyFaceMode.getOrDefault(side, FaceOption.OFF) == FaceOption.BOTH;
+        int mode = energyFaceMode.getOrDefault(side, FaceOption.OFF);
+        // [用户需求 2026-09] 主动输出（BE_OUT）面同时允许被动输入：外部可向该面充能
+        // （引擎/单元主动推给网络的同时，也能被网络/电池反向充能）
+        return FaceOption.isIn(mode) || mode == FaceOption.BOTH || mode == FaceOption.BE_OUT;
     }
 
     protected boolean canExtractEnergy(@Nullable Direction side) {
