@@ -29,6 +29,9 @@ public final class TENTagLangGen {
 
     public static final LinkedHashMap<String, String> ZH_ENTRIES = new LinkedHashMap<>();
 
+    /** 已写入键去重：item/block 同名类别在旧短键体系下同 key，值相同则合并。 */
+    private static final java.util.Set<String> WRITTEN = new java.util.HashSet<>();
+
     /** Registrate en_us provider 入口（与 TENLangHandler.init 同挂载点）。 */
     public static void init(RegistrateLangProvider provider) {
         // ── c: 物品类别（单段）──
@@ -133,21 +136,21 @@ public final class TENTagLangGen {
     }
 
     /**
-     * 写入标准 JEI/NeoForge 键 + 旧短键（历史兼容）。
-     * 标准：tag.item.c.ingots.tin；旧：tag.c.ingots.tin。
+     * 写入标准 JEI/EMI/NeoForge 键 + 旧短键（EMI 第三层兕底）。
+     * 标准：tag.item.c.ingots.tin（JEI 与 EMI 在 NeoForge 下同构）；旧：tag.c.ingots.tin。
+     * 旧短键 item/block 同名类别（ores/storage_blocks）值相同，合并写入（WRITTEN 去重）。
      */
     private static void addTag(RegistrateLangProvider provider, String registry,
                                String namespace, String path, String en, String cn) {
         String tagPath = path.replace('/', '.');
         addRaw(provider, "tag." + registry + "." + namespace + "." + tagPath, en, cn);
-        // 旧短键（tag.c.*，无 registry 段）仅 item 侧保留：block 同名类别（ores/storage_blocks）
-        // 在短键下与 item 键冲突，且短键本就源自旧版 item 标签翻译体系
-        if (registry.equals("item")) {
-            addRaw(provider, "tag." + namespace + "." + tagPath, en, cn);
-        }
+        addRaw(provider, "tag." + namespace + "." + tagPath, en, cn);
     }
 
     private static void addRaw(RegistrateLangProvider provider, String key, String en, String cn) {
+        if (!WRITTEN.add(key)) {
+            return; // 重复键（item/block 同名短键同值）：首写为准
+        }
         ZH_ENTRIES.put(key, cn);
         provider.add(key, en);
     }
