@@ -26,10 +26,6 @@ repositories {
         name = "FirstDarkDev Maven"
         url = "https://maven.firstdark.dev/snapshots"
     }
-    exclusiveContent { // Configuration
-        forRepository { maven { url = "https://repo.repsy.io/mvn/toma/public" } }
-        filter { includeGroup("dev.toma.configuration")}
-    }
     exclusiveContent { // tterrag - registrate
         forRepository { maven { url = "https://mvn.devos.one/snapshots/" } }
         filter { includeGroup("com.tterrag.registrate") }

@@ -10,8 +10,10 @@ dependencies {
     // Registrate
     jarJar(api(forge.registrate.get()))
 
-    // Configuration
-    jarJar(api(forge.configuration.get()))
+    // [移除] Configuration 3.1.1 jarJar：其 GUI 仅支持自家 @Config 注解类（全 jar 零处引用
+    // ModConfigSpec，反编译取证），与本项目已迁移至 NeoForge ModConfigSpec 的配置体系不兼容
+    // → 游戏内配置按钮打开空/异型屏幕。改用 NeoForge 内置 ConfigurationScreen（21.1 自带，
+    // 原生支持 ModConfigSpec + ValueSpec.langKey，双语已生成）
 
     // Recipe Viewers
     compileOnly(forge.bundles.jei)
