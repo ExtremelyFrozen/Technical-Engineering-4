@@ -9,6 +9,12 @@
 		"#c:dusts/copper",
 		"#c:dusts/mushrium",
 		"#c:dusts/nickel",
-		"#c:dusts/netherite"
+		"#c:dusts/netherite",
+		"#c:dusts/diamond",
+		"#c:dusts/emerald",
+		"#c:dusts/lapis",
+		"#c:dusts/quartz",
+		"#c:dusts/amethyst",
+		"#c:dusts/starlight"
 	]
 }
