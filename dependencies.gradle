@@ -38,10 +38,9 @@ dependencies {
     localRuntime(forge.modernfix)
 
     // Runtime Recipe Viewers - only enable one at a time.
-    // GTM's approach is to let EMI own the runtime path and keep JEI integration compile-only
-    // unless we are explicitly testing JEI itself.
-    localRuntime(forge.emi)
-//    localRuntime(forge.jei.neoforge.impl)
+    // 用户决策 2026-09：以 JEI 兼容层修补为主，EMI 暂时禁用
+//    localRuntime(forge.emi)
+    localRuntime(forge.jei.neoforge.impl)
 
     // Client-only runtime mods //
     clientLocalRuntime(forge.sodium)
