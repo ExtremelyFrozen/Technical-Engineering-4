@@ -56,7 +56,7 @@ public class EngineFuelCategory implements IRecipeCategory<EngineFuelRecipe> {
         this.recipeType = type;
         this.title = title;
         this.icon = helper.createDrawableItemStack(iconStack);
-        this.background = helper.createDrawable(TENConstants.JEI_HANDLER_MODULAR, 0, 0, WIDTH, HEIGHT);
+        this.background = helper.createDrawable(TENConstants.JEI_RECIPE_BG, 0, 0, WIDTH, HEIGHT);
         this.inputSlot = helper.drawableBuilder(TENConstants.ITEM_SLOT_SMALL, 0, 0, 18, 18).setTextureSize(18, 18).build();
         this.fuelGaugeBg = helper.drawableBuilder(TENConstants.FUEL_GAUGE_BG, FUEL_GAUGE_U, FUEL_GAUGE_V, FUEL_GAUGE_W, FUEL_GAUGE_H).setTextureSize(FUEL_GAUGE_W, FUEL_GAUGE_H).build();
         this.fuelGaugeFill = helper.drawableBuilder(TENConstants.FUEL_GAUGE_FILL, FUEL_GAUGE_U, FUEL_GAUGE_V, FUEL_GAUGE_W, FUEL_GAUGE_H).setTextureSize(FUEL_GAUGE_W, FUEL_GAUGE_H).build();

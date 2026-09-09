@@ -267,6 +267,8 @@ public final class TENMachineBlockUIFactory {
 
         List<UIElement> configContents = new ArrayList<>(List.of(energyModeButton, itemModeButton, fluidModeButton,
                 frontButton, backButton, leftButton, rightButton, upButton, downButton, closeButton));
+        // 中间覆盖层随内容层统一显隐（用户需求：面板完全展开后才出现，不随切片动画提前露出）
+        configContents.add(configUnderlay);
 
         // 展开状态：-1 收起完成；0..目标宽展开中；目标宽展开完成（fullyOpen 以 >=CONFIG_PANEL_WIDTH 判定，复用终值）
         int[] panelWidth = { uiState.isControlOpen() ? -1 : 0 };
@@ -406,6 +408,8 @@ public final class TENMachineBlockUIFactory {
                 () -> uiState.setUpgradeOpen(false), null, null).style(style -> style.zIndex(2));
         root.addChild(upgradeCloseButton);
         upgradeContents.add(upgradeCloseButton);
+        // 中间覆盖层随内容层统一显隐（用户需求：面板完全展开后才出现，不随切片动画提前露出）
+        upgradeContents.add(upgradeUnderlay);
 
         // 与配置面板同构的动画状态机：-1 收起完成；0..目标宽 展开中；目标宽 展开完成（从 tab 左上角对角生长）
         int[] panelWidth = { uiState.isUpgradeOpen() ? -1 : 0 };

@@ -68,7 +68,7 @@ public class SmelterJeiCategory implements IRecipeCategory<SmelterJeiCategory.Re
         this.recipeType = type;
         this.title = Component.translatable(TEN.MOD_ID + ".jei.category." + uid.getPath());
         this.icon = helper.createDrawableItemStack(iconStack);
-        this.background = helper.createDrawable(TENConstants.JEI_HANDLER_MODULAR, 0, 0, WIDTH, HEIGHT);
+        this.background = helper.createDrawable(TENConstants.JEI_RECIPE_BG, 0, 0, WIDTH, HEIGHT);
         this.inputSlot = helper.drawableBuilder(TENConstants.ITEM_SLOT_SMALL, 0, 0, 18, 18).setTextureSize(18, 18).build();
     }
 
