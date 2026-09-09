@@ -249,7 +249,9 @@ public class TENEmiPlugin implements EmiPlugin {
     }
 
     private static ResourceLocation recipeId(ResourceLocation categoryId, int index) {
-        return TEN.id(categoryId.getPath() + "/" + index);
+        // EMI 合成配方约定：路径以 '/' 开头 → EMI 视为 synthetic，跳过 vanilla RecipeManager
+        // 存在性校验（否则报 "not present in recipe manager" ERROR，996 条/次加载）
+        return TEN.id("/" + categoryId.getPath() + "/" + index);
     }
 
     private static void addModularExclusionArea(ModularUIContainerScreen screen, Consumer<Bounds> consumer) {
