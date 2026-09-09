@@ -675,6 +675,10 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         // ── 主动物品 IO：面配置 IN=机器主动拉取 / OUT=机器主动推出（无速率上限，尽力搬空）──
         doActiveItemIo();
 
+        // ── 主动能量 IO：面配置 OUT/BE_OUT/BOTH 时向相邻接收方推送（引擎/单元类）──
+        // [修复] 引擎类此前从不调用 → 面配置“主动输出”完全不推送能量
+        doActiveEnergyIo();
+
         // ── Sync face maps to arrays for client (server-authoritative mirror) ──
         // int[] 元素变更不触发 @DescSynced — 变化时全量推送 6 面 × 3 类型。
         if (rebuildFaceData()) {
@@ -1271,20 +1275,21 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
     }
 
     /**
-     * 机器主动能量 IO：面配置 OUT/BOTH 时向相邻容器推送能量。
-     * 仅引擎/单元类机器（canExternalExtract=true）生效——普通机器设 OUT 能量面不主动推。
+     * 机器主动能量 IO：面配置 OUT/BOTH/BE_OUT 时向相邻容器推送能量。
+     * 仅引擎/单元类机器（canExternalExtract=true）生效——普通机器设输出面不主动推。
+     * BE_OUT（主动输出）语义：机器主动推给相邻；OUT（被动输出）语义：外部拉取（两者都推无害）。
      */
     protected void doActiveEnergyIo() {
         if (level == null || level.isClientSide() || energyStorage == null) {
             return;
         }
+        if (!canExternalExtract()) {
+            return; // 仅引擎/单元类主动推（原内部逐面判断提升为方法门禁，语义显式化）
+        }
         for (Direction direction : Direction.values()) {
             int mode = energyFaceMode.getOrDefault(direction, initialFaceModeEnergy());
-            if (mode != FaceOption.OUT && mode != FaceOption.BOTH) {
-                continue;
-            }
-            if (canExtractEnergy(direction) && !canExternalExtract()) {
-                continue;
+            if (mode != FaceOption.OUT && mode != FaceOption.BOTH && mode != FaceOption.BE_OUT) {
+                continue; // [修复] 原：漏 BE_OUT——主动输出面完全不推送
             }
             IEnergyStorage sink = TransferNetworks.getEnergy(level, worldPosition.relative(direction), direction.getOpposite());
             if (sink == null || !sink.canReceive()) {

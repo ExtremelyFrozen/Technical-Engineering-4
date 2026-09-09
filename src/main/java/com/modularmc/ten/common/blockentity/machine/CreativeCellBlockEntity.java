@@ -90,8 +90,7 @@ public class CreativeCellBlockEntity extends CmMachineBlockEntity {
             }
         }
 
-        // 主动能量输出：向相邻能量接收方推送能量（P0-3：创造单元无限供电相邻机器）
-        doActiveEnergyIo();
+        // 主动能量输出已统一收口至 doBaseData → doActiveEnergyIo（防双推）
     }
 
     @Override
