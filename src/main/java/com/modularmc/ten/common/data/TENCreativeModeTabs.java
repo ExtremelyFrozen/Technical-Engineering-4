@@ -94,10 +94,10 @@ public class TENCreativeModeTabs {
     }
 
     static {
-        ZH_NAMES.put("itemGroup.kenergyengineering.block", "科能工程3 | 方块");
-        ZH_NAMES.put("itemGroup.kenergyengineering.machine", "科能工程3 | 机器");
-        ZH_NAMES.put("itemGroup.kenergyengineering.item", "科能工程3 | 物品");
-        ZH_NAMES.put("itemGroup.kenergyengineering.tool", "科能工程3 | 工具");
+        ZH_NAMES.put("itemGroup.kenergyengineering.block", "科能工程:再技术化 | 方块");
+        ZH_NAMES.put("itemGroup.kenergyengineering.machine", "科能工程:再技术化 | 机器");
+        ZH_NAMES.put("itemGroup.kenergyengineering.item", "科能工程:再技术化 | 物品");
+        ZH_NAMES.put("itemGroup.kenergyengineering.tool", "科能工程:再技术化 | 工具");
     }
 
     public static void init() {}

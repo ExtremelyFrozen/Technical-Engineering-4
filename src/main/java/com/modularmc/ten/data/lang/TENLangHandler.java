@@ -58,7 +58,7 @@ public final class TENLangHandler {
         add(provider, "locked_slot", "This slot has not been unlocked yet.", "未解锁槽位");
         add(provider, "energy_capacity.charging_on", "Charging enabled", "全身充能已开启");
         add(provider, "energy_capacity.charging_off", "Charging disabled", "全身充能已关闭");
-        add(provider, "key.categories." + TEN.MOD_ID, "Kenergy Engineering", "Kenergy Engineering");
+        add(provider, "key.categories." + TEN.MOD_ID, "Kenergy Engineering: Retechnicalized", "科能工程:再技术化");
         add(provider, "key." + TEN.MOD_ID + ".toggle_charge", "Toggle Energy Unit Charging", "切换能量单元充能");
     }
 
@@ -281,7 +281,7 @@ public final class TENLangHandler {
     }
 
     private static void addAdvancements(RegistrateLangProvider provider) {
-        add(provider, "adv.root", "Technical Engineering 3", "科能工程3");
+        add(provider, "adv.root", "Kenergy Engineering: Retechnicalized", "科能工程:再技术化");
         add(provider, "adv.root.0", "And the dream begins.", "梦开始的地方");
         add(provider, "adv.copper", "Isn't that copper?", "这不是铜吗？");
         add(provider, "adv.copper.0", "Get a copper ore from caves.", "从山洞里搞个铜矿石。");

@@ -22,7 +22,7 @@ import org.jetbrains.annotations.ApiStatus;
 public class TEN {
 
     public static final String MOD_ID = "kenergyengineering";
-    public static final String MOD_NAME = "Kenergy Engineering：Retechnicalized";
+    public static final String MOD_NAME = "科能工程:再技术化";
     public static final Logger LOGGER = LogManager.getLogger(MOD_NAME);
 
     @ApiStatus.Internal
