@@ -1,5 +1,6 @@
 package com.modularmc.ten.common.blockentity.channel;
 
+import com.modularmc.ten.TEN;
 import com.modularmc.ten.TENConstants;
 import com.modularmc.ten.api.blockentity.CmMachineBlockEntity;
 import com.modularmc.ten.api.option.FaceOption;
@@ -206,8 +207,15 @@ public abstract class AbstractChannelBlockEntity extends CmMachineBlockEntity {
         ChannelRegistry reg = registry();
         ChannelKey key = joinedKey();
         if (reg != null && key != null) {
-            pushLocalToShared();
+            // [修复问题3] 先注销成员（容量立即重算）再回流内容——
+            // pushLocalToShared 若异常不会残留幽灵成员占用共享上限
             reg.leave(key, memberId());
+            try {
+                pushLocalToShared();
+            } catch (Exception e) {
+                TEN.LOGGER.error("[Channel] Failed to push local buffer to shared storage on leave at {}",
+                        worldPosition, e);
+            }
         }
         channelId = "";
         joinedMemberCount = 0;

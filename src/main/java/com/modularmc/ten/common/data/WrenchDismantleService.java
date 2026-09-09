@@ -109,6 +109,11 @@ public final class WrenchDismantleService {
             preEncoded.putInt("redstoneMode", snapshot.redstoneMode);
             preEncoded.putInt("facingVal", snapshot.facingVal);
             preEncoded.putBoolean("active", snapshot.active);
+            // [修复问题1] 频道面板：拆解后掉落物不携带频道接入状态——
+            // BE 侧 setRemoved 已注销成员，残留 channelId 的掉落物重放置后会以
+            // 脏接入态读取不存在的成员身份（表现为“替换为未连接的面板”）
+            preEncoded.putString("channelId", "");
+            preEncoded.putInt("joinedMemberCount", 0);
         }
 
         // 4. playerWillDestroy

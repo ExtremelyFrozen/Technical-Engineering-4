@@ -1006,6 +1006,20 @@ public final class TENMachineBlockUIFactory {
     @Nullable
     private static Direction logicalDirection(CmMachineBlockEntity machine, int logicalSide) {
         Direction facing = Direction.from3DDataValue(machine.facingVal);
+        // [修复] 频道面板等 6 向机器（DirectionalMachineBlock）朝 UP/DOWN 时 getClockWise 抛
+        // IllegalStateException（Y 轴无旋转语义）→ 炸掉 GUI 同步包致客户端断线；
+        // Y 轴朝向时侧边栏四向固定为北南东西
+        if (facing.getAxis() == Direction.Axis.Y) {
+            return switch (logicalSide) {
+                case 0 -> facing;
+                case 1 -> facing.getOpposite();
+                case 2 -> Direction.NORTH;
+                case 3 -> Direction.SOUTH;
+                case 4 -> Direction.UP;
+                case 5 -> Direction.DOWN;
+                default -> null;
+            };
+        }
         return switch (logicalSide) {
             case 0 -> facing;
             case 1 -> facing.getOpposite();
