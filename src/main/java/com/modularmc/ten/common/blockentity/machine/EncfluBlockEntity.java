@@ -264,5 +264,4 @@ public class EncfluBlockEntity extends ProcessingMachineBlockEntity {
             throw new RuntimeException("Encflu onCookFinish failed and rolled back", e);
         }
     }
-
 }

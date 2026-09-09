@@ -1,12 +1,12 @@
 package com.modularmc.ten.common.blockentity.machine;
 
+import com.modularmc.ten.api.blockentity.IUpgradableMachine;
 import com.modularmc.ten.api.blockentity.ProcessingMachineBlockEntity;
 import com.modularmc.ten.api.capability.MachineFluidTank;
 import com.modularmc.ten.api.option.IngredientType;
 import com.modularmc.ten.api.option.MachineType;
 import com.modularmc.ten.common.data.TENFluids;
 import com.modularmc.ten.common.gui.TENMachineBlockUIFactory;
-import com.modularmc.ten.api.blockentity.IUpgradableMachine;
 import com.modularmc.ten.common.item.upgrades.LevelupKnow;
 
 import net.minecraft.core.BlockPos;
