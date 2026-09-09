@@ -454,7 +454,7 @@
   "kenergyengineering.jei.total_short": "%s FE",
   "kenergyengineering.jei_addition_chance": "副产概率: %s%%",
   "kenergyengineering.jei_addition_chance_rolls": "附加几率: %s%% × %s 次",
-  "kenergyengineering.key.c": "Change Holding Item Mode",
+  "kenergyengineering.key.c": "切换手持物品模式",
   "kenergyengineering.key.categories.kenergyengineering": "科能工程:再技术化",
   "kenergyengineering.key.kenergyengineering.toggle_charge": "切换能量单元充能",
   "kenergyengineering.knowledge_levelup": "升级：知识储备扩充",

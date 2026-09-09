@@ -54,7 +54,7 @@ public final class TENLangHandler {
         add(provider, "info.too_much_upgrades", "This machine has too many upgrades!", "这台机器的升级组件太多了！");
         add(provider, "info.not_support_upgrade", "This machine does not support this upgrade!", "这台机器不支持这个升级！");
         add(provider, "info.upgrade_successfully", " installed successfully.", " 安装成功。");
-        add(provider, "key.c", "Change Holding Item Mode", "Change Holding Item Mode");
+        add(provider, "key.c", "Change Holding Item Mode", "切换手持物品模式");
         add(provider, "locked_slot", "This slot has not been unlocked yet.", "未解锁槽位");
         add(provider, "energy_capacity.charging_on", "Charging enabled", "全身充能已开启");
         add(provider, "energy_capacity.charging_off", "Charging disabled", "全身充能已关闭");

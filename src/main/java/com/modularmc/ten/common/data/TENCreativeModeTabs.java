@@ -27,7 +27,7 @@ public class TENCreativeModeTabs {
         BLOCK_TAB = REGISTRATE
                 .defaultCreativeTab("block",
                         builder -> builder.icon(TIN_BLOCK::asStack)
-                                .title(REGISTRATE.addLang("itemGroup", TEN.id("block"), "Technical Engineering - Blocks"))
+                                .title(REGISTRATE.addLang("itemGroup", TEN.id("block"), "Kenergy Engineering: Retechnicalized - Blocks"))
                                 .displayItems((params, output) -> {
                                     var tab = BLOCK_TAB;
                                     if (tab != null) {
@@ -44,7 +44,7 @@ public class TENCreativeModeTabs {
         MACHINE_TAB = REGISTRATE
                 .defaultCreativeTab("machine",
                         builder -> builder.icon(MACHINE_SMELTER::asStack)
-                                .title(REGISTRATE.addLang("itemGroup", TEN.id("machine"), "Technical Engineering - Machines"))
+                                .title(REGISTRATE.addLang("itemGroup", TEN.id("machine"), "Kenergy Engineering: Retechnicalized - Machines"))
                                 .displayItems((params, output) -> {
                                     var tab = MACHINE_TAB;
                                     if (tab != null) {
@@ -61,7 +61,7 @@ public class TENCreativeModeTabs {
         ITEM_TAB = REGISTRATE
                 .defaultCreativeTab("item",
                         builder -> builder.icon(REDSTONE_AI_ADVANCED::asStack)
-                                .title(REGISTRATE.addLang("itemGroup", TEN.id("item"), "Technical Engineering - Items"))
+                                .title(REGISTRATE.addLang("itemGroup", TEN.id("item"), "Kenergy Engineering: Retechnicalized - Items"))
                                 .displayItems((params, output) -> {
                                     var tab = ITEM_TAB;
                                     if (tab != null) {
@@ -78,7 +78,7 @@ public class TENCreativeModeTabs {
         TOOL_TAB = REGISTRATE
                 .defaultCreativeTab("tool",
                         builder -> builder.icon(MOULD_GEAR::asStack)
-                                .title(REGISTRATE.addLang("itemGroup", TEN.id("tool"), "Technical Engineering - Tools"))
+                                .title(REGISTRATE.addLang("itemGroup", TEN.id("tool"), "Kenergy Engineering: Retechnicalized - Tools"))
                                 .displayItems((params, output) -> {
                                     var tab = TOOL_TAB;
                                     if (tab != null) {
