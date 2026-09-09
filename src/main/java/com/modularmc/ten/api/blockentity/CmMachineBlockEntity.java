@@ -1034,8 +1034,14 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         // 会重置 maps 并经 rebuildFaceData 抹掉 RPC 推送的真实 faceData（面配置按钮调整后闪烁显示
         // 应有状态又回退默认——与升级槽 deserialize 空 tag 清空同构）；writeTileData 恒写全部面配置，
         // 仅当 tag 含面配置键（真实存档/更新包）时才应用
+        // 读档后立即重建 faceData 镜像（26.1.2 P5-T1 对齐），服务端状态即时正确
         boolean hasFaceConfig = tag.contains("direEnergy" + Direction.NORTH.get3DDataValue());
-        if (!level.isClientSide() || hasFaceConfig) {
+        // level null-safe：loadAdditional（存档加载）阶段 Minecraft 尚未 setLevel（level==null），
+        // 原直接解引用会在每次存档加载时 NPE → MC 吞错并 skip 整批 BE（数据丢失）→
+        // 下游 LDLib2 ReadOnlyManagedRef 读 null 硬崩。语义：loadAdditional 时 level 为 null
+        // 但必为真实存档（应用分支）；GUI 空同步仅发生在已在世界的 BE（level 非空）。
+        boolean clientSide = level != null && level.isClientSide();
+        if (!clientSide || hasFaceConfig) {
             for (Direction direction : Direction.values()) {
                 energyFaceMode.put(direction, tag.getInt("direEnergy" + direction.get3DDataValue()));
                 itemFaceMode.put(direction, tag.getInt("direItem" + direction.get3DDataValue()));

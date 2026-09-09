@@ -212,6 +212,11 @@ public class EncfluBlockEntity extends ProcessingMachineBlockEntity {
         ItemStack strippedTool = tool.copy();
         strippedTool.set(DataComponents.ENCHANTMENTS, ItemEnchantments.EMPTY);
 
+        // [EncfluDiag] 祛魔组件取证：定位附魔性丢失边界（内存/槽位写入）
+        diagComponents("tool-before", tool);
+        diagComponents("stripped-mem", strippedTool);
+        diagComponents("stripped-isEnchantable=" + strippedTool.isEnchantable() + " isEnchanted=" + strippedTool.isEnchanted(), ItemStack.EMPTY);
+
         // 消耗 B 个目标后的数量
         ItemStack targetAfter = target.copy();
         targetAfter.shrink(B);
@@ -250,6 +255,9 @@ public class EncfluBlockEntity extends ProcessingMachineBlockEntity {
             }
 
             clearLockedBatch();
+            // [EncfluDiag] 写槽后回读：验证槽位往返后组件是否保真
+            diagComponents("slot0-after-set", itemHandler.getStackInSlot(0));
+            diagComponents("slot0-after-isEnchantable=" + itemHandler.getStackInSlot(0).isEnchantable() + " isEnchanted=" + itemHandler.getStackInSlot(0).isEnchanted(), ItemStack.EMPTY);
         } catch (Exception e) {
             // ── 任一异常回滚 ──
             itemHandler.setStackInSlot(0, slot0Snapshot);
@@ -263,5 +271,19 @@ public class EncfluBlockEntity extends ProcessingMachineBlockEntity {
             }
             throw new RuntimeException("Encflu onCookFinish failed and rolled back", e);
         }
+    }
+
+    /** [EncfluDiag] 打印物品全量组件明细（type id 列表，空栈跳过） */
+    private static void diagComponents(String tag, ItemStack stack) {
+        if (stack.isEmpty()) {
+            System.out.println("[EncfluDiag] " + tag + " → (empty)");
+            return;
+        }
+        var ids = new java.util.ArrayList<String>();
+        for (var typed : stack.getComponents()) {
+            ids.add(net.minecraft.core.registries.BuiltInRegistries.DATA_COMPONENT_TYPE.getKey(typed.type()) + "");
+        }
+        java.util.Collections.sort(ids);
+        System.out.println("[EncfluDiag] " + tag + " → count=" + ids.size() + " " + ids);
     }
 }
