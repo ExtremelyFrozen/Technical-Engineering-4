@@ -839,10 +839,14 @@ public final class TENMachineBlockUIFactory {
     /**
      * 18x50 modular 流体槽（FLUID_SLOT 底图 + FLUID_SLOT_OVERLAY 覆盖层）：背景 MACHINE_GUI 空面板的机器用。
      * TENFluidSlot 隐藏温度/气液态行（26.1.2 fluidGaugeBase 对齐）。
-     * 层序：底图（流体下方）→ 流体柱 → slotOverlay 覆盖层（常驻顶层：空槽时叠槽、有流体时叠流体）。
+     * 层序（TENFluidSlot 覆写渲染顺序）：底图（流体下方）→ 流体柱 → 覆盖层（空槽时叠槽、
+     * 有流体时叠流体）→ hover 高亮。ldlib2 原生顺序是覆盖层先于流体（有流体时被完全遮住）。
      */
     public static FluidSlot fluidGaugeModular(CmMachineBlockEntity machine, int x, int y, int width, int height, int tankIndex) {
         var slot = absolute(new TENFluidSlot(), x, y, width, height);
+        // FluidSlot 构造器默认 paddingAll(1) → 内容区 16×48，而底图/覆盖层/流体都画在内容区，
+        // 18×50 纹理被压缩（拉伸实锤非错觉）→ 归零后三者统一到全区域 18×50，与纹理尺寸一一对应
+        slot.layout(layout -> layout.paddingAll(0));
         slot.style(style -> style.backgroundTexture(fullTexture(TENConstants.FLUID_SLOT, width, height)));
         slot.slotStyle(style -> style
                 .slotOverlay(fullTexture(TENConstants.FLUID_SLOT_OVERLAY, width, height))

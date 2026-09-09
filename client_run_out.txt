@@ -34,16 +34,16 @@
 
 > Task :runClient
 WARN StatusConsoleListener Advanced terminal features are not available in this environment
-[18:46:19] [main/INFO] [cp.mo.mo.Launcher/MODLAUNCHER]: ModLauncher running: args [--launchTarget, forgeclientdev, --version, 21.1.219, --assetIndex, 17, --assetsDir, E:\\IDEA\\.gradle\\caches\\neoformruntime\\assets, --gameDir, ., --fml.fmlVersion, 4.0.42, --fml.mcVersion, 1.21.1, --fml.neoForgeVersion, 21.1.219, --fml.neoFormVersion, 20240808.144430]
-[18:46:19] [main/INFO] [cp.mo.mo.Launcher/MODLAUNCHER]: JVM identified as Azul Systems, Inc. OpenJDK 64-Bit Server VM 21.0.3+9-LTS
-[18:46:19] [main/INFO] [cp.mo.mo.Launcher/MODLAUNCHER]: ModLauncher 11.0.5+main.901c6ea8 starting: java version 21.0.3 by Azul Systems, Inc.; OS Windows 10 arch amd64 version 10.0
-[18:46:19] [main/INFO] [ne.ne.fm.lo.ImmediateWindowHandler/]: Loading ImmediateWindowProvider fmlearlywindow
-[18:46:20] [main/INFO] [EARLYDISPLAY/]: Trying GL version 4.6
-[18:46:20] [main/INFO] [EARLYDISPLAY/]: Requested GL version 4.6 got version 4.6
-[18:46:20] [main/INFO] [mixin/]: SpongePowered MIXIN Subsystem Version=0.8.7 Source=union:/E:/IDEA/.gradle/caches/modules-2/files-2.1/net.fabricmc/sponge-mixin/0.15.2+mixin.0.8.7/2af2f021d8e02a0220dc27a7a72b4666d66d44ca/sponge-mixin-0.15.2+mixin.0.8.7.jar%23136!/ Service=ModLauncher Env=CLIENT
-[18:46:21] [pool-2-thread-1/INFO] [EARLYDISPLAY/]: GL info: Intel(R) HD Graphics Gen11 GL version 4.6.0 - Build 31.0.101.1999, Intel
-[18:46:23] [main/INFO] [ne.ne.fm.lo.mo.lo.JarInJarDependencyLocator/]: Found 13 dependencies adding them to mods collection
-[18:46:23] [main/INFO] [ne.ne.fm.lo.mo.ModDiscoverer/]: 
+[20:16:56] [main/INFO] [cp.mo.mo.Launcher/MODLAUNCHER]: ModLauncher running: args [--launchTarget, forgeclientdev, --version, 21.1.219, --assetIndex, 17, --assetsDir, E:\\IDEA\\.gradle\\caches\\neoformruntime\\assets, --gameDir, ., --fml.fmlVersion, 4.0.42, --fml.mcVersion, 1.21.1, --fml.neoForgeVersion, 21.1.219, --fml.neoFormVersion, 20240808.144430]
+[20:16:56] [main/INFO] [cp.mo.mo.Launcher/MODLAUNCHER]: JVM identified as Azul Systems, Inc. OpenJDK 64-Bit Server VM 21.0.3+9-LTS
+[20:16:56] [main/INFO] [cp.mo.mo.Launcher/MODLAUNCHER]: ModLauncher 11.0.5+main.901c6ea8 starting: java version 21.0.3 by Azul Systems, Inc.; OS Windows 10 arch amd64 version 10.0
+[20:16:57] [main/INFO] [ne.ne.fm.lo.ImmediateWindowHandler/]: Loading ImmediateWindowProvider fmlearlywindow
+[20:16:57] [main/INFO] [EARLYDISPLAY/]: Trying GL version 4.6
+[20:16:57] [main/INFO] [EARLYDISPLAY/]: Requested GL version 4.6 got version 4.6
+[20:16:58] [main/INFO] [mixin/]: SpongePowered MIXIN Subsystem Version=0.8.7 Source=union:/E:/IDEA/.gradle/caches/modules-2/files-2.1/net.fabricmc/sponge-mixin/0.15.2+mixin.0.8.7/2af2f021d8e02a0220dc27a7a72b4666d66d44ca/sponge-mixin-0.15.2+mixin.0.8.7.jar%23136!/ Service=ModLauncher Env=CLIENT
+[20:16:58] [pool-2-thread-1/INFO] [EARLYDISPLAY/]: GL info: Intel(R) HD Graphics Gen11 GL version 4.6.0 - Build 31.0.101.1999, Intel
+[20:17:01] [main/INFO] [ne.ne.fm.lo.mo.lo.JarInJarDependencyLocator/]: Found 13 dependencies adding them to mods collection
+[20:17:01] [main/INFO] [ne.ne.fm.lo.mo.ModDiscoverer/]: 
      Mod List:
 		Name Version (Mod Id)
 
@@ -70,59 +70,59 @@ WARN StatusConsoleListener Advanced terminal features are not available in this 
 		Sodium 0.6.13+mc1.21.1 (sodium)
 		spark 1.10.124 (spark)
 		Test Framework 21.1.219 (testframework)
-[18:46:32] [main/INFO] [mixin/]: Compatibility level set to JAVA_17
-[18:46:32] [main/INFO] [mixin/]: Compatibility level set to JAVA_21
-[18:46:33] [main/INFO] [cp.mo.mo.LaunchServiceHandler/MODLAUNCHER]: Launching target 'forgeclientdev' with arguments [--version, 21.1.219, --gameDir, ., --assetsDir, E:\IDEA\.gradle\caches\neoformruntime\assets, --assetIndex, 17]
-[18:46:34] [main/WARN] [mixin/]: Reference map 'iris.refmap.json' for mixins.iris.json could not be read. If this is a development environment you can ignore this message
-[18:46:34] [main/WARN] [mixin/]: Reference map 'iris.refmap.json' for mixins.iris.fantastic.json could not be read. If this is a development environment you can ignore this message
-[18:46:34] [main/WARN] [mixin/]: Reference map 'iris.refmap.json' for mixins.iris.vertexformat.json could not be read. If this is a development environment you can ignore this message
-[18:46:34] [main/WARN] [mixin/]: Reference map 'iris.refmap.json' for iris-batched-entity-rendering.mixins.json could not be read. If this is a development environment you can ignore this message
-[18:46:34] [main/WARN] [mixin/]: Reference map 'iris.refmap.json' for mixins.iris.compat.sodium.json could not be read. If this is a development environment you can ignore this message
-[18:46:34] [main/WARN] [mixin/]: Reference map 'configuration.refmap.json' for configuration.mixins.json could not be read. If this is a development environment you can ignore this message
-[18:46:34] [main/INFO] [ModernUI-MC/Init]: Iris API installed...
-[18:46:34] [main/INFO] [Sodium/]: Loaded configuration file for Sodium: 43 options available, 1 override(s) found
-[18:46:34] [main/WARN] [mixin/]: Reference map 'curios.refmap.json' for curios.neoforge.mixins.json could not be read. If this is a development environment you can ignore this message
-[18:46:35] [main/WARN] [mixin/]: Reference map 'curios.refmap.json' for curios.mixins.json could not be read. If this is a development environment you can ignore this message
-[18:46:36] [main/INFO] [ModernFix/]: Loaded configuration file for ModernFix 5.24.3+mc1.21.1: 79 options available, 0 override(s) found
-[18:46:36] [main/INFO] [ModernFix/]: Applying Nashorn fix
-[18:46:38] [main/WARN] [mixin/]: Error loading class: mezz/jei/library/load/PluginCaller (java.lang.ClassNotFoundException: mezz.jei.library.load.PluginCaller)
-[18:46:41] [main/WARN] [mixin/]: Error loading class: com/portingdeadmods/cable_facades/events/GameClientEvents$2 (java.lang.ClassNotFoundException: com.portingdeadmods.cable_facades.events.GameClientEvents$2)
-[18:46:41] [main/WARN] [mixin/]: Error loading class: com/direwolf20/justdirethings/client/renderers/OurRenderTypes (java.lang.ClassNotFoundException: com.direwolf20.justdirethings.client.renderers.OurRenderTypes)
-[18:46:41] [main/WARN] [mixin/]: Error loading class: mekanism/client/render/entity/RenderFlame (java.lang.ClassNotFoundException: mekanism.client.render.entity.RenderFlame)
-[18:46:41] [main/WARN] [mixin/]: Error loading class: mekanism/client/render/armor/MekaSuitArmor (java.lang.ClassNotFoundException: mekanism.client.render.armor.MekaSuitArmor)
-[18:46:41] [main/WARN] [mixin/]: Error loading class: mekanism/client/render/lib/effect/BillboardingEffectRenderer (java.lang.ClassNotFoundException: mekanism.client.render.lib.effect.BillboardingEffectRenderer)
-[18:46:41] [main/WARN] [mixin/]: Error loading class: blusunrize/immersiveengineering/client/utils/IEGLShaders (java.lang.ClassNotFoundException: blusunrize.immersiveengineering.client.utils.IEGLShaders)
-[18:46:41] [main/WARN] [Sodium/]: Force-disabling mixin 'features.render.world.sky.FogRendererMixin' as rule 'mixin.features.render.world.sky' (added by mods [iris]) disables it and children
-[18:46:41] [main/WARN] [Sodium/]: Force-disabling mixin 'features.render.world.sky.ClientLevelMixin' as rule 'mixin.features.render.world.sky' (added by mods [iris]) disables it and children
-[18:46:41] [main/WARN] [Sodium/]: Force-disabling mixin 'features.render.world.sky.LevelRendererMixin' as rule 'mixin.features.render.world.sky' (added by mods [iris]) disables it and children
-[18:46:43] [main/INFO] [MixinExtras|Service/]: Initializing MixinExtras via com.llamalad7.mixinextras.service.MixinExtrasServiceImpl(version=0.5.0).
-[18:46:53] [pool-7-thread-1/INFO] [minecraft/Bootstrap]: ModernFix reached bootstrap stage (40.71 s after launch)
-[18:47:06] [Datafixer Bootstrap/INFO] [mojang/DataFixerBuilder]: 229 Datafixer optimizations took 16076 milliseconds
-[18:47:07] [pool-7-thread-1/INFO] [minecraft/Bootstrap]: Vanilla bootstrap took 13353 milliseconds
-[18:47:11] [main/WARN] [minecraft/Commands]: Ambiguity between arguments [teleport, location] and [teleport, destination] with inputs: [0.1 -0.5 .9, 0 0 0]
-[18:47:11] [main/WARN] [minecraft/Commands]: Ambiguity between arguments [teleport, location] and [teleport, targets] with inputs: [0.1 -0.5 .9, 0 0 0]
-[18:47:11] [main/WARN] [minecraft/Commands]: Ambiguity between arguments [teleport, destination] and [teleport, targets] with inputs: [Player, 0123, @e, dd12be42-52a9-4a91-a8a1-11c01849e498]
-[18:47:11] [main/WARN] [minecraft/Commands]: Ambiguity between arguments [teleport, targets] and [teleport, destination] with inputs: [Player, 0123, dd12be42-52a9-4a91-a8a1-11c01849e498]
-[18:47:11] [main/WARN] [minecraft/Commands]: Ambiguity between arguments [teleport, targets, location] and [teleport, targets, destination] with inputs: [0.1 -0.5 .9, 0 0 0]
-[18:47:11] [Render thread/WARN] [minecraft/VanillaPackResourcesBuilder]: Assets URL 'union:/E:/GitHub/Technical-Engineering-4/Technical-Engineering-4-1.21.1/build/moddev/artifacts/neoforge-21.1.219.jar%23187!/assets/.mcassetsroot' uses unexpected schema
-[18:47:11] [Render thread/WARN] [minecraft/VanillaPackResourcesBuilder]: Assets URL 'union:/E:/GitHub/Technical-Engineering-4/Technical-Engineering-4-1.21.1/build/moddev/artifacts/neoforge-21.1.219.jar%23187!/data/.mcassetsroot' uses unexpected schema
-[18:47:11] [Render thread/INFO] [mojang/YggdrasilAuthenticationService]: Environment: Environment[sessionHost=https://sessionserver.mojang.com, servicesHost=https://api.minecraftservices.com, name=PROD]
-[18:47:11] [Render thread/INFO] [minecraft/Minecraft]: Setting user: Dev
-[18:47:12] [Render thread/INFO] [minecraft/Minecraft]: Backend library: LWJGL version 3.3.3+5
-[18:47:12] [Render thread/INFO] [ModernUI-MC/Init]: Created MuiForgeAPI
-[18:47:12] [Render thread/INFO] [ModernUI-MC/Init]: Detected OpenGL 4.6 Core Profile from FML Early Window
-[18:47:12] [Render thread/INFO] [mojang/Window]: OpenGL Vendor: Intel
-[18:47:12] [Render thread/INFO] [mojang/Window]: OpenGL Renderer: Intel(R) HD Graphics Gen11
-[18:47:12] [Render thread/INFO] [mojang/Window]: OpenGL Version: 4.6.0 - Build 31.0.101.1999
-[18:47:13] [Render thread/INFO] [Arc3D/]: Identified OpenGL vendor: INTEL
-[18:47:13] [Render thread/INFO] [Arc3D/]: Identified OpenGL driver: INTEL
-[18:47:13] [Render thread/INFO] [Arc3D/]: Intel GPU detected, disabling DSA
-[18:47:13] [Render thread/INFO] [Arc3D/]: Using OpenGL 4.5 and GLSL 4.50
-[18:47:13] [Render thread/INFO] [Arc3D/]: Use KHR_blend_equation_advanced_coherent
-[18:47:13] [Render thread/INFO] [ModernUI/Core]: OpenGL vendor: Intel
-[18:47:13] [Render thread/INFO] [ModernUI/Core]: OpenGL renderer: Intel(R) HD Graphics Gen11
-[18:47:13] [Render thread/INFO] [ModernUI/Core]: OpenGL version: 4.6.0 - Build 31.0.101.1999
-[18:47:13] [Render thread/INFO] [ModernUI/Core]: OpenGL caps: 
+[20:17:09] [main/INFO] [mixin/]: Compatibility level set to JAVA_17
+[20:17:10] [main/INFO] [mixin/]: Compatibility level set to JAVA_21
+[20:17:10] [main/INFO] [cp.mo.mo.LaunchServiceHandler/MODLAUNCHER]: Launching target 'forgeclientdev' with arguments [--version, 21.1.219, --gameDir, ., --assetsDir, E:\IDEA\.gradle\caches\neoformruntime\assets, --assetIndex, 17]
+[20:17:10] [main/WARN] [mixin/]: Reference map 'iris.refmap.json' for mixins.iris.json could not be read. If this is a development environment you can ignore this message
+[20:17:10] [main/WARN] [mixin/]: Reference map 'iris.refmap.json' for mixins.iris.fantastic.json could not be read. If this is a development environment you can ignore this message
+[20:17:10] [main/WARN] [mixin/]: Reference map 'iris.refmap.json' for mixins.iris.vertexformat.json could not be read. If this is a development environment you can ignore this message
+[20:17:10] [main/WARN] [mixin/]: Reference map 'iris.refmap.json' for iris-batched-entity-rendering.mixins.json could not be read. If this is a development environment you can ignore this message
+[20:17:10] [main/WARN] [mixin/]: Reference map 'iris.refmap.json' for mixins.iris.compat.sodium.json could not be read. If this is a development environment you can ignore this message
+[20:17:10] [main/WARN] [mixin/]: Reference map 'configuration.refmap.json' for configuration.mixins.json could not be read. If this is a development environment you can ignore this message
+[20:17:10] [main/INFO] [ModernUI-MC/Init]: Iris API installed...
+[20:17:11] [main/INFO] [Sodium/]: Loaded configuration file for Sodium: 43 options available, 1 override(s) found
+[20:17:11] [main/WARN] [mixin/]: Reference map 'curios.refmap.json' for curios.neoforge.mixins.json could not be read. If this is a development environment you can ignore this message
+[20:17:11] [main/WARN] [mixin/]: Reference map 'curios.refmap.json' for curios.mixins.json could not be read. If this is a development environment you can ignore this message
+[20:17:11] [main/INFO] [ModernFix/]: Loaded configuration file for ModernFix 5.24.3+mc1.21.1: 79 options available, 0 override(s) found
+[20:17:11] [main/INFO] [ModernFix/]: Applying Nashorn fix
+[20:17:13] [main/WARN] [mixin/]: Error loading class: mezz/jei/library/load/PluginCaller (java.lang.ClassNotFoundException: mezz.jei.library.load.PluginCaller)
+[20:17:15] [main/WARN] [mixin/]: Error loading class: com/portingdeadmods/cable_facades/events/GameClientEvents$2 (java.lang.ClassNotFoundException: com.portingdeadmods.cable_facades.events.GameClientEvents$2)
+[20:17:15] [main/WARN] [mixin/]: Error loading class: com/direwolf20/justdirethings/client/renderers/OurRenderTypes (java.lang.ClassNotFoundException: com.direwolf20.justdirethings.client.renderers.OurRenderTypes)
+[20:17:15] [main/WARN] [mixin/]: Error loading class: mekanism/client/render/entity/RenderFlame (java.lang.ClassNotFoundException: mekanism.client.render.entity.RenderFlame)
+[20:17:15] [main/WARN] [mixin/]: Error loading class: mekanism/client/render/armor/MekaSuitArmor (java.lang.ClassNotFoundException: mekanism.client.render.armor.MekaSuitArmor)
+[20:17:15] [main/WARN] [mixin/]: Error loading class: mekanism/client/render/lib/effect/BillboardingEffectRenderer (java.lang.ClassNotFoundException: mekanism.client.render.lib.effect.BillboardingEffectRenderer)
+[20:17:15] [main/WARN] [mixin/]: Error loading class: blusunrize/immersiveengineering/client/utils/IEGLShaders (java.lang.ClassNotFoundException: blusunrize.immersiveengineering.client.utils.IEGLShaders)
+[20:17:16] [main/WARN] [Sodium/]: Force-disabling mixin 'features.render.world.sky.FogRendererMixin' as rule 'mixin.features.render.world.sky' (added by mods [iris]) disables it and children
+[20:17:16] [main/WARN] [Sodium/]: Force-disabling mixin 'features.render.world.sky.ClientLevelMixin' as rule 'mixin.features.render.world.sky' (added by mods [iris]) disables it and children
+[20:17:16] [main/WARN] [Sodium/]: Force-disabling mixin 'features.render.world.sky.LevelRendererMixin' as rule 'mixin.features.render.world.sky' (added by mods [iris]) disables it and children
+[20:17:19] [main/INFO] [MixinExtras|Service/]: Initializing MixinExtras via com.llamalad7.mixinextras.service.MixinExtrasServiceImpl(version=0.5.0).
+[20:17:27] [pool-7-thread-1/INFO] [minecraft/Bootstrap]: ModernFix reached bootstrap stage (39.04 s after launch)
+[20:17:42] [Datafixer Bootstrap/INFO] [mojang/DataFixerBuilder]: 229 Datafixer optimizations took 16424 milliseconds
+[20:17:43] [pool-7-thread-1/INFO] [minecraft/Bootstrap]: Vanilla bootstrap took 15250 milliseconds
+[20:17:47] [main/WARN] [minecraft/Commands]: Ambiguity between arguments [teleport, location] and [teleport, destination] with inputs: [0.1 -0.5 .9, 0 0 0]
+[20:17:47] [main/WARN] [minecraft/Commands]: Ambiguity between arguments [teleport, location] and [teleport, targets] with inputs: [0.1 -0.5 .9, 0 0 0]
+[20:17:47] [main/WARN] [minecraft/Commands]: Ambiguity between arguments [teleport, destination] and [teleport, targets] with inputs: [Player, 0123, @e, dd12be42-52a9-4a91-a8a1-11c01849e498]
+[20:17:47] [main/WARN] [minecraft/Commands]: Ambiguity between arguments [teleport, targets] and [teleport, destination] with inputs: [Player, 0123, dd12be42-52a9-4a91-a8a1-11c01849e498]
+[20:17:47] [main/WARN] [minecraft/Commands]: Ambiguity between arguments [teleport, targets, location] and [teleport, targets, destination] with inputs: [0.1 -0.5 .9, 0 0 0]
+[20:17:47] [Render thread/WARN] [minecraft/VanillaPackResourcesBuilder]: Assets URL 'union:/E:/GitHub/Technical-Engineering-4/Technical-Engineering-4-1.21.1/build/moddev/artifacts/neoforge-21.1.219.jar%23187!/assets/.mcassetsroot' uses unexpected schema
+[20:17:47] [Render thread/WARN] [minecraft/VanillaPackResourcesBuilder]: Assets URL 'union:/E:/GitHub/Technical-Engineering-4/Technical-Engineering-4-1.21.1/build/moddev/artifacts/neoforge-21.1.219.jar%23187!/data/.mcassetsroot' uses unexpected schema
+[20:17:47] [Render thread/INFO] [mojang/YggdrasilAuthenticationService]: Environment: Environment[sessionHost=https://sessionserver.mojang.com, servicesHost=https://api.minecraftservices.com, name=PROD]
+[20:17:47] [Render thread/INFO] [minecraft/Minecraft]: Setting user: Dev
+[20:17:48] [Render thread/INFO] [minecraft/Minecraft]: Backend library: LWJGL version 3.3.3+5
+[20:17:48] [Render thread/INFO] [ModernUI-MC/Init]: Created MuiForgeAPI
+[20:17:48] [Render thread/INFO] [ModernUI-MC/Init]: Detected OpenGL 4.6 Core Profile from FML Early Window
+[20:17:48] [Render thread/INFO] [mojang/Window]: OpenGL Vendor: Intel
+[20:17:48] [Render thread/INFO] [mojang/Window]: OpenGL Renderer: Intel(R) HD Graphics Gen11
+[20:17:48] [Render thread/INFO] [mojang/Window]: OpenGL Version: 4.6.0 - Build 31.0.101.1999
+[20:17:49] [Render thread/INFO] [Arc3D/]: Identified OpenGL vendor: INTEL
+[20:17:49] [Render thread/INFO] [Arc3D/]: Identified OpenGL driver: INTEL
+[20:17:49] [Render thread/INFO] [Arc3D/]: Intel GPU detected, disabling DSA
+[20:17:49] [Render thread/INFO] [Arc3D/]: Using OpenGL 4.5 and GLSL 4.50
+[20:17:49] [Render thread/INFO] [Arc3D/]: Use KHR_blend_equation_advanced_coherent
+[20:17:49] [Render thread/INFO] [ModernUI/Core]: OpenGL vendor: Intel
+[20:17:49] [Render thread/INFO] [ModernUI/Core]: OpenGL renderer: Intel(R) HD Graphics Gen11
+[20:17:49] [Render thread/INFO] [ModernUI/Core]: OpenGL version: 4.6.0 - Build 31.0.101.1999
+[20:17:49] [Render thread/INFO] [ModernUI/Core]: OpenGL caps: 
 AnisotropySupport: true
 GpuTracingSupport: false
 ConservativeRasterSupport: false
@@ -216,286 +216,263 @@ ColorTypeToBackendFormat:
 	ARGB_8888=>GLenum [0x0]
 CompressionTypeToBackendFormat: [null, {mBackend=OpenGL, mFormat=ETC2}, {mBackend=OpenGL, mFormat=RGB8_BC1}, {mBackend=OpenGL, mFormat=RGBA8_BC1}]
 
-[18:47:13] [Render thread/INFO] [Iris/]: Debug functionality is disabled.
-[18:47:13] [Render thread/INFO] [Iris/]: OpenGL 4.5 detected, enabling DSA.
-[18:47:13] [Render thread/INFO] [Iris/]: Shaders are disabled because no valid shaderpack is selected
-[18:47:15] [modloading-worker-0/INFO] [Configuration/FileWatching]: Registered configuration config for auto-sync function
-[18:47:15] [modloading-worker-0/INFO] [ModernUI-MC/Init]: Initialized Modern UI
-[18:47:15] [modloading-worker-0/INFO] [LowDragLib2/]: LowDragLib2 is initializing on platform: NeoForge
-[18:47:16] [ForkJoinPool.commonPool-worker-2/WARN] [Iris/]: [Iris Update Check] This version doesn't have an update index, skipping.
-[18:47:16] [modloading-worker-0/INFO] [ne.ne.ne.co.NeoForgeMod/NEOFORGE-MOD]: NeoForge mod loading, version 21.1.219, for MC 1.21.1
-[18:47:16] [modloading-worker-0/INFO] [ModernUI-MC/UIManager]: UI manager initialized
-[18:47:16] [modloading-worker-0/INFO] [ModernUI-MC/Init]: Created TextLayoutEngine
-[18:47:16] [modloading-worker-0/INFO] [ModernUI-MC/Init]: Initialized Modern UI text engine
-[18:47:16] [modloading-worker-0/INFO] [ModernUI-MC/Init]: Initialized Modern UI client
-[18:47:19] [UI thread/INFO] [ModernUI-MC/UIManager]: UI thread initialized in 3181ms
-[18:47:44] [Render thread/INFO] [Iris/]: Hardware information:
-[18:47:44] [Render thread/INFO] [Iris/]: CPU: 4x Intel(R) Celeron(R) N5095 @ 2.00GHz
-[18:47:44] [Render thread/INFO] [Iris/]: GPU: Intel(R) HD Graphics Gen11 (Supports OpenGL 4.6.0 - Build 31.0.101.1999)
-[18:47:44] [Render thread/INFO] [Iris/]: OS: Windows 10 (10.0)
-[18:47:44] [Render thread/INFO] [ne.ne.ne.ga.GameTestHooks/]: Enabled Gametest Namespaces: [kenergyengineering]
-[18:47:46] [Render thread/INFO] [ModernUI-MC/TextLayout]: Preloaded modern text shaders
-[18:47:46] [Render thread/INFO] [minecraft/ReloadableResourceManager]: Reloading ResourceManager: vanilla, mod_resources, mod/sodium, mod/emi, mod/powah, mod/iris, mod/fabric_renderer_api_v1, mod/fabric_api_base, mod/configuration, mod/kenergyengineering, mod/jade, mod/testframework, mod/guideme, mod/architectury, mod/itemzoomer, mod/modernui, mod/fabric_rendering_data_attachment_v1, mod/cloth_config, mod/spark, mod/curios, mod/ldlib2, mod/neoforge, mod/modernfix, mod/fabric_block_view_api_v2, ldlib2
-[18:47:47] [Render thread/INFO] [ModernUI-MC/TextLayout]: Loaded smart SDF text shaders
-[18:47:47] [Worker-ResourceReload-0/INFO] [ModernUI-MC/Glyph]: Scanned emoji map size: 3581
-[18:47:47] [Render thread/INFO] [ModernUI-MC/TextLayout]: Reloaded text layout engine, res level: 2 to 2, locale: zh_CN, layout RTL: false
-[18:47:47] [Worker-ResourceReload-0/INFO] [ModernUI-MC/Glyph]: Scanned emoji shortcodes: 6923
-[18:47:47] [ForkJoinPool.commonPool-worker-1/INFO] [ModernUI-MC/TextLayout]: Redirect registered font 'JetBrains Mono Medium' to 'modernui:jetbrains-mono-medium'
-[18:47:47] [ForkJoinPool.commonPool-worker-3/INFO] [ModernUI-MC/TextLayout]: Redirect registered font 'Inter Frozen Medium' to 'modernui:inter-frozen-medium'
-[18:47:47] [ForkJoinPool.commonPool-worker-3/INFO] [ModernUI-MC/Init]: Registered font 'Inter Frozen Medium', location 'modernui:font/inter-frozen-medium.otf' in pack: 'mod/modernui'
-[18:47:47] [ForkJoinPool.commonPool-worker-1/INFO] [ModernUI-MC/Init]: Registered font 'JetBrains Mono Medium', location 'modernui:font/jetbrains-mono-medium.ttf' in pack: 'mod/modernui'
-[18:47:47] [ForkJoinPool.commonPool-worker-2/INFO] [ModernUI-MC/Init]: Registered font 'Inter Frozen Medium', location 'modernui:font/inter-frozen-medium-italic.otf' in pack: 'mod/modernui'
-[18:47:47] [ForkJoinPool.commonPool-worker-1/INFO] [ModernUI-MC/TextLayout]: Redirect registered font 'mui-i18n-compat' to 'modernui:mui-i18n-compat'
-[18:47:47] [ForkJoinPool.commonPool-worker-1/INFO] [ModernUI-MC/Init]: Registered font 'mui-i18n-compat', location 'modernui:font/muii18ncompat/muii18ncompat.ttf' in pack: 'mod/modernui'
-[18:47:47] [ForkJoinPool.commonPool-worker-3/WARN] [ModernUI/Font]: Failed to lookup in registered fonts, original font: java.awt.Font[family=思源黑体 CN Medium,name=思源黑体 CN Medium,style=plain,size=1], full name: 思源黑体 CN Medium
-[18:47:47] [ForkJoinPool.commonPool-worker-3/INFO] [ModernUI-MC/TextLayout]: Redirect registered font 'Source Han Sans CN Medium' to 'modernui:source-han-sans-cn-medium'
-[18:47:47] [ForkJoinPool.commonPool-worker-3/INFO] [ModernUI-MC/Init]: Registered font 'Source Han Sans CN Medium', location 'modernui:font/source-han-sans-cn-medium.otf' in pack: 'mod/modernui'
-[18:47:48] [Worker-ResourceReload-2/INFO] [ModernUI-MC/Init]: Font 'Noto Sans' failed to load or invalid
-[18:47:48] [Worker-ResourceReload-2/INFO] [ModernUI-MC/Init]: Font 'Segoe UI Variable' failed to load or invalid
-[18:47:48] [Worker-ResourceReload-2/INFO] [ModernUI-MC/Init]: Font 'San Francisco' failed to load or invalid
-[18:47:48] [Worker-ResourceReload-2/INFO] [ModernUI-MC/Init]: Font 'Open Sans' failed to load or invalid
-[18:47:48] [Worker-ResourceReload-2/INFO] [ModernUI-MC/Init]: Font 'STHeiti' failed to load or invalid
-[18:47:48] [Worker-ResourceReload-2/INFO] [ModernUI-MC/Init]: Loaded typeface: FontCollection{mFamilies=[Source Han Sans CN Medium, Segoe UI, SimHei, Segoe UI Symbol, mui-i18n-compat], mExclusiveEastAsianBits=null}
-[18:47:49] [Worker-ResourceReload-2/INFO] [ModernUI-MC/TextLayout]: Loaded raw font 'minecraft:alt' in pack: 'vanilla'
-[18:47:49] [Worker-ResourceReload-2/INFO] [ModernUI-MC/TextLayout]: Loaded raw font bundle: 'minecraft:font/alt.json', font set: [minecraft:include/space,minecraft:font/ascii_sga.png]
-[18:47:49] [Worker-ResourceReload-2/INFO] [ModernUI-MC/TextLayout]: Loaded raw font 'minecraft:default' in pack: 'vanilla'
-[18:47:49] [Worker-ResourceReload-2/INFO] [ModernUI-MC/TextLayout]: Loaded raw font bundle: 'minecraft:font/default.json', font set: [minecraft:include/space,minecraft:include/default]
-[18:47:49] [Worker-ResourceReload-2/INFO] [ModernUI-MC/TextLayout]: Loaded raw font 'minecraft:illageralt' in pack: 'vanilla'
-[18:47:49] [Worker-ResourceReload-2/INFO] [ModernUI-MC/TextLayout]: Loaded raw font bundle: 'minecraft:font/illageralt.json', font set: [minecraft:include/space,minecraft:font/asciillager.png]
-[18:47:49] [Worker-ResourceReload-2/INFO] [ModernUI-MC/TextLayout]: Loaded raw font 'minecraft:include/default' in pack: 'vanilla'
-[18:47:49] [Worker-ResourceReload-2/INFO] [ModernUI-MC/TextLayout]: Loaded raw font bundle: 'minecraft:font/include/default.json', font set: [minecraft:font/nonlatin_european.png,minecraft:font/accented.png,minecraft:font/ascii.png]
-[18:47:49] [Worker-ResourceReload-2/INFO] [ModernUI-MC/TextLayout]: Loaded raw font 'minecraft:include/space' in pack: 'vanilla'
-[18:47:49] [Worker-ResourceReload-2/INFO] [ModernUI-MC/TextLayout]: Loaded raw font bundle: 'minecraft:font/include/space.json', font set: [minecraft:include/space / minecraft:space]
-[18:47:49] [Worker-ResourceReload-2/INFO] [ModernUI-MC/TextLayout]: Ignore 'size=9.0' of providers[0] in font 'ldlib2:jetbrains_mono_bold' in pack: 'mod/ldlib2'
-[18:47:49] [Worker-ResourceReload-2/INFO] [ModernUI-MC/TextLayout]: Ignore 'oversample=16.0' of providers[0] in font 'ldlib2:jetbrains_mono_bold' in pack: 'mod/ldlib2'
-[18:47:49] [Worker-ResourceReload-2/INFO] [ModernUI-MC/TextLayout]: Ignore 'shift=Shift[x=0.0, y=0.0]' of providers[0] in font 'ldlib2:jetbrains_mono_bold' in pack: 'mod/ldlib2'
-[18:47:49] [Worker-ResourceReload-2/INFO] [ModernUI-MC/TextLayout]: Ignore 'skip=' of providers[0] in font 'ldlib2:jetbrains_mono_bold' in pack: 'mod/ldlib2'
-[18:47:49] [Worker-ResourceReload-2/INFO] [ModernUI-MC/TextLayout]: Loaded raw font 'ldlib2:jetbrains_mono_bold' in pack: 'mod/ldlib2'
-[18:47:49] [Worker-ResourceReload-2/INFO] [ModernUI-MC/TextLayout]: Loaded raw font bundle: 'ldlib2:font/jetbrains_mono_bold.json', font set: [JetBrains Mono]
-[18:47:49] [Worker-ResourceReload-2/INFO] [ModernUI-MC/TextLayout]: Loaded font: 'minecraft:include/space', font set: [minecraft:include/space / minecraft:space]
-[18:47:49] [Worker-ResourceReload-2/INFO] [ModernUI-MC/TextLayout]: Loaded font: 'minecraft:include/default', font set: [minecraft:font/nonlatin_european.png,minecraft:font/accented.png,minecraft:font/ascii.png]
-[18:47:49] [Worker-ResourceReload-2/INFO] [ModernUI-MC/TextLayout]: Loaded font: 'minecraft:default', font set: [minecraft:include/space / minecraft:space,minecraft:font/nonlatin_european.png,minecraft:font/accented.png,minecraft:font/ascii.png]
-[18:47:49] [Worker-ResourceReload-2/INFO] [ModernUI-MC/TextLayout]: Loaded font: 'minecraft:illageralt', font set: [minecraft:include/space / minecraft:space,minecraft:font/asciillager.png]
-[18:47:49] [Worker-ResourceReload-2/INFO] [ModernUI-MC/TextLayout]: Loaded font: 'ldlib2:jetbrains_mono_bold', font set: [JetBrains Mono]
-[18:47:49] [Worker-ResourceReload-2/INFO] [ModernUI-MC/TextLayout]: Loaded font: 'minecraft:alt', font set: [minecraft:include/space / minecraft:space,minecraft:font/ascii_sga.png]
-[18:47:50] [Worker-ResourceReload-0/WARN] [minecraft/SpriteContents]: Unused frames in sprite powah:item/charged_snowball: [1, 2, 3, 4, 16, 17, 18, 19]
-[18:47:50] [Worker-ResourceReload-0/WARN] [minecraft/SpriteContents]: Invalid frame index on sprite powah:item/ender_core frame 40: 3
-[18:47:50] [Worker-ResourceReload-0/WARN] [minecraft/SpriteContents]: Invalid frame index on sprite powah:item/ender_core frame 43: 3
-[18:47:50] [Worker-ResourceReload-0/WARN] [minecraft/SpriteContents]: Invalid frame index on sprite powah:item/ender_core frame 90: 5
-[18:47:50] [Worker-ResourceReload-0/WARN] [minecraft/SpriteContents]: Invalid frame index on sprite powah:item/ender_core frame 91: 5
-[18:47:50] [Worker-ResourceReload-0/WARN] [minecraft/SpriteContents]: Invalid frame index on sprite powah:item/ender_core frame 92: 5
-[18:47:50] [Worker-ResourceReload-0/WARN] [minecraft/SpriteContents]: Invalid frame index on sprite powah:item/ender_core frame 93: 5
-[18:47:50] [Worker-ResourceReload-0/WARN] [minecraft/SpriteContents]: Invalid frame index on sprite powah:item/ender_core frame 94: 6
-[18:47:50] [Worker-ResourceReload-0/WARN] [minecraft/SpriteContents]: Invalid frame index on sprite powah:item/ender_core frame 95: 6
-[18:47:50] [Worker-ResourceReload-0/WARN] [minecraft/SpriteContents]: Invalid frame index on sprite powah:item/ender_core frame 96: 6
-[18:47:50] [Worker-ResourceReload-0/WARN] [minecraft/SpriteContents]: Invalid frame index on sprite powah:item/ender_core frame 97: 6
-[18:47:50] [Worker-ResourceReload-0/WARN] [minecraft/SpriteContents]: Invalid frame index on sprite powah:item/ender_core frame 98: 6
-[18:47:50] [Worker-ResourceReload-0/WARN] [minecraft/SpriteContents]: Invalid frame index on sprite powah:item/ender_core frame 99: 5
-[18:47:50] [Worker-ResourceReload-0/WARN] [minecraft/SpriteContents]: Invalid frame index on sprite powah:item/ender_core frame 100: 5
-[18:47:50] [Worker-ResourceReload-0/WARN] [minecraft/SpriteContents]: Invalid frame index on sprite powah:item/ender_core frame 101: 5
-[18:47:50] [Worker-ResourceReload-0/WARN] [minecraft/SpriteContents]: Invalid frame index on sprite powah:item/ender_core frame 102: 5
-[18:47:50] [Worker-ResourceReload-0/WARN] [minecraft/SpriteContents]: Invalid frame index on sprite powah:item/ender_core frame 146: 8
-[18:47:50] [Worker-ResourceReload-0/WARN] [minecraft/SpriteContents]: Invalid frame index on sprite powah:item/ender_core frame 147: 8
-[18:47:50] [Worker-ResourceReload-0/WARN] [minecraft/SpriteContents]: Invalid frame index on sprite powah:item/ender_core frame 148: 8
-[18:47:50] [Worker-ResourceReload-0/WARN] [minecraft/SpriteContents]: Invalid frame index on sprite powah:item/ender_core frame 149: 8
-[18:47:50] [Worker-ResourceReload-0/WARN] [minecraft/SpriteContents]: Invalid frame index on sprite powah:item/ender_core frame 150: 8
-[18:47:50] [Worker-ResourceReload-0/WARN] [minecraft/SpriteContents]: Invalid frame index on sprite powah:item/ender_core frame 151: 8
-[18:47:50] [Worker-ResourceReload-0/WARN] [minecraft/SpriteContents]: Invalid frame index on sprite powah:item/ender_core frame 152: 8
-[18:47:50] [Worker-ResourceReload-0/WARN] [minecraft/SpriteContents]: Invalid frame index on sprite powah:item/ender_core frame 153: 8
-[18:47:50] [Worker-ResourceReload-0/WARN] [minecraft/SpriteContents]: Invalid frame index on sprite powah:item/ender_core frame 172: 5
-[18:47:50] [Worker-ResourceReload-0/WARN] [minecraft/SpriteContents]: Invalid frame index on sprite powah:item/ender_core frame 173: 5
-[18:47:50] [Worker-ResourceReload-0/WARN] [minecraft/SpriteContents]: Invalid frame index on sprite powah:item/ender_core frame 174: 5
-[18:47:50] [Worker-ResourceReload-0/WARN] [minecraft/SpriteContents]: Invalid frame index on sprite powah:item/ender_core frame 175: 5
-[18:47:50] [Worker-ResourceReload-0/WARN] [minecraft/SpriteContents]: Invalid frame index on sprite powah:item/ender_core frame 192: 8
-[18:47:50] [Worker-ResourceReload-0/WARN] [minecraft/SpriteContents]: Invalid frame index on sprite powah:item/ender_core frame 193: 8
-[18:47:50] [Worker-ResourceReload-0/WARN] [minecraft/SpriteContents]: Invalid frame index on sprite powah:item/ender_core frame 194: 8
-[18:47:50] [Worker-ResourceReload-0/WARN] [minecraft/SpriteContents]: Invalid frame index on sprite powah:item/ender_core frame 195: 8
-[18:47:50] [Worker-ResourceReload-0/WARN] [minecraft/SpriteLoader]: Texture testframework:block/white with size 4x4 limits mip level from 4 to 2
-[18:47:50] [Worker-ResourceReload-0/INFO] [ModernUI-MC/Init]: Loaded modern text engine
-[18:47:51] [Worker-ResourceReload-1/WARN] [minecraft/ModelBakery]: Unable to load model: 'minecraft:block' referenced from: powah:block/energy_cell_starter: java.io.FileNotFoundException: minecraft:models/block.json
-[18:47:52] [Render thread/INFO] [ModernUI-MC/UIManager]: UI renderer initialized
-[18:47:53] [Worker-ResourceReload-1/WARN] [minecraft/ModelBakery]: Unable to load model: 'modernui:item/project_builder' referenced from: modernui:item/project_builder: java.io.FileNotFoundException: modernui:models/item/project_builder.json
-[18:47:53] [Worker-ResourceReload-1/WARN] [minecraft/ModelBakery]: Unable to load model: 'modernui:item/project_builder_main' referenced from: modernui:item/project_builder_main: java.io.FileNotFoundException: modernui:models/item/project_builder_main.json
-[18:47:53] [Worker-ResourceReload-1/WARN] [minecraft/ModelBakery]: Unable to load model: 'modernui:item/project_builder_cube' referenced from: modernui:item/project_builder_cube: java.io.FileNotFoundException: modernui:models/item/project_builder_cube.json
-[18:47:56] [Worker-ResourceReload-2/INFO] [sn.ja.Jade/]: Start loading plugin from com.modularmc.ten.integration.jade.TENJadePlugin
-[18:47:56] [Worker-ResourceReload-2/INFO] [sn.ja.Jade/]: Bootstrapped plugin from com.modularmc.ten.integration.jade.TENJadePlugin in 46.55 ms
-[18:47:56] [Worker-ResourceReload-2/INFO] [sn.ja.Jade/]: Loaded plugin from com.modularmc.ten.integration.jade.TENJadePlugin in 58.58 ms
-[18:47:56] [Worker-ResourceReload-2/INFO] [sn.ja.Jade/]: Start loading plugin from snownee.jade.addon.vanilla.VanillaPlugin
-[18:47:56] [Worker-ResourceReload-2/INFO] [sn.ja.Jade/]: Bootstrapped plugin from snownee.jade.addon.vanilla.VanillaPlugin in 105.6 ms
-[18:47:56] [Worker-ResourceReload-2/INFO] [sn.ja.Jade/]: Loaded plugin from snownee.jade.addon.vanilla.VanillaPlugin in 118.8 ms
-[18:47:56] [Worker-ResourceReload-2/INFO] [sn.ja.Jade/]: Start loading plugin from snownee.jade.addon.universal.UniversalPlugin
-[18:47:56] [Worker-ResourceReload-2/INFO] [sn.ja.Jade/]: Bootstrapped plugin from snownee.jade.addon.universal.UniversalPlugin in 16.66 ms
-[18:47:56] [Worker-ResourceReload-2/INFO] [sn.ja.Jade/]: Loaded plugin from snownee.jade.addon.universal.UniversalPlugin in 17.99 ms
-[18:47:56] [Worker-ResourceReload-2/INFO] [sn.ja.Jade/]: Start loading plugin from snownee.jade.addon.debug.DebugPlugin
-[18:47:56] [Worker-ResourceReload-2/INFO] [sn.ja.Jade/]: Bootstrapped plugin from snownee.jade.addon.debug.DebugPlugin in 7.803 ms
-[18:47:56] [Worker-ResourceReload-2/INFO] [sn.ja.Jade/]: Loaded plugin from snownee.jade.addon.debug.DebugPlugin in 8.811 ms
-[18:47:56] [Worker-ResourceReload-2/INFO] [sn.ja.Jade/]: Start loading plugin from snownee.jade.addon.core.CorePlugin
-[18:47:56] [Worker-ResourceReload-2/INFO] [sn.ja.Jade/]: Bootstrapped plugin from snownee.jade.addon.core.CorePlugin in 36.88 ms
-[18:47:56] [Worker-ResourceReload-2/INFO] [sn.ja.Jade/]: Loaded plugin from snownee.jade.addon.core.CorePlugin in 37.58 ms
-[18:47:56] [Worker-ResourceReload-2/INFO] [sn.ja.Jade/]: Start loading plugin from snownee.jade.addon.access.AccessibilityPlugin
-[18:47:56] [Worker-ResourceReload-2/INFO] [sn.ja.Jade/]: Bootstrapped plugin from snownee.jade.addon.access.AccessibilityPlugin in 10.46 ms
-[18:47:56] [Worker-ResourceReload-2/INFO] [sn.ja.Jade/]: Loaded plugin from snownee.jade.addon.access.AccessibilityPlugin in 11.35 ms
-[18:47:57] [Render thread/WARN] [minecraft/SoundEngine]: Missing sound for event: minecraft:item.goat_horn.play
-[18:47:57] [Render thread/WARN] [minecraft/SoundEngine]: Missing sound for event: minecraft:entity.goat.screaming.horn_break
-[18:47:57] [Render thread/INFO] [mojang/Library]: OpenAL initialized on device OpenAL Soft on 扬声器 (USB Audio and HID)
-[18:47:57] [Render thread/INFO] [minecraft/SoundEngine]: Sound engine started
-[18:47:57] [Render thread/INFO] [ModernUI-MC/Init]: Font 'Noto Sans' failed to load or invalid
-[18:47:57] [Render thread/INFO] [ModernUI-MC/Init]: Font 'Segoe UI Variable' failed to load or invalid
-[18:47:57] [Render thread/INFO] [ModernUI-MC/Init]: Font 'San Francisco' failed to load or invalid
-[18:47:57] [Render thread/INFO] [ModernUI-MC/Init]: Font 'Open Sans' failed to load or invalid
-[18:47:58] [Render thread/INFO] [ModernUI-MC/Init]: Font 'STHeiti' failed to load or invalid
-[18:47:58] [Render thread/INFO] [ModernUI-MC/Init]: Reloaded typeface: FontCollection{mFamilies=[Google Noto Color Emoji, Source Han Sans CN Medium, Segoe UI, SimHei, Segoe UI Symbol, mui-i18n-compat], mExclusiveEastAsianBits=null}
-[18:47:58] [Render thread/INFO] [ModernUI-MC/Glyph]: Reloaded glyph manager
-[18:47:58] [Render thread/INFO] [ModernUI-MC/TextLayout]: Reloaded text layout engine, res level: 2 to 2, locale: zh_CN, layout RTL: false
-[18:47:58] [Render thread/INFO] [minecraft/TextureAtlas]: Created: 1024x1024x4 minecraft:textures/atlas/blocks.png-atlas
-[18:48:04] [Render thread/INFO] [minecraft/TextureAtlas]: Created: 256x256x4 minecraft:textures/atlas/signs.png-atlas
-[18:48:04] [Render thread/INFO] [minecraft/TextureAtlas]: Created: 512x512x4 minecraft:textures/atlas/shield_patterns.png-atlas
-[18:48:05] [Render thread/INFO] [minecraft/TextureAtlas]: Created: 512x512x4 minecraft:textures/atlas/banner_patterns.png-atlas
-[18:48:05] [Render thread/INFO] [minecraft/TextureAtlas]: Created: 1024x1024x4 minecraft:textures/atlas/armor_trims.png-atlas
-[18:48:08] [Render thread/INFO] [minecraft/TextureAtlas]: Created: 256x256x4 minecraft:textures/atlas/chest.png-atlas
-[18:48:08] [Render thread/INFO] [minecraft/TextureAtlas]: Created: 128x64x4 minecraft:textures/atlas/decorated_pot.png-atlas
-[18:48:08] [Render thread/INFO] [minecraft/TextureAtlas]: Created: 512x256x4 minecraft:textures/atlas/beds.png-atlas
-[18:48:08] [Render thread/INFO] [minecraft/TextureAtlas]: Created: 512x256x4 minecraft:textures/atlas/shulker_boxes.png-atlas
-[18:48:08] [Render thread/INFO] [minecraft/TextureAtlas]: Created: 512x256x0 minecraft:textures/atlas/particles.png-atlas
-[18:48:08] [Render thread/INFO] [minecraft/TextureAtlas]: Created: 512x256x0 minecraft:textures/atlas/paintings.png-atlas
-[18:48:08] [Render thread/INFO] [minecraft/TextureAtlas]: Created: 256x128x0 minecraft:textures/atlas/mob_effects.png-atlas
-[18:48:08] [Render thread/INFO] [minecraft/TextureAtlas]: Created: 64x64x0 minecraft:textures/atlas/map_decorations.png-atlas
-[18:48:08] [Render thread/INFO] [minecraft/TextureAtlas]: Created: 1024x512x0 minecraft:textures/atlas/gui.png-atlas
-[18:48:10] [Render thread/WARN] [minecraft/ShaderInstance]: Shader rendertype_entity_translucent_emissive could not find sampler named Sampler2 in the specified shader program.
-[18:48:11] [Render thread/WARN] [minecraft/ShaderInstance]: Shader ldlib2:graph_wire could not find uniform named iTime in the specified shader program.
-[18:48:12] [Render thread/INFO] [gu.in.GuideReloadListener/]: Data driven guides: []
-[18:48:12] [Render thread/INFO] [ne.ne.ne.cl.en.an.js.AnimationLoader/]: Loaded 0 entity animations
-[18:48:12] [Render thread/INFO] [Iris/]: Creating pipeline for dimension minecraft:overworld
-[18:48:14] [Render thread/WARN] [ModernFix/]: Game took 121.372 seconds to start
-[18:48:21] [Render thread/INFO] [minecraft/RecipeManager]: Loaded 1778 recipes
-[18:48:22] [Render thread/INFO] [minecraft/AdvancementTree]: Loaded 1556 advancements
-[18:48:22] [Render thread/INFO] [Curios API/]: Loaded 10 curio slots
-[18:48:22] [Render thread/INFO] [Curios API/]: Loaded 1 curio entities
-[18:48:22] [Render thread/INFO] [EMI/]: [EMI] Recipes synchronized, waiting for tags to reload EMI...
-[18:48:22] [Render thread/INFO] [sn.ja.Jade/]: LootTableMineableCollector took 15.68 ms
-[18:48:22] [Render thread/WARN] [ModernFix/]: Initial datapack load took 4.681 s
-[18:48:23] [Server thread/INFO] [minecraft/IntegratedServer]: Starting integrated minecraft server version 1.21.1
-[18:48:23] [Server thread/INFO] [minecraft/MinecraftServer]: Generating keypair
-[18:48:23] [Server thread/INFO] [spark/]: Starting background profiler...
-[18:48:23] [Server thread/INFO] [spark/]: The async-profiler engine is not supported for your os/arch (windows10/amd64), so the built-in Java engine will be used instead.
-[18:48:24] [Server thread/INFO] [minecraft/MinecraftServer]: Preparing start region for dimension minecraft:overworld
-[18:48:25] [progressListener/INFO] [minecraft/LoggerChunkProgressListener]: 准备生成区域中：0%
-[18:48:25] [progressListener/INFO] [minecraft/LoggerChunkProgressListener]: 准备生成区域中：0%
-[18:48:25] [progressListener/INFO] [minecraft/LoggerChunkProgressListener]: 准备生成区域中：0%
-[18:48:25] [Server thread/INFO] [ne.ne.ne.se.pe.PermissionAPI/]: Successfully initialized permission handler neoforge:default_handler
-[18:48:25] [progressListener/INFO] [minecraft/LoggerChunkProgressListener]: Time elapsed: 1592 ms
-[18:48:26] [Server thread/INFO] [minecraft/IntegratedServer]: Changing view distance to 8, from 10
-[18:48:26] [Server thread/INFO] [minecraft/IntegratedServer]: Changing simulation distance to 12, from 0
-[18:48:27] [Render thread/INFO] [EMI/]: [EMI] Recipes synchronized, waiting for tags to reload EMI...
-[18:48:28] [Server thread/INFO] [minecraft/PlayerList]: Dev[local:E:0d4e8fc4] logged in with entity id 28 at (-32.61373997036579, 70.0, -46.229167276287356)
-[18:48:28] [Render thread/INFO] [Iris/]: Reloading pipeline on dimension change: minecraft:overworld => minecraft:overworld
-[18:48:28] [Render thread/INFO] [Iris/]: Destroying pipeline minecraft:overworld
-[18:48:28] [Render thread/INFO] [Iris/]: Creating pipeline for dimension minecraft:overworld
-[18:48:29] [Server thread/INFO] [minecraft/MinecraftServer]: Dev加入了游戏
-[18:48:29] [Render thread/INFO] [ChunkBuilder/]: Started 1 worker threads
-[18:48:29] [Render thread/INFO] [EMI/]: [EMI] Tags synchronized, reloading EMI
-[18:48:29] [Render thread/INFO] [EMI/]: [EMI] Starting Reload
-[18:48:29] [Render thread/INFO] [Kenergy Engineering：Retechnicalized/]: TENClientRecipeCache: snapshot accepted (generation 3), recipes: pulverizer=44 compressor=114 refiner=9 induction_furnace=9 psionicant=11
-[18:48:29] [Thread-15/INFO] [EMI/]: [EMI] Starting EMI reload...
-[18:48:29] [Thread-15/INFO] [EMI/]: [EMI] Clearing data
-[18:48:29] [Render thread/INFO] [sn.ja.Jade/]: Received config from the server: 
-[18:48:29] [Thread-15/INFO] [EMI/]: [EMI] Initializing plugin from emi
-[18:48:29] [Thread-15/INFO] [EMI/]: [EMI] Initialized plugin from emi in 29ms
-[18:48:29] [Thread-15/INFO] [EMI/]: [EMI] Initializing plugin from powah
-[18:48:29] [Thread-15/INFO] [EMI/]: [EMI] Initialized plugin from powah in 0ms
-[18:48:29] [Thread-15/INFO] [EMI/]: [EMI] Initializing plugin from kenergyengineering
-[18:48:29] [Thread-15/INFO] [EMI/]: [EMI] Initialized plugin from kenergyengineering in 0ms
-[18:48:29] [Thread-15/INFO] [EMI/]: [EMI] Initializing plugin from curios
-[18:48:29] [Thread-15/INFO] [EMI/]: [EMI] Initialized plugin from curios in 0ms
-[18:48:29] [Thread-15/INFO] [EMI/]: [EMI] Initializing plugin from ldlib2
-[18:48:29] [Thread-15/INFO] [EMI/]: [EMI] Initialized plugin from ldlib2 in 0ms
-[18:48:29] [Thread-15/INFO] [EMI/]: [EMI] Processing tags
-[18:48:29] [Thread-15/INFO] [EMI/]: [EMI] Constructing index
-[18:48:29] [Thread-15/INFO] [EMI/]: [EMI] Reloading item groups on client thread...
-[18:48:30] [Thread-15/INFO] [EMI/]: [EMI] Reloading item groups on client thread took 811ms
-[18:48:30] [Render thread/INFO] [minecraft/AdvancementTree]: Loaded 215 advancements
-[18:48:30] [Thread-15/INFO] [EMI/]: [EMI] Loading plugin from emi
-[18:48:31] [Thread-15/INFO] [EMI/]: [EMI] Reloaded plugin from emi in 671ms
-[18:48:31] [Thread-15/INFO] [EMI/]: [EMI] Loading plugin from powah
-[18:48:31] [Thread-15/INFO] [EMI/]: [EMI] Reloaded plugin from powah in 91ms
-[18:48:31] [Thread-15/INFO] [EMI/]: [EMI] Loading plugin from kenergyengineering
-[18:48:31] [Thread-15/INFO] [Kenergy Engineering：Retechnicalized/]: [EMI] Smelter category kenergyengineering:smelter_smelting registered with 86 recipes
-[18:48:31] [Thread-15/INFO] [Kenergy Engineering：Retechnicalized/]: [EMI] Smelter category kenergyengineering:smelter_blasting registered with 40 recipes
-[18:48:31] [Thread-15/INFO] [Kenergy Engineering：Retechnicalized/]: [EMI] Smelter category kenergyengineering:smelter_smoking registered with 9 recipes
-[18:48:31] [Thread-15/INFO] [Kenergy Engineering：Retechnicalized/]: [EMI] Engine fuel category kenergyengineering:extractor_fuel registered with 273 recipes
-[18:48:31] [Thread-15/INFO] [Kenergy Engineering：Retechnicalized/]: [EMI] Engine fuel category kenergyengineering:metalizer_fuel registered with 8 recipes
-[18:48:31] [Thread-15/INFO] [Kenergy Engineering：Retechnicalized/]: [EMI] Engine fuel category kenergyengineering:biomass_fuel registered with 82 recipes
-[18:48:31] [Thread-15/INFO] [EMI/]: [EMI] Reloaded plugin from kenergyengineering in 108ms
-[18:48:31] [Thread-15/INFO] [EMI/]: [EMI] Loading plugin from curios
-[18:48:31] [Thread-15/INFO] [EMI/]: [EMI] Reloaded plugin from curios in 1ms
-[18:48:31] [Thread-15/INFO] [EMI/]: [EMI] Loading plugin from ldlib2
-[18:48:31] [Render thread/WARN] [ModernFix/]: Time from main menu to in-game was 8.994367 seconds
-[18:48:31] [Render thread/WARN] [ModernFix/]: Total time to load game and open world was 130.36636 seconds
-[18:48:32] [Thread-15/INFO] [EMI/]: [EMI] Reloaded plugin from ldlib2 in 518ms
-[18:48:32] [Thread-15/INFO] [EMI/]: [EMI] Baking index
-[18:48:32] [Thread-15/INFO] [EMI/]: [EMI] Registering late recipes
-[18:48:32] [Thread-15/INFO] [EMI/]: [EMI] Baking recipes
-[18:48:32] [Thread-15/ERROR] [EMI/]: [EMI] Recipe powah:uraninite not present in recipe manager. Consider prefixing its path with '/' if it is synthetic.
-[18:48:32] [Thread-15/ERROR] [EMI/]: [EMI] Recipe powah:magmator_fuel/minecraft/lava not present in recipe manager. Consider prefixing its path with '/' if it is synthetic.
-[18:48:32] [Thread-15/ERROR] [EMI/]: [EMI] Recipe powah:fluid_coolant/minecraft/water not present in recipe manager. Consider prefixing its path with '/' if it is synthetic.
-[18:48:32] [Thread-15/ERROR] [EMI/]: [EMI] Recipe powah:coolants/solid/minecraft/snowball not present in recipe manager. Consider prefixing its path with '/' if it is synthetic.
-[18:48:32] [Thread-15/ERROR] [EMI/]: [EMI] Recipe powah:coolants/solid/minecraft/snow_block not present in recipe manager. Consider prefixing its path with '/' if it is synthetic.
-[18:48:32] [Thread-15/ERROR] [EMI/]: [EMI] Recipe powah:coolants/solid/minecraft/ice not present in recipe manager. Consider prefixing its path with '/' if it is synthetic.
-[18:48:32] [Thread-15/ERROR] [EMI/]: [EMI] Recipe powah:coolants/solid/minecraft/packed_ice not present in recipe manager. Consider prefixing its path with '/' if it is synthetic.
-[18:48:32] [Thread-15/ERROR] [EMI/]: [EMI] Recipe powah:coolants/solid/minecraft/blue_ice not present in recipe manager. Consider prefixing its path with '/' if it is synthetic.
-[18:48:32] [Thread-15/ERROR] [EMI/]: [EMI] Recipe powah:coolants/solid/powah/dry_ice not present in recipe manager. Consider prefixing its path with '/' if it is synthetic.
-[18:48:32] [Thread-15/ERROR] [EMI/]: [EMI] Recipe powah:passive_heat_source/block/minecraft/magma_block not present in recipe manager. Consider prefixing its path with '/' if it is synthetic.
-[18:48:32] [Thread-15/ERROR] [EMI/]: [EMI] Recipe powah:passive_heat_source/fluid/minecraft/lava not present in recipe manager. Consider prefixing its path with '/' if it is synthetic.
-[18:48:32] [Thread-15/ERROR] [EMI/]: [EMI] Recipe powah:passive_heat_source/block/powah/blazing_crystal_block not present in recipe manager. Consider prefixing its path with '/' if it is synthetic.
-[18:48:32] [Thread-15/ERROR] [EMI/]: [EMI] Untranslated recipe category ldlib2:test_category
-[18:48:32] [Thread-15/INFO] [EMI/]: [EMI] Baked 4305 recipes in 217ms
-[18:48:32] [Thread-16/ERROR] [EMI/]: [EMI] Recipe powah:uraninite not present in recipe manager. Consider prefixing its path with '/' if it is synthetic.
-[18:48:32] [Thread-16/ERROR] [EMI/]: [EMI] Recipe powah:magmator_fuel/minecraft/lava not present in recipe manager. Consider prefixing its path with '/' if it is synthetic.
-[18:48:32] [Thread-16/ERROR] [EMI/]: [EMI] Recipe powah:fluid_coolant/minecraft/water not present in recipe manager. Consider prefixing its path with '/' if it is synthetic.
-[18:48:32] [Thread-16/ERROR] [EMI/]: [EMI] Recipe powah:coolants/solid/minecraft/snowball not present in recipe manager. Consider prefixing its path with '/' if it is synthetic.
-[18:48:32] [Thread-16/ERROR] [EMI/]: [EMI] Recipe powah:coolants/solid/minecraft/snow_block not present in recipe manager. Consider prefixing its path with '/' if it is synthetic.
-[18:48:32] [Thread-16/ERROR] [EMI/]: [EMI] Recipe powah:coolants/solid/minecraft/ice not present in recipe manager. Consider prefixing its path with '/' if it is synthetic.
-[18:48:32] [Thread-16/ERROR] [EMI/]: [EMI] Recipe powah:coolants/solid/minecraft/packed_ice not present in recipe manager. Consider prefixing its path with '/' if it is synthetic.
-[18:48:32] [Thread-16/ERROR] [EMI/]: [EMI] Recipe powah:coolants/solid/minecraft/blue_ice not present in recipe manager. Consider prefixing its path with '/' if it is synthetic.
-[18:48:32] [Thread-16/ERROR] [EMI/]: [EMI] Recipe powah:coolants/solid/powah/dry_ice not present in recipe manager. Consider prefixing its path with '/' if it is synthetic.
-[18:48:32] [Thread-16/ERROR] [EMI/]: [EMI] Recipe powah:passive_heat_source/block/minecraft/magma_block not present in recipe manager. Consider prefixing its path with '/' if it is synthetic.
-[18:48:32] [Thread-16/ERROR] [EMI/]: [EMI] Recipe powah:passive_heat_source/fluid/minecraft/lava not present in recipe manager. Consider prefixing its path with '/' if it is synthetic.
-[18:48:32] [Thread-16/ERROR] [EMI/]: [EMI] Recipe powah:passive_heat_source/block/powah/blazing_crystal_block not present in recipe manager. Consider prefixing its path with '/' if it is synthetic.
-[18:48:32] [Thread-15/INFO] [EMI/]: [EMI] Baking search
-[18:48:32] [Thread-16/ERROR] [EMI/]: [EMI] Untranslated recipe category ldlib2:test_category
-[18:48:32] [Thread-16/INFO] [EMI/]: [EMI] Baked recipes after reload in 145ms
-[18:48:33] [Thread-15/INFO] [EMI/]: [EMI] Finishing up
-[18:48:33] [Thread-15/INFO] [EMI/]: [EMI] Reloaded EMI in 4104ms
-[18:48:34] [Server thread/WARN] [minecraft/MinecraftServer]: Can't keep up! Is the server overloaded? Running 5749ms or 114 ticks behind
-[18:48:55] [Render thread/INFO] [STDOUT/]: [com.modularmc.ten.common.block.machine.BaseMachineBlock:useItemOn:122]: [UpgradeDiag] useItemOn: item=kenergyengineering:relic_levelup shift=false cm=true type=11 supSlots=true handlerNull=false
-[18:48:55] [Server thread/INFO] [STDOUT/]: [com.modularmc.ten.common.block.machine.BaseMachineBlock:useItemOn:122]: [UpgradeDiag] useItemOn: item=kenergyengineering:relic_levelup shift=false cm=true type=11 supSlots=true handlerNull=false
-[18:48:55] [Render thread/WARN] [Sodium-VertexConsumerTracker/]: Class dev.emi.emi.screen.StackBatcher$UnlitFacade$Consumer does not support optimized vertex writing code paths, which may cause reduced rendering performance
-[18:49:02] [Render thread/INFO] [STDOUT/]: [com.modularmc.ten.common.block.machine.BaseMachineBlock:useItemOn:122]: [UpgradeDiag] useItemOn: item=kenergyengineering:relic_levelup shift=false cm=true type=11 supSlots=true handlerNull=false
-[18:49:02] [Server thread/INFO] [STDOUT/]: [com.modularmc.ten.common.block.machine.BaseMachineBlock:useItemOn:122]: [UpgradeDiag] useItemOn: item=kenergyengineering:relic_levelup shift=false cm=true type=11 supSlots=true handlerNull=false
-[18:49:03] [Render thread/INFO] [STDOUT/]: [com.modularmc.ten.common.block.machine.BaseMachineBlock:useItemOn:122]: [UpgradeDiag] useItemOn: item=kenergyengineering:relic_levelup shift=false cm=true type=11 supSlots=true handlerNull=false
-[18:49:03] [Server thread/INFO] [STDOUT/]: [com.modularmc.ten.common.block.machine.BaseMachineBlock:useItemOn:122]: [UpgradeDiag] useItemOn: item=kenergyengineering:relic_levelup shift=false cm=true type=11 supSlots=true handlerNull=false
-[18:49:05] [Server thread/INFO] [minecraft/IntegratedServer]: Saving and pausing game...
-[18:49:05] [Server thread/INFO] [minecraft/MinecraftServer]: Saving chunks for level 'ServerLevel[新的世界]'/minecraft:overworld
-[18:49:05] [Server thread/INFO] [minecraft/MinecraftServer]: Saving chunks for level 'ServerLevel[新的世界]'/minecraft:the_nether
-[18:49:05] [Server thread/INFO] [minecraft/MinecraftServer]: Saving chunks for level 'ServerLevel[新的世界]'/minecraft:the_end
-[18:49:06] [Render thread/INFO] [EMI/]: [EMI] Disconnecting from server, EMI data cleared
-[18:49:06] [Thread-21/INFO] [EMI/]: [EMI] Clearing data
-[18:49:06] [Server thread/INFO] [minecraft/ServerGamePacketListenerImpl]: Dev lost connection: 连接中断
-[18:49:06] [Server thread/INFO] [minecraft/MinecraftServer]: Dev退出了游戏
-[18:49:06] [Server thread/INFO] [minecraft/ServerCommonPacketListenerImpl]: Stopping singleplayer server as player logged out
-[18:49:06] [Server thread/INFO] [minecraft/MinecraftServer]: Stopping server
-[18:49:06] [Server thread/INFO] [minecraft/MinecraftServer]: Saving players
-[18:49:06] [Server thread/INFO] [minecraft/MinecraftServer]: Saving worlds
-[18:49:06] [Server thread/INFO] [minecraft/MinecraftServer]: Saving chunks for level 'ServerLevel[新的世界]'/minecraft:overworld
-[18:49:06] [Server thread/INFO] [minecraft/MinecraftServer]: Saving chunks for level 'ServerLevel[新的世界]'/minecraft:the_nether
-[18:49:06] [Server thread/INFO] [minecraft/MinecraftServer]: Saving chunks for level 'ServerLevel[新的世界]'/minecraft:the_end
-[18:49:06] [Server thread/INFO] [minecraft/MinecraftServer]: ThreadedAnvilChunkStorage (新的世界): All chunks are saved
-[18:49:06] [Server thread/INFO] [minecraft/MinecraftServer]: ThreadedAnvilChunkStorage (DIM-1): All chunks are saved
-[18:49:06] [Server thread/INFO] [minecraft/MinecraftServer]: ThreadedAnvilChunkStorage (DIM1): All chunks are saved
-[18:49:06] [Server thread/INFO] [minecraft/MinecraftServer]: ThreadedAnvilChunkStorage: All dimensions are saved
-[18:49:06] [Render thread/INFO] [ChunkBuilder/]: Stopping worker threads
-[18:49:07] [Render thread/INFO] [minecraft/Minecraft]: Stopping!
-
-BUILD SUCCESSFUL in 3m
-18 actionable tasks: 1 executed, 17 up-to-date
-Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.5.0/userguide/configuration_cache_enabling.html
+[20:17:49] [Render thread/INFO] [Iris/]: Debug functionality is disabled.
+[20:17:49] [Render thread/INFO] [Iris/]: OpenGL 4.5 detected, enabling DSA.
+[20:17:49] [Render thread/INFO] [Iris/]: Shaders are disabled because no valid shaderpack is selected
+[20:17:50] [modloading-worker-0/INFO] [Configuration/FileWatching]: Registered configuration config for auto-sync function
+[20:17:50] [modloading-worker-0/INFO] [ModernUI-MC/Init]: Initialized Modern UI
+[20:17:51] [ForkJoinPool.commonPool-worker-3/WARN] [Iris/]: [Iris Update Check] This version doesn't have an update index, skipping.
+[20:17:51] [modloading-worker-0/INFO] [LowDragLib2/]: LowDragLib2 is initializing on platform: NeoForge
+[20:17:51] [modloading-worker-0/INFO] [ModernUI-MC/UIManager]: UI manager initialized
+[20:17:52] [modloading-worker-0/INFO] [ne.ne.ne.co.NeoForgeMod/NEOFORGE-MOD]: NeoForge mod loading, version 21.1.219, for MC 1.21.1
+[20:17:52] [modloading-worker-0/INFO] [ModernUI-MC/Init]: Created TextLayoutEngine
+[20:17:52] [modloading-worker-0/INFO] [ModernUI-MC/Init]: Initialized Modern UI text engine
+[20:17:52] [modloading-worker-0/INFO] [ModernUI-MC/Init]: Initialized Modern UI client
+[20:17:55] [UI thread/INFO] [ModernUI-MC/UIManager]: UI thread initialized in 3329ms
+[20:18:17] [Render thread/INFO] [Iris/]: Hardware information:
+[20:18:17] [Render thread/INFO] [Iris/]: CPU: 4x Intel(R) Celeron(R) N5095 @ 2.00GHz
+[20:18:17] [Render thread/INFO] [Iris/]: GPU: Intel(R) HD Graphics Gen11 (Supports OpenGL 4.6.0 - Build 31.0.101.1999)
+[20:18:17] [Render thread/INFO] [Iris/]: OS: Windows 10 (10.0)
+[20:18:17] [Render thread/INFO] [ne.ne.ne.ga.GameTestHooks/]: Enabled Gametest Namespaces: [kenergyengineering]
+[20:18:19] [Render thread/INFO] [ModernUI-MC/TextLayout]: Preloaded modern text shaders
+[20:18:19] [Render thread/INFO] [minecraft/ReloadableResourceManager]: Reloading ResourceManager: vanilla, mod_resources, mod/sodium, mod/emi, mod/powah, mod/iris, mod/fabric_renderer_api_v1, mod/fabric_api_base, mod/configuration, mod/kenergyengineering, mod/jade, mod/testframework, mod/guideme, mod/architectury, mod/itemzoomer, mod/modernui, mod/fabric_rendering_data_attachment_v1, mod/cloth_config, mod/spark, mod/curios, mod/ldlib2, mod/neoforge, mod/modernfix, mod/fabric_block_view_api_v2, ldlib2
+[20:18:20] [Worker-ResourceReload-2/INFO] [ModernUI-MC/Glyph]: Scanned emoji map size: 3581
+[20:18:20] [Worker-ResourceReload-2/INFO] [ModernUI-MC/Glyph]: Scanned emoji shortcodes: 6923
+[20:18:20] [Render thread/INFO] [ModernUI-MC/TextLayout]: Loaded smart SDF text shaders
+[20:18:20] [Render thread/INFO] [ModernUI-MC/TextLayout]: Reloaded text layout engine, res level: 2 to 2, locale: zh_CN, layout RTL: false
+[20:18:20] [ForkJoinPool.commonPool-worker-2/INFO] [ModernUI-MC/TextLayout]: Redirect registered font 'Inter Frozen Medium' to 'modernui:inter-frozen-medium'
+[20:18:20] [ForkJoinPool.commonPool-worker-1/INFO] [ModernUI-MC/TextLayout]: Redirect registered font 'JetBrains Mono Medium' to 'modernui:jetbrains-mono-medium'
+[20:18:20] [ForkJoinPool.commonPool-worker-1/INFO] [ModernUI-MC/Init]: Registered font 'JetBrains Mono Medium', location 'modernui:font/jetbrains-mono-medium.ttf' in pack: 'mod/modernui'
+[20:18:20] [ForkJoinPool.commonPool-worker-2/INFO] [ModernUI-MC/Init]: Registered font 'Inter Frozen Medium', location 'modernui:font/inter-frozen-medium.otf' in pack: 'mod/modernui'
+[20:18:20] [ForkJoinPool.commonPool-worker-3/INFO] [ModernUI-MC/Init]: Registered font 'Inter Frozen Medium', location 'modernui:font/inter-frozen-medium-italic.otf' in pack: 'mod/modernui'
+[20:18:20] [ForkJoinPool.commonPool-worker-1/INFO] [ModernUI-MC/TextLayout]: Redirect registered font 'mui-i18n-compat' to 'modernui:mui-i18n-compat'
+[20:18:20] [ForkJoinPool.commonPool-worker-1/INFO] [ModernUI-MC/Init]: Registered font 'mui-i18n-compat', location 'modernui:font/muii18ncompat/muii18ncompat.ttf' in pack: 'mod/modernui'
+[20:18:21] [ForkJoinPool.commonPool-worker-2/WARN] [ModernUI/Font]: Failed to lookup in registered fonts, original font: java.awt.Font[family=思源黑体 CN Medium,name=思源黑体 CN Medium,style=plain,size=1], full name: 思源黑体 CN Medium
+[20:18:21] [ForkJoinPool.commonPool-worker-2/INFO] [ModernUI-MC/TextLayout]: Redirect registered font 'Source Han Sans CN Medium' to 'modernui:source-han-sans-cn-medium'
+[20:18:21] [ForkJoinPool.commonPool-worker-2/INFO] [ModernUI-MC/Init]: Registered font 'Source Han Sans CN Medium', location 'modernui:font/source-han-sans-cn-medium.otf' in pack: 'mod/modernui'
+[20:18:21] [Worker-ResourceReload-1/INFO] [ModernUI-MC/Init]: Font 'Noto Sans' failed to load or invalid
+[20:18:21] [Worker-ResourceReload-1/INFO] [ModernUI-MC/Init]: Font 'Segoe UI Variable' failed to load or invalid
+[20:18:21] [Worker-ResourceReload-1/INFO] [ModernUI-MC/Init]: Font 'San Francisco' failed to load or invalid
+[20:18:22] [Worker-ResourceReload-1/INFO] [ModernUI-MC/Init]: Font 'Open Sans' failed to load or invalid
+[20:18:22] [Worker-ResourceReload-1/INFO] [ModernUI-MC/Init]: Font 'STHeiti' failed to load or invalid
+[20:18:22] [Worker-ResourceReload-1/INFO] [ModernUI-MC/Init]: Loaded typeface: FontCollection{mFamilies=[Source Han Sans CN Medium, Segoe UI, SimHei, Segoe UI Symbol, mui-i18n-compat], mExclusiveEastAsianBits=null}
+[20:18:22] [Worker-ResourceReload-1/INFO] [ModernUI-MC/TextLayout]: Loaded raw font 'minecraft:alt' in pack: 'vanilla'
+[20:18:22] [Worker-ResourceReload-1/INFO] [ModernUI-MC/TextLayout]: Loaded raw font bundle: 'minecraft:font/alt.json', font set: [minecraft:include/space,minecraft:font/ascii_sga.png]
+[20:18:22] [Worker-ResourceReload-1/INFO] [ModernUI-MC/TextLayout]: Loaded raw font 'minecraft:default' in pack: 'vanilla'
+[20:18:22] [Worker-ResourceReload-1/INFO] [ModernUI-MC/TextLayout]: Loaded raw font bundle: 'minecraft:font/default.json', font set: [minecraft:include/space,minecraft:include/default]
+[20:18:22] [Worker-ResourceReload-1/INFO] [ModernUI-MC/TextLayout]: Loaded raw font 'minecraft:illageralt' in pack: 'vanilla'
+[20:18:22] [Worker-ResourceReload-1/INFO] [ModernUI-MC/TextLayout]: Loaded raw font bundle: 'minecraft:font/illageralt.json', font set: [minecraft:include/space,minecraft:font/asciillager.png]
+[20:18:22] [Worker-ResourceReload-1/INFO] [ModernUI-MC/TextLayout]: Loaded raw font 'minecraft:include/default' in pack: 'vanilla'
+[20:18:22] [Worker-ResourceReload-1/INFO] [ModernUI-MC/TextLayout]: Loaded raw font bundle: 'minecraft:font/include/default.json', font set: [minecraft:font/nonlatin_european.png,minecraft:font/accented.png,minecraft:font/ascii.png]
+[20:18:22] [Worker-ResourceReload-1/INFO] [ModernUI-MC/TextLayout]: Loaded raw font 'minecraft:include/space' in pack: 'vanilla'
+[20:18:22] [Worker-ResourceReload-1/INFO] [ModernUI-MC/TextLayout]: Loaded raw font bundle: 'minecraft:font/include/space.json', font set: [minecraft:include/space / minecraft:space]
+[20:18:22] [Worker-ResourceReload-1/INFO] [ModernUI-MC/TextLayout]: Ignore 'size=9.0' of providers[0] in font 'ldlib2:jetbrains_mono_bold' in pack: 'mod/ldlib2'
+[20:18:22] [Worker-ResourceReload-1/INFO] [ModernUI-MC/TextLayout]: Ignore 'oversample=16.0' of providers[0] in font 'ldlib2:jetbrains_mono_bold' in pack: 'mod/ldlib2'
+[20:18:22] [Worker-ResourceReload-1/INFO] [ModernUI-MC/TextLayout]: Ignore 'shift=Shift[x=0.0, y=0.0]' of providers[0] in font 'ldlib2:jetbrains_mono_bold' in pack: 'mod/ldlib2'
+[20:18:22] [Worker-ResourceReload-1/INFO] [ModernUI-MC/TextLayout]: Ignore 'skip=' of providers[0] in font 'ldlib2:jetbrains_mono_bold' in pack: 'mod/ldlib2'
+[20:18:22] [Worker-ResourceReload-1/INFO] [ModernUI-MC/TextLayout]: Loaded raw font 'ldlib2:jetbrains_mono_bold' in pack: 'mod/ldlib2'
+[20:18:22] [Worker-ResourceReload-1/INFO] [ModernUI-MC/TextLayout]: Loaded raw font bundle: 'ldlib2:font/jetbrains_mono_bold.json', font set: [JetBrains Mono]
+[20:18:22] [Worker-ResourceReload-1/INFO] [ModernUI-MC/TextLayout]: Loaded font: 'minecraft:include/space', font set: [minecraft:include/space / minecraft:space]
+[20:18:22] [Worker-ResourceReload-1/INFO] [ModernUI-MC/TextLayout]: Loaded font: 'minecraft:include/default', font set: [minecraft:font/nonlatin_european.png,minecraft:font/accented.png,minecraft:font/ascii.png]
+[20:18:22] [Worker-ResourceReload-1/INFO] [ModernUI-MC/TextLayout]: Loaded font: 'minecraft:default', font set: [minecraft:include/space / minecraft:space,minecraft:font/nonlatin_european.png,minecraft:font/accented.png,minecraft:font/ascii.png]
+[20:18:22] [Worker-ResourceReload-1/INFO] [ModernUI-MC/TextLayout]: Loaded font: 'minecraft:illageralt', font set: [minecraft:include/space / minecraft:space,minecraft:font/asciillager.png]
+[20:18:22] [Worker-ResourceReload-1/INFO] [ModernUI-MC/TextLayout]: Loaded font: 'ldlib2:jetbrains_mono_bold', font set: [JetBrains Mono]
+[20:18:22] [Worker-ResourceReload-1/INFO] [ModernUI-MC/TextLayout]: Loaded font: 'minecraft:alt', font set: [minecraft:include/space / minecraft:space,minecraft:font/ascii_sga.png]
+[20:18:23] [Worker-ResourceReload-0/WARN] [minecraft/SpriteContents]: Unused frames in sprite powah:item/charged_snowball: [1, 2, 3, 4, 16, 17, 18, 19]
+[20:18:23] [Worker-ResourceReload-0/WARN] [minecraft/SpriteContents]: Invalid frame index on sprite powah:item/ender_core frame 40: 3
+[20:18:23] [Worker-ResourceReload-0/WARN] [minecraft/SpriteContents]: Invalid frame index on sprite powah:item/ender_core frame 43: 3
+[20:18:23] [Worker-ResourceReload-0/WARN] [minecraft/SpriteContents]: Invalid frame index on sprite powah:item/ender_core frame 90: 5
+[20:18:23] [Worker-ResourceReload-0/WARN] [minecraft/SpriteContents]: Invalid frame index on sprite powah:item/ender_core frame 91: 5
+[20:18:23] [Worker-ResourceReload-0/WARN] [minecraft/SpriteContents]: Invalid frame index on sprite powah:item/ender_core frame 92: 5
+[20:18:23] [Worker-ResourceReload-0/WARN] [minecraft/SpriteContents]: Invalid frame index on sprite powah:item/ender_core frame 93: 5
+[20:18:23] [Worker-ResourceReload-0/WARN] [minecraft/SpriteContents]: Invalid frame index on sprite powah:item/ender_core frame 94: 6
+[20:18:23] [Worker-ResourceReload-0/WARN] [minecraft/SpriteContents]: Invalid frame index on sprite powah:item/ender_core frame 95: 6
+[20:18:23] [Worker-ResourceReload-0/WARN] [minecraft/SpriteContents]: Invalid frame index on sprite powah:item/ender_core frame 96: 6
+[20:18:23] [Worker-ResourceReload-0/WARN] [minecraft/SpriteContents]: Invalid frame index on sprite powah:item/ender_core frame 97: 6
+[20:18:23] [Worker-ResourceReload-0/WARN] [minecraft/SpriteContents]: Invalid frame index on sprite powah:item/ender_core frame 98: 6
+[20:18:23] [Worker-ResourceReload-0/WARN] [minecraft/SpriteContents]: Invalid frame index on sprite powah:item/ender_core frame 99: 5
+[20:18:23] [Worker-ResourceReload-0/WARN] [minecraft/SpriteContents]: Invalid frame index on sprite powah:item/ender_core frame 100: 5
+[20:18:23] [Worker-ResourceReload-0/WARN] [minecraft/SpriteContents]: Invalid frame index on sprite powah:item/ender_core frame 101: 5
+[20:18:23] [Worker-ResourceReload-0/WARN] [minecraft/SpriteContents]: Invalid frame index on sprite powah:item/ender_core frame 102: 5
+[20:18:23] [Worker-ResourceReload-0/WARN] [minecraft/SpriteContents]: Invalid frame index on sprite powah:item/ender_core frame 146: 8
+[20:18:23] [Worker-ResourceReload-0/WARN] [minecraft/SpriteContents]: Invalid frame index on sprite powah:item/ender_core frame 147: 8
+[20:18:23] [Worker-ResourceReload-0/WARN] [minecraft/SpriteContents]: Invalid frame index on sprite powah:item/ender_core frame 148: 8
+[20:18:23] [Worker-ResourceReload-0/WARN] [minecraft/SpriteContents]: Invalid frame index on sprite powah:item/ender_core frame 149: 8
+[20:18:23] [Worker-ResourceReload-0/WARN] [minecraft/SpriteContents]: Invalid frame index on sprite powah:item/ender_core frame 150: 8
+[20:18:23] [Worker-ResourceReload-0/WARN] [minecraft/SpriteContents]: Invalid frame index on sprite powah:item/ender_core frame 151: 8
+[20:18:23] [Worker-ResourceReload-0/WARN] [minecraft/SpriteContents]: Invalid frame index on sprite powah:item/ender_core frame 152: 8
+[20:18:23] [Worker-ResourceReload-0/WARN] [minecraft/SpriteContents]: Invalid frame index on sprite powah:item/ender_core frame 153: 8
+[20:18:23] [Worker-ResourceReload-0/WARN] [minecraft/SpriteContents]: Invalid frame index on sprite powah:item/ender_core frame 172: 5
+[20:18:23] [Worker-ResourceReload-0/WARN] [minecraft/SpriteContents]: Invalid frame index on sprite powah:item/ender_core frame 173: 5
+[20:18:23] [Worker-ResourceReload-0/WARN] [minecraft/SpriteContents]: Invalid frame index on sprite powah:item/ender_core frame 174: 5
+[20:18:23] [Worker-ResourceReload-0/WARN] [minecraft/SpriteContents]: Invalid frame index on sprite powah:item/ender_core frame 175: 5
+[20:18:23] [Worker-ResourceReload-0/WARN] [minecraft/SpriteContents]: Invalid frame index on sprite powah:item/ender_core frame 192: 8
+[20:18:23] [Worker-ResourceReload-0/WARN] [minecraft/SpriteContents]: Invalid frame index on sprite powah:item/ender_core frame 193: 8
+[20:18:23] [Worker-ResourceReload-0/WARN] [minecraft/SpriteContents]: Invalid frame index on sprite powah:item/ender_core frame 194: 8
+[20:18:23] [Worker-ResourceReload-0/WARN] [minecraft/SpriteContents]: Invalid frame index on sprite powah:item/ender_core frame 195: 8
+[20:18:23] [Worker-ResourceReload-0/WARN] [minecraft/SpriteLoader]: Texture testframework:block/white with size 4x4 limits mip level from 4 to 2
+[20:18:24] [Worker-ResourceReload-1/INFO] [ModernUI-MC/Init]: Loaded modern text engine
+[20:18:25] [Worker-ResourceReload-2/WARN] [minecraft/ModelBakery]: Unable to load model: 'minecraft:block' referenced from: powah:block/energy_cell_starter: java.io.FileNotFoundException: minecraft:models/block.json
+[20:18:25] [Render thread/INFO] [ModernUI-MC/UIManager]: UI renderer initialized
+[20:18:26] [Worker-ResourceReload-2/WARN] [minecraft/ModelBakery]: Unable to load model: 'modernui:item/project_builder' referenced from: modernui:item/project_builder: java.io.FileNotFoundException: modernui:models/item/project_builder.json
+[20:18:27] [Worker-ResourceReload-2/WARN] [minecraft/ModelBakery]: Unable to load model: 'modernui:item/project_builder_main' referenced from: modernui:item/project_builder_main: java.io.FileNotFoundException: modernui:models/item/project_builder_main.json
+[20:18:27] [Worker-ResourceReload-2/WARN] [minecraft/ModelBakery]: Unable to load model: 'modernui:item/project_builder_cube' referenced from: modernui:item/project_builder_cube: java.io.FileNotFoundException: modernui:models/item/project_builder_cube.json
+[20:18:31] [Worker-ResourceReload-1/INFO] [sn.ja.Jade/]: Start loading plugin from com.modularmc.ten.integration.jade.TENJadePlugin
+[20:18:31] [Worker-ResourceReload-1/INFO] [sn.ja.Jade/]: Bootstrapped plugin from com.modularmc.ten.integration.jade.TENJadePlugin in 46.45 ms
+[20:18:31] [Worker-ResourceReload-1/INFO] [sn.ja.Jade/]: Loaded plugin from com.modularmc.ten.integration.jade.TENJadePlugin in 72.51 ms
+[20:18:31] [Worker-ResourceReload-1/INFO] [sn.ja.Jade/]: Start loading plugin from snownee.jade.addon.vanilla.VanillaPlugin
+[20:18:31] [Worker-ResourceReload-1/INFO] [sn.ja.Jade/]: Bootstrapped plugin from snownee.jade.addon.vanilla.VanillaPlugin in 208.1 ms
+[20:18:31] [Worker-ResourceReload-1/INFO] [sn.ja.Jade/]: Loaded plugin from snownee.jade.addon.vanilla.VanillaPlugin in 222.8 ms
+[20:18:31] [Worker-ResourceReload-1/INFO] [sn.ja.Jade/]: Start loading plugin from snownee.jade.addon.universal.UniversalPlugin
+[20:18:31] [Worker-ResourceReload-1/INFO] [sn.ja.Jade/]: Bootstrapped plugin from snownee.jade.addon.universal.UniversalPlugin in 58.29 ms
+[20:18:31] [Worker-ResourceReload-1/INFO] [sn.ja.Jade/]: Loaded plugin from snownee.jade.addon.universal.UniversalPlugin in 59.47 ms
+[20:18:31] [Worker-ResourceReload-1/INFO] [sn.ja.Jade/]: Start loading plugin from snownee.jade.addon.debug.DebugPlugin
+[20:18:31] [Worker-ResourceReload-1/INFO] [sn.ja.Jade/]: Bootstrapped plugin from snownee.jade.addon.debug.DebugPlugin in 6.837 ms
+[20:18:31] [Worker-ResourceReload-1/INFO] [sn.ja.Jade/]: Loaded plugin from snownee.jade.addon.debug.DebugPlugin in 7.716 ms
+[20:18:31] [Worker-ResourceReload-1/INFO] [sn.ja.Jade/]: Start loading plugin from snownee.jade.addon.core.CorePlugin
+[20:18:31] [Worker-ResourceReload-1/INFO] [sn.ja.Jade/]: Bootstrapped plugin from snownee.jade.addon.core.CorePlugin in 14.53 ms
+[20:18:31] [Worker-ResourceReload-1/INFO] [sn.ja.Jade/]: Loaded plugin from snownee.jade.addon.core.CorePlugin in 17.16 ms
+[20:18:31] [Worker-ResourceReload-1/INFO] [sn.ja.Jade/]: Start loading plugin from snownee.jade.addon.access.AccessibilityPlugin
+[20:18:31] [Worker-ResourceReload-1/INFO] [sn.ja.Jade/]: Bootstrapped plugin from snownee.jade.addon.access.AccessibilityPlugin in 11.37 ms
+[20:18:31] [Worker-ResourceReload-1/INFO] [sn.ja.Jade/]: Loaded plugin from snownee.jade.addon.access.AccessibilityPlugin in 12.12 ms
+[20:18:32] [Render thread/WARN] [minecraft/SoundEngine]: Missing sound for event: minecraft:item.goat_horn.play
+[20:18:32] [Render thread/WARN] [minecraft/SoundEngine]: Missing sound for event: minecraft:entity.goat.screaming.horn_break
+[20:18:33] [Render thread/INFO] [mojang/Library]: OpenAL initialized on device OpenAL Soft on 扬声器 (USB Audio and HID)
+[20:18:33] [Render thread/INFO] [minecraft/SoundEngine]: Sound engine started
+[20:18:33] [Render thread/INFO] [ModernUI-MC/Init]: Font 'Noto Sans' failed to load or invalid
+[20:18:33] [Render thread/INFO] [ModernUI-MC/Init]: Font 'Segoe UI Variable' failed to load or invalid
+[20:18:33] [Render thread/INFO] [ModernUI-MC/Init]: Font 'San Francisco' failed to load or invalid
+[20:18:33] [Render thread/INFO] [ModernUI-MC/Init]: Font 'Open Sans' failed to load or invalid
+[20:18:33] [Render thread/INFO] [ModernUI-MC/Init]: Font 'STHeiti' failed to load or invalid
+[20:18:33] [Render thread/INFO] [ModernUI-MC/Init]: Reloaded typeface: FontCollection{mFamilies=[Google Noto Color Emoji, Source Han Sans CN Medium, Segoe UI, SimHei, Segoe UI Symbol, mui-i18n-compat], mExclusiveEastAsianBits=null}
+[20:18:33] [Render thread/INFO] [ModernUI-MC/Glyph]: Reloaded glyph manager
+[20:18:33] [Render thread/INFO] [ModernUI-MC/TextLayout]: Reloaded text layout engine, res level: 2 to 2, locale: zh_CN, layout RTL: false
+[20:18:33] [Render thread/INFO] [minecraft/TextureAtlas]: Created: 1024x1024x4 minecraft:textures/atlas/blocks.png-atlas
+[20:18:40] [Render thread/INFO] [minecraft/TextureAtlas]: Created: 256x256x4 minecraft:textures/atlas/signs.png-atlas
+[20:18:40] [Render thread/INFO] [minecraft/TextureAtlas]: Created: 512x512x4 minecraft:textures/atlas/shield_patterns.png-atlas
+[20:18:40] [Render thread/INFO] [minecraft/TextureAtlas]: Created: 512x512x4 minecraft:textures/atlas/banner_patterns.png-atlas
+[20:18:41] [Render thread/INFO] [minecraft/TextureAtlas]: Created: 1024x1024x4 minecraft:textures/atlas/armor_trims.png-atlas
+[20:18:43] [Render thread/INFO] [minecraft/TextureAtlas]: Created: 256x256x4 minecraft:textures/atlas/chest.png-atlas
+[20:18:43] [Render thread/INFO] [minecraft/TextureAtlas]: Created: 128x64x4 minecraft:textures/atlas/decorated_pot.png-atlas
+[20:18:43] [Render thread/INFO] [minecraft/TextureAtlas]: Created: 512x256x4 minecraft:textures/atlas/beds.png-atlas
+[20:18:43] [Render thread/INFO] [minecraft/TextureAtlas]: Created: 512x256x4 minecraft:textures/atlas/shulker_boxes.png-atlas
+[20:18:44] [Render thread/INFO] [minecraft/TextureAtlas]: Created: 512x256x0 minecraft:textures/atlas/particles.png-atlas
+[20:18:44] [Render thread/INFO] [minecraft/TextureAtlas]: Created: 512x256x0 minecraft:textures/atlas/paintings.png-atlas
+[20:18:44] [Render thread/INFO] [minecraft/TextureAtlas]: Created: 256x128x0 minecraft:textures/atlas/mob_effects.png-atlas
+[20:18:44] [Render thread/INFO] [minecraft/TextureAtlas]: Created: 64x64x0 minecraft:textures/atlas/map_decorations.png-atlas
+[20:18:44] [Render thread/INFO] [minecraft/TextureAtlas]: Created: 1024x512x0 minecraft:textures/atlas/gui.png-atlas
+[20:18:45] [Render thread/WARN] [minecraft/ShaderInstance]: Shader rendertype_entity_translucent_emissive could not find sampler named Sampler2 in the specified shader program.
+[20:18:46] [Render thread/WARN] [minecraft/ShaderInstance]: Shader ldlib2:graph_wire could not find uniform named iTime in the specified shader program.
+[20:18:47] [Render thread/INFO] [gu.in.GuideReloadListener/]: Data driven guides: []
+[20:18:47] [Render thread/INFO] [ne.ne.ne.cl.en.an.js.AnimationLoader/]: Loaded 0 entity animations
+[20:18:47] [Render thread/INFO] [Iris/]: Creating pipeline for dimension minecraft:overworld
+[20:18:49] [Render thread/WARN] [ModernFix/]: Game took 120.572 seconds to start
+[20:19:01] [Render thread/INFO] [minecraft/RecipeManager]: Loaded 1778 recipes
+[20:19:02] [Render thread/INFO] [minecraft/AdvancementTree]: Loaded 1556 advancements
+[20:19:02] [Render thread/INFO] [Curios API/]: Loaded 10 curio slots
+[20:19:02] [Render thread/INFO] [Curios API/]: Loaded 1 curio entities
+[20:19:02] [Render thread/INFO] [EMI/]: [EMI] Recipes synchronized, waiting for tags to reload EMI...
+[20:19:02] [Render thread/INFO] [sn.ja.Jade/]: LootTableMineableCollector took 26.25 ms
+[20:19:02] [Render thread/WARN] [ModernFix/]: Initial datapack load took 4.601 s
+[20:19:03] [Server thread/INFO] [minecraft/IntegratedServer]: Starting integrated minecraft server version 1.21.1
+[20:19:03] [Server thread/INFO] [minecraft/MinecraftServer]: Generating keypair
+[20:19:03] [Server thread/INFO] [spark/]: Starting background profiler...
+[20:19:03] [Server thread/INFO] [spark/]: The async-profiler engine is not supported for your os/arch (windows10/amd64), so the built-in Java engine will be used instead.
+[20:19:04] [Server thread/INFO] [minecraft/MinecraftServer]: Preparing start region for dimension minecraft:overworld
+[20:19:05] [progressListener/INFO] [minecraft/LoggerChunkProgressListener]: 准备生成区域中：0%
+[20:19:05] [progressListener/INFO] [minecraft/LoggerChunkProgressListener]: 准备生成区域中：0%
+[20:19:05] [progressListener/INFO] [minecraft/LoggerChunkProgressListener]: 准备生成区域中：0%
+[20:19:06] [Server thread/INFO] [ne.ne.ne.se.pe.PermissionAPI/]: Successfully initialized permission handler neoforge:default_handler
+[20:19:06] [progressListener/INFO] [minecraft/LoggerChunkProgressListener]: Time elapsed: 1606 ms
+[20:19:06] [Server thread/INFO] [minecraft/IntegratedServer]: Changing view distance to 8, from 10
+[20:19:06] [Server thread/INFO] [minecraft/IntegratedServer]: Changing simulation distance to 12, from 0
+[20:19:08] [Render thread/INFO] [EMI/]: [EMI] Recipes synchronized, waiting for tags to reload EMI...
+[20:19:09] [Server thread/INFO] [minecraft/PlayerList]: Dev[local:E:f2e4e106] logged in with entity id 32 at (-30.928632683929287, 70.0, -45.91824797798295)
+[20:19:10] [Render thread/INFO] [Iris/]: Reloading pipeline on dimension change: minecraft:overworld => minecraft:overworld
+[20:19:10] [Render thread/INFO] [Iris/]: Destroying pipeline minecraft:overworld
+[20:19:10] [Render thread/INFO] [Iris/]: Creating pipeline for dimension minecraft:overworld
+[20:19:10] [Server thread/INFO] [minecraft/MinecraftServer]: Dev加入了游戏
+[20:19:10] [Render thread/INFO] [ChunkBuilder/]: Started 1 worker threads
+[20:19:11] [Render thread/INFO] [EMI/]: [EMI] Tags synchronized, reloading EMI
+[20:19:11] [Render thread/INFO] [EMI/]: [EMI] Starting Reload
+[20:19:11] [Render thread/INFO] [Kenergy Engineering：Retechnicalized/]: TENClientRecipeCache: snapshot accepted (generation 3), recipes: pulverizer=44 compressor=114 refiner=9 induction_furnace=9 psionicant=11
+[20:19:11] [Thread-15/INFO] [EMI/]: [EMI] Starting EMI reload...
+[20:19:11] [Thread-15/INFO] [EMI/]: [EMI] Clearing data
+[20:19:11] [Render thread/INFO] [sn.ja.Jade/]: Received config from the server: 
+[20:19:11] [Thread-15/INFO] [EMI/]: [EMI] Initializing plugin from emi
+[20:19:11] [Thread-15/INFO] [EMI/]: [EMI] Initialized plugin from emi in 26ms
+[20:19:11] [Thread-15/INFO] [EMI/]: [EMI] Initializing plugin from powah
+[20:19:11] [Thread-15/INFO] [EMI/]: [EMI] Initialized plugin from powah in 0ms
+[20:19:11] [Thread-15/INFO] [EMI/]: [EMI] Initializing plugin from kenergyengineering
+[20:19:11] [Thread-15/INFO] [EMI/]: [EMI] Initialized plugin from kenergyengineering in 0ms
+[20:19:11] [Thread-15/INFO] [EMI/]: [EMI] Initializing plugin from curios
+[20:19:11] [Thread-15/INFO] [EMI/]: [EMI] Initialized plugin from curios in 0ms
+[20:19:11] [Thread-15/INFO] [EMI/]: [EMI] Initializing plugin from ldlib2
+[20:19:11] [Thread-15/INFO] [EMI/]: [EMI] Initialized plugin from ldlib2 in 0ms
+[20:19:11] [Thread-15/INFO] [EMI/]: [EMI] Processing tags
+[20:19:11] [Thread-15/INFO] [EMI/]: [EMI] Constructing index
+[20:19:11] [Thread-15/INFO] [EMI/]: [EMI] Reloading item groups on client thread...
+[20:19:11] [Server thread/WARN] [minecraft/MinecraftServer]: Can't keep up! Is the server overloaded? Running 2210ms or 44 ticks behind
+[20:19:12] [Thread-15/INFO] [EMI/]: [EMI] Reloading item groups on client thread took 614ms
+[20:19:12] [Render thread/INFO] [minecraft/AdvancementTree]: Loaded 215 advancements
+[20:19:12] [Thread-15/INFO] [EMI/]: [EMI] Loading plugin from emi
+[20:19:12] [Thread-15/INFO] [EMI/]: [EMI] Reloaded plugin from emi in 662ms
+[20:19:12] [Thread-15/INFO] [EMI/]: [EMI] Loading plugin from powah
+[20:19:12] [Thread-15/INFO] [EMI/]: [EMI] Reloaded plugin from powah in 89ms
+[20:19:12] [Thread-15/INFO] [EMI/]: [EMI] Loading plugin from kenergyengineering
+[20:19:12] [Thread-15/INFO] [Kenergy Engineering：Retechnicalized/]: [EMI] Smelter category kenergyengineering:smelter_smelting registered with 86 recipes
+[20:19:12] [Thread-15/INFO] [Kenergy Engineering：Retechnicalized/]: [EMI] Smelter category kenergyengineering:smelter_blasting registered with 40 recipes
+[20:19:12] [Thread-15/INFO] [Kenergy Engineering：Retechnicalized/]: [EMI] Smelter category kenergyengineering:smelter_smoking registered with 9 recipes
+[20:19:13] [Thread-15/INFO] [Kenergy Engineering：Retechnicalized/]: [EMI] Engine fuel category kenergyengineering:extractor_fuel registered with 273 recipes
+[20:19:13] [Thread-15/INFO] [Kenergy Engineering：Retechnicalized/]: [EMI] Engine fuel category kenergyengineering:metalizer_fuel registered with 8 recipes
+[20:19:13] [Thread-15/INFO] [Kenergy Engineering：Retechnicalized/]: [EMI] Engine fuel category kenergyengineering:biomass_fuel registered with 82 recipes
+[20:19:13] [Thread-15/INFO] [EMI/]: [EMI] Reloaded plugin from kenergyengineering in 135ms
+[20:19:13] [Thread-15/INFO] [EMI/]: [EMI] Loading plugin from curios
+[20:19:13] [Thread-15/INFO] [EMI/]: [EMI] Reloaded plugin from curios in 1ms
+[20:19:13] [Thread-15/INFO] [EMI/]: [EMI] Loading plugin from ldlib2
+[20:19:13] [Render thread/WARN] [ModernFix/]: Time from main menu to in-game was 10.513682 seconds
+[20:19:13] [Render thread/WARN] [ModernFix/]: Total time to load game and open world was 131.08568 seconds
+[20:19:13] [Thread-15/INFO] [EMI/]: [EMI] Reloaded plugin from ldlib2 in 482ms
+[20:19:13] [Thread-15/INFO] [EMI/]: [EMI] Baking index
+[20:19:13] [Thread-15/INFO] [EMI/]: [EMI] Registering late recipes
+[20:19:13] [Thread-15/INFO] [EMI/]: [EMI] Baking recipes
+[20:19:13] [Thread-15/ERROR] [EMI/]: [EMI] Recipe powah:uraninite not present in recipe manager. Consider prefixing its path with '/' if it is synthetic.
+[20:19:13] [Thread-15/ERROR] [EMI/]: [EMI] Recipe powah:magmator_fuel/minecraft/lava not present in recipe manager. Consider prefixing its path with '/' if it is synthetic.
+[20:19:13] [Thread-15/ERROR] [EMI/]: [EMI] Recipe powah:fluid_coolant/minecraft/water not present in recipe manager. Consider prefixing its path with '/' if it is synthetic.
+[20:19:13] [Thread-15/ERROR] [EMI/]: [EMI] Recipe powah:coolants/solid/minecraft/snowball not present in recipe manager. Consider prefixing its path with '/' if it is synthetic.
+[20:19:13] [Thread-15/ERROR] [EMI/]: [EMI] Recipe powah:coolants/solid/minecraft/snow_block not present in recipe manager. Consider prefixing its path with '/' if it is synthetic.
+[20:19:13] [Thread-15/ERROR] [EMI/]: [EMI] Recipe powah:coolants/solid/minecraft/ice not present in recipe manager. Consider prefixing its path with '/' if it is synthetic.
+[20:19:13] [Thread-15/ERROR] [EMI/]: [EMI] Recipe powah:coolants/solid/minecraft/packed_ice not present in recipe manager. Consider prefixing its path with '/' if it is synthetic.
+[20:19:13] [Thread-15/ERROR] [EMI/]: [EMI] Recipe powah:coolants/solid/minecraft/blue_ice not present in recipe manager. Consider prefixing its path with '/' if it is synthetic.
+[20:19:13] [Thread-15/ERROR] [EMI/]: [EMI] Recipe powah:coolants/solid/powah/dry_ice not present in recipe manager. Consider prefixing its path with '/' if it is synthetic.
+[20:19:13] [Thread-15/ERROR] [EMI/]: [EMI] Recipe powah:passive_heat_source/block/minecraft/magma_block not present in recipe manager. Consider prefixing its path with '/' if it is synthetic.
+[20:19:13] [Thread-15/ERROR] [EMI/]: [EMI] Recipe powah:passive_heat_source/fluid/minecraft/lava not present in recipe manager. Consider prefixing its path with '/' if it is synthetic.
+[20:19:13] [Thread-15/ERROR] [EMI/]: [EMI] Recipe powah:passive_heat_source/block/powah/blazing_crystal_block not present in recipe manager. Consider prefixing its path with '/' if it is synthetic.
+[20:19:13] [Thread-15/ERROR] [EMI/]: [EMI] Untranslated recipe category ldlib2:test_category
+[20:19:13] [Thread-15/INFO] [EMI/]: [EMI] Baked 4305 recipes in 223ms
+[20:19:13] [Thread-15/INFO] [EMI/]: [EMI] Baking search
+[20:19:13] [Thread-16/ERROR] [EMI/]: [EMI] Recipe powah:uraninite not present in recipe manager. Consider prefixing its path with '/' if it is synthetic.
+[20:19:13] [Thread-16/ERROR] [EMI/]: [EMI] Recipe powah:magmator_fuel/minecraft/lava not present in recipe manager. Consider prefixing its path with '/' if it is synthetic.
+[20:19:13] [Thread-16/ERROR] [EMI/]: [EMI] Recipe powah:fluid_coolant/minecraft/water not present in recipe manager. Consider prefixing its path with '/' if it is synthetic.
+[20:19:13] [Thread-16/ERROR] [EMI/]: [EMI] Recipe powah:coolants/solid/minecraft/snowball not present in recipe manager. Consider prefixing its path with '/' if it is synthetic.
+[20:19:13] [Thread-16/ERROR] [EMI/]: [EMI] Recipe powah:coolants/solid/minecraft/snow_block not present in recipe manager. Consider prefixing its path with '/' if it is synthetic.
+[20:19:13] [Thread-16/ERROR] [EMI/]: [EMI] Recipe powah:coolants/solid/minecraft/ice not present in recipe manager. Consider prefixing its path with '/' if it is synthetic.
+[20:19:13] [Thread-16/ERROR] [EMI/]: [EMI] Recipe powah:coolants/solid/minecraft/packed_ice not present in recipe manager. Consider prefixing its path with '/' if it is synthetic.
+[20:19:13] [Thread-16/ERROR] [EMI/]: [EMI] Recipe powah:coolants/solid/minecraft/blue_ice not present in recipe manager. Consider prefixing its path with '/' if it is synthetic.
+[20:19:13] [Thread-16/ERROR] [EMI/]: [EMI] Recipe powah:coolants/solid/powah/dry_ice not present in recipe manager. Consider prefixing its path with '/' if it is synthetic.
+[20:19:13] [Thread-16/ERROR] [EMI/]: [EMI] Recipe powah:passive_heat_source/block/minecraft/magma_block not present in recipe manager. Consider prefixing its path with '/' if it is synthetic.
+[20:19:13] [Thread-16/ERROR] [EMI/]: [EMI] Recipe powah:passive_heat_source/fluid/minecraft/lava not present in recipe manager. Consider prefixing its path with '/' if it is synthetic.
+[20:19:13] [Thread-16/ERROR] [EMI/]: [EMI] Recipe powah:passive_heat_source/block/powah/blazing_crystal_block not present in recipe manager. Consider prefixing its path with '/' if it is synthetic.
+[20:19:13] [Thread-16/ERROR] [EMI/]: [EMI] Untranslated recipe category ldlib2:test_category
+[20:19:14] [Thread-16/INFO] [EMI/]: [EMI] Baked recipes after reload in 279ms
+[20:19:15] [Thread-15/INFO] [EMI/]: [EMI] Finishing up
+[20:19:15] [Thread-15/INFO] [EMI/]: [EMI] Reloaded EMI in 3991ms
+[20:19:31] [Render thread/WARN] [Sodium-VertexConsumerTracker/]: Class dev.emi.emi.screen.StackBatcher$UnlitFacade$Consumer does not support optimized vertex writing code paths, which may cause reduced rendering performance
+[20:19:33] [Server thread/WARN] [minecraft/MinecraftServer]: Can't keep up! Is the server overloaded? Running 7212ms or 144 ticks behind
+[20:19:36] [Render thread/INFO] [ModernUI-MC/TextLayout]: Reloaded text layout engine, res level: 2 to 3, locale: zh_CN, layout RTL: false
+[20:19:56] [Server thread/INFO] [EMI/]: [EMI] literal{Dev} cheated in 1 minecraft:cherry_slab
+[20:19:56] [Render thread/INFO] [minecraft/AdvancementTree]: Loaded 217 advancements
+[20:20:48] [Server thread/WARN] [minecraft/MinecraftServer]: Can't keep up! Is the server overloaded? Running 2342ms or 46 ticks behind
+[20:21:07] [Server thread/WARN] [minecraft/MinecraftServer]: Can't keep up! Is the server overloaded? Running 4112ms or 82 ticks behind
+[20:27:29] [Server thread/WARN] [minecraft/MinecraftServer]: Can't keep up! Is the server overloaded? Running 2316ms or 46 ticks behind
+[20:28:09] [Server thread/WARN] [minecraft/MinecraftServer]: Can't keep up! Is the server overloaded? Running 2258ms or 45 ticks behind
