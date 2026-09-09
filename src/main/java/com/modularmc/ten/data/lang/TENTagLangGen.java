@@ -54,21 +54,38 @@ public final class TENTagLangGen {
             addMatForm(provider, "ingots", "Ingot", "锭", mat);
         }
         for (Mat mat : new Mat[] { Mat.IRON, Mat.GOLD, Mat.COPPER, Mat.TIN, Mat.NICKEL,
-                Mat.POWERED_TIN, Mat.CHLORIUM, Mat.MUSHRIUM, Mat.NETHERITE }) {
+                Mat.POWERED_TIN, Mat.CHLORIUM, Mat.MUSHRIUM, Mat.NETHERITE, Mat.DIAMOND, Mat.EMERALD,
+                Mat.LAPIS, Mat.QUARTZ, Mat.AMETHYST, Mat.STARLIGHT }) {
             addMatForm(provider, "dusts", "Dust", "粉", mat);
         }
         for (Mat mat : new Mat[] { Mat.IRON, Mat.GOLD, Mat.COPPER, Mat.TIN, Mat.NICKEL,
-                Mat.POWERED_TIN, Mat.CHLORIUM, Mat.MUSHRIUM, Mat.NETHERITE }) {
+                Mat.POWERED_TIN, Mat.CHLORIUM, Mat.MUSHRIUM, Mat.NETHERITE, Mat.DIAMOND, Mat.EMERALD,
+                Mat.LAPIS, Mat.QUARTZ }) {
             addMatForm(provider, "nuggets", "Nugget", "粒", mat);
         }
         for (Mat mat : new Mat[] { Mat.IRON, Mat.GOLD, Mat.COPPER, Mat.TIN, Mat.NICKEL,
-                Mat.POWERED_TIN, Mat.CHLORIUM, Mat.MUSHRIUM, Mat.NETHERITE }) {
+                Mat.POWERED_TIN, Mat.CHLORIUM, Mat.MUSHRIUM, Mat.NETHERITE, Mat.DIAMOND, Mat.EMERALD,
+                Mat.LAPIS, Mat.QUARTZ, Mat.AMETHYST, Mat.REDSTONE }) {
             addMatForm(provider, "plates", "Plate", "板", mat);
         }
         for (Mat mat : new Mat[] { Mat.IRON, Mat.GOLD, Mat.COPPER, Mat.TIN, Mat.NICKEL,
-                Mat.POWERED_TIN, Mat.CHLORIUM, Mat.MUSHRIUM, Mat.NETHERITE }) {
+                Mat.POWERED_TIN, Mat.CHLORIUM, Mat.MUSHRIUM, Mat.NETHERITE, Mat.DIAMOND, Mat.EMERALD,
+                Mat.LAPIS, Mat.QUARTZ, Mat.AMETHYST, Mat.REDSTONE }) {
             addMatForm(provider, "gears", "Gear", "齿轮", mat);
         }
+        for (Mat mat : new Mat[] { Mat.IRON, Mat.GOLD, Mat.COPPER, Mat.TIN, Mat.NICKEL,
+                Mat.POWERED_TIN, Mat.CHLORIUM, Mat.NETHERITE, Mat.MUSHRIUM }) {
+            addMatForm(provider, "rods", "Rod", "杆", mat);
+        }
+        for (Mat mat : new Mat[] { Mat.IRON, Mat.GOLD, Mat.COPPER, Mat.TIN, Mat.NICKEL,
+                Mat.POWERED_TIN, Mat.CHLORIUM, Mat.NETHERITE, Mat.MUSHRIUM }) {
+            addMatForm(provider, "wires", "Wire", "线", mat);
+        }
+        addTag(provider, "item", "c", "rods", "Rods", "杆");
+        addTag(provider, "item", "c", "wires", "Wires", "线");
+        // 物品矿石标签（ore item 形态，c:ores/copper）
+        addTag(provider, "item", "c", "ores/copper", "Copper Ore", "铜矿石");
+
         // 宝石（gem 类别：材质名即 gem 名）
         for (Mat mat : new Mat[] { Mat.DIAMOND, Mat.EMERALD, Mat.LAPIS, Mat.QUARTZ, Mat.AMETHYST }) {
             addTag(provider, "item", "c", "gems/" + mat.id, mat.englishName(), mat.cn);

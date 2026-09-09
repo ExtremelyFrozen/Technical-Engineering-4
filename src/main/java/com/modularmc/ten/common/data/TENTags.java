@@ -12,7 +12,6 @@ import net.minecraft.world.level.block.Block;
 public class TENTags {
 
     public static final TagKey<Block> MACHINES = blockTag("machines");
-    public static final TagKey<Block> WRENCH_DISMANTLEABLE = blockTag("wrench_dismantleable");
     /** 扳手类物品（连接模式切换交互判定），SpannerItem 经 datagen 注册入内。 */
     public static final TagKey<Item> SPANNER = itemTag("spanner");
 
