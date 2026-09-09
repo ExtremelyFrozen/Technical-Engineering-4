@@ -20,7 +20,6 @@ public final class TENLangHandler {
         addCommon(provider);
         addChannel(provider);
         addUpgradeTips(provider);
-        addLevels(provider);
         addSpannerInfo(provider);
         addMachineInfo(provider);
         addAdvancements(provider);
@@ -127,16 +126,6 @@ public final class TENLangHandler {
         add(provider, "knowledge_levelup.2", "10 ticks → 1 mB Liquid XP (per unit)", "每10 tick产1 mB液态经验（每单位）");
         add(provider, "stream_levelup.0", "In machines:", "在机器中：");
         add(provider, "stream_levelup.1", "Energy transfer rate: Infinite", "能量传输速率修改为无限");
-    }
-
-    private static void addLevels(RegistrateLangProvider provider) {
-        add(provider, "level.0", " (Common)", " (普通)");
-        add(provider, "level.1", " (Hard)", " (坚硬)");
-        add(provider, "level.2", " (Rapid)", " (迅捷)");
-        add(provider, "level.3", " (Powered)", " (充能)");
-        add(provider, "level.4", " (Shining)", " (闪耀)");
-        add(provider, "level.5", " (Strong)", " (强力)");
-        add(provider, "level.6", " (Top)", " (顶级)");
     }
 
     private static void addSpannerInfo(RegistrateLangProvider provider) {
