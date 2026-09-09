@@ -328,6 +328,10 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         active = a;
         if (level != null) {
             BlockState state = getBlockState();
+            // [修复] BE 已被移除（破坏/替换流程中）时不得回写方块状态——
+            // 否则破坏 setBlock(air) 后 setActive(false) 会把旧 state 写回，
+            // 吞掉破坏（方块变成未连接态而非掉落）
+            if (isRemoved()) return;
             if (state.hasProperty(com.modularmc.ten.common.block.machine.BaseMachineBlock.ACTIVE) && state.getValue(com.modularmc.ten.common.block.machine.BaseMachineBlock.ACTIVE) != a) {
                 level.setBlock(worldPosition,
                         state.setValue(com.modularmc.ten.common.block.machine.BaseMachineBlock.ACTIVE, a), Block.UPDATE_ALL);
