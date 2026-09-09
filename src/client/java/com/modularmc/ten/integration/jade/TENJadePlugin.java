@@ -24,7 +24,9 @@ public class TENJadePlugin implements IWailaPlugin {
 
     @Override
     public void registerClient(IWailaClientRegistration registration) {
-        registration.addConfig(PipePullProvider.UID, true);
+        // 注意：勿手动 addConfig(PipePullProvider.UID, ...)——registerBlockComponent 会
+        // 为 provider UID 自动注册同名开关，手动再注册即 Duplicate config key 崩资源重载。
+        // 开关翻译键 config.jade.plugin_kenergyengineering.pipe_pull 由 TENLangHandler 提供。
         registration.registerBlockComponent(new ChannelJadeProvider(), ChannelBlock.class);
         registration.registerBlockComponent(new PipeJadeProvider(), CableBased.class);
         registration.registerBlockComponent(new PipePullProvider(), CableBased.class);

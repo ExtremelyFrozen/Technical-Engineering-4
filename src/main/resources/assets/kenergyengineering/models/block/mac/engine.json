@@ -2,9 +2,9 @@
 	"format_version": "1.21.11",
 	"credit": "Made with Blockbench",
 	"textures": {
-		"bot": "",
-		"particle": "",
-		"side": ""
+		"bot": "kenergyengineering:block/machine_bottom",
+		"particle": "kenergyengineering:block/machine_side",
+		"side": "kenergyengineering:block/machine_side"
 	},
 	"elements": [
 		{

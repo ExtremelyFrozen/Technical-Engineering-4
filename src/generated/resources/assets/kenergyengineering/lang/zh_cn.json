@@ -46,6 +46,7 @@
   "block.kenergyengineering.tin_block": "锡块",
   "block.kenergyengineering.tin_ore": "锡矿石",
   "config.jade.plugin_kenergyengineering.channel_status": "频道状态",
+  "config.jade.plugin_kenergyengineering.pipe_pull": "管道输出面",
   "config.jade.plugin_kenergyengineering.pipe_status": "管道状态",
   "emi.category.kenergyengineering.compressor": "压缩机",
   "emi.category.kenergyengineering.induction_furnace": "感应炉",

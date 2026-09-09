@@ -219,6 +219,7 @@ public final class TENLangHandler {
         // Jade 配置界面（Jade 约定 config.jade.plugin_<modid>.<uid>，不加 modid 前缀）
         addRaw(provider, "config.jade.plugin_kenergyengineering.channel_status", "Channel Status", "频道状态");
         addRaw(provider, "config.jade.plugin_kenergyengineering.pipe_status", "Pipe Status", "管道状态");
+        addRaw(provider, "config.jade.plugin_kenergyengineering.pipe_pull", "Pipe Output Faces", "管道输出面");
         add(provider, "info.smelter.0", "Turns energy into heat.", "使用能量加热，");
         add(provider, "info.smelter.1", "Provides higher speed than a Furnace.", "提供比熔炉更快的速度。");
         add(provider, "info.smelter.2", "The more energy it stores, the faster it works.", "储存的能量越多，熔炼速度越快。");

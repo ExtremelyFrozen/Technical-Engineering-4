@@ -46,6 +46,7 @@
   "block.kenergyengineering.tin_block": "Block of Tin",
   "block.kenergyengineering.tin_ore": "Tin Ore",
   "config.jade.plugin_kenergyengineering.channel_status": "Channel Status",
+  "config.jade.plugin_kenergyengineering.pipe_pull": "Pipe Output Faces",
   "config.jade.plugin_kenergyengineering.pipe_status": "Pipe Status",
   "emi.category.kenergyengineering.compressor": "Compressor",
   "emi.category.kenergyengineering.induction_furnace": "Induction Furnace",
