@@ -45,7 +45,6 @@ mise run run-client
 |------|------|
 | [CONTRIBUTING.md](CONTRIBUTING.md) | 项目结构、技术栈、编码约定、贡献流程 |
 | [CHANGELOG.md](CHANGELOG.md) | 显著变更记录（Keep a Changelog 格式） |
-| [TODO.md](TODO.md) | 1.21.1 移植清单（26.1.2 → 1.21.1，P0/P1/P2 分级） |
 | [CODEOWNERS](CODEOWNERS) | 代码所有者与审批规则 |
 
 ## 许可证
