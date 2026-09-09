@@ -118,6 +118,8 @@ public class BaseMachineBlock extends Block implements EntityBlock, BlockUIMenuT
             return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
         }
         // 潜行+右键快捷安装：手持升级插件对准支持升级槽的机器，插入第一个空槽（无空位/不兼容则提示并阻止）
+        boolean diagCm = be instanceof CmMachineBlockEntity diagM;
+        System.out.println("[UpgradeDiag] useItemOn: item=" + stack.getItem() + " shift=" + player.isShiftKeyDown() + " cm=" + diagCm + (diagCm ? " type=" + ((CmMachineBlockEntity) be).machineType() + " supSlots=" + ((CmMachineBlockEntity) be).supportsUpgradeSlots() + " handlerNull=" + (((CmMachineBlockEntity) be).upgradeHandler == null) : ""));
         if (be instanceof CmMachineBlockEntity machine && player.isShiftKeyDown() && stack.getItem() instanceof UpgradeItem && machine.supportsUpgradeSlots()) {
             if (level.isClientSide()) {
                 return ItemInteractionResult.SUCCESS;
@@ -126,6 +128,7 @@ public class BaseMachineBlock extends Block implements EntityBlock, BlockUIMenuT
                 return ItemInteractionResult.CONSUME;
             }
             if (UpgradeInstallHelper.tryInstall(machine.upgradeHandler, stack, machine::validUpgrade)) {
+                System.out.println("[UpgradeDiag] tryInstall OK");
                 // 消耗手持 1 个（副本插入 + 原物 shrink 成对，防复制漏洞；创造不消耗对齐原版惯例）
                 if (!player.getAbilities().instabuild) {
                     stack.shrink(1);
@@ -135,7 +138,10 @@ public class BaseMachineBlock extends Block implements EntityBlock, BlockUIMenuT
                         .append(net.minecraft.network.chat.Component.translatable("kenergyengineering.info.upgrade_successfully")), true);
             } else {
                 // 无空位 → 槽满提示；兼容性拒绝（互斥/canApply/不支持） → 不支持提示；均阻止放入与开 UI
-                boolean noEmptySlot = UpgradeInstallHelper.findFirstEmptySlot(machine.upgradeHandler) < 0;
+                int diagSlot = UpgradeInstallHelper.findFirstEmptySlot(machine.upgradeHandler);
+                ItemStack probe = stack.copyWithCount(1);
+                System.out.println("[UpgradeDiag] tryInstall FAIL: emptySlot=" + diagSlot + " validUpgrade=" + machine.validUpgrade(Math.max(0, diagSlot), probe) + " isItemValid=" + machine.upgradeHandler.isItemValid(Math.max(0, diagSlot), probe));
+                boolean noEmptySlot = diagSlot < 0;
                 String key = noEmptySlot ? "kenergyengineering.info.too_much_upgrades" : "kenergyengineering.info.not_support_upgrade";
                 player.displayClientMessage(net.minecraft.network.chat.Component.translatable(key), true);
             }
