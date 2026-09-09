@@ -421,7 +421,8 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         if (!hasFaceCapabilityItem(side)) return false;
         if (side == null) return true;
         int mode = itemFaceMode.getOrDefault(side, FaceOption.OFF);
-        return mode == FaceOption.BE_IN || mode == FaceOption.BOTH;
+        // [用户需求 2026-09] 主动输出（BE_OUT）面同时允许被动输入（三 IO 统一）
+        return mode == FaceOption.BE_IN || mode == FaceOption.BOTH || mode == FaceOption.BE_OUT;
     }
 
     /**
@@ -438,7 +439,9 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
     protected boolean canReceiveFluid(@Nullable Direction side) {
         if (!hasFaceCapabilityFluid(side)) return false;
         if (side == null) return true;
-        return FaceOption.isIn(fluidFaceMode.getOrDefault(side, FaceOption.OFF)) || fluidFaceMode.getOrDefault(side, FaceOption.OFF) == FaceOption.BOTH;
+        int mode = fluidFaceMode.getOrDefault(side, FaceOption.OFF);
+        // [用户需求 2026-09] 主动输出（BE_OUT）面同时允许被动输入（三 IO 统一）
+        return FaceOption.isIn(mode) || mode == FaceOption.BOTH || mode == FaceOption.BE_OUT;
     }
 
     protected boolean canExtractFluid(@Nullable Direction side) {
@@ -675,8 +678,11 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
             effAuc = efficientIn;
         }
 
-        // ── 主动物品 IO：面配置 IN=机器主动拉取 / OUT=机器主动推出（无速率上限，尽力搬空）──
+        // ── 主动物品 IO：面配置 IN=机器主动拉取 / OUT/BE_OUT=机器主动推出（无速率上限，尽力搬空）──
         doActiveItemIo();
+
+        // ── 主动流体 IO：面配置 OUT/BE_OUT/BOTH 时向相邻接收方推流体（无速率上限）──
+        doActiveFluidIo();
 
         // ── 主动能量 IO：面配置 OUT/BE_OUT/BOTH 时向相邻接收方推送（引擎/单元类）──
         // [修复] 引擎类此前从不调用 → 面配置“主动输出”完全不推送能量
@@ -1179,7 +1185,8 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
     // ───── 主动 IO（P0-3 移植：面配置 IN/OUT 由机器自拉/自推；用户决策：取消 64/tick 上限，每次尽力搬空）─────
 
     /**
-     * 机器主动物品 IO：对每个面，itemFaceMode == IN → 主动拉取；OUT → 主动推出。
+     * 机器主动物品 IO：对每个面，itemFaceMode == IN → 主动拉取；OUT/BE_OUT → 主动推出
+     * （BE_OUT 主动输出，三 IO 统一执行）。
      */
     private void doActiveItemIo() {
         if (level == null || level.isClientSide() || itemHandler == null) {
@@ -1189,7 +1196,7 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
             int mode = itemFaceMode.getOrDefault(direction, FaceOption.OFF);
             if (mode == FaceOption.IN) {
                 activePullItems(direction);
-            } else if (mode == FaceOption.OUT) {
+            } else if (mode == FaceOption.OUT || mode == FaceOption.BE_OUT) {
                 activePushItems(direction);
             }
         }
@@ -1271,6 +1278,40 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
             remaining = itemHandler.insertItem(slot, remaining, simulate);
         }
         return remaining;
+    }
+
+    /**
+     * 机器主动流体 IO：面配置 OUT/BE_OUT/BOTH 时向相邻容器推流体（输出罐 → 相邻，无速率上限）。
+     * 相邻为管道时跳过（由管道逐级传递处理，同物品/能量口径）。
+     */
+    protected void doActiveFluidIo() {
+        if (level == null || level.isClientSide() || tanks.isEmpty()) {
+            return;
+        }
+        for (Direction direction : Direction.values()) {
+            int mode = fluidFaceMode.getOrDefault(direction, initialFaceModeFluid());
+            if (mode != FaceOption.OUT && mode != FaceOption.BE_OUT && mode != FaceOption.BOTH) {
+                continue;
+            }
+            if (level.getBlockEntity(worldPosition.relative(direction)) instanceof PipeBlockEntity) {
+                continue; // 相邻为管道：由管道逐级传递处理
+            }
+            IFluidHandler sink = TransferNetworks.getFluids(level, worldPosition.relative(direction), direction.getOpposite());
+            if (sink == null) {
+                continue;
+            }
+            // 逐输出罐推送到相邻（经包装器 drain 门控 → canExtractFluid(side) 校验本面输出许可）
+            for (int tank = 0; tank < tanks.size(); tank++) {
+                FluidStack inTank = tanks.get(tank).getFluid();
+                if (inTank.isEmpty()) {
+                    continue;
+                }
+                int moved = TransferNetworks.moveFluid(combinedFluidHandler, sink, inTank.getAmount(), false);
+                if (moved <= 0) {
+                    continue;
+                }
+            }
+        }
     }
 
     /**
