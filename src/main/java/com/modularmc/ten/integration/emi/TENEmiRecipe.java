@@ -120,6 +120,11 @@ public class TENEmiRecipe implements EmiRecipe {
                         slot.height(),
                         ingredient != null ? Math.max(1, TENRecipeWidget.fluidCapacity(ingredient)) : 1)
                         .drawBack(false);
+                // 覆盖层在 tank 之后加入（EMI 按加入顺序绘制，后加者在上）——空槽叠槽、有流体叠在流体上，
+                // 与 GUI 侧 fluidGaugeModular 层序对齐
+                widgets.addTexture(TENConstants.FLUID_SLOT_OVERLAY,
+                        slot.x() - 1, slot.y() - 1, slot.width(), slot.height(),
+                        0, 0, slot.width(), slot.height(), slot.width(), slot.height());
                 if (ingredient != null) {
                     attachSlotTooltips(emiTank, slot, ingredient);
                 }

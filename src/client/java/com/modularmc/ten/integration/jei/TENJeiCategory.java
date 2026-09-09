@@ -37,6 +37,7 @@ public class TENJeiCategory implements IRecipeCategory<FormsCombinedRecipe> {
     private final IDrawable icon;
     private final IDrawable inputSlot;
     private final IDrawable fluidSlot;
+    private final IDrawable fluidSlotOverlay;
     private final TENRecipeWidget.Layout layout;
 
     public TENJeiCategory(IGuiHelper helper, ResourceLocation categoryId, RecipeType<FormsCombinedRecipe> type, ItemStack iconStack) {
@@ -47,6 +48,10 @@ public class TENJeiCategory implements IRecipeCategory<FormsCombinedRecipe> {
         // 26.1.2 对齐：槽位底图用 LDLib2 modular 素材族（旧版手工 blit 已弃用）
         this.inputSlot = helper.drawableBuilder(TENConstants.ITEM_SLOT_SMALL, 0, 0, 18, 18).setTextureSize(18, 18).build();
         this.fluidSlot = helper.drawableBuilder(TENConstants.FLUID_SLOT, 0, 0, 18, 50).setTextureSize(18, 50).build();
+        // 流体槽覆盖层（与 GUI 侧 fluidGaugeModular 同款）：JEI setOverlay 绘制在流体之上——
+        // chance 文本覆盖仅用于物品槽（TENJeiSlotOverlay.shouldHaveOverlay 对 fluid 返回 false），
+        // 流体槽的 overlay 入口空闲可复用
+        this.fluidSlotOverlay = helper.drawableBuilder(TENConstants.FLUID_SLOT_OVERLAY, 0, 0, 18, 50).setTextureSize(18, 50).build();
     }
 
     @Override
@@ -79,7 +84,9 @@ public class TENJeiCategory implements IRecipeCategory<FormsCombinedRecipe> {
                 }
             } else if (slot.kind() == TENRecipeWidget.SlotKind.FLUID) {
                 var jeiSlot = builder.addSlot(toJeiRole(slot.role()), slot.x() + 1, slot.y() + 1)
-                        .setBackground(fluidSlot, -1, -1);
+                        .setBackground(fluidSlot, -1, -1)
+                        // 覆盖层与底图同几何（offset -1,-1 对齐背景），叠在流体渲染之上
+                        .setOverlay(fluidSlotOverlay, -1, -1);
                 int capacity = ingredient != null ? Math.max(1, TENRecipeWidget.fluidCapacity(ingredient)) : 1;
                 jeiSlot.setFluidRenderer(capacity, true, slot.width() - 2, slot.height() - 2);
                 if (ingredient != null) {
