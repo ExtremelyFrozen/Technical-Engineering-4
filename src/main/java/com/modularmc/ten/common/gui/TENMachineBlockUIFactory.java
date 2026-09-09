@@ -663,7 +663,6 @@ public final class TENMachineBlockUIFactory {
                 () -> List.of(
                         ComponentHelper.translated(ComponentHelper.GOLD, tooltipKey),
                         ComponentHelper.translated("kenergyengineering.info." + FaceOption.toStr(faceMode(machine, uiState.getSelectedTransferMode(), logicalSide)))),
-                null,
                 () -> {
                     Direction direction = logicalDirection(machine, logicalSide);
                     if (direction != null) {
