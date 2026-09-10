@@ -62,10 +62,16 @@ dependencies {
     localRuntime("me.shedaniel.cloth:cloth-config-neoforge:15.0.140")
     // Powah! Rearchitected - dev testing energy mod
     localRuntime("maven.modrinth:powah:6.2.8-neoforge")
-    // GuideMe - required by Powah for in-game guidebook
-    localRuntime("maven.modrinth:guideme:21.1.15")
+    // 注：Powah 指南书的 GuideME 与 AE2 硬前置同源，统一在下方 AE2 段声明（不重复写坐标）
 
     // Applied Energistics 2 - dev testing storage/automation mod
-    // 无硬性前置（NeoForge 之外零依赖）；可选集成 JEI/EMI 已在 dev 环境就绪
+    // 硬前置（读自 ae2-19.2.17.jar 的 META-INF/neoforge.mods.toml）：
+    //   neoforge[21.1.169,) / minecraft[1.21.1] / guideme[21.1.1,) —— 缺 GuideME 直接启动失败
+    // 可选集成：jade（dev 已就绪）/ emi（本仓库已禁用）/ theoneprobe（未装）
+    // compileOnly：集成代码可引用 appeng/guideme API（运行时是否在场需自判，前端仍不硬依赖）；
+    // localRuntime：dev 跑图/GameTest 实测用
+    compileOnly(forge.ae2)
+    compileOnly(forge.guideme)
     localRuntime(forge.ae2)
+    localRuntime(forge.guideme)
 }

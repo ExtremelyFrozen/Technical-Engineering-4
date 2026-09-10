@@ -13,6 +13,7 @@ iris = "1.8.8+1.21.1-neoforge"
 modernfix = "4SPHwiDB" # 5.24.3+mc1.21.1
 modernui = "3.12.0.2"
 ae2 = "19.2.17" # AE2 19.2.17 仅在 Modrinth maven；modmaven 的 appeng 坐标止步 19.2.0-beta
+guideme = "21.1.15" # AE2 硬前置 REQUIRED [21.1.1,)；Powah 指南书 REQUIRED [21.1.7,)（生效下限 21.1.7）
 
 ## curseforge maven ##
 spark = "6225208"
@@ -35,6 +36,7 @@ iris                = { module = "maven.modrinth:iris", version.ref = "iris" }
 modernui            = { module = "maven.modrinth:modern-ui", version.ref = "modernui" }
 modernfix           = { module = "maven.modrinth:modernfix", version.ref = "modernfix" }
 ae2                 = { module = "maven.modrinth:ae2", version.ref = "ae2" }
+guideme             = { module = "maven.modrinth:guideme", version.ref = "guideme" }
 
 spark               = { module = "curse.maven:spark-361579", version.ref = "spark" }
 [bundles]
