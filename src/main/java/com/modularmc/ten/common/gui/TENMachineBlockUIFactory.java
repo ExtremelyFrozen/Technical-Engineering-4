@@ -106,24 +106,33 @@ public final class TENMachineBlockUIFactory {
     private static final int CONFIG_PANEL_Y = 27;
     /** 低于此宽度不绘制面板（边角 4px×2 + 中缝最小可见宽）。 */
     private static final int CONFIG_PANEL_MIN_VISIBLE = 2 * CONFIG_PANEL_BORDER;
-    /** 升级面板内容区到九宫格底图内边框的恒等间距（四边一致 6px）。配置面板已改用 texGap + 纹理原生留白，不再取此值。 */
+    /** 升级面板内容区到九宫格底图内边框的恒等间距（四边一致 6px）。配置面板已改用内容间距 + 纹理原生留白推导，不再取此值。 */
     private static final int UPGRADE_CONTENT_GAP = 6;
     /**
      * 升级面板内容区原点 inset = border(4) + gap(6) = 10，仅供升级槽面板（尺寸/边框/槽位基准）。
-     * 配置面板的内容坐标系原点是 CONFIG_UNDERLAY_XY（=5，纹理像素坐标基准），两者不可混用。
+     * 配置面板的内容坐标系原点是 CONFIG_UNDERLAY_XY（=3，纹理像素坐标基准），两者不可混用。
      */
     private static final int UPGRADE_CONTENT_INSET = CONFIG_PANEL_BORDER + UPGRADE_CONTENT_GAP;
     /** 叠加层纹理尺寸（panel_config_legacy.png 60x85，配置项的布局图/默认状态）。 */
     private static final int OVERLAY_TEX_W = 60;
     private static final int OVERLAY_TEX_H = 85;
-    /** 底图九宫格内边框到 legacy 纹理矩形（非图形）的代码间距：视觉间距 = 1 + 纹理原生留白 5 = 6px。 */
-    private static final int CONFIG_TEX_GAP = 1;
+    /** legacy 纹理四边原生透明留白（panel_config_legacy.png 60×85，图形 bbox 5..54 / 5..79）。 */
+    private static final int CONFIG_TEX_MARGIN = 5;
+    /** 配置面板内边距：legacy 图形可见边缘到九宫格底图内边框，与升级面板附加底图对齐为 4px。 */
+    private static final int CONFIG_CONTENT_GAP = 4;
     /**
-     * 展开面板目标尺寸：底图伴随叠加层尺寸推导 = legacy 纹理原生尺寸 + 四边 (texGap 1 + border 4)。
-     * 容器 = 60+2×5=70 × 85+2×5=95；legacy 图形距内边框恒等 6px（1px 代码 + 5px 纹理原生留白）。
+     * 中间叠加层原点，同时是配置面板内容钮的坐标系原点：矩形 inset = border 4 + 内容间距 4 − 纹理原生留白 5 = 3
+     * （矩形压进边框区的 1px 落在透明留白内，不绘制像素）。纹理 1:1 不拉伸，纹理像素 (px,py) 即落在
+     * 面板 (3+px, 3+py)，故内容钮直接写纹理像素坐标即可与叠加层逐像素对齐。
+     * 四边内边距恒等 4px 依赖 legacy 纹理留白四边对称（各 5px），换纹理须重新核对。
      */
-    private static final int CONFIG_PANEL_WIDTH = OVERLAY_TEX_W + 2 * (CONFIG_PANEL_BORDER + CONFIG_TEX_GAP);
-    private static final int CONFIG_PANEL_HEIGHT = OVERLAY_TEX_H + 2 * (CONFIG_PANEL_BORDER + CONFIG_TEX_GAP);
+    private static final int CONFIG_UNDERLAY_XY = CONFIG_PANEL_BORDER + CONFIG_CONTENT_GAP - CONFIG_TEX_MARGIN;
+    /**
+     * 展开面板目标尺寸：底图伴随叠加层尺寸推导 = legacy 纹理原生尺寸 + 四边 × 叠加层 inset 3。
+     * 容器 = 60+2×3=66 × 85+2×3=91；legacy 图形距内边框四边恒等 4px。
+     */
+    private static final int CONFIG_PANEL_WIDTH = OVERLAY_TEX_W + 2 * CONFIG_UNDERLAY_XY;
+    private static final int CONFIG_PANEL_HEIGHT = OVERLAY_TEX_H + 2 * CONFIG_UNDERLAY_XY;
 
     // ───── 升级槽 tab（右缘、配置 tab 上侧，与左缘机器信息 tab 对齐 y=0）─────
     /** 升级槽尺寸（ITEM_SLOT_SMALL 18x18）。 */
@@ -151,12 +160,6 @@ public final class TENMachineBlockUIFactory {
     private static final int PANEL_UPGRADE_UNDERLAY_H = 62;
     /** 升级面板附加底图内边距：内容区原点 10 外扩 2px → (8,8)（右/下缘对称至 50，面板 58/78 内居中）。 */
     private static final int UPGRADE_PANEL_BORDER = UPGRADE_CONTENT_INSET - 2;
-    /**
-     * 中间叠加层原点，同时是配置面板内容钮的坐标系原点：内边框内沿 4 + texGap 1 = 5
-     * （legacy 纹理原生 1:1 绘制，不拉伸）。叠加层元素落在此处后，纹理像素 (px,py) 即落在
-     * 面板 (5+px, 5+py)，故内容钮直接写纹理像素坐标即可与底图逐像素对齐。
-     */
-    private static final int CONFIG_UNDERLAY_XY = CONFIG_PANEL_BORDER + CONFIG_TEX_GAP;
 
     public static void addCommonSidebar(UIElement root, BlockUIMenuType.BlockUIHolder holder, CmMachineBlockEntity machine, UIState uiState) {
         // 侧栏 tab 全部引用独立 26×26 图标（icons/*.png），不再切旧图集
@@ -207,13 +210,14 @@ public final class TENMachineBlockUIFactory {
         for (PanelSlice s : configPanelSlices) {
             configPanel.addChild(s.element());
         }
-        // 附加底图（用户需求）：介入九宫格底图与内容钮之间——legacy 布局图 60×85 贴在面板 (5,5)
-        // （5 + 60 + 5 = 70 宽 / 5 + 85 + 5 = 95 高）；后 addChild → 同 zIndex(0) 下后画于切片，
+        // 附加底图（用户需求）：介入九宫格底图与内容钮之间——legacy 布局图 60×85 贴在面板 (3,3)
+        // （3 + 60 + 3 = 66 宽 / 3 + 85 + 3 = 91 高）；后 addChild → 同 zIndex(0) 下后画于切片，
         // 内容钮 zIndex=1（root 子级）仍在其上
-        // [间距对齐 2026-09 v3] 底图伴随叠加层推导：叠加层恢复 legacy 纹理原生 60×85 @ (5,5)
-        // 不拉伸（v2 的 72×97 拉伸 1.2 倍会放大纹理内钮图示 → 与交互钮错位）。视觉间距 6px
-        // = 代码间距 1px + 纹理原生留白 5px；底图 = 纹理 + 2×(texGap1+border4) = 70×95 伴随推导。
-        // 内容钮 overlayOrigin = 叠加层纹理原点 (5,5) = border4 + texGap1，内容坐标直接写
+        // [间距对齐 2026-09 v3] 底图伴随叠加层推导：叠加层保持 legacy 纹理原生 60×85 不拉伸
+        // （v2 的 72×97 拉伸 1.2 倍会放大纹理内钮图示 → 与交互钮错位）。
+        // [内边距 v4] 内边距 = legacy 图形可见边缘到九宫格内边框 = 4px（对齐升级面板附加底图）：
+        // 图形边缘 = 矩形 inset 3 + 纹理原生留白 5 = 面板内 8 = border 4 + 内边距 4。
+        // 内容钮 overlayOrigin = 叠加层纹理原点 (3,3)，内容坐标直接写
         // panel_config_legacy.png 的纹理像素坐标（坐标值已含纹理 5px 原生留白）
         var configUnderlay = new UIElement().style(style -> style.backgroundTexture(
                 fullTexture(TENConstants.PANEL_CONFIG_LEGACY, OVERLAY_TEX_W, OVERLAY_TEX_H)));
@@ -225,11 +229,11 @@ public final class TENMachineBlockUIFactory {
             layout.height(OVERLAY_TEX_H);
         });
         configPanel.addChild(configUnderlay);
-        // 层2+ 内容钮：坐标 = 叠加层纹理原点 (5,5) + legacy 纹理像素坐标；仅 fullyOpen 后可交互。
+        // 层2+ 内容钮：坐标 = 叠加层纹理原点 (3,3) + legacy 纹理像素坐标；仅 fullyOpen 后可交互。
         // z 层规范（统一分层）：面板底图 zIndex=0、内容层（钮/槽）显式 zIndex=1——
         // 同 zIndex 时排序按 addChild 索引降序、倒序绘制 → 后 addChild 者反而在下层，
         // 故内容必须显式 zIndex 抬升才能盖过面板底图（勿删 zIndex(1)）。
-        // NOTE: 原点只能取 CONFIG_UNDERLAY_XY（叠加层纹理原点 5），不可用 UPGRADE_CONTENT_INSET（10）——
+        // NOTE: 原点只能取 CONFIG_UNDERLAY_XY（叠加层纹理原点 3），不可用 UPGRADE_CONTENT_INSET（10）——
         // 后者是纹理内图形原点，已含 5px 原生留白；而内容坐标本身就是含留白的纹理像素坐标，
         // 再用图形原点会把留白计两次，全部内容钮整体右下偏 5px（脱离底图钮槽）。
         int overlayOriginX = CONFIG_PANEL_LEFT_X + CONFIG_UNDERLAY_XY;
