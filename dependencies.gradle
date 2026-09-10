@@ -74,4 +74,10 @@ dependencies {
     compileOnly(forge.guideme)
     localRuntime(forge.ae2)
     localRuntime(forge.guideme)
+    // AE2 自 1.21 起移除自带 JEI 集成（官方转用 EMI），由该桥接模组补回 JEI 侧
+    // （机器配方 / 幽灵物品拖拽 / 终端与 JEI 搜索同步）；自身前置仅 ae2 + jei，dev 环境已就绪。
+    // 上游：CurseForge 项目 1074338（作者 Tamaized + mezz）/ github.com/Tamaized/AE2-JEI-Integration
+    // 注意：本模组硬依赖 jei（required / side=BOTH）——若按上方「only enable one at a time」切到 EMI，
+    // 必须同时移除本行，否则 dev 侧因缺 jei 前置直接启动失败
+    localRuntime(forge.ae2jeiintegration)
 }

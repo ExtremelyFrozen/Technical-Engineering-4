@@ -17,6 +17,8 @@ guideme = "21.1.15" # AE2 硬前置 REQUIRED [21.1.1,)；Powah 指南书 REQUIRE
 
 ## curseforge maven ##
 spark = "6225208"
+# AE2 自 1.21 起不再自带 JEI 集成（官方转用 EMI），由该桥接模组补回；坐标 = CurseForge 项目 1074338 / 文件 7727898（1.2.1）
+ae2jeiintegration = "7727898"
 
 ## libs ##
 
@@ -39,5 +41,7 @@ ae2                 = { module = "maven.modrinth:ae2", version.ref = "ae2" }
 guideme             = { module = "maven.modrinth:guideme", version.ref = "guideme" }
 
 spark               = { module = "curse.maven:spark-361579", version.ref = "spark" }
+ae2jeiintegration   = { module = "curse.maven:ae2-jei-integration-1074338", version.ref = "ae2jeiintegration" }
+
 [bundles]
 jei = ["jei-common-api", "jei-neoforge-api", "jei-neoforge-impl"]
