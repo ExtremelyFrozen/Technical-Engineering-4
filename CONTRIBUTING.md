@@ -319,7 +319,7 @@ REGISTRATE.addDataGenerator(ProviderType.LANG, TENLangHandler::init);
 | 文件 | 内容 |
 |---|---|
 | `gradle/libs.versions.toml` | 核心依赖：Minecraft、NeoForge、ModDevGradle、Spotless、Lombok、Mixin |
-| `gradle/forge.versions.toml` | NeoForge 生态依赖：Registrate、JEI、EMI、Jade、Sodium、Iris、ModernFix、Spark |
+| `gradle/forge.versions.toml` | NeoForge 生态依赖：Registrate、JEI、EMI、Jade、Sodium、Iris、ModernFix、AE2、Spark |
 
 `settings.gradle` 中注册了 `forge` catalog：
 

@@ -64,4 +64,8 @@ dependencies {
     localRuntime("maven.modrinth:powah:6.2.8-neoforge")
     // GuideMe - required by Powah for in-game guidebook
     localRuntime("maven.modrinth:guideme:21.1.15")
+
+    // Applied Energistics 2 - dev testing storage/automation mod
+    // 无硬性前置（NeoForge 之外零依赖）；可选集成 JEI/EMI 已在 dev 环境就绪
+    localRuntime(forge.ae2)
 }
