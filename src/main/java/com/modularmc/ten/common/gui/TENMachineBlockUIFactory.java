@@ -106,11 +106,14 @@ public final class TENMachineBlockUIFactory {
     private static final int CONFIG_PANEL_Y = 27;
     /** 低于此宽度不绘制面板（边角 4px×2 + 中缝最小可见宽）。 */
     private static final int CONFIG_PANEL_MIN_VISIBLE = 2 * CONFIG_PANEL_BORDER;
-    /** 层1 覆盖层（panel_config_legacy.png 布局图）与层0 底图九宫格内边框的恒等间距（四边一致）。 */
-    private static final int CONFIG_OVERLAY_GAP = 6;
-    /** 层1 覆盖层原点：容器 border(4) + gap(6) = 10；legacy 布局图 60x85 原尺寸不拉伸。 */
-    private static final int CONFIG_OVERLAY_XY = CONFIG_PANEL_BORDER + CONFIG_OVERLAY_GAP;
-    /** 覆盖层纹理尺寸（panel_config_legacy.png 60x85，配置项的布局图/默认状态）。 */
+    /** 升级面板内容区到九宫格底图内边框的恒等间距（四边一致 6px）。配置面板已改用 texGap + 纹理原生留白，不再取此值。 */
+    private static final int UPGRADE_CONTENT_GAP = 6;
+    /**
+     * 升级面板内容区原点 inset = border(4) + gap(6) = 10，仅供升级槽面板（尺寸/边框/槽位基准）。
+     * 配置面板的内容坐标系原点是 CONFIG_UNDERLAY_XY（=5，纹理像素坐标基准），两者不可混用。
+     */
+    private static final int UPGRADE_CONTENT_INSET = CONFIG_PANEL_BORDER + UPGRADE_CONTENT_GAP;
+    /** 叠加层纹理尺寸（panel_config_legacy.png 60x85，配置项的布局图/默认状态）。 */
     private static final int OVERLAY_TEX_W = 60;
     private static final int OVERLAY_TEX_H = 85;
     /** 底图九宫格内边框到 legacy 纹理矩形（非图形）的代码间距：视觉间距 = 1 + 纹理原生留白 5 = 6px。 */
@@ -135,9 +138,9 @@ public final class TENMachineBlockUIFactory {
     private static final int UPGRADE_CONTENT_W = UPGRADE_COLS * UPGRADE_SLOT_SIZE + (UPGRADE_COLS - 1) * UPGRADE_SLOT_GAP;
     /** 升级面板内容区高：3×18 + 行间 2×2 = 58。 */
     private static final int UPGRADE_CONTENT_H = UPGRADE_ROWS * UPGRADE_SLOT_SIZE + (UPGRADE_ROWS - 1) * UPGRADE_SLOT_GAP;
-    /** 升级面板目标尺寸：内容区 + 四边 (gap 6 + border 4)，与配置面板同基准。 */
-    private static final int UPGRADE_PANEL_WIDTH = UPGRADE_CONTENT_W + 2 * CONFIG_OVERLAY_XY;
-    private static final int UPGRADE_PANEL_HEIGHT = UPGRADE_CONTENT_H + 2 * CONFIG_OVERLAY_XY;
+    /** 升级面板目标尺寸：内容区 + 四边 (gap 6 + border 4)，与配置面板同一九宫格 border4 基准。 */
+    private static final int UPGRADE_PANEL_WIDTH = UPGRADE_CONTENT_W + 2 * UPGRADE_CONTENT_INSET;
+    private static final int UPGRADE_PANEL_HEIGHT = UPGRADE_CONTENT_H + 2 * UPGRADE_CONTENT_INSET;
     /** 升级槽 tab 头 y：与左缘机器信息 tab（y=0）平齐，位于配置 tab（y=27）上侧。 */
     private static final int UPGRADE_TAB_Y = 0;
     /** 升级面板锚定 y = tab 头 y。 */
@@ -147,8 +150,12 @@ public final class TENMachineBlockUIFactory {
     private static final int PANEL_UPGRADE_UNDERLAY_W = 42;
     private static final int PANEL_UPGRADE_UNDERLAY_H = 62;
     /** 升级面板附加底图内边距：内容区原点 10 外扩 2px → (8,8)（右/下缘对称至 50，面板 58/78 内居中）。 */
-    private static final int UPGRADE_PANEL_BORDER = CONFIG_OVERLAY_XY - 2;
-    /** 中间叠加层原点：内边框内沿 4 + texGap 1 = 5（legacy 纹理原生 1:1 绘制，不拉伸）。 */
+    private static final int UPGRADE_PANEL_BORDER = UPGRADE_CONTENT_INSET - 2;
+    /**
+     * 中间叠加层原点，同时是配置面板内容钮的坐标系原点：内边框内沿 4 + texGap 1 = 5
+     * （legacy 纹理原生 1:1 绘制，不拉伸）。叠加层元素落在此处后，纹理像素 (px,py) 即落在
+     * 面板 (5+px, 5+py)，故内容钮直接写纹理像素坐标即可与底图逐像素对齐。
+     */
     private static final int CONFIG_UNDERLAY_XY = CONFIG_PANEL_BORDER + CONFIG_TEX_GAP;
 
     public static void addCommonSidebar(UIElement root, BlockUIMenuType.BlockUIHolder holder, CmMachineBlockEntity machine, UIState uiState) {
@@ -200,13 +207,14 @@ public final class TENMachineBlockUIFactory {
         for (PanelSlice s : configPanelSlices) {
             configPanel.addChild(s.element());
         }
-        // 附加底图（用户需求）：介入九宫格底图与内容钮之间——legacy 布局图 60×85 精确覆盖内容区
-        // （10 + 60 + 10 = 80 宽 / 10 + 85 + 10 = 105 高）；后 addChild → 同 zIndex(0) 下后画于切片，
+        // 附加底图（用户需求）：介入九宫格底图与内容钮之间——legacy 布局图 60×85 贴在面板 (5,5)
+        // （5 + 60 + 5 = 70 宽 / 5 + 85 + 5 = 95 高）；后 addChild → 同 zIndex(0) 下后画于切片，
         // 内容钮 zIndex=1（root 子级）仍在其上
         // [间距对齐 2026-09 v3] 底图伴随叠加层推导：叠加层恢复 legacy 纹理原生 60×85 @ (5,5)
         // 不拉伸（v2 的 72×97 拉伸 1.2 倍会放大纹理内钮图示 → 与交互钮错位）。视觉间距 6px
         // = 代码间距 1px + 纹理原生留白 5px；底图 = 纹理 + 2×(texGap1+border4) = 70×95 伴随推导。
-        // 内容钮 overlayOrigin(10,10) = legacy 图形原点（5+5 原生留白），相对坐标即原生布局值
+        // 内容钮 overlayOrigin = 叠加层纹理原点 (5,5) = border4 + texGap1，内容坐标直接写
+        // panel_config_legacy.png 的纹理像素坐标（坐标值已含纹理 5px 原生留白）
         var configUnderlay = new UIElement().style(style -> style.backgroundTexture(
                 fullTexture(TENConstants.PANEL_CONFIG_LEGACY, OVERLAY_TEX_W, OVERLAY_TEX_H)));
         configUnderlay.layout(layout -> {
@@ -217,12 +225,15 @@ public final class TENMachineBlockUIFactory {
             layout.height(OVERLAY_TEX_H);
         });
         configPanel.addChild(configUnderlay);
-        // 层2+ 内容钮：坐标 = 覆盖层原点 (10,10) + legacy 原布局相对坐标；仅 fullyOpen 后可交互。
+        // 层2+ 内容钮：坐标 = 叠加层纹理原点 (5,5) + legacy 纹理像素坐标；仅 fullyOpen 后可交互。
         // z 层规范（统一分层）：面板底图 zIndex=0、内容层（钮/槽）显式 zIndex=1——
         // 同 zIndex 时排序按 addChild 索引降序、倒序绘制 → 后 addChild 者反而在下层，
         // 故内容必须显式 zIndex 抬升才能盖过面板底图（勿删 zIndex(1)）。
-        int overlayOriginX = CONFIG_PANEL_LEFT_X + CONFIG_OVERLAY_XY;
-        int overlayOriginY = configTabY + CONFIG_OVERLAY_XY;
+        // NOTE: 原点只能取 CONFIG_UNDERLAY_XY（叠加层纹理原点 5），不可用 UPGRADE_CONTENT_INSET（10）——
+        // 后者是纹理内图形原点，已含 5px 原生留白；而内容坐标本身就是含留白的纹理像素坐标，
+        // 再用图形原点会把留白计两次，全部内容钮整体右下偏 5px（脱离底图钮槽）。
+        int overlayOriginX = CONFIG_PANEL_LEFT_X + CONFIG_UNDERLAY_XY;
+        int overlayOriginY = configTabY + CONFIG_UNDERLAY_XY;
 
         // 类型按钮（能量/物品/流体）：CONFIG_MODE_BUTTONS 图集（42×56，格 14×14）——
         // 列=类型（左列流体 x=0 / 中列能量 x=14 / 右列物品 x=28）；行=状态：未悬停未选 y=0 / 悬停未选 y=14 /
@@ -250,7 +261,9 @@ public final class TENMachineBlockUIFactory {
         var rightButton = faceModeElement(machine, uiState, overlayOriginX + 38, overlayOriginY + 22, 3, "kenergyengineering.info.right").style(style -> style.zIndex(1));
         var upButton = faceModeElement(machine, uiState, overlayOriginX + 24, overlayOriginY + 8, 4, "kenergyengineering.info.up").style(style -> style.zIndex(1));
         var downButton = faceModeElement(machine, uiState, overlayOriginX + 24, overlayOriginY + 36, 5, "kenergyengineering.info.down").style(style -> style.zIndex(1));
-        var closeButton = textureElement(overlayOriginX + 54, overlayOriginY - 6, 10, 10, IGuiTexture.EMPTY,
+        // close 热区（IGuiTexture.EMPTY，无图元可对齐）：钉面板右上角 10×10，同升级面板 close 锚法，
+        // 不越出面板上缘（像素扫描确认 legacy 纹理右上区仅棋盘格空位，无 X 图元，故不进纹理像素坐标系）
+        var closeButton = textureElement(CONFIG_PANEL_LEFT_X + CONFIG_PANEL_WIDTH - 14, configTabY, 10, 10, IGuiTexture.EMPTY,
                 () -> controlTooltip(), () -> uiState.setControlOpen(false), null, null)
                 .style(style -> style.zIndex(1));
 
@@ -278,7 +291,7 @@ public final class TENMachineBlockUIFactory {
 
         List<UIElement> configContents = new ArrayList<>(List.of(energyModeButton, itemModeButton, fluidModeButton,
                 frontButton, backButton, leftButton, rightButton, upButton, downButton, closeButton));
-        // 中间覆盖层随内容层统一显隐（用户需求：面板完全展开后才出现，不随切片动画提前露出）
+        // 中间叠加层随内容层统一显隐（用户需求：面板完全展开后才出现，不随切片动画提前露出）
         configContents.add(configUnderlay);
 
         // 展开状态：-1 收起完成；0..目标宽展开中；目标宽展开完成（fullyOpen 以 >=CONFIG_PANEL_WIDTH 判定，复用终值）
@@ -401,8 +414,8 @@ public final class TENMachineBlockUIFactory {
         // NOTE: 同 zIndex 时按 addChild 索引降序排序、倒序绘制——切片（先 add，index 小）先画、
         // 槽（后 add，index 大）后画，故槽底图/物品绘制在面板切片之上（painter 顶层）。
         // 物品渲染 z = 面板 zIndex(1) + 槽 zIndex(0) + 32 = 33，与主 GUI 机器槽 z=32 同安全档。
-        int slotBaseX = CONFIG_OVERLAY_XY;
-        int slotBaseY = CONFIG_OVERLAY_XY;
+        int slotBaseX = UPGRADE_CONTENT_INSET;
+        int slotBaseY = UPGRADE_CONTENT_INSET;
         int upgradeSlots = machine.upgradeHandler.getSlots();
         List<UIElement> upgradeContents = new ArrayList<>();
 
@@ -434,7 +447,7 @@ public final class TENMachineBlockUIFactory {
                 () -> uiState.setUpgradeOpen(false), null, null).style(style -> style.zIndex(2));
         root.addChild(upgradeCloseButton);
         upgradeContents.add(upgradeCloseButton);
-        // 中间覆盖层随内容层统一显隐（用户需求：面板完全展开后才出现，不随切片动画提前露出）
+        // 中间叠加层随内容层统一显隐（用户需求：面板完全展开后才出现，不随切片动画提前露出）
         upgradeContents.add(upgradeUnderlay);
 
         // 与配置面板同构的动画状态机：-1 收起完成；0..目标宽 展开中；目标宽 展开完成（从 tab 左上角对角生长）
