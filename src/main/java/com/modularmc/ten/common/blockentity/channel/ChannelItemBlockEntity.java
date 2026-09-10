@@ -89,7 +89,9 @@ public class ChannelItemBlockEntity extends AbstractChannelBlockEntity {
 
             @Override
             public ItemStack getStackInSlot(int slot) {
-                return canExtractItem(side) ? shared.getStackInSlot(slot) : ItemStack.EMPTY;
+                // 观察读不设面权限门控（否则不可抽取面在外部读取侧表现为空容器，
+                // AE2 样板供应器阻挡模式会据此误判目标已空）；抽取权限由 extractItem 单独门控
+                return shared.getStackInSlot(slot);
             }
 
             @Override

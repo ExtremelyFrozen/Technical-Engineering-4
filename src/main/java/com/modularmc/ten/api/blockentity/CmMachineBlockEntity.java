@@ -890,7 +890,11 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
 
             @Override
             public ItemStack getStackInSlot(int slot) {
-                return canExtractItem(side) ? itemHandler.getStackInSlot(slot) : ItemStack.EMPTY;
+                // 观察读必须真实：外部设备（AE2 样板供应器阻挡模式逐槽 getStackInSlot 判定上批是否
+                // 已消费完、存储总线、比较器、漏斗等）据此获知机器内容，只看不取。抽取权限由
+                // extractItem 单独门控——若此处按 canExtractItem 藏空，主动输出(OUT)面（机器自推、
+                // 不开放外部抽取）会被读成空容器，供应器阻挡模式因此永远判定目标已空、连发配方。
+                return itemHandler.getStackInSlot(slot);
             }
 
             @Override
@@ -933,7 +937,9 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
 
             @Override
             public FluidStack getFluidInTank(int tank) {
-                return canExtractFluid(side) ? combinedFluidHandler.getFluidInTank(tank) : FluidStack.EMPTY;
+                // 同物品槽：观察读不设面权限门控（否则主动输出面在外部读取侧表现为空罐），
+                // 抽取权限由 drain 单独门控
+                return combinedFluidHandler.getFluidInTank(tank);
             }
 
             @Override

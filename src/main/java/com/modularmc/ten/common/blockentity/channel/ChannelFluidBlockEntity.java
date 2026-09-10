@@ -112,7 +112,9 @@ public class ChannelFluidBlockEntity extends AbstractChannelBlockEntity {
 
             @Override
             public FluidStack getFluidInTank(int tank) {
-                return canExtractFluid(side) ? delegate.getFluidInTank(tank) : FluidStack.EMPTY;
+                // 同共享物品包装：观察读不设面权限门控（否则不可抽取面在外部读取侧表现为空罐），
+                // 抽取权限由 drain 单独门控
+                return delegate.getFluidInTank(tank);
             }
 
             @Override
