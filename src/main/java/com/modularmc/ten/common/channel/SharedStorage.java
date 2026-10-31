@@ -212,8 +212,9 @@ public final class SharedStorage {
                 for (int i = 0; i < ITEM_SLOTS; i++) {
                     ItemStack stack = itemHandler.getStackInSlot(i);
                     if (!stack.isEmpty()) {
-                        // 1.21.1: saveOptional(Provider) 返回 Tag；空堆叠不保存（占位空 CompoundTag）
-                        items.add(stack.saveOptional(registries));
+                        // 经 MachineItemHandler 的 BigCount 通道写入：vanilla CODEC 的 count 限 1..99，
+                        // 频道堆叠上限是 64×成员数，直接 saveOptional 会在超限时抛错
+                        items.add(MachineItemHandler.saveStack(stack, registries));
                     } else {
                         items.add(new CompoundTag());
                     }
@@ -243,7 +244,7 @@ public final class SharedStorage {
             case ITEM -> {
                 ListTag items = tag.getList("items", Tag.TAG_COMPOUND);
                 for (int i = 0; i < Math.min(items.size(), ITEM_SLOTS); i++) {
-                    ItemStack stack = ItemStack.parseOptional(registries, items.getCompound(i));
+                    ItemStack stack = MachineItemHandler.readStack(items.getCompound(i), registries);
                     if (!stack.isEmpty()) {
                         itemHandler.setStackInSlot(i, stack);
                     }

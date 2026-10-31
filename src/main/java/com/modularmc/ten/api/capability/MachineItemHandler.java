@@ -1,5 +1,9 @@
 package com.modularmc.ten.api.capability;
 
+import net.minecraft.core.HolderLookup;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.items.ItemStackHandler;
 
@@ -10,15 +14,68 @@ import java.util.function.BiPredicate;
 import java.util.function.ToIntBiFunction;
 
 /**
- * 机器物品槽能力：槽位级插入/提取校验（回调注入），并支持
- * 批处理动态堆叠上限（setDynamicSlotLimit，输出槽 64×B 超堆叠）。
+ * 机器物品槽能力：槽位级插入/提取校验（回调注入），支持批处理动态堆叠上限
+ * （{@link #setDynamicSlotLimit}），并自行实现超 99 堆叠的 NBT 读写。
  */
 @Setter
 public class MachineItemHandler extends ItemStackHandler {
 
+    /**
+     * 超堆叠数量的持久化键。vanilla {@code ItemStack.CODEC} 的 count 是
+     * {@code intRange(1, 99)}，超出即编码抛错；这里以 count=1 走 vanilla 编码，
+     * 真实数量单独存 int（键名与 vanilla 的 {@code count} 不冲突）。
+     */
+    public static final String BIG_COUNT_KEY = "BigCount";
+
     private BiPredicate<Integer, ItemStack> validator;
     private Runnable changeListener = () -> {};
     private ToIntBiFunction<Integer, ItemStack> dynamicSlotLimit;
+
+    /** 以 count=1 走 vanilla 编码，真实数量写入 {@link #BIG_COUNT_KEY}。 */
+    public static Tag saveStack(ItemStack stack, HolderLookup.Provider registries) {
+        if (stack.isEmpty()) return new CompoundTag();
+        CompoundTag tag = (CompoundTag) stack.copyWithCount(1).save(registries);
+        if (stack.getCount() != 1) tag.putInt(BIG_COUNT_KEY, stack.getCount());
+        return tag;
+    }
+
+    /** vanilla 解析后用 {@link #BIG_COUNT_KEY} 覆盖数量（无该键即 ≤99 的旧数据）。 */
+    public static ItemStack readStack(CompoundTag tag, HolderLookup.Provider registries) {
+        ItemStack stack = ItemStack.parseOptional(registries, tag);
+        int big = tag.getInt(BIG_COUNT_KEY);
+        if (!stack.isEmpty() && big > 0) stack.setCount(big);
+        return stack;
+    }
+
+    @Override
+    public CompoundTag serializeNBT(HolderLookup.Provider provider) {
+        ListTag nbtTagList = new ListTag();
+        for (int i = 0; i < getSlots(); i++) {
+            ItemStack stack = getStackInSlot(i);
+            if (stack.isEmpty()) continue;
+            CompoundTag itemTag = (CompoundTag) saveStack(stack, provider);
+            itemTag.putInt("Slot", i);
+            nbtTagList.add(itemTag);
+        }
+        CompoundTag nbt = new CompoundTag();
+        nbt.put("Items", nbtTagList);
+        nbt.putInt("Size", getSlots());
+        return nbt;
+    }
+
+    @Override
+    public void deserializeNBT(HolderLookup.Provider provider, CompoundTag nbt) {
+        setSize(nbt.contains("Size", Tag.TAG_INT) ? nbt.getInt("Size") : getSlots());
+        ListTag tagList = nbt.getList("Items", Tag.TAG_COMPOUND);
+        for (int i = 0; i < tagList.size(); i++) {
+            CompoundTag itemTags = tagList.getCompound(i);
+            int slot = itemTags.getInt("Slot");
+            if (slot >= 0 && slot < getSlots()) {
+                stacks.set(slot, readStack(itemTags, provider));
+            }
+        }
+        onLoad();
+    }
 
     public MachineItemHandler(int slots) {
         super(slots);

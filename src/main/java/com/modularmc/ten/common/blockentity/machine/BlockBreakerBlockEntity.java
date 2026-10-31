@@ -136,7 +136,6 @@ public class BlockBreakerBlockEntity extends RadiusMachineBlockEntity {
     @Override
     public void applyEffect() {
         if (level == null || itemHandler == null) return;
-        installDynamicOutputLimit();
         ItemStack tool = itemHandler.getStackInSlot(0);
         if (tool.isEmpty()) return;
         int B = getLockedBatchSize();
@@ -198,17 +197,6 @@ public class BlockBreakerBlockEntity extends RadiusMachineBlockEntity {
             units += existing.isEmpty() ? itemHandler.getSlotLimit(i) : Math.max(0, itemHandler.getSlotLimit(i) - existing.getCount());
         }
         return units < B;
-    }
-
-    private void installDynamicOutputLimit() {
-        if (itemHandler == null) return;
-        int B = getLockedBatchSize();
-        int cap = (int) Math.min(64L * Math.max(1, B), Integer.MAX_VALUE);
-        itemHandler.setDynamicSlotLimit((slot, candidate) -> {
-            if (slot < 1 || slot >= inventorySize()) return 64;
-            ItemStack existing = itemHandler.getStackInSlot(slot);
-            return existing.isEmpty() ? cap : Math.max(cap, existing.getCount());
-        });
     }
 
     // ─── 输出槽快照+模拟+提交（防丢失） ───

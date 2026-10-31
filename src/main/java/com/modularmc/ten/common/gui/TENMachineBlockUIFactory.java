@@ -113,23 +113,20 @@ public final class TENMachineBlockUIFactory {
      * 配置面板的内容坐标系原点是 CONFIG_UNDERLAY_XY（=3，纹理像素坐标基准），两者不可混用。
      */
     private static final int UPGRADE_CONTENT_INSET = CONFIG_PANEL_BORDER + UPGRADE_CONTENT_GAP;
-    /** 叠加层纹理尺寸（panel_config_legacy.png 60x85，配置项的布局图/默认状态）。 */
-    private static final int OVERLAY_TEX_W = 60;
-    private static final int OVERLAY_TEX_H = 85;
-    /** legacy 纹理四边原生透明留白（panel_config_legacy.png 60×85，图形 bbox 5..54 / 5..79）。 */
-    private static final int CONFIG_TEX_MARGIN = 5;
+    /** 叠加层纹理尺寸（panel_config_legacy.png 50×75；2026-11 裁掉四边 5px 透明留白后的原生尺寸）。 */
+    private static final int OVERLAY_TEX_W = 50;
+    private static final int OVERLAY_TEX_H = 75;
     /** 配置面板内边距：legacy 图形可见边缘到九宫格底图内边框，与升级面板附加底图对齐为 4px。 */
     private static final int CONFIG_CONTENT_GAP = 4;
     /**
-     * 中间叠加层原点，同时是配置面板内容钮的坐标系原点：矩形 inset = border 4 + 内容间距 4 − 纹理原生留白 5 = 3
-     * （矩形压进边框区的 1px 落在透明留白内，不绘制像素）。纹理 1:1 不拉伸，纹理像素 (px,py) 即落在
-     * 面板 (3+px, 3+py)，故内容钮直接写纹理像素坐标即可与叠加层逐像素对齐。
-     * 四边内边距恒等 4px 依赖 legacy 纹理留白四边对称（各 5px），换纹理须重新核对。
+     * 中间叠加层原点，同时是配置面板内容钮的坐标系原点：inset = border 4 + 内容间距 4 = 8。
+     * 纹理已裁掉原生透明留白，故叠加层元素矩形与可见图形矩形重合；纹理 1:1 不拉伸，
+     * 内容钮写「裁切后纹理像素坐标」即可与叠加层逐像素对齐。
      */
-    private static final int CONFIG_UNDERLAY_XY = CONFIG_PANEL_BORDER + CONFIG_CONTENT_GAP - CONFIG_TEX_MARGIN;
+    private static final int CONFIG_UNDERLAY_XY = CONFIG_PANEL_BORDER + CONFIG_CONTENT_GAP;
     /**
-     * 展开面板目标尺寸：底图伴随叠加层尺寸推导 = legacy 纹理原生尺寸 + 四边 × 叠加层 inset 3。
-     * 容器 = 60+2×3=66 × 85+2×3=91；legacy 图形距内边框四边恒等 4px。
+     * 展开面板目标尺寸 = 叠加层尺寸 + 四边 inset 8 → 50+16=66 × 75+16=91
+     * （与裁切前的 60+2×3 / 85+2×3 同值，面板外框不因裁切而变）。
      */
     private static final int CONFIG_PANEL_WIDTH = OVERLAY_TEX_W + 2 * CONFIG_UNDERLAY_XY;
     private static final int CONFIG_PANEL_HEIGHT = OVERLAY_TEX_H + 2 * CONFIG_UNDERLAY_XY;
@@ -210,15 +207,14 @@ public final class TENMachineBlockUIFactory {
         for (PanelSlice s : configPanelSlices) {
             configPanel.addChild(s.element());
         }
-        // 附加底图（用户需求）：介入九宫格底图与内容钮之间——legacy 布局图 60×85 贴在面板 (3,3)
-        // （3 + 60 + 3 = 66 宽 / 3 + 85 + 3 = 91 高）；后 addChild → 同 zIndex(0) 下后画于切片，
+        // 附加底图（用户需求）：介入九宫格底图与内容钮之间——legacy 布局图 50×75 贴在面板 (8,8)
+        // （8 + 50 + 8 = 66 宽 / 8 + 75 + 8 = 91 高）；后 addChild → 同 zIndex(0) 下后画于切片，
         // 内容钮 zIndex=1（root 子级）仍在其上
-        // [间距对齐 2026-09 v3] 底图伴随叠加层推导：叠加层保持 legacy 纹理原生 60×85 不拉伸
+        // [间距对齐 2026-09 v3] 底图伴随叠加层推导：叠加层保持 legacy 纹理原生尺寸不拉伸
         // （v2 的 72×97 拉伸 1.2 倍会放大纹理内钮图示 → 与交互钮错位）。
-        // [内边距 v4] 内边距 = legacy 图形可见边缘到九宫格内边框 = 4px（对齐升级面板附加底图）：
-        // 图形边缘 = 矩形 inset 3 + 纹理原生留白 5 = 面板内 8 = border 4 + 内边距 4。
-        // 内容钮 overlayOrigin = 叠加层纹理原点 (3,3)，内容坐标直接写
-        // panel_config_legacy.png 的纹理像素坐标（坐标值已含纹理 5px 原生留白）
+        // [内边距 v5] 纹理已裁掉四边 5px 透明留白（60×85 → 50×75），inset 直接 = border 4 + 内边距 4 = 8；
+        // 面板外框仍 66×91，内容钮坐标整体 −5，绝对位置与裁切前一致。
+        // 副作用：叠加层元素矩形与可见图形矩形重合，点击收起的热区由 3px 环变为 8px 环。
         var configUnderlay = new UIElement().style(style -> style.backgroundTexture(
                 fullTexture(TENConstants.PANEL_CONFIG_LEGACY, OVERLAY_TEX_W, OVERLAY_TEX_H)));
         configUnderlay.layout(layout -> {
@@ -229,13 +225,12 @@ public final class TENMachineBlockUIFactory {
             layout.height(OVERLAY_TEX_H);
         });
         configPanel.addChild(configUnderlay);
-        // 层2+ 内容钮：坐标 = 叠加层纹理原点 (3,3) + legacy 纹理像素坐标；仅 fullyOpen 后可交互。
+        // 层2+ 内容钮：坐标 = 叠加层原点 (8,8) + 裁切后的纹理像素坐标；仅 fullyOpen 后可交互。
         // z 层规范（统一分层）：面板底图 zIndex=0、内容层（钮/槽）显式 zIndex=1——
         // 同 zIndex 时排序按 addChild 索引降序、倒序绘制 → 后 addChild 者反而在下层，
         // 故内容必须显式 zIndex 抬升才能盖过面板底图（勿删 zIndex(1)）。
-        // NOTE: 原点只能取 CONFIG_UNDERLAY_XY（叠加层纹理原点 3），不可用 UPGRADE_CONTENT_INSET（10）——
-        // 后者是纹理内图形原点，已含 5px 原生留白；而内容坐标本身就是含留白的纹理像素坐标，
-        // 再用图形原点会把留白计两次，全部内容钮整体右下偏 5px（脱离底图钮槽）。
+        // NOTE: 原点取 CONFIG_UNDERLAY_XY（=8，叠加层矩形原点），不可用 UPGRADE_CONTENT_INSET（=10）——
+        // 后者含升级面板附加底图自己的 2px 外扩，与配置面板无关，误用会让全部内容钮右下偏 2px。
         int overlayOriginX = CONFIG_PANEL_LEFT_X + CONFIG_UNDERLAY_XY;
         int overlayOriginY = configTabY + CONFIG_UNDERLAY_XY;
 
@@ -243,28 +238,28 @@ public final class TENMachineBlockUIFactory {
         // 列=类型（左列流体 x=0 / 中列能量 x=14 / 右列物品 x=28）；行=状态：未悬停未选 y=0 / 悬停未选 y=14 /
         // 未悬停已选 y=28 / 悬停已选 y=42；syncTexture（TICK）实时刷新，hover 由 element.isHover() 取
         var modeIconTex = TENConstants.CONFIG_MODE_BUTTONS;
-        var energyModeButton = textureElement(overlayOriginX + 7, overlayOriginY + 64, 14, 14,
+        var energyModeButton = textureElement(overlayOriginX + 2, overlayOriginY + 59, 14, 14,
                 IGuiTexture.EMPTY, () -> energyModeTooltip(), () -> uiState.setSelectedTransferMode(0), null, null)
                 .style(style -> style.zIndex(1));
         syncTexture(energyModeButton, () -> sprite(modeIconTex, 14,
                 (uiState.getSelectedTransferMode() == 0 ? 2 : 0) * 14 + (energyModeButton.isHover() ? 14 : 0), 14, 14));
-        var itemModeButton = textureElement(overlayOriginX + 23, overlayOriginY + 64, 14, 14,
+        var itemModeButton = textureElement(overlayOriginX + 18, overlayOriginY + 59, 14, 14,
                 IGuiTexture.EMPTY, () -> itemModeTooltip(), () -> uiState.setSelectedTransferMode(1), null, null)
                 .style(style -> style.zIndex(1));
         syncTexture(itemModeButton, () -> sprite(modeIconTex, 28,
                 (uiState.getSelectedTransferMode() == 1 ? 2 : 0) * 14 + (itemModeButton.isHover() ? 14 : 0), 14, 14));
-        var fluidModeButton = textureElement(overlayOriginX + 39, overlayOriginY + 64, 14, 14,
+        var fluidModeButton = textureElement(overlayOriginX + 34, overlayOriginY + 59, 14, 14,
                 IGuiTexture.EMPTY, () -> fluidModeTooltip(), () -> uiState.setSelectedTransferMode(2), null, null)
                 .style(style -> style.zIndex(1));
         syncTexture(fluidModeButton, () -> sprite(modeIconTex, 0,
                 (uiState.getSelectedTransferMode() == 2 ? 2 : 0) * 14 + (fluidModeButton.isHover() ? 14 : 0), 14, 14));
 
-        var frontButton = faceModeElement(machine, uiState, overlayOriginX + 24, overlayOriginY + 22, 0, "kenergyengineering.info.front").style(style -> style.zIndex(1));
-        var backButton = faceModeElement(machine, uiState, overlayOriginX + 38, overlayOriginY + 36, 1, "kenergyengineering.info.back").style(style -> style.zIndex(1));
-        var leftButton = faceModeElement(machine, uiState, overlayOriginX + 10, overlayOriginY + 22, 2, "kenergyengineering.info.left").style(style -> style.zIndex(1));
-        var rightButton = faceModeElement(machine, uiState, overlayOriginX + 38, overlayOriginY + 22, 3, "kenergyengineering.info.right").style(style -> style.zIndex(1));
-        var upButton = faceModeElement(machine, uiState, overlayOriginX + 24, overlayOriginY + 8, 4, "kenergyengineering.info.up").style(style -> style.zIndex(1));
-        var downButton = faceModeElement(machine, uiState, overlayOriginX + 24, overlayOriginY + 36, 5, "kenergyengineering.info.down").style(style -> style.zIndex(1));
+        var frontButton = faceModeElement(machine, uiState, overlayOriginX + 19, overlayOriginY + 17, 0, "kenergyengineering.info.front").style(style -> style.zIndex(1));
+        var backButton = faceModeElement(machine, uiState, overlayOriginX + 33, overlayOriginY + 31, 1, "kenergyengineering.info.back").style(style -> style.zIndex(1));
+        var leftButton = faceModeElement(machine, uiState, overlayOriginX + 5, overlayOriginY + 17, 2, "kenergyengineering.info.left").style(style -> style.zIndex(1));
+        var rightButton = faceModeElement(machine, uiState, overlayOriginX + 33, overlayOriginY + 17, 3, "kenergyengineering.info.right").style(style -> style.zIndex(1));
+        var upButton = faceModeElement(machine, uiState, overlayOriginX + 19, overlayOriginY + 3, 4, "kenergyengineering.info.up").style(style -> style.zIndex(1));
+        var downButton = faceModeElement(machine, uiState, overlayOriginX + 19, overlayOriginY + 31, 5, "kenergyengineering.info.down").style(style -> style.zIndex(1));
         // close 热区（IGuiTexture.EMPTY，无图元可对齐）：钉面板右上角 10×10，同升级面板 close 锚法，
         // 不越出面板上缘（像素扫描确认 legacy 纹理右上区仅棋盘格空位，无 X 图元，故不进纹理像素坐标系）
         var closeButton = textureElement(CONFIG_PANEL_LEFT_X + CONFIG_PANEL_WIDTH - 14, configTabY, 10, 10, IGuiTexture.EMPTY,

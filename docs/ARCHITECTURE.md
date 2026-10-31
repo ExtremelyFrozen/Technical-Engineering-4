@@ -113,7 +113,7 @@ CmBlockEntity (implements ISyncPersistRPCBlockEntity)
   多数子类按机器形态选择下级抽象基类；能量单元与创造能量单元直接继承本类。
 - `ProcessingMachineBlockEntity`：逐 tick 加工主循环。子类实现 `baseTickTime()`，可覆盖
   `conditionStart()`、`cooking()`、`onProcessTick()`、`onCookFinish()`。
-- `RecipeMachineBlockEntity`：配方查找、配方身份检测、四维 B 锁定、动态槽位堆叠与七阶段原子产出。
+- `RecipeMachineBlockEntity`：配方查找、配方身份检测、四维 B 锁定、七阶段原子产出（堆叠上限见 `CmMachineBlockEntity`）。
 - `EffectMachineBlockEntity`：按 `effectInterval()` 周期触发 `applyEffect()`，不走逐 tick 配方。
 - `RadiusMachineBlockEntity`：维护 `radius` 与客户端预览半径，配合 `RangeDisplayBER` 画工作范围。
 - `EngineBlockEntity`：燃料或光照驱动产能，能量面强制 OUT 主动推送。
@@ -163,8 +163,10 @@ CmBlockEntity (implements ISyncPersistRPCBlockEntity)
 「只按面权限 / 槽位类型 / 信号门控，数量由调用方决定」。储能容量仍随 B 缩放，`doBaseData()` 每 tick 重算。
 `LevelupStream`（原「解除传输速率限制」）因此不再有可观察效果，保留待升级内容重构重新定义。
 
-左侧能量信息栏读 `energyUse` / `energyUseMax` 两个 `@DescSynced` 镜像：当前消耗 =
-`getActualEfficiency() × 锁定 B`（处理中的真实 FE/t），最大消耗 = `× 理论 B`。
+左侧能量信息栏读 `energyUse` / `energyUseMax` 两个 `@DescSynced` 镜像：当前消耗是
+最近 5 tick 的实测平均（处理型/效果型机器在成功扣能后 `recordEnergyUse(fePerTick)` 记账，
+`doBaseData()` 每 tick 推进环形缓冲取均值，停机后随窗口滑出归零）；
+最大消耗 = `getActualEfficiency() × 理论 B`，即当前升级配置可达的峰值。
 
 ### 2.6 面配置与 capability
 
@@ -209,6 +211,21 @@ CmBlockEntity (implements ISyncPersistRPCBlockEntity)
 形状与 `EngineFuelRecipe` 一致，由 JEI 在运行时按标签合成。
 `usesRemaining` / `coolantTotalUses` 是服务端每 tick 写的 `@DescSynced` 镜像——GUI 进度栏在客户端求值，
 不经 `@DescSynced`/RPC 的字段到不了客户端。
+
+### 2.9 槽位堆叠与超 99 持久化
+
+堆叠上限由 `CmMachineBlockEntity.installBatchSlotLimit()` 一处给出，全机器统一：
+可进/可出的槽 = `物品 maxStackSize × 理论 B`，不可堆叠物品（工具/武器槽）保持 1，
+其余槽用 64。各机器不再自写 provider（旧实现按 `slotInfo` 或硬编码索引各算一份，
+且固定 `64 × B` 会凭空放大非 64 上限的物品）。`MachineItemHandler` 的
+`getSlotLimit`/`getStackLimit` 在 provider 生效时绕过 `maxStackSize`，并保证不低于槽内既有数量。
+
+超 99 的数量必须走自定义读写：vanilla `ItemStack.CODEC` 的 count 是 `intRange(1, 99)`，
+`ItemStackHandler.serializeNBT` 经 `ItemStack.save()` 编码超限堆叠会抛。
+`MachineItemHandler` 因此覆写 `serializeNBT`/`deserializeNBT`，以 count=1 走 vanilla 编码、
+真实数量另存 int 键 `BigCount`；`SharedStorage`（频道物品存储，上限 64×成员数）与
+扩容迁移分支共用同一对 `saveStack`/`readStack`。网络侧不受此限（`OPTIONAL_STREAM_CODEC`
+写 varint），所以只有一条持久化通道需要覆盖。
 
 ---
 

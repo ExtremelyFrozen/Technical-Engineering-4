@@ -25,6 +25,21 @@
   （`maven.neoforged.net` 不可达）。
 - 网络恢复或本地缓存 testframework 后，去掉 `-x compileTestJava` 再跑一次 `runClient` 与 `runGameTestServer`。
 
+### AE2 Pattern Disk 0.9.8 载入实机确认 — P2 🧪
+- 0.9.7 的供应器在载入世界时对空网格节点解引用会崩服（dev 世界两次复现，同一坐标），上游 0.9.8 已修复发布。
+- 开发依赖已 bump 到 CF file `9384288`（0.9.8），`runtimeClasspath` 解析通过，客户端本体启动无异常。
+- 待做：在 dev 客户端进入该存档，确认 `(-37,71,-44)` 那台供应器不再触发崩服。
+
+### 槽位堆叠统一与超 99 持久化实机复验 — P2 🧪
+- 2026-10-31 堆叠上限改由 `CmMachineBlockEntity.installBatchSlotLimit()` 统一给出
+  （可进/可出槽 = 物品 maxStackSize × 理论 B；不可堆叠物品 1；其余 64），
+  删掉 Farm / Quarry / 方块破坏器 / 生物啃噬器与配方机器基类各写一份的 provider；
+  `MachineItemHandler` 覆写 NBT 读写，超 99 数量存 `BigCount`（vanilla CODEC 的 count 限 1..99）。
+- 需复验：B≥2 时输出槽能堆到 128+；**保存并重进世界后数量不丢、不抛错**；
+  频道物品存储（64×成员数）同样能存回；工具槽仍为 1；非 64 上限物品（如 16 上限）不再被凭空放大。
+- 未覆盖：`ItemStack` 走 `validatedStreamCodec` 的同步路径若将来命中，需一并处理；
+  目前实测界面显示与容器同步正常（varint 计数不受 99 限制）。
+
 ### GuideME 指南实机验证 — P2 🧪
 - 指南物品只在 GuideME 在场时注册；需验证工具页指南书可打开、导航与页面物品图标正常。
 - 未装 GuideME 时模组正常加载且不出现指南物品；指南不依赖 AE2。

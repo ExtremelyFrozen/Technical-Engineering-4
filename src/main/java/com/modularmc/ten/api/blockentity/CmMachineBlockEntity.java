@@ -73,11 +73,11 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
     @Persisted
     @DescSynced
     public int maxFuel = 0;
-    /** 当前能量消耗（FE/t）= 实际效率 × 锁定批量 B。左侧能量信息栏读此镜像。 */
+    /** 当前能量消耗（FE/t）= 最近 5 tick 实测扣能的滑动平均；停机后随窗口滑出归零。 */
     @Persisted
     @DescSynced
     public int energyUse = 0;
-    /** 最大能量消耗（FE/t）= 实际效率 × 理论批量 B（当前升级允许的批量上限）。 */
+    /** 最大能量消耗（FE/t）= 实际效率 × 理论批量 B（当前升级配置可达的峰值）。 */
     @Persisted
     @DescSynced
     public int energyUseMax = 0;
@@ -234,6 +234,39 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
 
         for (var tank : tanks) tank.setChangeListener(this::markDirty);
         combinedFluidHandler = createCombinedFluidHandler();
+        installBatchSlotLimit();
+    }
+
+    /** 非批量槽位的常规堆叠上限（升级槽、结构槽等）。 */
+    private static final int DEFAULT_SLOT_LIMIT = 64;
+
+    /**
+     * 安装全机器统一的批处理倍增堆叠上限。由 {@link #initMachine()} 装一次即可——
+     * provider 每次求值都现读理论 B，不需要随配方变化或锁定批量重装。
+     */
+    protected void installBatchSlotLimit() {
+        if (itemHandler == null) return;
+        itemHandler.setDynamicSlotLimit(this::batchSlotLimitFor);
+    }
+
+    /**
+     * 槽位堆叠上限：可进/可出的槽按「物品自身上限 × 理论 B」倍增，不可堆叠物品保持 1
+     * （工具槽等自动落在此规则内），其余槽用 {@value #DEFAULT_SLOT_LIMIT}。
+     * 超 99 的部分由 {@code MachineItemHandler} 的 BigCount 负责持久化。
+     * 子类可覆写以表达个别槽位的特殊语义。
+     */
+    protected int batchSlotLimitFor(int slot, ItemStack candidate) {
+        IngredientType type = slotType(slot);
+        if (!type.canIn() && !type.canOut()) {
+            return DEFAULT_SLOT_LIMIT;
+        }
+        // 空槽查询时无从得知物品上限，按 64×B 预留（真正插入时会带 candidate 再算一次）
+        int maxStackSize = candidate.isEmpty() ? DEFAULT_SLOT_LIMIT : Math.max(1, candidate.getMaxStackSize());
+        if (maxStackSize <= 1) {
+            return 1;
+        }
+        long limit = (long) maxStackSize * getTheoreticalBatchSize();
+        return (int) Math.min(limit, net.minecraft.world.item.Item.ABSOLUTE_MAX_STACK_SIZE);
     }
 
     // ───── ldlib2 NBT: 确保反序列化前 handler 已初始化 ─────
@@ -602,8 +635,9 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         markDirty("energyUseMax");
         maxEnergyStored = maxStorageEnergy;
         energyStored = energyStorage.getEnergyStored();
-        // 左侧能量信息栏：当前消耗按锁定批量（处理中的真实 FE/t），最大消耗按理论批量
-        energyUse = safeMultiply(getActualEfficiency(), getLockedBatchSize());
+        // 信息栏：当前消耗取最近 5 tick 的实测平均（本 tick 扣能在 process() 里记账，下一 tick 进窗口）；
+        // 最大消耗取当前升级配置可达的峰值（实际效率 × 理论 B）
+        energyUse = rollEnergyUseSample();
         energyUseMax = safeMultiply(getActualEfficiency(), theoreticalB);
         upgSize = upgradeSize;
         // ── 流体容量批量缩放：每 tank 按构造初始容量 × theoreticalB 独立缩放 ──
@@ -633,6 +667,34 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         if (rebuildFaceData()) {
             syncAllFacesToClients();
         }
+    }
+
+    /** 能量消耗滑动窗口长度（tick）：信息栏「当前能量消耗」按此取平均。 */
+    private static final int ENERGY_USE_WINDOW = 5;
+    private final int[] energyUseSamples = new int[ENERGY_USE_WINDOW];
+    private int energyUseSampleIndex = 0;
+    private int energyUseThisTick = 0;
+
+    /**
+     * 记账本 tick 实际扣掉的能量（处理型/效果型机器在成功提取后调用）。
+     * 不记账即视为本 tick 未消耗（停机、缺能、缺料），会随窗口滑出而归零。
+     */
+    protected void recordEnergyUse(int fe) {
+        if (fe > 0) {
+            energyUseThisTick += fe;
+        }
+    }
+
+    /** 收口上一 tick 的采样、推进环形缓冲，返回窗口平均 FE/t。 */
+    private int rollEnergyUseSample() {
+        energyUseSamples[energyUseSampleIndex] = energyUseThisTick;
+        energyUseSampleIndex = (energyUseSampleIndex + 1) % ENERGY_USE_WINDOW;
+        energyUseThisTick = 0;
+        long sum = 0;
+        for (int sample : energyUseSamples) {
+            sum += sample;
+        }
+        return (int) Math.min(Integer.MAX_VALUE, sum / ENERGY_USE_WINDOW);
     }
 
     // Slots
@@ -969,7 +1031,7 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
                 // 不直接 deserializeNBT——NeoForge 按旧 Size 重建数组会缩回旧槽数复发越界。
                 var list = invTag.getList("Items", net.minecraft.nbt.Tag.TAG_COMPOUND);
                 for (int i = 0; i < savedSize && i < list.size(); i++) {
-                    itemHandler.setStackInSlot(i, ItemStack.parseOptional(registries, list.getCompound(i)));
+                    itemHandler.setStackInSlot(i, MachineItemHandler.readStack(list.getCompound(i), registries));
                 }
             }
         }

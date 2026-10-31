@@ -121,21 +121,6 @@ public class FarmBlockEntity extends RadiusMachineBlockEntity {
     }
 
     /**
-     * 批量升级时按 lockedB 动态扩展输出槽上限（6..11），保留既有超堆叠。
-     * 在每个 applyEffect 周期开始时调用。
-     */
-    private void installDynamicOutputLimit() {
-        if (itemHandler == null) return;
-        int B = getLockedBatchSize();
-        int cap = (int) Math.min(64L * Math.max(1, B), Integer.MAX_VALUE);
-        itemHandler.setDynamicSlotLimit((slot, candidate) -> {
-            if (slot < 6 || slot >= inventorySize()) return 64; // 非输出槽
-            ItemStack existing = itemHandler.getStackInSlot(slot);
-            return existing.isEmpty() ? cap : Math.max(cap, existing.getCount());
-        });
-    }
-
-    /**
      * 生效范围：机器背面（2*radius+1)²（宽轴 ±radius、深轴从背面第一格起，
      * Y=自身一层），与 buildXOffsets/scanRow 的动态列数 × 动态深度一致。
      */
@@ -178,9 +163,6 @@ public class FarmBlockEntity extends RadiusMachineBlockEntity {
     @Override
     public void applyEffect() {
         if (level == null) return;
-
-        // 批量升级时按 B 动态扩展输出槽上限
-        installDynamicOutputLimit();
 
         // Build X offsets for current radius
         int[] allOffsets = buildXOffsets();

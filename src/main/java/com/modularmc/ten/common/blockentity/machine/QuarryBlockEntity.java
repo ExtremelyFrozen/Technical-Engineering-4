@@ -281,8 +281,6 @@ public class QuarryBlockEntity extends RadiusMachineBlockEntity {
             clearLockedBatch();
             return;
         }
-        // 批量升级时按 lockedB 动态扩展输出槽上限
-        installDynamicOutputLimit();
         // 只有真正致命条件 break：工具损坏（空）/周期中途挖尽。
         // 单次未命中（无掉落/挖不动/容量满）→ continue（QuarryLoopMissVsBreak 契约）。
         int B = getLockedBatchSize();
@@ -318,20 +316,6 @@ public class QuarryBlockEntity extends RadiusMachineBlockEntity {
             units += existing.isEmpty() ? itemHandler.getSlotLimit(i) : Math.max(0, itemHandler.getSlotLimit(i) - existing.getCount());
         }
         return units < B;
-    }
-
-    /**
-     * 批量升级时按 lockedB 动态扩展输出槽上限（1..12），保留既有超堆叠。
-     */
-    private void installDynamicOutputLimit() {
-        if (itemHandler == null) return;
-        int B = getLockedBatchSize();
-        int cap = (int) Math.min(64L * Math.max(1, B), Integer.MAX_VALUE);
-        itemHandler.setDynamicSlotLimit((slot, candidate) -> {
-            if (slot < OUTPUT_START || slot >= inventorySize()) return 1; // 工具槽堆叠上限 1（用户调整）
-            ItemStack existing = itemHandler.getStackInSlot(slot);
-            return existing.isEmpty() ? cap : Math.max(cap, existing.getCount());
-        });
     }
 
     /**

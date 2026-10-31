@@ -163,8 +163,7 @@ public class MobRipBlockEntity extends RadiusMachineBlockEntity {
     @Override
     public void applyEffect() {
         if (level == null) return;
-        // 武器槽堆叠上限 1（用户调整）：幂等设置，随 handler 动态限制机制生效
-        itemHandler.setDynamicSlotLimit((slot, candidate) -> slot == 0 ? 1 : 64);
+        // 武器槽上限 1 由基类统一规则给出（不可堆叠物品不倍增），无需在此自写 provider
         int B = getLockedBatchSize();
 
         // 记录周期开始时武器是否存在：若原本有而中途损坏/耗尽则停止剩余批次，

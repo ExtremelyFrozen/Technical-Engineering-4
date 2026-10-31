@@ -47,8 +47,8 @@ repositories {
         forRepository { mavenCentral() }
         filter { includeGroup("org.projectlombok") }
     }
-    exclusiveContent { // tterrag - registrate
-        forRepository { maven { url = "https://mvn.devos.one/snapshots/" } }
+    exclusiveContent { // tterrag - registrate（1.21.1 线只发布在 Gegy 的 maven；旧的 devos snapshots 已无引用）
+        forRepository { maven { url = "https://maven.gegy.dev/releases/" } }
         filter { includeGroup("com.tterrag.registrate") }
     }
     exclusiveContent { // terraformers - EMI

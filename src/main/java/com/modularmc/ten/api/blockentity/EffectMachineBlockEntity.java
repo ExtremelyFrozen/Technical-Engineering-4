@@ -94,6 +94,7 @@ public abstract class EffectMachineBlockEntity extends CmMachineBlockEntity {
                 throw new IllegalStateException(
                         "Energy under-extraction: expected " + fePerTick + " FE but extracted less. Machine state may be inconsistent.");
             }
+            recordEnergyUse(fePerTick);
 
             // ── Step 6: Advance progress by exactly 1 tick ──
             progress++;

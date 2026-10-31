@@ -20,7 +20,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.function.ToIntBiFunction;
 
 /**
  * 配方机器基类：负责配方查找/身份检测（配方变化重置进度）、四维 B_actual
@@ -409,52 +408,15 @@ public abstract class RecipeMachineBlockEntity extends ProcessingMachineBlockEnt
     // ───── Dynamic slot limit support ─────
 
     /**
-     * Installs a dynamic slot limit provider on the item handler for output slots.
-     * Called when a new recipe starts (in {@link #conditionStart()}).
+     * 重装统一的批处理倍增堆叠上限（实现在
+     * {@link CmMachineBlockEntity#installBatchSlotLimit()}）。
      * <p>
-     * 改革后：槽位堆叠上限固定为 {@code 64 × lockedB}（简单固定倍率，与配方 amount/rolls 无关）。
-     * roll 类型配方不再影响堆叠。机器内部通过自定义 oversized codec 持久化超 99 堆叠。
+     * 旧版在此按 {@code slotInfo.i1..i2 / o1..o2} 自建 provider，公式与基类一致但漏掉了
+     * 物品自身上限（对 maxStackSize 非 64 的物品会凭空放大），且各机器各写一份；
+     * 现在只留这一处委托，配方切换时重装只为保持幂等。
      */
     protected void installDynamicSlotLimit() {
-        if (itemHandler == null) return;
-
-        // 空闲时也用理论 B（1+Σbatch）设置固定 64×B 堆叠：装批量升级即常驻生效，
-        // 无需等机器运行锁定批量（对齐末影箱动态堆叠的常态生效语义）。
-        // 仅当有配方且有具体输出物品时，才需要按输出槽位语义区分（同公式 64×B）。
-        var itemOutputs = currentRecipe == null ? null : currentRecipe.allOutputItems();
-        itemHandler.setDynamicSlotLimit(createOutputSlotLimitProvider(itemOutputs));
-    }
-
-    /**
-     * Creates a {@link ToIntBiFunction} that computes per-slot limits.
-     * Slot limit = 64 × theoreticalB（简单固定倍率，与配方 amount/rolls 无关）。
-     * 用理论 B（1+Σbatch，装升级即反映），空闲与运行时都常驻生效。
-     * roll 类型配方不再影响堆叠。
-     * <p>
-     * 输出槽（slotInfo.o1..o2）用 64×B；其余槽（输入/升级）保持默认 64。
-     *
-     * @param itemOutputs 配方输出物品（可 null；空闲/无输出时仍按输出槽位 64×B 处理）
-     */
-    private ToIntBiFunction<Integer, ItemStack> createOutputSlotLimitProvider(
-                                                                              List<FormsCombinedIngredient> itemOutputs) {
-        int batchSize = getTheoreticalBatchSize();
-        long limitWithB = 64L * batchSize;
-        int cap = (int) Math.min(limitWithB, Integer.MAX_VALUE);
-        return (slot, candidate) -> {
-            // 输入槽（i1..i2）与输出槽（o1..o2）都应用 64×B 堆叠（双向，对齐精妙存储：
-            // 槽位上限 = 物品 maxStackSize × 批量倍率）。升级槽等其他槽保持默认 64。
-            boolean isInput = slot >= slotInfo.i1() && slot <= slotInfo.i2();
-            boolean isOutput = slot >= slotInfo.o1() && slot <= slotInfo.o2();
-            if (!isInput && !isOutput) {
-                return 64;
-            }
-            // Never go below existing count (preserve overstack from previous configs)
-            ItemStack existing = itemHandler.getStackInSlot(slot);
-            if (!existing.isEmpty()) {
-                return Math.max(cap, existing.getCount());
-            }
-            return cap;
-        };
+        installBatchSlotLimit();
     }
 
     /**
