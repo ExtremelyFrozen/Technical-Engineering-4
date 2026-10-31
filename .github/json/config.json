@@ -1,21 +1,28 @@
 {
   "categories": [
     {
-      "title": "### Added",
-      "labels": ["type: feature"]
+      "title": "### 新增",
+      "labels": [
+        "type: feature"
+      ]
     },
     {
-      "title": "### Fixed",
-      "labels": ["type: bugfix"]
+      "title": "### 修复",
+      "labels": [
+        "type: bugfix"
+      ]
     },
     {
-      "title": "### Changed",
-      "labels": ["type: refactor", "type: translation"]
+      "title": "### 改进",
+      "labels": [
+        "type: refactor",
+        "type: translation"
+      ]
     }
   ],
   "sort": "ASC",
-  "template": "## Version [v#{{VERSION}}](#{{RELEASE_DIFF}})\n#{{CHANGELOG}} ",
-  "pr_template": "- #{{TITLE}} by @#{{AUTHOR}} in [##{{NUMBER}}](#{{URL}})",
+  "template": "## [#{{VERSION}}]\n\n#{{CHANGELOG}}",
+  "pr_template": "- #{{TITLE}}",
   "custom_placeholders": [
     {
       "name": "VERSION",
@@ -27,7 +34,9 @@
     }
   ],
   "empty_template": "",
-  "ignore_labels": ["ignore changelog"],
+  "ignore_labels": [
+    "ignore changelog"
+  ],
   "tag_resolver": {
     "method": "semver",
     "filter": {
@@ -41,5 +50,7 @@
   },
   "max_pull_requests": 1000,
   "max_back_track_time_days": 365,
-  "base_branches": ["1.21"]
+  "base_branches": [
+    "1.21"
+  ]
 }

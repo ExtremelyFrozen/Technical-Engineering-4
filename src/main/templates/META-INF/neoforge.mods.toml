@@ -34,3 +34,10 @@ enumExtensions = "META-INF/enum_extensions.json"
     versionRange = "${minecraft_version}"
     ordering = "NONE"
     side = "BOTH"
+
+[[dependencies.${mod_id}]]
+    modId = "guideme"
+    type = "optional"
+    versionRange = "[21.1.1,)"
+    ordering = "NONE"
+    side = "BOTH"

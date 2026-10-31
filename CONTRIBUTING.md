@@ -37,6 +37,8 @@ Technical-Engineering 4 是一个 **NeoForge 1.21.1** 科技模组，继承自 T
 - **代码简化**: Lombok（仅少量 @Getter/@Setter，不强制）
 - **代码格式化**: Spotless（Eclipse 格式化配置）
 
+> 本文保留项目结构、技术栈、注册与编码约定、DataGen、本地化与审查清单；架构、发版与更新日志细节见 `AGENTS.md` 与 `docs/`。
+
 ---
 
 ## 技术栈
@@ -44,7 +46,7 @@ Technical-Engineering 4 是一个 **NeoForge 1.21.1** 科技模组，继承自 T
 | 组件 | 版本 / 说明 |
 |---|---|
 | Minecraft | 1.21.1 |
-| NeoForge | 21.1.219 |
+| NeoForge | 21.1.243 |
 | Java | 21 |
 | Gradle | ModDevGradle 2.0.141 |
 | Registrate | MC1.21-1.3.0+67（通过 `TENRegistrate` 封装） |
@@ -350,7 +352,7 @@ forge.jei
 1. 先判断依赖属于核心（`libs.versions.toml`）还是生态（`forge.versions.toml`）。
 2. 在新文件中添加 version 和 library 声明。
 3. 在 `build.gradle` 或 `dependencies.gradle` 中使用 catalog 引用。
-4. **不要在 `build.gradle` 中硬编码版本号**。
+4. **新增依赖不要硬编码版本号**；现有硬编码坐标（Lombok、Curios、开发运行期模组、Kotlin 插件）待迁移。
 
 ---
 
@@ -368,7 +370,7 @@ forge.jei
 ### 风格
 - [ ] 运行 `./gradlew spotlessApply` 后无 diff？(`./gradlew spotlessCheck`)
 - [ ] import 顺序正确（com.modularmc → net → java → javax → #）？
-- [ ] 没有硬编码的依赖版本号？
+- [ ] 新增依赖没有硬编码版本号？
 - [ ] 无 `System.out` / `printStackTrace`（使用 `TEN.LOGGER`）？
 
 ### 资源

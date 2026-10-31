@@ -94,6 +94,8 @@
   "item.kenergyengineering.gold_plate": "Gold Plate",
   "item.kenergyengineering.gold_rod": "Gold Rod",
   "item.kenergyengineering.gold_wire": "Gold Wire",
+  "item.kenergyengineering.guide": "Kenergy Engineering Guide",
+  "item.kenergyengineering.guide.tooltip": "Open the in-game guide",
   "item.kenergyengineering.hydraulic_widget": "Hydraulic Widget",
   "item.kenergyengineering.ice_levelup": "Upgrade: Frozen Soil Drilling",
   "item.kenergyengineering.indigo": "Indigo",

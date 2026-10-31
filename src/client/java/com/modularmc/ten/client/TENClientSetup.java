@@ -2,15 +2,17 @@ package com.modularmc.ten.client;
 
 import com.modularmc.ten.TEN;
 import com.modularmc.ten.api.blockentity.CmMachineBlockEntity;
-import com.modularmc.ten.common.data.TENBlockEntities;
+import com.modularmc.ten.client.guide.TENGuideMeClient;
 import com.modularmc.ten.client.renderer.RangeDisplayBER;
+import com.modularmc.ten.common.data.TENBlockEntities;
 
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
+import net.minecraft.client.renderer.blockentity.BlockEntityRenderers;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.ModList;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
-import net.minecraft.client.renderer.blockentity.BlockEntityRenderers;
 
 /**
  * Client setup handler that initializes client-only subsystems.
@@ -27,6 +29,10 @@ public class TENClientSetup {
         // from the NeoForge game bus. This cache provides TEN machine recipes
         // to the JEI plugin without requiring an integrated server.
         TENClientRecipeCache.init();
+
+        if (ModList.get().isLoaded("guideme")) {
+            TENGuideMeClient.init();
+        }
 
         // 范围显示：为有工作生效范围的 7 台机器注册统一 BER（内部按 rangeVisible
         // 开关与 getRangeBoxes 非空决定是否绘制；无覆盖的机器返回空列表零开销）。

@@ -13,7 +13,8 @@ Minecraft 1.21.1 / NeoForge 科技向模组（Technical Engineering 4 的重制�
 - **频道系统**：跨机器共享存储与频道连接
 - **升级系统**：批处理 / 效率 / 持续时间等升级维度，四维 B 锁定
 - **面配置**：机器各面能量/物品/流体交互模式
-- **生态集成**：JEI/EMI（XEI）、Jade
+- **生态集成**：JEI（含 XEI 兼容层）、Jade；EMI 运行时待验证
+- **游戏内指南**：科能工程指南（需 GuideME）
 
 ## 多版本容器结构
 
@@ -21,8 +22,8 @@ Minecraft 1.21.1 / NeoForge 科技向模组（Technical Engineering 4 的重制�
 
 | 目录 | Minecraft | NeoForge | Java | 状态 |
 |------|-----------|----------|------|------|
-| `Technical-Engineering-4-1.21.1/` | 1.21.1 | 21.1.219 | 21 | 当前稳定版本 |
-| `Technical-Engineering-4-26.1.2/` | 26.1.2 | 26.1.2 | 25 | 参照源分支（含完整 plans/docs） |
+| `Technical-Engineering-4-1.21.1/` | 1.21.1 | 21.1.243 | 21 | 当前稳定版本 |
+| `Technical-Engineering-4-26.1.2/` | 26.1.2 | 26.1.2.78 | 25 | 参照源分支（含完整 plans/docs） |
 
 ## 构建
 
@@ -41,10 +42,18 @@ mise run run-client
 
 ## 文档
 
+文档入口是 [AGENTS.md](AGENTS.md)：先看文档地图，再按任务读对应手册。
+
 | 文档 | 内容 |
 |------|------|
-| [CONTRIBUTING.md](CONTRIBUTING.md) | 项目结构、技术栈、编码约定、贡献流程 |
-| [CHANGELOG.md](CHANGELOG.md) | 显著变更记录（Keep a Changelog 格式） |
+| [AGENTS.md](AGENTS.md) | 文档地图与动手前必读的硬约定 |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | 项目结构、技术栈、注册与编码约定、贡献流程 |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | 源集、包职责、机器框架、同步、注册与数据生成 |
+| [docs/CHANGELOG_STYLE.md](docs/CHANGELOG_STYLE.md) | 更新日志的两份文件分工、六小节与发版搬运 |
+| [docs/RELEASE.md](docs/RELEASE.md) | 发版流程、CI 链路、版本号与已知坑 |
+| [docs/TODO.md](docs/TODO.md) | 未完成事项与待实机验证项 |
+| [CHANGELOG_UNRELEASED.md](CHANGELOG_UNRELEASED.md) | 待发改动草稿 |
+| [CHANGELOG.md](CHANGELOG.md) | 已发布版本留档 |
 | [CODEOWNERS](CODEOWNERS) | 代码所有者与审批规则 |
 
 ## 许可证

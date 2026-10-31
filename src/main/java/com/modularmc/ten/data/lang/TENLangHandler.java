@@ -26,6 +26,7 @@ public final class TENLangHandler {
         addEmi(provider);
         addJei(provider);
         addConfig(provider);
+        addGuide(provider);
     }
 
     private static void addDirections(RegistrateLangProvider provider) {
@@ -326,6 +327,11 @@ public final class TENLangHandler {
 
     private static void add(RegistrateLangProvider provider, String suffix, String en, String cn) {
         addRaw(provider, TEN.MOD_ID + "." + suffix, en, cn);
+    }
+
+    private static void addGuide(RegistrateLangProvider provider) {
+        addRaw(provider, "item.kenergyengineering.guide", "Kenergy Engineering Guide", "科能工程指南");
+        addRaw(provider, "item.kenergyengineering.guide.tooltip", "Open the in-game guide", "打开游戏内指南");
     }
 
     private static void addConfig(RegistrateLangProvider provider) {

@@ -94,6 +94,8 @@
   "item.kenergyengineering.gold_plate": "金板",
   "item.kenergyengineering.gold_rod": "金杆",
   "item.kenergyengineering.gold_wire": "金线",
+  "item.kenergyengineering.guide": "科能工程指南",
+  "item.kenergyengineering.guide.tooltip": "打开游戏内指南",
   "item.kenergyengineering.hydraulic_widget": "液压组件",
   "item.kenergyengineering.ice_levelup": "升级：地下冻土开采",
   "item.kenergyengineering.indigo": "靛青",

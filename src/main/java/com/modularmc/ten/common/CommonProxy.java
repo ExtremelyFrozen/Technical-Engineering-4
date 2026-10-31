@@ -8,6 +8,7 @@ import com.modularmc.ten.data.TENDataGen;
 
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.ModList;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 import net.neoforged.neoforge.energy.IEnergyStorage;
@@ -32,6 +33,10 @@ public class CommonProxy {
         TENRecipeTypes.TYPES.register(modBus);
         TENDataComponents.DATA_COMPONENTS.register(modBus);
         modBus.register(CommonProxy.class);
+
+        if (ModList.get().isLoaded("guideme")) {
+            TENGuideItems.init(modBus);
+        }
     }
 
     @SubscribeEvent
