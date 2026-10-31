@@ -69,7 +69,7 @@ public final class SharedStorage {
             }
             case ENERGY -> {
                 this.itemHandler = null;
-                this.energy = new MachineEnergyStorage(BASE_ENERGY_CAPACITY, rate(BASE_ENERGY_CAPACITY), rate(BASE_ENERGY_CAPACITY));
+                this.energy = new MachineEnergyStorage(BASE_ENERGY_CAPACITY);
             }
             default -> throw new IllegalStateException("Unsupported channel type: " + type);
         }
@@ -85,11 +85,6 @@ public final class SharedStorage {
 
     public static SharedStorage forEnergy() {
         return new SharedStorage(ChannelType.ENERGY);
-    }
-
-    /** 能量速率与容量同源：max(capacity / 200, 1)。 */
-    private static int rate(int capacity) {
-        return Math.max(capacity / 200, 1);
     }
 
     // ───── 受控访问（按类型隔离，非法访问 fail-fast）─────
@@ -184,8 +179,6 @@ public final class SharedStorage {
                 if (energy.getEnergyStored() <= capacity) {
                     energy.setCapacity(capacity);
                 }
-                energy.setMaxReceive(rate(capacity));
-                energy.setMaxExtract(rate(capacity));
             }
             default -> throw new IllegalStateException("Unsupported channel type: " + type);
         }

@@ -27,7 +27,7 @@ public class EncfluBlockEntity extends ProcessingMachineBlockEntity {
         super(type, pos, state);
         setCapacity(kFE(20));
         setEfficiency(100);
-        tanks.add(new com.modularmc.ten.api.capability.MachineFluidTank(1000));
+        tanks.add(new com.modularmc.ten.api.capability.MachineFluidTank(4000)); // XP 输出罐，容量与熔炼机对齐
     }
 
     @Override
@@ -92,6 +92,8 @@ public class EncfluBlockEntity extends ProcessingMachineBlockEntity {
             root.addChild(TENMachineBlockUIFactory.verticalProgressMini(39, 14, 18, TENConstants.PROGRESS_ARROW_MINI_ENCFLU_BG, false));
             // 进度箭头（modular smelter 素材 22x16）：encflu 映射 PROGRESS_ARROW_SMELTER 素材族
             root.addChild(TENMachineBlockUIFactory.progressGaugeModular(this, 76, 33, true));
+            // 契约同熔炼机：XP 输出罐（tank 0，可取出禁注入）——输出大槽(113,28)右缘 139 右侧 x=143（间隔 4）、主区垂直对齐 y=17
+            root.addChild(TENMachineBlockUIFactory.createXpFluidSlot(this, 143, 17, 18, 50));
         });
     }
 

@@ -73,30 +73,14 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
     @Persisted
     @DescSynced
     public int maxFuel = 0;
+    /** 当前能量消耗（FE/t）= 实际效率 × 锁定批量 B。左侧能量信息栏读此镜像。 */
     @Persisted
     @DescSynced
-    public int energyRec = 0;       // E_REC
+    public int energyUse = 0;
+    /** 最大能量消耗（FE/t）= 实际效率 × 理论批量 B（当前升级允许的批量上限）。 */
     @Persisted
     @DescSynced
-    public int energyExt = 0;       // E_EXT
-    @Persisted
-    @DescSynced
-    public int itemRec = 0;         // I_REC
-    @Persisted
-    @DescSynced
-    public int itemExt = 0;         // I_EXT
-    @Persisted
-    @DescSynced
-    public int fluidRec = 0;        // F_REC
-    @Persisted
-    @DescSynced
-    public int fluidExt = 0;        // F_EXT
-    @Persisted
-    @DescSynced
-    public int effAuc = 0;          // EFF_AUC
-    @Persisted
-    @DescSynced
-    public int eff = 0;             // EFF
+    public int energyUseMax = 0;
     @Persisted
     @DescSynced
     public int upgSize = 1;         // UPGSIZE
@@ -163,35 +147,26 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
     public double powerMultiplier = 1.0;
     /** 配方模式（Blast/Smoke 升级切换；默认熔炼）。 */
     public int recipeMode = IUpgradableMachine.RECIPE_MODE_SMELTING;
-    /** 无限能量传输（Stream 升级；解除 maxReceive/maxExtract 速率限制）。 */
+    /**
+     * 无限能量传输（Stream 升级）。能量收发已不再限速，此标记当前无可观察效果，
+     * 保留待升级内容重构时重新定义。
+     */
     public boolean unlimitedEnergyTransfer = false;
 
     // ───── Machine fields ─────
     public MachineEnergyStorage energyStorage;
     public int maxStorageEnergy;
     public int initialEnergyStorage;
-    public int maxReceiveEnergy;
-    public int initialEnergyReceive;
-    public int maxExtractEnergy;
-    public int initialEnergyExtract;
     public int efficientIn;
     public int initialEfficientIn;
 
     public MachineItemHandler itemHandler;
     public MachineItemHandler upgradeHandler;
-    public int maxReceiveItem;
-    public int initialItemReceive;
-    public int maxExtractItem;
-    public int initialItemExtract;
     public int upgradeSize = 1;
     public int initialUpgradeSize = 1;
     public static final int MAX_UPGRADE_SLOTS = 6;
 
     public List<MachineFluidTank> tanks = new ArrayList<>();
-    public int maxReceiveFluid;
-    public int initialFluidReceive;
-    public int maxExtractFluid;
-    public int initialFluidExtract;
 
     public Map<Direction, Integer> energyFaceMode = new HashMap<>();
     public Map<Direction, Integer> itemFaceMode = new HashMap<>();
@@ -223,11 +198,7 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
     public void setCapacity(int energy) {
         initialEnergyStorage = energy;
         maxStorageEnergy = energy;
-        initialEnergyReceive = Math.max(energy / 200, 1);
-        maxReceiveEnergy = initialEnergyReceive;
-        initialEnergyExtract = Math.max(energy / 200, 1);
-        maxExtractEnergy = initialEnergyExtract;
-        energyStorage = new MachineEnergyStorage(energy, Math.max(energy / 100, 1), Math.max(energy / 100, 1));
+        energyStorage = new MachineEnergyStorage(energy);
         energyStorage.setChangeListener(this::markDirty);
     }
 
@@ -240,11 +211,7 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         machineInitialised = true;
 
         if (initialEnergyStorage <= 0) initialEnergyStorage = 10000;
-        if (initialEnergyReceive <= 0) initialEnergyReceive = Math.max(initialEnergyStorage / 200, 1);
-        if (initialEnergyExtract <= 0) initialEnergyExtract = Math.max(initialEnergyStorage / 200, 1);
         if (maxStorageEnergy <= 0) maxStorageEnergy = initialEnergyStorage;
-        if (maxReceiveEnergy <= 0) maxReceiveEnergy = initialEnergyReceive;
-        if (maxExtractEnergy <= 0) maxExtractEnergy = initialEnergyExtract;
 
         if (itemHandler == null || itemHandler.getSlots() != inventorySize()) {
             itemHandler = new MachineItemHandler(inventorySize(), this::valid);
@@ -261,19 +228,9 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         upgradeHandler.setChangeListener(this::onUpgradeChanged);
 
         if (energyStorage == null) {
-            energyStorage = new MachineEnergyStorage(maxStorageEnergy, maxReceiveEnergy, maxExtractEnergy);
+            energyStorage = new MachineEnergyStorage(maxStorageEnergy);
         }
         energyStorage.setChangeListener(this::markDirty);
-
-        if (maxReceiveItem <= 0) maxReceiveItem = initialItemReceive > 0 ? initialItemReceive : 8;
-        if (maxExtractItem <= 0) maxExtractItem = initialItemExtract > 0 ? initialItemExtract : 8;
-        initialItemReceive = maxReceiveItem;
-        initialItemExtract = maxExtractItem;
-
-        if (maxReceiveFluid <= 0) maxReceiveFluid = initialFluidReceive > 0 ? initialFluidReceive : 100;
-        if (maxExtractFluid <= 0) maxExtractFluid = initialFluidExtract > 0 ? initialFluidExtract : 100;
-        initialFluidReceive = maxReceiveFluid;
-        initialFluidExtract = maxExtractFluid;
 
         for (var tank : tanks) tank.setChangeListener(this::markDirty);
         combinedFluidHandler = createCombinedFluidHandler();
@@ -622,39 +579,16 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         // 使乘子升级效果平方化、radius/batch 每 tick 累加）──
         applyUpgradeEffects();
 
-        // ── 理论 B 批量缩放能量基础设施：批量升级后处理速率 fePerTick =
-        // efficientIn × lockedB，储能/吞吐不随 B 放大将导致 extractEnergy 永久不足 → 全机停滞 ──
+        // ── 理论 B 批量缩放储能：批量升级后每 tick 总能耗 fePerTick =
+        // efficientIn × lockedB，储能不随 B 放大将导致扣能永久不足 → 全机停滞。
+        // 收发速率已不限流，因此这里只缩放容量 ──
         int theoreticalB = getTheoreticalBatchSize();
         int effectiveStorage = safeMultiply(initialEnergyStorage, theoreticalB);
-        int effectiveReceive = safeMultiply(initialEnergyReceive, theoreticalB);
-        int effectiveExtract = Math.max(
-                safeMultiply(initialEnergyExtract, theoreticalB),
-                safeMultiply(efficientIn, theoreticalB));
 
         // setCapacity 会在存量超出新容量时截断；batch 只增不减，不缩容
         energyStorage.setCapacity(effectiveStorage);
-        energyStorage.setMaxReceive(effectiveReceive);
-        energyStorage.setMaxExtract(effectiveExtract);
 
         maxStorageEnergy = effectiveStorage;
-        maxReceiveEnergy = effectiveReceive;
-        maxExtractEnergy = effectiveExtract;
-        maxReceiveItem = initialItemReceive;
-        maxExtractItem = initialItemExtract;
-        maxReceiveFluid = initialFluidReceive;
-        maxExtractFluid = initialFluidExtract;
-
-        // ── Stream: Unlimited energy transfer overrides rate limits ──
-        // LevelupStream 安装时 maxReceive/maxExtract 设为 MAX_VALUE 解除速率限制。
-        // 必须在 @DescSynced 写入段之前执行，否则客户端同步的 energyRec/energyExt
-        // 永远是 override 前的 effective 值（override 必须在镜像写入前）。
-        // 容量、面配置、canExternalExtract 与方向门控保持不变。
-        if (hasUnlimitedEnergyTransfer()) {
-            maxReceiveEnergy = Integer.MAX_VALUE;
-            maxExtractEnergy = Integer.MAX_VALUE;
-            energyStorage.setMaxReceive(Integer.MAX_VALUE);
-            energyStorage.setMaxExtract(Integer.MAX_VALUE);
-        }
 
         // ── Write to ldlib2 @DescSynced fields ──
         progress = Math.max(progress, 0);
@@ -664,15 +598,13 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         markDirty("maxProgress");
         markDirty("energyStored");
         markDirty("maxEnergyStored");
+        markDirty("energyUse");
+        markDirty("energyUseMax");
         maxEnergyStored = maxStorageEnergy;
         energyStored = energyStorage.getEnergyStored();
-        energyRec = maxReceiveEnergy;
-        energyExt = maxExtractEnergy;
-        eff = efficientIn;
-        itemRec = maxReceiveItem;
-        itemExt = maxExtractItem;
-        fluidRec = maxReceiveFluid;
-        fluidExt = maxExtractFluid;
+        // 左侧能量信息栏：当前消耗按锁定批量（处理中的真实 FE/t），最大消耗按理论批量
+        energyUse = safeMultiply(getActualEfficiency(), getLockedBatchSize());
+        energyUseMax = safeMultiply(getActualEfficiency(), theoreticalB);
         upgSize = upgradeSize;
         // ── 流体容量批量缩放：每 tank 按构造初始容量 × theoreticalB 独立缩放 ──
         if (!tanks.isEmpty()) {
@@ -684,10 +616,6 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
 
         if (energyStorage.getEnergyStored() > maxStorageEnergy) {
             energyStorage.setEnergy(maxStorageEnergy);
-        }
-        effAuc = efficientIn;
-        if (getAliveTime() % 4 == 0) {
-            effAuc = efficientIn;
         }
 
         // ── 主动物品 IO：面配置 IN=机器主动拉取 / OUT/BE_OUT=机器主动推出（无速率上限，尽力搬空）──
@@ -740,12 +668,6 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
     protected void resetUpgradeEffects() {
         efficientIn = initialEfficientIn;
         maxStorageEnergy = initialEnergyStorage;
-        maxReceiveEnergy = initialEnergyReceive;
-        maxExtractEnergy = initialEnergyExtract;
-        maxReceiveItem = initialItemReceive;
-        maxExtractItem = initialItemExtract;
-        maxReceiveFluid = initialFluidReceive;
-        maxExtractFluid = initialFluidExtract;
         upgradeSize = MAX_UPGRADE_SLOTS;
         // 重置乘法模型字段
         durationMultiplier = 1.0;
@@ -844,8 +766,7 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
             @Override
             public int receiveEnergy(int maxReceive, boolean simulate) {
                 if (!signalAllowRun() || !canReceiveEnergy(side)) return 0;
-                // 限流只用 storage 实例自身 maxReceive（doBaseData 每 tick 与容量同源设置）；
-                // maxReceiveEnergy 是 @DescSynced 显示镜像，作二次钳制存在与容量脱节的时序风险
+                // 速率不限流：storage 的 maxReceive 恒为 MAX_VALUE，实际由空余容量封顶
                 return energyStorage.receiveEnergy(maxReceive, simulate);
             }
 
@@ -907,7 +828,8 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
             @Override
             public ItemStack extractItem(int slot, int amount, boolean simulate) {
                 if (!signalAllowRun() || !canExtractItem(side) || !slotType(slot).canOut()) return ItemStack.EMPTY;
-                return itemHandler.extractItem(slot, Math.min(amount, maxExtractItem), simulate);
+                // 速率不限流：只按面权限与槽位类型门控，数量由调用方决定
+                return itemHandler.extractItem(slot, amount, simulate);
             }
 
             @Override
@@ -1352,8 +1274,8 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
             if (sink == null || !sink.canReceive()) {
                 continue;
             }
-            // 本机可推能量 = min(储能, maxExtractEnergy)
-            int available = Math.min(energyStorage.getEnergyStored(), maxExtractEnergy);
+            // 速率不限流：可推能量 = 当前储能，接收方上限与对面容量再封顶
+            int available = energyStorage.getEnergyStored();
             if (available <= 0) {
                 continue;
             }
@@ -1521,12 +1443,6 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
     public boolean onUpgradeApply(double percent, int slotIncrease) {
         efficientIn = (int) (efficientIn + initialEfficientIn * percent);
         maxStorageEnergy = (int) (maxStorageEnergy + initialEnergyStorage * percent);
-        maxReceiveEnergy = (int) (maxReceiveEnergy + initialEnergyReceive * percent);
-        maxExtractEnergy = (int) (maxExtractEnergy + initialEnergyExtract * percent);
-        maxReceiveItem = (int) (maxReceiveItem + initialItemReceive * percent);
-        maxExtractItem = (int) (maxExtractItem + initialItemExtract * percent);
-        maxReceiveFluid = (int) (maxReceiveFluid + initialFluidReceive * percent);
-        maxExtractFluid = (int) (maxExtractFluid + initialFluidExtract * percent);
         upgradeSize = Math.max(1, Math.min(upgradeSize + slotIncrease, MAX_UPGRADE_SLOTS));
         return true;
     }

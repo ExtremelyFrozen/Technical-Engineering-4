@@ -65,8 +65,6 @@ public class ChannelEnergyBlockEntity extends AbstractChannelBlockEntity {
                 energyStored = shared.getEnergy().getEnergyStored();
                 maxEnergyStored = shared.getEnergy().getMaxEnergyStored();
                 maxStorageEnergy = maxEnergyStored;
-                maxReceiveEnergy = shared.getEnergy().getMaxReceive();
-                maxExtractEnergy = shared.getEnergy().getMaxExtract();
             }
         }
     }
@@ -101,7 +99,7 @@ public class ChannelEnergyBlockEntity extends AbstractChannelBlockEntity {
                 if (!signalAllowRun() || !canReceiveEnergy(side)) {
                     return 0;
                 }
-                return shared.receiveEnergy(Math.min(maxReceive, maxReceiveEnergy), simulate);
+                return shared.receiveEnergy(maxReceive, simulate);
             }
 
             @Override
@@ -109,7 +107,7 @@ public class ChannelEnergyBlockEntity extends AbstractChannelBlockEntity {
                 if (!canExternalExtract() || !signalAllowRun() || !canExtractEnergy(side)) {
                     return 0;
                 }
-                return shared.extractEnergy(Math.min(maxExtract, maxExtractEnergy), simulate);
+                return shared.extractEnergy(maxExtract, simulate);
             }
 
             @Override

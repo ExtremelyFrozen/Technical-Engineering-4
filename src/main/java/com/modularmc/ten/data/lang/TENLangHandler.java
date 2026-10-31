@@ -178,14 +178,8 @@ public final class TENLangHandler {
         add(provider, "info.bar_control", "Transfer Control: ", "传输配置: ");
         add(provider, "info.bar_energy", "Power: ", "功率:");
         add(provider, "info.bar_upgrade", "Upgrades: ", "升级: ");
-        add(provider, "info.bar_energy_fact", "Actual Power: ", "实际功率: ");
-        add(provider, "info.bar_energy_max", "Maximum Power: ", "最大功率: ");
-        add(provider, "info.bar_energy_in_max", "Maximum Energy Input: ", "最大能量输入功率: ");
-        add(provider, "info.bar_energy_out_max", "Maximum Energy Output: ", "最大能量输出功率: ");
-        add(provider, "info.bar_item_in_max", "Maximum Item Input: ", "最大物品输入功率: ");
-        add(provider, "info.bar_item_out_max", "Maximum Item Output: ", "最大物品输出功率: ");
-        add(provider, "info.bar_fluid_in_max", "Maximum Fluid Input: ", "最大流体输入功率: ");
-        add(provider, "info.bar_fluid_out_max", "Maximum Fluid Output: ", "最大流体输出功率: ");
+        add(provider, "info.bar_energy_use", "Energy Use: ", "当前能量消耗: ");
+        add(provider, "info.bar_energy_use_max", "Max Energy Use: ", "最大能量消耗: ");
         // 采石场扫描模式切换（GUI 按钮文案与 tooltip，供后续功能移植）
         add(provider, "info.quarry.scan_mode", "Scan Mode", "扫描模式");
         add(provider, "info.quarry.scan_normal", "Normal", "标准");
@@ -314,6 +308,15 @@ public final class TENLangHandler {
         add(provider, "jei.base_rate_short", "%s FE/t", "%s FE/t");
         add(provider, "jei.duration_short", "%s ticks", "%s tick");
         add(provider, "jei.total_short", "%s FE", "%s FE");
+        // JEI 冷却剂分类（数值来自 c:coolants 分档标签）
+        add(provider, "jei.coolant_interval", "Cooling cycle: %s ticks", "冷却周期: %s tick");
+        add(provider, "jei.coolant_reduction", "Progress per cycle: %s ticks", "每周期推进: %s tick");
+        add(provider, "jei.coolant_uses", "Uses per item: %s", "每份可用次数: %s");
+        add(provider, "jei.coolant_total", "Total progress per item: %s ticks", "每份累计推进: %s tick");
+        add(provider, "jei.coolant_lifetime", "One item lasts: %s ticks", "一份可持续: %s tick");
+        add(provider, "jei.coolant_interval_short", "cycle %s t", "周期 %s t");
+        add(provider, "jei.coolant_reduction_short", "cut %s t", "推进 %s t");
+        add(provider, "jei.coolant_uses_short", "%s uses", "可用 %s 次");
         // JEI 冶炼分类标题
         add(provider, "jei.category.smelter_smelting", "Smelter \u2014 Smelting", "熔炼机 \u2014 熔炉");
         add(provider, "jei.category.smelter_blasting", "Smelter \u2014 Blasting", "熔炼机 \u2014 高炉");

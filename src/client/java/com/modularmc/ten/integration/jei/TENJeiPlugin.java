@@ -1,6 +1,8 @@
 package com.modularmc.ten.integration.jei;
 
 import com.modularmc.ten.TEN;
+import com.modularmc.ten.api.option.CoolantRecipe;
+import com.modularmc.ten.api.option.Coolants;
 import com.modularmc.ten.api.recipe.FormsCombinedRecipe;
 import com.modularmc.ten.client.TENClientRecipeCache;
 import com.modularmc.ten.common.blockentity.EngineFuelRecipe;
@@ -76,6 +78,10 @@ public class TENJeiPlugin implements IModPlugin {
             new mezz.jei.api.recipe.RecipeType<>(TEN.id("metalizer_fuel"), EngineFuelRecipe.class);
     public static final mezz.jei.api.recipe.RecipeType<EngineFuelRecipe> BIOMASS_FUEL =
             new mezz.jei.api.recipe.RecipeType<>(TEN.id("biomass_fuel"), EngineFuelRecipe.class);
+
+    // ── Cooler coolant recipe type ───────────────────────────────────
+    public static final mezz.jei.api.recipe.RecipeType<CoolantRecipe> COOLER_COOLANT =
+            new mezz.jei.api.recipe.RecipeType<>(TEN.id("cooler_coolant"), CoolantRecipe.class);
 
     // ═══════════════════════════════════════════════════════════════════
     //  Runtime coordination
@@ -167,6 +173,12 @@ public class TENJeiPlugin implements IModPlugin {
                         TENBlocks.ENGINE_BIOMASS.get().getName())
         );
 
+        registration.addRecipeCategories(
+                new CoolantJeiCategory(helper, TEN.id("cooler_coolant"), COOLER_COOLANT,
+                        icon("machine_cooler"),
+                        TENBlocks.MACHINE_COOLER.get().getName())
+        );
+
         TEN.LOGGER.info("TEN JEI plugin categories registered — uid: {}", UID);
     }
 
@@ -184,6 +196,7 @@ public class TENJeiPlugin implements IModPlugin {
         List<EngineFuelRecipe> extractorRecipes = new ArrayList<>();
         List<EngineFuelRecipe> metalizerRecipes = new ArrayList<>();
         List<EngineFuelRecipe> biomassRecipes = new ArrayList<>();
+        List<CoolantRecipe> coolantRecipes = new ArrayList<>();
 
         for (ItemStack stack : allStacks) {
             if (stack == null || stack.isEmpty()) continue;
@@ -202,14 +215,22 @@ public class TENJeiPlugin implements IModPlugin {
             if (biomassValue > 0) {
                 biomassRecipes.add(new EngineFuelRecipe(stack, biomassValue, BiomassBlockEntity.BASE_GENERATION_RATE));
             }
+
+            var coolantValue = Coolants.get(stack);
+            if (coolantValue != null) {
+                coolantRecipes.add(new CoolantRecipe(stack, coolantValue));
+            }
         }
 
         Comparator<EngineFuelRecipe> byItemIdThenComponents = Comparator.comparing(
                 (EngineFuelRecipe r) -> r.ingredients().get(0).getItem().toString());
+        Comparator<CoolantRecipe> coolantSortKey = Comparator.comparing(
+                (CoolantRecipe r) -> r.ingredients().get(0).getItem().toString());
 
-        registration.addRecipes(EXTRACTOR_FUEL, dedupSorted(extractorRecipes, byItemIdThenComponents));
-        registration.addRecipes(METALIZER_FUEL, dedupSorted(metalizerRecipes, byItemIdThenComponents));
-        registration.addRecipes(BIOMASS_FUEL, dedupSorted(biomassRecipes, byItemIdThenComponents));
+        registration.addRecipes(EXTRACTOR_FUEL, dedupSorted(extractorRecipes, byItemIdThenComponents, EngineFuelRecipe::ingredients));
+        registration.addRecipes(METALIZER_FUEL, dedupSorted(metalizerRecipes, byItemIdThenComponents, EngineFuelRecipe::ingredients));
+        registration.addRecipes(BIOMASS_FUEL, dedupSorted(biomassRecipes, byItemIdThenComponents, EngineFuelRecipe::ingredients));
+        registration.addRecipes(COOLER_COOLANT, dedupSorted(coolantRecipes, coolantSortKey, CoolantRecipe::ingredients));
     }
 
     // ═══════════════════════════════════════════════════════════════════
@@ -336,16 +357,18 @@ public class TENJeiPlugin implements IModPlugin {
                 .toList();
     }
 
-    private static List<EngineFuelRecipe> dedupSorted(List<EngineFuelRecipe> recipes, Comparator<EngineFuelRecipe> sortKey) {
+    private static <T> List<T> dedupSorted(List<T> recipes, Comparator<T> sortKey,
+                                           java.util.function.Function<T, List<ItemStack>> ingredientsOf) {
         if (recipes.isEmpty()) return List.of();
-        recipes.sort(sortKey);
-        List<EngineFuelRecipe> result = new ArrayList<>();
-        result.add(recipes.get(0));
-        for (int i = 1; i < recipes.size(); i++) {
-            ItemStack current = recipes.get(i).ingredients().get(0);
-            ItemStack last = result.get(result.size() - 1).ingredients().get(0);
+        List<T> sorted = new ArrayList<>(recipes);
+        sorted.sort(sortKey);
+        List<T> result = new ArrayList<>();
+        result.add(sorted.get(0));
+        for (int i = 1; i < sorted.size(); i++) {
+            ItemStack current = ingredientsOf.apply(sorted.get(i)).get(0);
+            ItemStack last = ingredientsOf.apply(result.get(result.size() - 1)).get(0);
             if (!ItemStack.isSameItemSameComponents(current, last)) {
-                result.add(recipes.get(i));
+                result.add(sorted.get(i));
             }
         }
         return result;
@@ -368,6 +391,8 @@ public class TENJeiPlugin implements IModPlugin {
         registration.addRecipeCatalyst(engineIcon("extraction"), EXTRACTOR_FUEL);
         registration.addRecipeCatalyst(engineIcon("metal"), METALIZER_FUEL);
         registration.addRecipeCatalyst(engineIcon("biomass"), BIOMASS_FUEL);
+
+        registration.addRecipeCatalyst(icon("machine_cooler"), COOLER_COOLANT);
     }
 
     @Override

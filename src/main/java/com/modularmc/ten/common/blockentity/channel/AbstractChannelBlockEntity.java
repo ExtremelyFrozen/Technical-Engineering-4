@@ -826,18 +826,12 @@ public abstract class AbstractChannelBlockEntity extends CmMachineBlockEntity {
         }
         // 物品/流体频道不需要能量存储：把能量基础设施清零，避免 initMachine/doBaseData
         // 仍创建并逐 tick 缩放默认 10000FE 的内部缓冲。hasFaceCapabilityEnergy=false 已阻断
-        // 外部能量访问，此处进一步确保容量/收发速率恒为 0（doBaseData 依赖 energyStorage
-        // 非空才继续，因此保留对象本身而非置 null）。
+        // 外部能量访问，此处进一步确保容量恒为 0（速率为不限，容量 0 即封顶；doBaseData
+        // 依赖 energyStorage 非空才继续，因此保留对象本身而非置 null）。
         initialEnergyStorage = 0;
-        initialEnergyReceive = 0;
-        initialEnergyExtract = 0;
         maxStorageEnergy = 0;
-        maxReceiveEnergy = 0;
-        maxExtractEnergy = 0;
         if (energyStorage != null) {
             energyStorage.setCapacity(0);
-            energyStorage.setMaxReceive(0);
-            energyStorage.setMaxExtract(0);
         }
     }
 }

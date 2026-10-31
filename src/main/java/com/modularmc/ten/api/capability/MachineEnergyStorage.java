@@ -3,15 +3,15 @@ package com.modularmc.ten.api.capability;
 import net.neoforged.neoforge.energy.EnergyStorage;
 
 /**
- * 机器储能能力：容量与收发速率可在运行时调整
- * （批处理 B 缩放、Stream 无限传输解除限流），存量超容时截断。
+ * 机器储能能力：容量可在运行时调整（批处理 B 缩放、频道动态容量），存量超容时截断。
+ * 收发速率恒为不限——能量进出只受容量与接收方自身上限约束。
  */
 public class MachineEnergyStorage extends EnergyStorage {
 
     private Runnable changeListener = () -> {};
 
-    public MachineEnergyStorage(int capacity, int maxReceive, int maxExtract) {
-        super(capacity, maxReceive, maxExtract);
+    public MachineEnergyStorage(int capacity) {
+        super(capacity, Integer.MAX_VALUE, Integer.MAX_VALUE);
     }
 
     public void setChangeListener(Runnable changeListener) {
@@ -21,22 +21,6 @@ public class MachineEnergyStorage extends EnergyStorage {
     public void setEnergy(int energy) {
         this.energy = energy;
         changeListener.run();
-    }
-
-    public void setMaxReceive(int max) {
-        this.maxReceive = max;
-    }
-
-    public void setMaxExtract(int max) {
-        this.maxExtract = max;
-    }
-
-    public int getMaxReceive() {
-        return maxReceive;
-    }
-
-    public int getMaxExtract() {
-        return maxExtract;
     }
 
     /**

@@ -35,6 +35,7 @@ public final class TENTagLangGen {
     /** Registrate en_us provider 入口（与 TENLangHandler.init 同挂载点）。 */
     public static void init(RegistrateLangProvider provider) {
         // ── c: 物品类别（单段）──
+        addTag(provider, "item", "c", "coolants", "Coolants", "冷却剂");
         addTag(provider, "item", "c", "dusts", "Dusts", "粉尘");
         addTag(provider, "item", "c", "gears", "Gears", "齿轮");
         addTag(provider, "item", "c", "gems", "Gems", "宝石");
@@ -103,7 +104,11 @@ public final class TENTagLangGen {
 
         // ── c: 模具子类 ──
         addTag(provider, "item", "c", "moulds/shape", "Shaping Moulds", "成型模具");
-        addTag(provider, "item", "c", "moulds/utility", "Utility Moulds", "功能模具");
+
+        // ── c: 冷却剂分档（数值见 Coolants.TIERS）──
+        addTag(provider, "item", "c", "coolants/basic", "Basic Coolants", "基础冷却剂");
+        addTag(provider, "item", "c", "coolants/standard", "Standard Coolants", "标准冷却剂");
+        addTag(provider, "item", "c", "coolants/premium", "Premium Coolants", "高效冷却剂");
 
         // ── c: 方块类别 ──
         addTag(provider, "block", "c", "cobblestones", "Cobblestones", "圆石");

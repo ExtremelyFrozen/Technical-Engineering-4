@@ -110,16 +110,14 @@ public interface IUpgradableMachine {
     // ───── Unlimited energy transfer (Stream) ─────
 
     /**
-     * Enable or disable unlimited energy transfer for this machine.
-     * When enabled, maxReceive and maxExtract are set to Integer.MAX_VALUE
-     * during doBaseData, removing all rate limits on energy transfer.
+     * Records whether a Stream upgrade is installed.
      * <p>
-     * Only affects transfer rate — capacity, FaceOption, canExternalExtract,
-     * and direction guards remain unchanged.
+     * Currently has no observable effect: machine energy transfer no longer has a
+     * rate limit at all, so there is nothing left to lift. Kept for the pending
+     * upgrade redesign.
      * <p>
-     * Default no-op for backward compatibility.
-     * <p>
-     * Only implemented on {@link com.modularmc.ten.api.blockentity.CmMachineBlockEntity}.
+     * Default no-op for backward compatibility. Only implemented on
+     * {@link com.modularmc.ten.api.blockentity.CmMachineBlockEntity}.
      */
     default void setUnlimitedEnergyTransfer(boolean unlimited) {
         // Default no-op

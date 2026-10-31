@@ -76,7 +76,7 @@ public class CellBlockEntity extends CmMachineBlockEntity {
         if (stack0.getCount() == 1) {
             var energy0 = stack0.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM);
             if (energy0 != null && energy0.canExtract()) {
-                int diff = energy0.extractEnergy(Math.min(maxReceiveEnergy, maxStorageEnergy - energyStorage.getEnergyStored()), false);
+                int diff = energy0.extractEnergy(maxStorageEnergy - energyStorage.getEnergyStored(), false);
                 if (diff > 0) {
                     energyStorage.receiveEnergy(diff, false);
                 }
@@ -86,7 +86,7 @@ public class CellBlockEntity extends CmMachineBlockEntity {
         if (stack1.getCount() == 1) {
             var energy1 = stack1.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM);
             if (energy1 != null && energy1.canReceive()) {
-                int diff = energy1.receiveEnergy(Math.min(maxExtractEnergy, energyStorage.getEnergyStored()), false);
+                int diff = energy1.receiveEnergy(energyStorage.getEnergyStored(), false);
                 if (diff > 0) {
                     energyStorage.extractEnergy(diff, false);
                 }

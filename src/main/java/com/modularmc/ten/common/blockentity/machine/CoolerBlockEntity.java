@@ -19,6 +19,7 @@ import net.neoforged.neoforge.fluids.FluidStack;
 
 import com.lowdragmc.lowdraglib2.gui.factory.BlockUIMenuType;
 import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
+import com.lowdragmc.lowdraglib2.syncdata.annotation.DescSynced;
 import com.lowdragmc.lowdraglib2.syncdata.annotation.Persisted;
 
 import java.util.List;
@@ -30,9 +31,18 @@ import java.util.List;
  */
 public class CoolerBlockEntity extends EffectMachineBlockEntity {
 
-    /** 当前冷却剂剩余作用次数。0 表示需要新冷却剂或刚放入待初始化。 */
+    /**
+     * 当前冷却剂剩余作用次数。0 表示需要新冷却剂。
+     * 进度栏在客户端求值，故必须 @DescSynced（LDLib2 只同步 @DescSynced/RPC，见
+     * CmMachineBlockEntity#syncUpgradesToClients 的探针结论）。
+     */
     @Persisted
+    @DescSynced
     public int usesRemaining = 0;
+
+    /** 当前冷却剂一份的总作用次数；0 表示槽内无冷却剂。与 usesRemaining 一起构成进度栏数据源。 */
+    @DescSynced
+    public int coolantTotalUses = 0;
 
     /** 当前冷却剂物品的注册 key（BuiltInRegistries.ITEM）。换冷却剂时据此重置 usesRemaining。 */
     @Persisted
@@ -131,42 +141,52 @@ public class CoolerBlockEntity extends EffectMachineBlockEntity {
         });
     }
 
+    /**
+     * 服务端每 tick 刷新冷却剂状态与客户端镜像。放入/更换冷却剂当刻即完成次数初始化
+     * （旧实现把初始化放在 applyEffect 里，代价是白丢一个完整周期），取出则立即清零。
+     */
+    @Override
+    public void doBaseData() {
+        super.doBaseData();
+        ItemStack stack = itemHandler == null ? ItemStack.EMPTY : itemHandler.getStackInSlot(0);
+        Coolant data = Coolants.get(stack);
+        if (data == null) {
+            coolantItemKey = "";
+            usesRemaining = 0;
+            coolantTotalUses = 0;
+        } else {
+            String key = BuiltInRegistries.ITEM.getKey(stack.getItem()).toString();
+            if (!key.equals(coolantItemKey) || usesRemaining <= 0) {
+                coolantItemKey = key;
+                usesRemaining = data.uses();
+            }
+            coolantTotalUses = data.uses();
+        }
+        markDirty("usesRemaining");
+        markDirty("coolantTotalUses");
+    }
+
     @Override
     public void applyEffect() {
         if (level == null || itemHandler == null || level.isClientSide()) return;
         ItemStack coolant = itemHandler.getStackInSlot(0);
         Coolant data = Coolants.get(coolant);
-        if (data == null) {
-            coolantItemKey = "";
-            usesRemaining = 0;
-            setChanged();
-            return;
-        }
-        String key = BuiltInRegistries.ITEM.getKey(coolant.getItem()).toString();
-        if (!key.equals(coolantItemKey)) {
-            coolantItemKey = key;
-            usesRemaining = data.uses();
-            setChanged();
-            return;
-        }
-        if (usesRemaining <= 0) {
-            usesRemaining = data.uses();
-            setChanged();
+        if (data == null || usesRemaining <= 0) {
             return;
         }
         BlockEntity be = level.getBlockEntity(worldPosition.relative(getFacing()));
-        if (be instanceof CmMachineBlockEntity targetMachine && targetMachine.maxProgress > 0) {
-            int delta = safeMultiply(data.reductionTicks(), getLockedBatchSize());
-            targetMachine.progress = Math.min(targetMachine.maxProgress, targetMachine.progress + delta);
-            targetMachine.setChanged();
-            usesRemaining--;
-            if (usesRemaining <= 0) {
-                coolant.shrink(1);
-                itemHandler.setStackInSlot(0, coolant);
-                usesRemaining = 0;
-            }
-            setChanged();
+        if (!(be instanceof CmMachineBlockEntity targetMachine && targetMachine.maxProgress > 0)) {
+            return;
         }
+        int delta = safeMultiply(data.reductionTicks(), getLockedBatchSize());
+        targetMachine.progress = Math.min(targetMachine.maxProgress, targetMachine.progress + delta);
+        targetMachine.setChanged();
+        usesRemaining--;
+        if (usesRemaining <= 0) {
+            coolant.shrink(1);
+            itemHandler.setStackInSlot(0, coolant);
+        }
+        setChanged();
     }
 
     @Override
@@ -183,11 +203,10 @@ public class CoolerBlockEntity extends EffectMachineBlockEntity {
         return be instanceof CmMachineBlockEntity targetMachine && targetMachine.maxProgress > 0 && targetMachine.isActive();
     }
 
-    /** 冷却剂进度（GUI 显示）：当前剩余作用次数 / 总作用次数。 */
+    /** 冷却剂进度（GUI 显示）：剩余次数 / 总次数。两个字段都是服务端写入的 @DescSynced 镜像。 */
     public float getCoolantPercent() {
-        Coolant data = currentCoolant();
-        if (data == null || usesRemaining <= 0) return 0f;
-        return (float) usesRemaining / data.uses();
+        if (coolantTotalUses <= 0 || usesRemaining <= 0) return 0f;
+        return (float) Math.min(usesRemaining, coolantTotalUses) / coolantTotalUses;
     }
 
     private Coolant currentCoolant() {

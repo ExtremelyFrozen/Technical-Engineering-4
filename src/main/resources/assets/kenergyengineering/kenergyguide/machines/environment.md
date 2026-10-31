@@ -24,7 +24,10 @@ categories:
   <ItemImage id="machine_farm_manager" scale="4" />
 </Row>
 
-* **冷却器** `machine_cooler`：消耗冷却液进行周期冷却；需要 Coolants 冷却液。
+* **冷却器** `machine_cooler`：按周期推进正面一格机器的进度，消耗冷却剂。它不启动机器，目标必须正在运行。
+  冷却剂由物品标签决定：`c:coolants/basic`（冰）每 10 秒推进 20 tick、`c:coolants/standard`（浮冰）
+  每 8 秒推进 40 tick、`c:coolants/premium`（蓝冰）每 5 秒推进 80 tick，每份均可作用 64 次。
+  把任意物品加入 `c:coolants` 与某个分档标签即可新增冷却剂；具体数值可在 JEI 的冷却器页查看。
 * **信标模拟机** `machine_beacon_simulator`：在范围内提供信标效果；范围可用 Rg 升级扩展。
 * **生物啃噬者** `machine_mob_ripper`：清理范围内的生物并收集掉落。
 * **采矿场** `machine_quarry`：在范围内采矿；可使用工具/武器附魔与范围升级。

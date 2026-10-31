@@ -110,7 +110,7 @@ public class ChannelItemBlockEntity extends AbstractChannelBlockEntity {
                 if (!signalAllowRun() || !canExtractItem(side) || !slotType(slot).canOut()) {
                     return ItemStack.EMPTY;
                 }
-                return shared.extractItem(slot, Math.min(amount, maxExtractItem), simulate);
+                return shared.extractItem(slot, amount, simulate);
             }
 
             @Override

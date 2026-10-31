@@ -38,7 +38,7 @@
 | （根包） | 2 | 模组入口 `TEN`、常量 `TENConstants` |
 | `api/blockentity` | 10 | BE 抽象体系：同步基座、机器基类、处理/效果/引擎/配方/范围机器 |
 | `api/capability` | 3 | 能量、物品、流体能力封装 |
-| `api/option` | 6 | 面配置、机器类型、红石模式、冷却液 |
+| `api/option` | 7 | 面配置、机器类型、红石模式、冷却剂 |
 | `api/recipe` | 9 | `FormsCombinedRecipe` 配方体系与序列化 |
 | `api/registry/registrate` | 1 | `TENRegistrate` |
 | `api/transmission` | 7 | 线缆/管道传输网络（另有 `energy/` 3、`item/` 3） |
@@ -157,6 +157,15 @@ CmBlockEntity (implements ISyncPersistRPCBlockEntity)
 处理时间由配方与时长升级决定，不再与配方总能耗绑定。实际每 tick 扣能是
 `实际效率 × 锁定批量 B`，所以批量越大，总 FE/t 越高，但单件时间不变。
 
+机器 IO 全面取消每 tick 限速：能量侧 `MachineEnergyStorage` 的 `maxReceive`/`maxExtract` 恒为
+`Integer.MAX_VALUE`，进出只受储能容量与接收方上限约束（线缆仍按各自档位限速）；物品侧面 capability 的
+`extractItem` 不再按 `maxExtractItem` 截断，流体侧本就只有显示镜像、从不截断。三者统一为
+「只按面权限 / 槽位类型 / 信号门控，数量由调用方决定」。储能容量仍随 B 缩放，`doBaseData()` 每 tick 重算。
+`LevelupStream`（原「解除传输速率限制」）因此不再有可观察效果，保留待升级内容重构重新定义。
+
+左侧能量信息栏读 `energyUse` / `energyUseMax` 两个 `@DescSynced` 镜像：当前消耗 =
+`getActualEfficiency() × 锁定 B`（处理中的真实 FE/t），最大消耗 = `× 理论 B`。
+
 ### 2.6 面配置与 capability
 
 - `FaceOption` 定义每面的能量/物品/流体模式；`CmMachineBlockEntity` 为六个方向各存一份。
@@ -178,7 +187,28 @@ CmBlockEntity (implements ISyncPersistRPCBlockEntity)
 - 功率乘子 `powerMultiplier`：影响每 tick 扣能。
 - 批量 `batch`：Shulker +3 / Power +1，服务端每 tick 重算并同步给客户端。
 - 范围 `radius`：`LevelupRg` 累加，`RadiusMachineBlockEntity.resetUpgradeEffects()` 每轮重置回基础值。
-- 特殊：`LevelupSyn` 光合注能、`LevelupStream` 解除能量传输速率限制、`LevelupBlast` / `LevelupSmoke` 切换熔炼配方模式。
+- 特殊：`LevelupSyn` 光合注能、`LevelupBlast` / `LevelupSmoke` 切换熔炼配方模式。`LevelupStream` 自能量限速取消后为空效果。
+
+### 2.8 冷却剂
+
+冷却器（`CoolerBlockEntity`）按 `effectInterval` 周期把**正面一格**机器的 `progress` 直接推进
+`reductionTicks × lockedB` tick；一份冷却剂作用 `uses` 次后消耗。它不启动机器——`conditionStart()`
+要求目标机器已在运行。
+
+准入与数值都是数据驱动（`api/option/Coolants`），与金属燃料按品位标签分档同构：
+
+| 标签 | 周期 | 每次推进 | 次数 | 内置成员 |
+|---|---|---|---|---|
+| `c:coolants` | — | 准入总标签 | — | 三个分档标签 |
+| `c:coolants/basic` | 10 s | 20 tick | 64 | `minecraft:ice` |
+| `c:coolants/standard` | 8 s | 40 tick | 64 | `minecraft:packed_ice` |
+| `c:coolants/premium` | 5 s | 80 tick | 64 | `minecraft:blue_ice` |
+
+数据包或第三方往标签加物品即可新增冷却剂，无需改代码；`Coolants.register(Item, Coolant)`
+保留为代码侧覆盖，优先级高于标签。展示条目 `CoolantRecipe` 是伪配方（无 `RecipeType`），
+形状与 `EngineFuelRecipe` 一致，由 JEI 在运行时按标签合成。
+`usesRemaining` / `coolantTotalUses` 是服务端每 tick 写的 `@DescSynced` 镜像——GUI 进度栏在客户端求值，
+不经 `@DescSynced`/RPC 的字段到不了客户端。
 
 ---
 
@@ -305,7 +335,7 @@ GUI 走「末影箱模式」：频道目录、创建、接入、退出、删除�
 
 | 邻居 | 位置 | 说明 |
 |---|---|---|
-| JEI | `src/client/java` + `integration/xei` | 配方查看、幽灵物品、熔炼机原版熔炉催化剂 |
+| JEI | `src/client/java` + `integration/xei` | 配方查看、幽灵物品、熔炼机原版熔炉催化剂、引擎燃料与冷却剂页 |
 | EMI | `integration/emi` | 配方查看与共享绘制组件；运行时待验证 |
 | Jade | `src/client/java/com/modularmc/ten/integration/jade` | 频道状态、管道过滤与抽取面 |
 | GuideME | `src/client/java/.../client/guide` + `common/data/TENGuideItems` | 可选独立指南；GuideME 缺席时指南物品不注册 |

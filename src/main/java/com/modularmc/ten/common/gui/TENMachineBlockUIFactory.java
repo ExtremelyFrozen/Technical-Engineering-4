@@ -1120,22 +1120,10 @@ public final class TENMachineBlockUIFactory {
     private static List<Component> energyInfoTooltips(CmMachineBlockEntity machine) {
         var list = new ArrayList<Component>();
         list.add(ComponentHelper.translated(ComponentHelper.GOLD, "kenergyengineering.info.bar_energy"));
-        list.add(ComponentHelper.translated("kenergyengineering.info.bar_energy_fact"));
-        list.add(ComponentHelper.translated(ComponentHelper.RED, Math.abs(machine.eff) + " FE/t"));
-        list.add(ComponentHelper.translated("kenergyengineering.info.bar_energy_max"));
-        list.add(ComponentHelper.translated(ComponentHelper.RED, machine.effAuc + " FE/t"));
-        list.add(ComponentHelper.translated("kenergyengineering.info.bar_energy_in_max"));
-        list.add(ComponentHelper.translated(ComponentHelper.RED, machine.energyRec + " FE/t"));
-        list.add(ComponentHelper.translated("kenergyengineering.info.bar_energy_out_max"));
-        list.add(ComponentHelper.translated(ComponentHelper.RED, machine.energyExt + " FE/t"));
-        list.add(ComponentHelper.translated("kenergyengineering.info.bar_item_in_max"));
-        list.add(ComponentHelper.translated(ComponentHelper.RED, machine.itemRec + " IS/t"));
-        list.add(ComponentHelper.translated("kenergyengineering.info.bar_item_out_max"));
-        list.add(ComponentHelper.translated(ComponentHelper.RED, machine.itemExt + " IS/t"));
-        list.add(ComponentHelper.translated("kenergyengineering.info.bar_fluid_in_max"));
-        list.add(ComponentHelper.translated(ComponentHelper.RED, machine.fluidRec + " mB/t"));
-        list.add(ComponentHelper.translated("kenergyengineering.info.bar_fluid_out_max"));
-        list.add(ComponentHelper.translated(ComponentHelper.RED, machine.fluidExt + " mB/t"));
+        list.add(ComponentHelper.translated("kenergyengineering.info.bar_energy_use"));
+        list.add(ComponentHelper.translated(ComponentHelper.RED, machine.energyUse + " FE/t"));
+        list.add(ComponentHelper.translated("kenergyengineering.info.bar_energy_use_max"));
+        list.add(ComponentHelper.translated(ComponentHelper.RED, machine.energyUseMax + " FE/t"));
         return list;
     }
 
