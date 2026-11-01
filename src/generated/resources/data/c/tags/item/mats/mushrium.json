@@ -1,0 +1,13 @@
+{
+  "replace": false,
+  "values": [
+    {
+      "id": "#c:ingots/mushrium",
+      "required": false
+    },
+    {
+      "id": "#c:dusts/mushrium",
+      "required": false
+    }
+  ]
+}

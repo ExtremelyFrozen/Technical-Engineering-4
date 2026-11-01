@@ -1,0 +1,41 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "enderio"
+    },
+    {
+      "type": "kenergyengineering:compat_enabled",
+      "source": "enderio"
+    }
+  ],
+  "type": "kenergyengineering:pulverizer",
+  "inputs": [
+    {
+      "type": "tag",
+      "form": "item",
+      "key": "c:ores/quartz"
+    }
+  ],
+  "outputs": [
+    {
+      "type": "static",
+      "count": 2,
+      "form": "item",
+      "key": "minecraft:quartz"
+    },
+    {
+      "type": "static",
+      "chance": 0.1,
+      "form": "item",
+      "key": "enderio:powdered_quartz"
+    },
+    {
+      "type": "static",
+      "chance": 0.15,
+      "form": "item",
+      "key": "minecraft:netherrack"
+    }
+  ],
+  "time": 160
+}

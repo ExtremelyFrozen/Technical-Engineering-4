@@ -127,12 +127,32 @@ public class FormsCombinedIngredient {
 
     public List<ItemStack> itemStacks() {
         if (ALLOW_ALL) return List.of(ItemStack.EMPTY);
-        return matchItems.stream().map(i -> new ItemStack(i, amountOrCount)).toList();
+        return itemMembers().stream().map(i -> new ItemStack(i, amountOrCount)).toList();
     }
 
     public List<FluidStack> fluidStacks() {
         if (ALLOW_ALL) return List.of(FluidStack.EMPTY);
-        return matchFluids.stream().map(f -> new FluidStack(f, amountOrCount)).toList();
+        return fluidMembers().stream().map(f -> new FluidStack(f, amountOrCount)).toList();
+    }
+
+    /**
+     * 标签成员的惰性解析，服务于标签<b>输入</b>的成员判定与展示。配方 JSON 在异步 prepare 阶段
+     * 反序列化，那一刻标签未必已应用到注册表，解析期快照会永久为空，所以只在运行期需要时重取，
+     * 且仅当当前为空才重取：空结果可能只是加载顺序，不能固化成"该标签没有成员"。
+     * <p>
+     * 注意：这不是允许标签输出的理由。按标准处理，配方输出是确定的 ItemStack，
+     * 标签输出要能在运行期正确产出，必须在编写期就解析成具体物品（见 {@code TENCompatGen} 的约定）。
+     */
+    Collection<Item> itemMembers() {
+        if ("tag".equals(type) && (matchItems == null || matchItems.isEmpty()))
+            matchItems = TagHelper.getItems(ifTagItem);
+        return matchItems;
+    }
+
+    Collection<Fluid> fluidMembers() {
+        if ("tag".equals(type) && (matchFluids == null || matchFluids.isEmpty()))
+            matchFluids = TagHelper.getFluids(ifTagFluid);
+        return matchFluids;
     }
 
     public boolean contains(Item i) {

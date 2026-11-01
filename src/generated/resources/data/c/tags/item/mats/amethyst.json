@@ -1,0 +1,13 @@
+{
+  "replace": false,
+  "values": [
+    {
+      "id": "#c:ingots/amethyst",
+      "required": false
+    },
+    {
+      "id": "#c:dusts/amethyst",
+      "required": false
+    }
+  ]
+}

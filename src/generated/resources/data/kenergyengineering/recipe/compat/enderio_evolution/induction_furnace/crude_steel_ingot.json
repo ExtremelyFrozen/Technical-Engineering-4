@@ -1,0 +1,38 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "enderio_evolution"
+    },
+    {
+      "type": "kenergyengineering:compat_enabled",
+      "source": "enderio_evolution"
+    }
+  ],
+  "type": "kenergyengineering:induction_furnace",
+  "inputs": [
+    {
+      "type": "static",
+      "form": "item",
+      "key": "minecraft:iron_ingot"
+    },
+    {
+      "type": "static",
+      "form": "item",
+      "key": "minecraft:clay_ball"
+    },
+    {
+      "type": "tag",
+      "form": "item",
+      "key": "c:cobblestones"
+    }
+  ],
+  "outputs": [
+    {
+      "type": "static",
+      "form": "item",
+      "key": "enderio_evolution:crude_steel_ingot"
+    }
+  ],
+  "time": 667
+}

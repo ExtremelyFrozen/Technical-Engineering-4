@@ -1,0 +1,41 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "enderio"
+    },
+    {
+      "type": "kenergyengineering:compat_enabled",
+      "source": "enderio"
+    }
+  ],
+  "type": "kenergyengineering:pulverizer",
+  "inputs": [
+    {
+      "type": "tag",
+      "form": "item",
+      "key": "minecraft:leaves"
+    }
+  ],
+  "outputs": [
+    {
+      "type": "static",
+      "chance": 0.3,
+      "form": "item",
+      "key": "enderio:plant_matter_green"
+    },
+    {
+      "type": "static",
+      "chance": 0.1,
+      "form": "item",
+      "key": "enderio:plant_matter_green"
+    },
+    {
+      "type": "static",
+      "chance": 0.02,
+      "form": "item",
+      "key": "enderio:plant_matter_green"
+    }
+  ],
+  "time": 160
+}

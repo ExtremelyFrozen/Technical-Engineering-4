@@ -1,0 +1,13 @@
+{
+  "replace": false,
+  "values": [
+    {
+      "id": "#c:ingots/gold",
+      "required": false
+    },
+    {
+      "id": "#c:dusts/gold",
+      "required": false
+    }
+  ]
+}

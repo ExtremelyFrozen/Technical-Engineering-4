@@ -1,8 +1,12 @@
 package com.modularmc.ten.config;
 
+import net.neoforged.fml.ModList;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.function.Supplier;
 
 /**
  * NeoForge ModConfigSpec definitions for TEN (Kenergy Engineering).
@@ -16,6 +20,7 @@ public final class TENConfig {
     public static final MachineConfig MACHINE;
     public static final EnergyUnitConfig ENERGY_UNIT;
     public static final FarmConfig FARM;
+    public static final CompatConfig COMPAT;
 
     public static final ModConfigSpec CLIENT_SPEC;
     public static final ClientConfig CLIENT;
@@ -25,6 +30,7 @@ public final class TENConfig {
         MACHINE = new MachineConfig(commonBuilder);
         ENERGY_UNIT = new EnergyUnitConfig(commonBuilder);
         FARM = new FarmConfig(commonBuilder);
+        COMPAT = new CompatConfig(commonBuilder);
         COMMON_SPEC = commonBuilder.build();
 
         var clientBuilder = new ModConfigSpec.Builder();
@@ -245,6 +251,77 @@ public final class TENConfig {
                 return upgradePanelAnimationSpeed.get();
             }
             return panelAnimationSpeed.get();
+        }
+    }
+
+    /**
+     * 邻居兼容层开关。按来源模组关闭：列出的来源其 compat 配方在加载期整体消失，
+     * JEI 也不再显示——1.21.1 没有加载后摘除配方的钩子，只能靠条件过滤。
+     * 取值见 {@code TENCompatGen} 的来源表（enderio / enderio_evolution / mekanism /
+     * immersiveengineering / alltheores / allthemodium）。
+     * <p>
+     * {@code providerPriority} 是同一材料被多个模组提供时的归属顺序，由
+     * {@code kenergyengineering:provider_priority} 条件在加载期求值：数据为每个候选模组
+     * 各写一条互斥配方，装了什么模组、顺序怎么排，决定哪一条真的进配方表。
+     */
+    public static final class CompatConfig {
+
+        /** 材料归属的默认顺序：本模组优先，邻居按「内容更贴近我们 / 更通用」排，原版垫底。 */
+        private static final List<String> DEFAULT_PROVIDER_PRIORITY = List.of(
+                "kenergyengineering", "enderio_evolution", "enderio", "mekanism",
+                "immersiveengineering", "alltheores", "allthemodium", "minecraft");
+
+        public final ModConfigSpec.ConfigValue<List<? extends String>> disabledSources;
+        public final ModConfigSpec.ConfigValue<List<? extends String>> providerPriority;
+
+        CompatConfig(ModConfigSpec.Builder builder) {
+            builder.push("compat").comment("Neighbour-mod compat recipe toggles");
+            disabledSources = builder
+                    .comment("Compat sources to switch off, e.g. [\"enderio_evolution\"]. Empty = all on.",
+                            "A switched-off source loses its compat recipes and stops owning shared",
+                            "materials, so the ore chain falls through to the next provider.")
+                    .defineListAllowEmpty("disabledSources", List.of(), s -> s instanceof String);
+            providerPriority = builder
+                    .comment("Which mod owns an item when several mods ship the same material,",
+                            "best first. Only consulted where the data ships one variant per provider,",
+                            "i.e. the pulverizer ore chain. Candidates missing from this list keep",
+                            "their order from the data and lose to anything listed.")
+                    .defineList("providerPriority", DEFAULT_PROVIDER_PRIORITY, s -> s instanceof String);
+            builder.pop();
+        }
+
+        /** 该来源的兼容配方是否启用。 */
+        public boolean enabled(String source) {
+            return !read(disabledSources, () -> List.<String>of()).contains(source);
+        }
+
+        /**
+         * 从 candidates 里按 {@code providerPriority} 挑第一个已加载的模组，决定这一份内容归属谁。
+         * 不在列表里的候选排在末尾并保持数据里的顺序；一个都没加载时返回 {@code null}。
+         */
+        public String firstProvider(List<String> candidates) {
+            var order = read(providerPriority, () -> DEFAULT_PROVIDER_PRIORITY);
+            List<String> sorted = new ArrayList<>(candidates);
+            sorted.sort(Comparator.comparingInt(mod -> providerRank(order, mod)));
+            for (var mod : sorted) {
+                // 关掉的来源既不贡献 compat 配方，也不再拥有共享材料，两个开关语义一致
+                if (enabled(mod) && ModList.get().isLoaded(mod)) return mod;
+            }
+            return null;
+        }
+
+        private static int providerRank(List<? extends String> order, String mod) {
+            int index = order.indexOf(mod);
+            return index < 0 ? Integer.MAX_VALUE : index;
+        }
+
+        /**
+         * 配方条件在数据包加载期求值，早于配置求值的场景（如极端第三方加载顺序）不能让
+         * {@code get()} 抛 "Cannot get config value before config is loaded" 把整批配方带走，
+         * 因此未加载时退到默认值。
+         */
+        private static <T> T read(ModConfigSpec.ConfigValue<T> value, Supplier<T> fallback) {
+            return COMMON_SPEC.isLoaded() ? value.get() : fallback.get();
         }
     }
 }

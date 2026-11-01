@@ -77,6 +77,10 @@ public class DataGenerators {
         });
         // Material variant recipes
         generator.addProvider(event.includeServer(), new TENRecipeGen(output, event.getLookupProvider()));
+        // c:mats/* 聚合标签（锭或粉）
+        generator.addProvider(event.includeServer(), new TENMaterialTagGen(output));
+        // 邻居模组兼容配方（EIO 系，条件门控）
+        generator.addProvider(event.includeServer(), new TENCompatGen(output));
         // Vanilla pack/split recipes
         generator.addProvider(event.includeServer(), new TENVanillaPackGen(output));
     }

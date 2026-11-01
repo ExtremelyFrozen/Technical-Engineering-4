@@ -1,0 +1,33 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "enderio"
+    },
+    {
+      "type": "kenergyengineering:compat_enabled",
+      "source": "enderio"
+    }
+  ],
+  "type": "kenergyengineering:induction_furnace",
+  "inputs": [
+    {
+      "type": "tag",
+      "form": "item",
+      "key": "c:glass_blocks/colorless"
+    },
+    {
+      "type": "static",
+      "form": "item",
+      "key": "minecraft:glowstone"
+    }
+  ],
+  "outputs": [
+    {
+      "type": "static",
+      "form": "item",
+      "key": "enderio:clear_glass_e"
+    }
+  ],
+  "time": 213
+}

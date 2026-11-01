@@ -1,0 +1,39 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "enderio"
+    },
+    {
+      "type": "kenergyengineering:compat_enabled",
+      "source": "enderio"
+    }
+  ],
+  "type": "kenergyengineering:induction_furnace",
+  "inputs": [
+    {
+      "type": "tag",
+      "form": "item",
+      "key": "c:end_stones"
+    },
+    {
+      "type": "tag",
+      "form": "item",
+      "key": "c:ingots/dark_steel"
+    },
+    {
+      "type": "tag",
+      "form": "item",
+      "key": "c:obsidians"
+    }
+  ],
+  "outputs": [
+    {
+      "type": "static",
+      "count": 2,
+      "form": "item",
+      "key": "enderio:end_steel_ingot"
+    }
+  ],
+  "time": 427
+}

@@ -212,7 +212,7 @@ CmBlockEntity (implements ISyncPersistRPCBlockEntity)
 `usesRemaining` / `coolantTotalUses` 是服务端每 tick 写的 `@DescSynced` 镜像——GUI 进度栏在客户端求值，
 不经 `@DescSynced`/RPC 的字段到不了客户端。
 
-### 2.9 槽位堆叠与超 99 持久化
+### 2.9 槽位堆叠、插入去重与超 99 持久化
 
 堆叠上限由 `CmMachineBlockEntity.installBatchSlotLimit()` 一处给出，全机器统一：
 可进/可出的槽 = `物品 maxStackSize × 理论 B`，不可堆叠物品（工具/武器槽）保持 1，
@@ -226,6 +226,21 @@ CmBlockEntity (implements ISyncPersistRPCBlockEntity)
 真实数量另存 int 键 `BigCount`；`SharedStorage`（频道物品存储，上限 64×成员数）与
 扩容迁移分支共用同一对 `saveStack`/`readStack`。网络侧不受此限（`OPTIONAL_STREAM_CODEC`
 写 varint），所以只有一条持久化通道需要覆盖。
+
+provider 只统一了「上限从哪来」，写入侧仍要各自去问：走 `RecipeMachineBlockEntity`
+的机器由 `computeEffectiveSlotLimit` 给出 `64 × lockedB`，自带批处理数学的机器
+（熔炼机）必须改问 `itemHandler.getEffectiveSlotLimit(slot, stack)`——直接用
+`ItemStack#getMaxStackSize()` 判余量会把输出槽悄悄封顶在 64，倍增上限形同不存在。
+
+同一物品在本机只能占用一个槽位，由 `CmMachineBlockEntity.canPlaceItem()` 统一把关：
+它是 `valid(int, ItemStack)` 之上的合成入口，item handler 的 validator、面 capability、
+GUI `mayPlace`、管道与主动 IO 都走它，所以子类的 `valid` 覆写不会绕过这条规则。
+判定按槽位角色分组（可插入的槽之间互斥、可抽出的槽之间互斥，输入与输出互不影响），
+只比物品本体不比 components——与 `FormsCombinedIngredient#contains` 的匹配口径一致，
+感应炉那类严格匹配（占用槽数必须等于原料种类数）因此能在放置时就被拦住。
+机器自身产出走 `setStackInSlot`/`grow`，不经这道门，产物可以正常跨输出槽溢出。
+电池仓、创造单元与频道共享存储覆写 `enforcesUniqueItemSlots()` 返回 false 退出：
+同款电池分放充/放两槽、同物品跨成员槽聚合都是正常用法。
 
 ---
 
@@ -247,10 +262,18 @@ TENBlocks → TENFluids → TENBlockEntities → TENRecipeTypes → TENItems
 
 | 入口 | 位置 | 职责 |
 |---|---|---|
-| `DataGenerators.gatherData` | `data/DataGenerators.java` | `zh_cn` 语言 Provider、材料变体配方、原版打包/拆分配方 |
+| `DataGenerators.gatherData` | `data/DataGenerators.java` | `zh_cn` 语言 Provider、材料变体配方、材料聚合标签、邻居兼容配方、原版打包/拆分配方 |
 | `TENDataGen.init` | `data/TENDataGen.java` | 给 Registrate 挂语言 Provider（`TENLangHandler`、`TENTagLangGen`） |
 | `TENRecipeGen` | `data/TENRecipeGen.java` | 材料变体配方 |
+| `TENMaterialTagGen` | `data/TENMaterialTagGen.java` | `c:mats/<材料>` 聚合标签（锭或粉） |
+| `TENCompatGen` | `data/TENCompatGen.java` | 邻居模组兼容配方（EIO 系，`mod_loaded` 条件门控） |
 | `TENVanillaPackGen` | `data/TENVanillaPackGen.java` | 原版打包/拆分配方 |
+
+跨模组的「材料族」标签一律放 `c:` 命名空间、由 DataGen 生成，成员写成
+`{"id": "#c:ingots/x", "required": false}`：材料缺席时条目自动落空、引用它的配方因输入标签为空
+而不匹配，不需要为每个邻居模组维护文件，也不需要运行期注入——NeoForge 1.21.1 没有受支持的
+加载期标签写入点（`TagsUpdatedEvent` 已在冻结之后）。判据只看粉形态：铁/铜/金的锭用原版物品，
+`isRegistered("ingot")` 为 false 而 `c:ingots/X` 照样存在，拿它当判据会静默丢掉配方输入。
 
 Registrate 自动产出方块/物品模型、blockstate 与英文语言；`src/generated/resources/` 是输出目录。
 中文由多路合并：
@@ -279,6 +302,47 @@ Registrate 自动产出方块/物品模型、blockstate 与英文语言；`src/g
 
 配方机器的 `findRecipe()` 返回当前配方；`RecipeMachineBlockEntity` 负责 B 锁定与原子产出。
 配方变化会重置进度。
+
+矿石处理是「矿石→粗料→粉」三段式，由 `TENRecipeGen.ORE_CHAIN` 生成（`recipe/pulverizer/chain/`）：
+输入用标签（`c:ores/X`、`c:raw_materials/X`），输出写具体物品。材料缺席时靠 `neoforge:conditions` 的
+`not(tag_empty)` 在加载期剔除，所以别的模组只要给这些标签加成员就能接上；但输出侧要求粗料与粉都能
+落到具体物品，解析不到的材料就不生成。同一输入标签不得再留旧的直出配方
+（旧的 `*_dust_ore` / `*_dust_raw` 已删，否则 `findRecipe` 匹配歧义）。
+
+每段把「谁能提供这一样」列成候选：铁/铜/金的粗料只有原版、粉有本模组/Mekanism/沉浸工程/ATO 四家；
+锡/镍本模组与邻居都有；铅/锇/铀/铝/银来自邻居；铱/铂/锌来自 ATO；万用金/振金/不可得金来自 Allthemodium。
+只有一个候选时按输出归属写 `neoforge:mod_loaded`（原版与本模组不写）；多个候选时每个候选各写一条**互斥变体**，
+由自定义条件 `kenergyengineering:provider_priority` 在加载期按 `compat.providerPriority` 选出唯一赢家。
+变体之间输入签名相同，但只有一条进配方表，所以不算 `findRecipe` 歧义（`RecipeSignature` 认这个例外）。
+两段各自选人，粗料与粉允许来自不同模组——第二段吃 `c:raw_materials/X` 标签，接得住任何一家的粗料。
+新增邻居后由兼容层转换器按同一优先级报出可补候选，再往表里加候选，不必重新决定归属。
+
+**同一台机器不得有两条可匹配配方**：`RecipeSignature` 定义「类型 + 输入集合」签名，两处强制——
+生成期 `TENRecipeGen`/`TENCompatGen` 落盘前 `claim`，撞车直接让 DataGen 失败；运行期 `TENRecipeAudit`
+在 `RecipesUpdatedEvent` 里按机器类型分组复查，冲突打 ERROR（它看的是条件过滤与数据包覆盖之后真正加载的那份）。
+NeoForge 1.21.1 只有客户端的 `RecipesUpdatedEvent`，没有加载后增删配方的钩子，
+所以专用服务器上的冲突要等配方同步到客户端才报得出来；成批的机械导入还要靠 `tools/compat` 的校验脚本兜底。
+
+**兼容层每源可关**：`TENCompatGen` 每条配方除 `neoforge:mod_loaded` 外还带
+`kenergyengineering:compat_enabled`（`source` = 该行首个门控模组），`compat.disabledSources` 列出的来源
+其配方在加载期整体消失，JEI 也就无从显示——「关闭」与「隐藏」是同一件事。
+关掉某来源同时让它退出上面的材料归属竞选，两个开关语义一致。
+
+**配方输出一律是具体物品**：标准语义里输出是一个确定的 ItemStack，写成标签按标准处理会得到空产物，
+而且症状是「产物少了一件」而不是报错（输入侧走实时 `contains()`，照常匹配）。需要标签匹配时，
+在编写期按「期望兼容 mod 优先级」（本模组 → EVO → EIO → Mekanism → 沉浸工程 → NeoForge 原版包装）
+取该标签的第一个可用成员落成具体物品，解析不到就不导入，邻居增减后重跑转换器对齐。
+配方行的 `neoforge:mod_loaded` 门控按输出物品所属命名空间自动推导，可叠加多个模组。
+`FormsCombinedIngredient#itemMembers`/`fluidMembers` 的惰性解析只服务于标签输入的判定与展示，
+不是允许标签输出的理由。
+
+跨模组内容集中在 `TENCompatGen`：一条表 = 一份配方，输出到 `recipe/compat/<modid>/<机器类型>/`
+（必须分子目录——EIO 的 `alloy_smelting` 与 `sag_milling` 存在同名文件，平铺会互相覆盖），
+每条带 `neoforge:mod_loaded` 条件，未装邻居时整体消失，所以生成结果与本机是否安装邻居无关，
+CI 与本地产出一致。合金表与研磨表都从对方数据机械导入：时间按对方每次总能耗折算到本模组的
+15 FE/t；金属输入写 `c:ingots/X`，该材料存在 `c:mats/X` 时自动升级为「锭或粉皆可入」；
+输入签名与本模组已有配方相同的条目不导入，本模组语义优先；两张表在同一次 DataGen 里互相 `claim`，
+漏网的重复会在生成期直接失败，而不是等到实机里发现某条配方永远匹配不上。
 
 ---
 
@@ -355,7 +419,7 @@ GUI 走「末影箱模式」：频道目录、创建、接入、退出、删除�
 | JEI | `src/client/java` + `integration/xei` | 配方查看、幽灵物品、熔炼机原版熔炉催化剂、引擎燃料与冷却剂页 |
 | EMI | `integration/emi` | 配方查看与共享绘制组件；运行时待验证 |
 | Jade | `src/client/java/com/modularmc/ten/integration/jade` | 频道状态、管道过滤与抽取面 |
-| GuideME | `src/client/java/.../client/guide` + `common/data/TENGuideItems` | 可选独立指南；GuideME 缺席时指南物品不注册 |
+| GuideME | `src/client/java/.../client/guide` + `common/data/TENGuideItems` | 可选独立指南；GuideME 缺席时指南物品不注册。`folder` 是跨命名空间内容根（`assets/<ns>/<folder>/**.md`），页面 id = `<ns>:folder 内相对路径`（含 `.md`）；起始页交给 GuideME 缺省 `<ns>:index.md`，不要手写 |
 | AE2 | capability 层 + 开发期依赖 | 样板供应器阻挡模式依赖面观察读语义；不直接 import `appeng` |
 | Curios | 编译期可选 | 饰品槽支持 |
 | Sodium / Iris / ModernFix | 编译期可选 | 开发期依赖，仓库暂无直接引用 |

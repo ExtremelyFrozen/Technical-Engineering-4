@@ -1,6 +1,7 @@
 package com.modularmc.ten.data;
 
 import com.modularmc.ten.TEN;
+import com.modularmc.ten.api.recipe.RecipeSignature;
 import com.modularmc.ten.common.data.Mat;
 
 import net.minecraft.core.HolderLookup;
@@ -85,6 +86,12 @@ public class TENRecipeGen implements DataProvider {
             }
         }
 
+        // 矿石三段式（输入标签驱动，输出具体物品，多提供者写互斥变体）
+        for (var row : ORE_CHAIN) {
+            buildOreToRaw(futures, cache, recipeDir, row.material(), row.rawItems());
+            buildRawToDust(futures, cache, recipeDir, row.material(), row.dustItems());
+        }
+
         // Moulds
         for (var m : MOULDS)
             futures.add(saveJson(cache, recipeDir.resolve("vanilla/" + m.id + ".json"), buildMould(m)));
@@ -99,6 +106,7 @@ public class TENRecipeGen implements DataProvider {
 
     private CompletableFuture<?> saveJson(CachedOutput cache, Path path, JsonObject json) {
         path.getParent().toFile().mkdirs();
+        RecipeSignature.claim(json, path.toString());
         return DataProvider.saveStable(cache, json, path);
     }
 
@@ -116,10 +124,58 @@ public class TENRecipeGen implements DataProvider {
 
     private record PulvFmt(String tagCat, int dustCount, int time, String suffix) {}
 
+    // 矿石与粗料段改由 ORE_CHAIN 的标签驱动配方承担（pulverizer/chain/），
+    // 这里只留锭→粉，避免同一输入标签出现两条可匹配配方。
     private static final List<PulvFmt> PULV = List.of(
-            new PulvFmt("ingots", 1, 100, "_dust"),
-            new PulvFmt("ores", 2, 180, "_dust_ore"),
-            new PulvFmt("raw_materials", 1, 120, "_dust_raw"));
+            new PulvFmt("ingots", 1, 100, "_dust"));
+
+    /**
+     * 粉碎机矿石三段式：{@code c:ores/X → 粗料 → 粉}。
+     * <p>
+     * 输入用标签（别的模组有这些标签就自动生效），**输出必须是具体物品**——
+     * 配方输出的标准语义是一个确定的 ItemStack，标签输出只有各家自定义 serializer
+     * 自行解析才行（EIO 就是自己解析的），按标准处理会得到空产物。
+     * 所以每段把「谁能提供这一样」都列成候选：铁/铜/金的粗料只有原版有，粉有本模组/Mekanism/
+     * 沉浸工程/ATO 四家；锡/镍本模组与邻居都有；铅/锇/铀/铝/银来自邻居（Mekanism、沉浸工程、
+     * ATO、EIO 进化）；铱/铂/锌来自 ATO，万用金/振金/不可得金来自 Allthemodium。
+     * <p>
+     * 只有一个候选时按输出归属写 {@code neoforge:mod_loaded}（{@link #gateOf}，原版与本模组不写）；
+     * 多个候选时每个候选各写一条互斥变体，由 {@code kenergyengineering:provider_priority} 按
+     * {@code compat.providerPriority} 选出唯一赢家——邻居增减、改配置顺序都不必重新生成数据，
+     * 而默认顺序（本模组优先）与只写一条时的行为一致。两段各自选人，粗料与粉可以来自不同模组，
+     * 因为第二段吃 {@code c:raw_materials/X} 标签，接得住任何一家的粗料。
+     * 解析不到具体物品的材料（无粗料形态的 bauxite/cinnabar 一类）不生成；
+     * 装了新邻居后由兼容层转换器按同一优先级报出可补候选，再往本表加行。
+     */
+    private record ChainRow(String material, List<String> rawItems, List<String> dustItems) {}
+
+    private static final List<ChainRow> ORE_CHAIN = List.of(
+            new ChainRow("iron", List.of("minecraft:raw_iron"),
+                    List.of("kenergyengineering:iron_dust", "enderio:powdered_iron", "mekanism:dust_iron", "immersiveengineering:dust_iron", "alltheores:iron_dust")),
+            new ChainRow("copper", List.of("minecraft:raw_copper"),
+                    List.of("kenergyengineering:copper_dust", "enderio:powdered_copper", "mekanism:dust_copper", "immersiveengineering:dust_copper", "alltheores:copper_dust")),
+            new ChainRow("gold", List.of("minecraft:raw_gold"),
+                    List.of("kenergyengineering:gold_dust", "enderio:powdered_gold", "mekanism:dust_gold", "immersiveengineering:dust_gold", "alltheores:gold_dust")),
+            new ChainRow("tin", List.of("kenergyengineering:raw_tin", "mekanism:raw_tin", "alltheores:raw_tin"),
+                    List.of("kenergyengineering:tin_dust", "enderio:powdered_tin", "mekanism:dust_tin", "alltheores:tin_dust")),
+            new ChainRow("nickel", List.of("kenergyengineering:raw_nickel", "immersiveengineering:raw_nickel", "alltheores:raw_nickel"),
+                    List.of("kenergyengineering:nickel_dust", "immersiveengineering:dust_nickel", "alltheores:nickel_dust")),
+            new ChainRow("lead", List.of("mekanism:raw_lead", "immersiveengineering:raw_lead", "alltheores:raw_lead"),
+                    List.of("mekanism:dust_lead", "immersiveengineering:dust_lead", "alltheores:lead_dust")),
+            new ChainRow("osmium", List.of("mekanism:raw_osmium", "alltheores:raw_osmium"),
+                    List.of("mekanism:dust_osmium", "alltheores:osmium_dust")),
+            new ChainRow("uranium", List.of("mekanism:raw_uranium", "immersiveengineering:raw_uranium", "alltheores:raw_uranium"),
+                    List.of("mekanism:dust_uranium", "immersiveengineering:dust_uranium", "alltheores:uranium_dust")),
+            new ChainRow("aluminum", List.of("immersiveengineering:raw_aluminum", "alltheores:raw_aluminum"),
+                    List.of("immersiveengineering:dust_aluminum", "alltheores:aluminum_dust")),
+            new ChainRow("silver", List.of("enderio_evolution:raw_silver", "immersiveengineering:raw_silver", "alltheores:raw_silver"),
+                    List.of("immersiveengineering:dust_silver", "alltheores:silver_dust")),
+            new ChainRow("iridium", List.of("alltheores:raw_iridium"), List.of("alltheores:iridium_dust")),
+            new ChainRow("platinum", List.of("alltheores:raw_platinum"), List.of("alltheores:platinum_dust")),
+            new ChainRow("zinc", List.of("alltheores:raw_zinc"), List.of("alltheores:zinc_dust")),
+            new ChainRow("allthemodium", List.of("allthemodium:raw_allthemodium"), List.of("allthemodium:allthemodium_dust")),
+            new ChainRow("unobtainium", List.of("allthemodium:raw_unobtainium"), List.of("allthemodium:unobtainium_dust")),
+            new ChainRow("vibranium", List.of("allthemodium:raw_vibranium"), List.of("allthemodium:vibranium_dust")));
 
     private record SmeltFmt(String input, String output, float xp, String suffix) {}
 
@@ -219,13 +275,88 @@ public class TENRecipeGen implements DataProvider {
 
         var outs = new JsonArray();
         outs.add(ingr("item", "static", mat.itemId("dust"), r.dustCount, null));
-        if (r.suffix.equals("_dust_ore"))
-            outs.add(ingr("item", "static", "minecraft:gravel", 1, 0.2));
-        else if (r.suffix.equals("_dust_raw"))
-            outs.add(ingr("item", "static", mat.itemId("dust"), 1, 0.4));
         j.add("outputs", outs);
         j.addProperty("time", r.time);
         return j;
+    }
+
+    /** 三段式第一段：{@code c:ores/X} → 具体粗料物品 1 + 0.33，附带 0.15 圆石副产。 */
+    private void buildOreToRaw(List<CompletableFuture<?>> futures, CachedOutput cache, Path recipeDir, String mat,
+            List<String> candidates) {
+        buildChainStage(futures, cache, recipeDir, mat, "ore_raw", "c:ores/" + mat, candidates, 180, item -> {
+            var outs = new JsonArray();
+            outs.add(ingr("item", "static", item, 1, null));
+            outs.add(ingr("item", "static", item, 1, 0.33));
+            outs.add(ingr("item", "static", "minecraft:cobblestone", 1, 0.15));
+            return outs;
+        });
+    }
+
+    /** 三段式第二段：{@code c:raw_materials/X} → 具体粉尘物品 1 + 0.8（合计 1.8 粉/粗料）。 */
+    private void buildRawToDust(List<CompletableFuture<?>> futures, CachedOutput cache, Path recipeDir, String mat,
+            List<String> candidates) {
+        buildChainStage(futures, cache, recipeDir, mat, "raw_dust", "c:raw_materials/" + mat, candidates, 120, item -> {
+            var outs = new JsonArray();
+            outs.add(ingr("item", "static", item, 1, null));
+            outs.add(ingr("item", "static", item, 1, 0.8));
+            return outs;
+        });
+    }
+
+    /**
+     * 一个候选一条配方。单候选沿用输出归属的 {@code mod_loaded} 门控；多候选写
+     * {@code provider_priority} 互斥变体组，加载期只留赢家（规则见 {@link #ORE_CHAIN} 说明）。
+     */
+    private void buildChainStage(List<CompletableFuture<?>> futures, CachedOutput cache, Path recipeDir,
+            String mat, String stage, String inputTag, List<String> candidates, int time,
+            java.util.function.Function<String, JsonArray> outputs) {
+        boolean exclusive = candidates.size() > 1;
+        var group = candidates.stream().map(TENRecipeGen::providerOf).toList();
+        for (String item : candidates) {
+            var j = new JsonObject();
+            j.addProperty("type", TEN.MOD_ID + ":pulverizer");
+            if (exclusive) addConditions(j, tagPresent(inputTag), priorityOf(providerOf(item), group));
+            else addConditions(j, tagPresent(inputTag), gateOf(item));
+            j.add("inputs", arr(ingr("item", "tag", inputTag, null, null)));
+            j.add("outputs", outputs.apply(item));
+            j.addProperty("time", time);
+            String name = mat + "_" + stage + (exclusive ? "_" + providerOf(item) : "");
+            futures.add(saveJson(cache, recipeDir.resolve("pulverizer/chain/" + name + ".json"), j));
+        }
+    }
+
+    /** 输出物品归属的模组命名空间。 */
+    private static String providerOf(String itemId) {
+        int colon = itemId.indexOf(':');
+        return colon < 0 ? "minecraft" : itemId.substring(0, colon);
+    }
+
+    /** 条件：本条是候选组里的一个变体，加载期由 {@code compat.providerPriority} 在组里选唯一赢家。 */
+    private static JsonObject priorityOf(String mod, List<String> candidates) {
+        var a = new JsonArray();
+        candidates.forEach(a::add);
+        return obj("type", TEN.MOD_ID + ":provider_priority", "mod", mod, "candidates", a);
+    }
+
+    /** 输出物品归属的模组 → {@code mod_loaded} 门控；原版与本模组不需要。 */
+    private static JsonObject gateOf(String itemId) {
+        int colon = itemId.indexOf(':');
+        String ns = colon < 0 ? "" : itemId.substring(0, colon);
+        if (ns.isEmpty() || "minecraft".equals(ns) || TEN.MOD_ID.equals(ns)) return null;
+        return obj("type", "neoforge:mod_loaded", "modid", ns);
+    }
+
+    /** 写入条件数组，自动丢掉 null（无门控）与重复项。 */
+    private static void addConditions(JsonObject j, JsonObject... conds) {
+        var a = new JsonArray();
+        java.util.Set<String> seen = new java.util.LinkedHashSet<>();
+        for (var c : conds) if (c != null && seen.add(c.toString())) a.add(c);
+        if (a.size() > 0) j.add("neoforge:conditions", a);
+    }
+
+    /** 条件：该标签非空（材料缺席时整条配方在加载期被剔除）。 */
+    private static JsonObject tagPresent(String tag) {
+        return obj("type", "neoforge:not", "value", obj("type", "neoforge:tag_empty", "tag", tag));
     }
 
     private JsonObject buildShapedGear(Mat mat) {
@@ -236,7 +367,6 @@ public class TENRecipeGen implements DataProvider {
         j.add("result", obj("id", mat.itemId("gear")));
         return j;
     }
-
     private JsonObject buildSmelting(String input, String result, float xp, int time) {
         var j = new JsonObject();
         j.addProperty("type", "minecraft:smelting");

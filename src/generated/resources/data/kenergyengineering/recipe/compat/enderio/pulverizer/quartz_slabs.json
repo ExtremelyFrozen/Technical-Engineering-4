@@ -1,0 +1,34 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "enderio"
+    },
+    {
+      "type": "kenergyengineering:compat_enabled",
+      "source": "enderio"
+    }
+  ],
+  "type": "kenergyengineering:pulverizer",
+  "inputs": [
+    {
+      "type": "static",
+      "form": "item",
+      "key": "minecraft:quartz_slab"
+    }
+  ],
+  "outputs": [
+    {
+      "type": "static",
+      "form": "item",
+      "key": "minecraft:quartz"
+    },
+    {
+      "type": "static",
+      "chance": 0.25,
+      "form": "item",
+      "key": "minecraft:quartz"
+    }
+  ],
+  "time": 160
+}

@@ -1,0 +1,29 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "enderio"
+    },
+    {
+      "type": "kenergyengineering:compat_enabled",
+      "source": "enderio"
+    }
+  ],
+  "type": "kenergyengineering:induction_furnace",
+  "inputs": [
+    {
+      "type": "tag",
+      "count": 9,
+      "form": "item",
+      "key": "c:dusts/ender_pearl"
+    }
+  ],
+  "outputs": [
+    {
+      "type": "static",
+      "form": "item",
+      "key": "minecraft:ender_pearl"
+    }
+  ],
+  "time": 133
+}

@@ -1,0 +1,44 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "enderio"
+    },
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "mekanism"
+    },
+    {
+      "type": "kenergyengineering:compat_enabled",
+      "source": "enderio"
+    }
+  ],
+  "type": "kenergyengineering:pulverizer",
+  "inputs": [
+    {
+      "type": "tag",
+      "form": "item",
+      "key": "minecraft:coals"
+    }
+  ],
+  "outputs": [
+    {
+      "type": "static",
+      "form": "item",
+      "key": "enderio:powdered_coal"
+    },
+    {
+      "type": "static",
+      "chance": 0.1,
+      "form": "item",
+      "key": "enderio:powdered_coal"
+    },
+    {
+      "type": "static",
+      "chance": 0.1,
+      "form": "item",
+      "key": "mekanism:dust_sulfur"
+    }
+  ],
+  "time": 160
+}

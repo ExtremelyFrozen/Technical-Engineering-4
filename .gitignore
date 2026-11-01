@@ -30,3 +30,6 @@ run_client.bat
 
 # 运行日志重定向产物
 client_run_*.txt
+
+# 兼容层转换器的中间产物（tools/compat）
+tools/compat/out/

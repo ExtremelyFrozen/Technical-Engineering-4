@@ -1,0 +1,39 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "enderio_evolution"
+    },
+    {
+      "type": "kenergyengineering:compat_enabled",
+      "source": "enderio_evolution"
+    }
+  ],
+  "type": "kenergyengineering:induction_furnace",
+  "inputs": [
+    {
+      "type": "static",
+      "form": "item",
+      "key": "enderio:pulsating_powder"
+    },
+    {
+      "type": "static",
+      "form": "item",
+      "key": "enderio:pulsating_alloy_ingot"
+    },
+    {
+      "type": "static",
+      "form": "item",
+      "key": "enderio_evolution:vivid_alloy_ingot"
+    }
+  ],
+  "outputs": [
+    {
+      "type": "static",
+      "count": 2,
+      "form": "item",
+      "key": "enderio_evolution:crystalline_alloy_ingot"
+    }
+  ],
+  "time": 667
+}

@@ -2,6 +2,7 @@ package com.modularmc.ten.data.lang;
 
 import com.modularmc.ten.TEN;
 import com.modularmc.ten.common.data.Mat;
+import com.modularmc.ten.data.TENMaterialTagGen;
 
 import com.tterrag.registrate.providers.RegistrateLangProvider;
 
@@ -21,7 +22,7 @@ import java.util.LinkedHashMap;
  * 覆盖范围 = src/main/resources/data 下全部 tags json：
  * <ul>
  * <li>c: 命名空间（类别 + 材质家族，item + block）</li>
- * <li>kenergyengineering: 自有标签（catalyst/spanner/mats/采矿场等）</li>
+ * <li>kenergyengineering: 自有标签（catalyst/spanner/采矿场等）</li>
  * <li>minecraft: 本模组追加值的原版标签（mineable/pickaxe、needs_iron_tool）</li>
  * </ul>
  */
@@ -110,6 +111,14 @@ public final class TENTagLangGen {
         addTag(provider, "item", "c", "coolants/standard", "Standard Coolants", "标准冷却剂");
         addTag(provider, "item", "c", "coolants/premium", "Premium Coolants", "高效冷却剂");
 
+        // ── c: 材料聚合（锭或粉；标签文件由 TENMaterialTagGen 生成）──
+        for (Mat mat : Mat.values()) {
+            if (TENMaterialTagGen.hasMatTag(mat)) {
+                addTag(provider, "item", "c", "mats/" + mat.id,
+                        mat.englishName() + " Materials", mat.cn + "材料");
+            }
+        }
+
         // ── c: 方块类别 ──
         addTag(provider, "block", "c", "cobblestones", "Cobblestones", "圆石");
         addTag(provider, "block", "c", "cobblestones/normal", "Normal Cobblestones", "普通圆石");
@@ -135,11 +144,6 @@ public final class TENTagLangGen {
         addTag(provider, "item", TEN.MOD_ID, "uncommon_ingots", "Uncommon Ingots", "稀有金属锭");
         addTag(provider, "item", TEN.MOD_ID, "valuable_ingots", "Valuable Ingots", "贵重金属锭");
         addTag(provider, "item", TEN.MOD_ID, "spanner", "Spanners", "扳手");
-        for (Mat mat : new Mat[] { Mat.IRON, Mat.GOLD, Mat.COPPER, Mat.TIN, Mat.NICKEL,
-                Mat.POWERED_TIN, Mat.CHLORIUM }) {
-            addTag(provider, "item", TEN.MOD_ID, "mats/" + mat.id,
-                    mat.englishName() + " Materials", mat.cn + "材料");
-        }
 
         // ── kenergyengineering 方块标签 ──
         addTag(provider, "block", TEN.MOD_ID, "quarry_valids", "Quarry-Valid Blocks", "采矿场可挖掘方块");

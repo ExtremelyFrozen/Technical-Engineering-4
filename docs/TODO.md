@@ -45,6 +45,9 @@
 - 未装 GuideME 时模组正常加载且不出现指南物品；指南不依赖 AE2。
 - 2026-10-31 内容根 folder 由 `ae2guide` 改为独立的 `kenergyguide`（同 folder 会被 GuideME
   按跨命名空间合并成同一册）。需复验：不再出现在 AE2 手册目录树里，指南书直接打开到「开始」页。
+- 2026-11-01 起始页改为不手写（吃 GuideME 缺省 `<ns>:index.md`）：旧写法 `TEN.id("index")`
+  少扩展名，页面 map 取不到 → 书打开空白。folder 隔离把这条一直存在的缺陷从「借 AE2 目录树
+  可见」变成「唯一入口」，所以看起来像改坏了。需复验同一项：首页可进 + 9 个子页可点。
 
 ### 机器 IO 取消限速实机复验 — P2 🧪
 - 2026-10-31 移除机器能量 / 物品 / 流体的每 tick 限速：能量只受储能容量约束，物品 `extractItem`
@@ -62,6 +65,24 @@
   换档冷却剂数值随之改变；JEI 冷却器页列出三档成员与周期/推进量/次数。
 - 未做：EMI 侧没有冷却剂页（引擎燃料有 `EngineFuelEmiRecipe`）。补之前先验证 EMI 运行路径，
   见「EMI 运行时切换」。
+
+### 槽位物品唯一实机复验 — P2 🧪
+- 2026-11-01 `CmMachineBlockEntity.canPlaceItem()` 按「输入组 / 输出组」分组查重，同组内已有同物品即拒收；
+  它同时作为 `MachineItemHandler` 的校验位（构造与 `setValidator` 两处），
+  所以界面放入与管道 / face 写入走同一条判定。
+- 需复验：感应炉两输入槽放同种锭被拦、放两种锭正常；输出槽与输入槽同物品不算冲突；
+  电池仓 / 频道存储豁免生效；漏斗 / AE2 总线从外面向输入槽塞重复物品被拒且不丢件。
+
+### 兼容层配方与开关实机验证 — P2 🧪
+- 2026-11-01 兼容层 119 条配方（`recipe/compat/<modid>/<机器类型>/`）由 `TENCompatGen` 生成，
+  每条带 `neoforge:mod_loaded` + 自定义条件 `kenergyengineering:compat_enabled`；
+  三段式改成候选模组的互斥变体（`kenergyengineering:provider_priority` + `compat.providerPriority`）。
+- 需复验：JEI 能看到承接配方且能真的产出；把 `compat.disabledSources` 填 `enderio_evolution` 后
+  重启世界，该来源配方与 JEI 页一并消失；把 `compat.providerPriority` 里 `mekanism` 提到
+  `kenergyengineering` 之前，锡/铅的粗料与粉改由通用机械提供（三段式两段的归属独立选人）。
+- 需复验日志：`TENRecipeAudit` 在本次加载不输出「机器配方歧义」；`tools/compat/check.js` 退出码 0。
+- 未做：`runGameTestServer` / 单元测试跑不了（`net.neoforged:testframework` 拉不到），
+  条件求值与配置读取时序目前只有静态取证，须以实机为准。
 
 ## 二、未开始
 

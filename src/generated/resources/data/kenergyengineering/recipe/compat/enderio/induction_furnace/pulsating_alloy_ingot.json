@@ -1,0 +1,34 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "enderio"
+    },
+    {
+      "type": "kenergyengineering:compat_enabled",
+      "source": "enderio"
+    }
+  ],
+  "type": "kenergyengineering:induction_furnace",
+  "inputs": [
+    {
+      "type": "tag",
+      "form": "item",
+      "key": "c:mats/iron"
+    },
+    {
+      "type": "tag",
+      "form": "item",
+      "key": "c:ender_pearls"
+    }
+  ],
+  "outputs": [
+    {
+      "type": "static",
+      "count": 2,
+      "form": "item",
+      "key": "enderio:pulsating_alloy_ingot"
+    }
+  ],
+  "time": 320
+}
