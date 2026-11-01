@@ -1,0 +1,13 @@
+{
+  "replace": false,
+  "values": [
+    {
+      "id": "#c:ingots/vibranium",
+      "required": false
+    },
+    {
+      "id": "#c:dusts/vibranium",
+      "required": false
+    }
+  ]
+}

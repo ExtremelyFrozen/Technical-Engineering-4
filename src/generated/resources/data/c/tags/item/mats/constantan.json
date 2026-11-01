@@ -1,0 +1,13 @@
+{
+  "replace": false,
+  "values": [
+    {
+      "id": "#c:ingots/constantan",
+      "required": false
+    },
+    {
+      "id": "#c:dusts/constantan",
+      "required": false
+    }
+  ]
+}

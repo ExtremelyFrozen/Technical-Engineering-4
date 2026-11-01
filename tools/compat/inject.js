@@ -23,6 +23,9 @@ function replaceTable(src, fieldName, list) {
 let src = fs.readFileSync(TARGET, "utf8");
 src = replaceTable(src, "ALLOYS", rows.alloy);
 src = replaceTable(src, "GRIND", rows.grind);
+// 压缩机表可以空（config 里没有对应来源时），空数组不值得为它改写文件
+if (rows.press && rows.press.length) src = replaceTable(src, "PRESS", rows.press);
+else console.log("PRESS 无导入行，保持原样");
 fs.writeFileSync(TARGET, src);
-console.log(`已写回 ${display(TARGET)}：ALLOYS=${rows.alloy.length} GRIND=${rows.grind.length}`);
+console.log(`已写回 ${display(TARGET)}：ALLOYS=${rows.alloy.length} GRIND=${rows.grind.length} PRESS=${(rows.press || []).length}`);
 console.log("下一步：./gradlew runData && node tools/compat/check.js");

@@ -5,6 +5,13 @@
       "modid": "enderio"
     },
     {
+      "type": "neoforge:not",
+      "value": {
+        "type": "neoforge:tag_empty",
+        "tag": "c:dusts/ender_pearl"
+      }
+    },
+    {
       "type": "kenergyengineering:compat_enabled",
       "source": "enderio"
     }
@@ -25,5 +32,5 @@
       "key": "minecraft:ender_pearl"
     }
   ],
-  "time": 133
+  "time": 450
 }

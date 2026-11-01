@@ -5,6 +5,27 @@
       "modid": "enderio"
     },
     {
+      "type": "neoforge:not",
+      "value": {
+        "type": "neoforge:tag_empty",
+        "tag": "c:dusts/redstone"
+      }
+    },
+    {
+      "type": "neoforge:not",
+      "value": {
+        "type": "neoforge:tag_empty",
+        "tag": "c:ingots/conductive_alloy"
+      }
+    },
+    {
+      "type": "neoforge:not",
+      "value": {
+        "type": "neoforge:tag_empty",
+        "tag": "c:mats/gold"
+      }
+    },
+    {
       "type": "kenergyengineering:compat_enabled",
       "source": "enderio"
     }
@@ -35,5 +56,5 @@
       "key": "enderio:energetic_alloy_ingot"
     }
   ],
-  "time": 320
+  "time": 150
 }

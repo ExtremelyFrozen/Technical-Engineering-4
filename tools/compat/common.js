@@ -69,8 +69,18 @@ const ownerOf = id => (id.includes(":") ? id.split(":")[0] : "minecraft");
 /** 归属 → 门控模组；原版与本模组不需要条件。 */
 const gateOf = ns => (ns === "minecraft" || ns === "kenergyengineering" ? null : ns);
 
-/** 对方能量（每次操作总 FE）→ 本模组 tick 数。 */
-const ticksFromEnergy = fe =>
-  Math.max(CFG.timeFloor, Math.min(CFG.timeCeil, Math.round((fe || 2400) / CFG.fePerTick)));
+/**
+ * 耗时尺规（见 config.json 的 timeRule）：邻居能量**不**参与时长换算。
+ * 原来是「对方每次总 FE ÷ 我们的 15 FE/t」，IE 一次冲压机给 51200 FE 就变成 1200 tick 上限，
+ * 与本模组原生（压缩机恒 100、感应炉 50–300）差一个数量级，实测就是「耗时失控」的来源。
+ * 感应炉按用户定的尺规：每个输入物料 +50 tick。
+ */
+function alignTicks(kind, inputUnits) {
+  const rules = CFG.timeRule;
+  if (kind === "induction_furnace") return rules.induction_furnace.perUnit * Math.max(1, inputUnits);
+  if (kind === "compressor") return rules.compressor.flat;
+  const pulv = rules.pulverizer;
+  return inputUnits >= pulv.blockUnits ? pulv.blockTime : pulv.base;
+}
 
-module.exports = { ROOT, GEN, MAIN, CFG, walk, load, rel, display, tagIndex, ownerOf, gateOf, ticksFromEnergy };
+module.exports = { ROOT, GEN, MAIN, CFG, walk, load, rel, display, tagIndex, ownerOf, gateOf, alignTicks };

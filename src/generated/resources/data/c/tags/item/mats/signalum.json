@@ -1,0 +1,13 @@
+{
+  "replace": false,
+  "values": [
+    {
+      "id": "#c:ingots/signalum",
+      "required": false
+    },
+    {
+      "id": "#c:dusts/signalum",
+      "required": false
+    }
+  ]
+}

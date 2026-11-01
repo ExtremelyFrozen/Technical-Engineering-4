@@ -5,6 +5,13 @@
       "modid": "enderio"
     },
     {
+      "type": "neoforge:not",
+      "value": {
+        "type": "neoforge:tag_empty",
+        "tag": "c:gems/pulsating_crystal"
+      }
+    },
+    {
       "type": "kenergyengineering:compat_enabled",
       "source": "enderio"
     }
@@ -24,5 +31,5 @@
       "key": "enderio:pulsating_powder"
     }
   ],
-  "time": 160
+  "time": 120
 }

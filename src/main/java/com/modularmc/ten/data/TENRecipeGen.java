@@ -58,10 +58,7 @@ public class TENRecipeGen implements DataProvider {
                     futures.add(saveJson(cache, recipeDir.resolve("pulverizer/metal/" + mat.id + r.suffix() + ".json"), buildPulv(mat, r)));
             }
 
-            // Raw block → 9 dust + 9×40% bonus dust（roll 掷骰配方）
-            if (mat.hasRawBlock()) {
-                futures.add(saveJson(cache, recipeDir.resolve("pulverizer/metal/" + mat.id + "_raw_block.json"), buildRawBlockPulv(mat)));
-            }
+            // 粗矿块→粉改由 ORE_CHAIN 的 block_dust 段承担（标签驱动，邻居材料同样能走）
 
             for (var r : SMELT) if (canSmelt(mat, r)) {
                 String inputId = smeltInput(mat, r);
@@ -90,7 +87,10 @@ public class TENRecipeGen implements DataProvider {
         for (var row : ORE_CHAIN) {
             buildOreToRaw(futures, cache, recipeDir, row.material(), row.rawItems());
             buildRawToDust(futures, cache, recipeDir, row.material(), row.dustItems());
+            buildRawBlockToDust(futures, cache, recipeDir, row.material(), row.dustItems());
+            buildIngotToDust(futures, cache, recipeDir, row.material(), row.dustItems());
         }
+        buildAlloys(futures, cache, recipeDir);
 
         // Moulds
         for (var m : MOULDS)
@@ -138,6 +138,9 @@ public class TENRecipeGen implements DataProvider {
      * 所以每段把「谁能提供这一样」都列成候选：铁/铜/金的粗料只有原版有，粉有本模组/Mekanism/
      * 沉浸工程/ATO 四家；锡/镍本模组与邻居都有；铅/锇/铀/铝/银来自邻居（Mekanism、沉浸工程、
      * ATO、EIO 进化）；铱/铂/锌来自 ATO，万用金/振金/不可得金来自 Allthemodium。
+     * ECO（NEO ECO AE Extension）自带铝/钨两种矿石与铝/钨/铁粉，在默认优先级里排第二
+     * （仅次于本模组），所以铝的粗料与粉、以及钨的整条链默认落到它；删掉它的候选即退回
+     * 沉浸工程/ATO 的那几份。
      * <p>
      * 只有一个候选时按输出归属写 {@code neoforge:mod_loaded}（{@link #gateOf}，原版与本模组不写）；
      * 多个候选时每个候选各写一条互斥变体，由 {@code kenergyengineering:provider_priority} 按
@@ -151,7 +154,7 @@ public class TENRecipeGen implements DataProvider {
 
     private static final List<ChainRow> ORE_CHAIN = List.of(
             new ChainRow("iron", List.of("minecraft:raw_iron"),
-                    List.of("kenergyengineering:iron_dust", "enderio:powdered_iron", "mekanism:dust_iron", "immersiveengineering:dust_iron", "alltheores:iron_dust")),
+                    List.of("kenergyengineering:iron_dust", "neoecoae:iron_dust", "enderio:powdered_iron", "mekanism:dust_iron", "immersiveengineering:dust_iron", "alltheores:iron_dust")),
             new ChainRow("copper", List.of("minecraft:raw_copper"),
                     List.of("kenergyengineering:copper_dust", "enderio:powdered_copper", "mekanism:dust_copper", "immersiveengineering:dust_copper", "alltheores:copper_dust")),
             new ChainRow("gold", List.of("minecraft:raw_gold"),
@@ -166,8 +169,10 @@ public class TENRecipeGen implements DataProvider {
                     List.of("mekanism:dust_osmium", "alltheores:osmium_dust")),
             new ChainRow("uranium", List.of("mekanism:raw_uranium", "immersiveengineering:raw_uranium", "alltheores:raw_uranium"),
                     List.of("mekanism:dust_uranium", "immersiveengineering:dust_uranium", "alltheores:uranium_dust")),
-            new ChainRow("aluminum", List.of("immersiveengineering:raw_aluminum", "alltheores:raw_aluminum"),
-                    List.of("immersiveengineering:dust_aluminum", "alltheores:aluminum_dust")),
+            new ChainRow("aluminum", List.of("neoecoae:raw_aluminum_ore", "immersiveengineering:raw_aluminum",
+                            "alltheores:raw_aluminum"),
+                    List.of("neoecoae:aluminum_dust", "immersiveengineering:dust_aluminum", "alltheores:aluminum_dust")),
+            new ChainRow("tungsten", List.of("neoecoae:raw_tungsten_ore"), List.of("neoecoae:tungsten_dust")),
             new ChainRow("silver", List.of("enderio_evolution:raw_silver", "immersiveengineering:raw_silver", "alltheores:raw_silver"),
                     List.of("immersiveengineering:dust_silver", "alltheores:silver_dust")),
             new ChainRow("iridium", List.of("alltheores:raw_iridium"), List.of("alltheores:iridium_dust")),
@@ -176,6 +181,60 @@ public class TENRecipeGen implements DataProvider {
             new ChainRow("allthemodium", List.of("allthemodium:raw_allthemodium"), List.of("allthemodium:allthemodium_dust")),
             new ChainRow("unobtainium", List.of("allthemodium:raw_unobtainium"), List.of("allthemodium:unobtainium_dust")),
             new ChainRow("vibranium", List.of("allthemodium:raw_vibranium"), List.of("allthemodium:vibranium_dust")));
+
+    /**
+     * 固定比率合金：感应炉的通用配方，也就是这些合金的**默认**配比，一律由邻居的**粉末**配方推导。
+     * <ul>
+     * <li>ATO：{@code alltheores/recipe/crafting/<alloy>/alloy_blending_from_dust.json} 与它的锭层面
+     *     {@code alloy_smelting/<alloy>_ingot.json} 一致——青铜/黄铜 3+1→4、因瓦 2+1→3、电子/康铜 1+1→2；
+     *     非常规的 steel/enderium/lumium/signalum 照同一份表。</li>
+     * <li>ECO（NEO ECO AE Extension）：{@code neoecoae} 的 {@code <alloy>_dust.json} 无形状合成——
+     *     铝合金 1 铁 + 1 铝 + 2 赛斯特石英、黑钨合金 1 钨 + 1 铝合金 + 2 流克斯；它的粉→锭是 1:1，
+     *     所以这里直接落成 1 锭。</li>
+     * </ul>
+     * 产出数按邻居数据里的 {@code result.count} 写死，不套「原子守恒」：lumium 是 4+1+3→4，
+     * 守恒假设会算成 8。
+     * <p>
+     * 输入写标签：{@code c:ingots/X} 在该材料有 {@code c:mats/X} 聚合标签时由 {@link #matInput}
+     * 自动升级成「粉或锭皆可入」（与感应炉既有设计同一判据），萤石粉/红石/煤/赛斯特石英这类
+     * 没有锭形态的写它们自己的标签。聚合标签由 {@code TENMaterialTagGen} 生成，成员是对
+     * {@code #c:ingots/X} / {@code #c:dusts/X} 的可选引用，所以谁提供这种金属都能进配方；
+     * 赛斯特石英/流克斯由 AE2 提供，没装 AE2 时标签为空、整条（含 JEI 显示）在加载期消失。
+     * 输出仍必须是具体物品，因此按候选模组各写一条互斥变体，与 {@link #ORE_CHAIN} 共用
+     * {@code provider_priority} 机制；耗时按 {@link #furnaceTime} 的锚点算，与原生感应炉配方同尺度。
+     */
+    private record AlloyIn(String tag, int count) {}
+
+    private record AlloyRow(String alloy, List<AlloyIn> inputs, List<String> outputs, int yieldCount) {}
+
+    private static final List<AlloyRow> ALLOY_CHAIN = List.of(
+            new AlloyRow("bronze", List.of(new AlloyIn("c:ingots/copper", 3), new AlloyIn("c:ingots/tin", 1)),
+                    List.of("alltheores:bronze_ingot", "mekanism:ingot_bronze"), 4),
+            new AlloyRow("brass", List.of(new AlloyIn("c:ingots/copper", 3), new AlloyIn("c:ingots/zinc", 1)),
+                    List.of("alltheores:brass_ingot"), 4),
+            new AlloyRow("invar", List.of(new AlloyIn("c:ingots/iron", 2), new AlloyIn("c:ingots/nickel", 1)),
+                    List.of("alltheores:invar_ingot"), 3),
+            new AlloyRow("electrum", List.of(new AlloyIn("c:ingots/gold", 1), new AlloyIn("c:ingots/silver", 1)),
+                    List.of("immersiveengineering:ingot_electrum", "alltheores:electrum_ingot"), 2),
+            new AlloyRow("constantan", List.of(new AlloyIn("c:ingots/copper", 1), new AlloyIn("c:ingots/nickel", 1)),
+                    List.of("immersiveengineering:ingot_constantan", "alltheores:constantan_ingot"), 2),
+            new AlloyRow("steel", List.of(new AlloyIn("c:ingots/iron", 1), new AlloyIn("minecraft:coals", 1)),
+                    List.of("alltheores:steel_ingot", "mekanism:ingot_steel", "immersiveengineering:ingot_steel"), 1),
+            new AlloyRow("enderium", List.of(new AlloyIn("c:ingots/lead", 3), new AlloyIn("c:ingots/platinum", 1),
+                            new AlloyIn("c:ender_pearls", 2)),
+                    List.of("alltheores:enderium_ingot"), 4),
+            new AlloyRow("lumium", List.of(new AlloyIn("c:dusts/glowstone", 4), new AlloyIn("c:ingots/silver", 1),
+                            new AlloyIn("c:ingots/tin", 3)),
+                    List.of("alltheores:lumium_ingot"), 4),
+            new AlloyRow("signalum", List.of(new AlloyIn("c:ingots/copper", 3), new AlloyIn("c:ingots/silver", 1),
+                            new AlloyIn("c:dusts/redstone", 4)),
+                    List.of("alltheores:signalum_ingot"), 4),
+            new AlloyRow("aluminum_alloy", List.of(new AlloyIn("c:ingots/iron", 1), new AlloyIn("c:ingots/aluminum", 1),
+                            new AlloyIn("c:dusts/certus_quartz", 2)),
+                    List.of("neoecoae:aluminum_alloy_ingot"), 1),
+            new AlloyRow("black_tungsten_alloy", List.of(new AlloyIn("c:ingots/tungsten", 1),
+                            new AlloyIn("c:ingots/aluminum_alloy", 1), new AlloyIn("c:dusts/fluix", 2)),
+                    List.of("neoecoae:black_tungsten_alloy_ingot"), 1));
 
     private record SmeltFmt(String input, String output, float xp, String suffix) {}
 
@@ -283,7 +342,7 @@ public class TENRecipeGen implements DataProvider {
     /** 三段式第一段：{@code c:ores/X} → 具体粗料物品 1 + 0.33，附带 0.15 圆石副产。 */
     private void buildOreToRaw(List<CompletableFuture<?>> futures, CachedOutput cache, Path recipeDir, String mat,
             List<String> candidates) {
-        buildChainStage(futures, cache, recipeDir, mat, "ore_raw", "c:ores/" + mat, candidates, 180, item -> {
+        buildChainStage(futures, cache, recipeDir, mat, "ore_raw", "c:ores/" + mat, candidates, 120, item -> {
             var outs = new JsonArray();
             outs.add(ingr("item", "static", item, 1, null));
             outs.add(ingr("item", "static", item, 1, 0.33));
@@ -299,6 +358,35 @@ public class TENRecipeGen implements DataProvider {
             var outs = new JsonArray();
             outs.add(ingr("item", "static", item, 1, null));
             outs.add(ingr("item", "static", item, 1, 0.8));
+            return outs;
+        });
+    }
+
+    /**
+     * 通用段（原来自设、现按标签驱动）：{@code c:storage_blocks/raw_X} → 粉 9 + 9×40% 掷骰。
+     * 耗时 200 对齐原生「1 进 8 出」那一档（{@code pulverizer/snow_ice_blue.json}），
+     * 原来按 9 倍写 900 是把「物料份数」当成了「操作次数」，粉碎机原生一律是 100–200 一级。
+     */
+    private void buildRawBlockToDust(List<CompletableFuture<?>> futures, CachedOutput cache, Path recipeDir, String mat,
+            List<String> candidates) {
+        buildChainStage(futures, cache, recipeDir, mat, "block_dust", "c:storage_blocks/raw_" + mat, candidates, 200, item -> {
+            var outs = new JsonArray();
+            outs.add(ingr("item", "static", item, 9, null));
+            outs.add(ingr("item", "static", item, 1, 0.4, 9));
+            return outs;
+        });
+    }
+
+    /**
+     * 通用段：{@code c:ingots/X} → 粉 1。本模组注册的粉已由 {@code PULV} 表按材料覆盖，
+     * 这里只补邻居材料（铅/锇/铀/铝/银/锌…），所以候选头一个是我们的粉时直接跳过。
+     */
+    private void buildIngotToDust(List<CompletableFuture<?>> futures, CachedOutput cache, Path recipeDir, String mat,
+            List<String> candidates) {
+        if (providerOf(candidates.get(0)).equals(TEN.MOD_ID)) return;
+        buildChainStage(futures, cache, recipeDir, mat, "ingot_dust", "c:ingots/" + mat, candidates, 100, item -> {
+            var outs = new JsonArray();
+            outs.add(ingr("item", "static", item, 1, null));
             return outs;
         });
     }
@@ -336,6 +424,54 @@ public class TENRecipeGen implements DataProvider {
         var a = new JsonArray();
         candidates.forEach(a::add);
         return obj("type", TEN.MOD_ID + ":provider_priority", "mod", mod, "candidates", a);
+    }
+
+    /**
+     * 固定比率合金：每个候选锭一条感应炉配方。输入与该合金的存在性都补 {@code not(tag_empty)} 门控，
+     * 所以缺这种金属时整条（含 JEI 显示）一起消失，不会留下跑不起来的配方。
+     */
+    private void buildAlloys(List<CompletableFuture<?>> futures, CachedOutput cache, Path recipeDir) {
+        for (var row : ALLOY_CHAIN) {
+            var group = row.outputs().stream().map(TENRecipeGen::providerOf).toList();
+            boolean exclusive = row.outputs().size() > 1;
+            int units = row.inputs().stream().mapToInt(AlloyIn::count).sum();
+            for (String out : row.outputs()) {
+                var conds = new ArrayList<JsonObject>();
+                var ins = new JsonArray();
+                for (var in : row.inputs()) {
+                    String tag = matInput(in.tag());
+                    ins.add(ingr("item", "tag", tag, in.count(), null));
+                    conds.add(tagPresent(tag));
+                }
+                conds.add(tagPresent("c:ingots/" + row.alloy()));
+                conds.add(exclusive ? priorityOf(providerOf(out), group) : gateOf(out));
+                var j = new JsonObject();
+                j.addProperty("type", TEN.MOD_ID + ":induction_furnace");
+                addConditions(j, conds.toArray(new JsonObject[0]));
+                j.add("inputs", ins);
+                var outs = new JsonArray();
+                outs.add(ingr("item", "static", out, row.yieldCount(), null));
+                j.add("outputs", outs);
+                j.addProperty("time", furnaceTime(units));
+                String name = "alloy/" + row.alloy() + (exclusive ? "_" + providerOf(out) : "");
+                futures.add(saveJson(cache, recipeDir.resolve("induction_furnace/" + name + ".json"), j));
+            }
+        }
+    }
+
+    /**
+     * 感应炉耗时尺规：**每个输入物料 +50 tick**，线性、不夹上限。
+     * 原生手写配方与新生成的合金/兼容行都按这一条走，见 {@code recipe/induction_furnace/}。
+     */
+    private static int furnaceTime(int inputUnits) {
+        return 50 * inputUnits;
+    }
+
+    /** 材料输入标签：该材料有 {@code c:mats/X} 聚合标签时粉与锭皆可入，否则原样返回。 */
+    private static String matInput(String tag) {
+        if (!tag.startsWith("c:ingots/")) return tag;
+        String material = tag.substring("c:ingots/".length());
+        return TENMaterialTagGen.hasMatTag(material) ? "c:mats/" + material : tag;
     }
 
     /** 输出物品归属的模组 → {@code mod_loaded} 门控；原版与本模组不需要。 */
@@ -438,18 +574,6 @@ public class TENRecipeGen implements DataProvider {
     // ══════════════════════════════════════════════════════════════════
 
     /** Raw block → 9 dust with 9×40% bonus dust（roll 掷骰配方）。 */
-    private JsonObject buildRawBlockPulv(Mat mat) {
-        var j = new JsonObject();
-        j.addProperty("type", TEN.MOD_ID + ":pulverizer");
-        j.add("inputs", arr(ingr("item", "tag", mat.rawBlockTag(), null, null)));
-        var outs = new JsonArray();
-        outs.add(ingr("item", "static", mat.itemId("dust"), 9, null));
-        outs.add(ingr("item", "static", mat.itemId("dust"), 1, 0.4, 9));
-        j.add("outputs", outs);
-        j.addProperty("time", 900);
-        return j;
-    }
-
     private static JsonObject ref(String id) {
         return obj(id.startsWith("c:") ? "tag" : "item", id);
     }

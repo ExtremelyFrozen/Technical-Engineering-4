@@ -5,6 +5,13 @@
       "modid": "enderio"
     },
     {
+      "type": "neoforge:not",
+      "value": {
+        "type": "neoforge:tag_empty",
+        "tag": "c:mats/gold"
+      }
+    },
+    {
       "type": "kenergyengineering:compat_enabled",
       "source": "enderio"
     }
@@ -29,5 +36,5 @@
       "key": "enderio:soularium_ingot"
     }
   ],
-  "time": 373
+  "time": 100
 }

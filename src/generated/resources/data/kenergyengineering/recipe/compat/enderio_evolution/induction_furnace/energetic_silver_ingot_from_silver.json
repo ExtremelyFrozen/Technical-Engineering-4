@@ -5,6 +5,13 @@
       "modid": "enderio_evolution"
     },
     {
+      "type": "neoforge:not",
+      "value": {
+        "type": "neoforge:tag_empty",
+        "tag": "c:mats/silver"
+      }
+    },
+    {
       "type": "kenergyengineering:compat_enabled",
       "source": "enderio_evolution"
     }
@@ -19,7 +26,7 @@
     {
       "type": "tag",
       "form": "item",
-      "key": "c:ingots/silver"
+      "key": "c:mats/silver"
     },
     {
       "type": "static",
@@ -34,5 +41,5 @@
       "key": "enderio_evolution:energetic_silver_ingot"
     }
   ],
-  "time": 667
+  "time": 150
 }

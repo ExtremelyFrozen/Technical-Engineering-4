@@ -5,6 +5,13 @@
       "modid": "enderio"
     },
     {
+      "type": "neoforge:not",
+      "value": {
+        "type": "neoforge:tag_empty",
+        "tag": "c:storage_blocks/quartz"
+      }
+    },
+    {
       "type": "kenergyengineering:compat_enabled",
       "source": "enderio"
     }
@@ -29,5 +36,5 @@
       "key": "enderio:fused_quartz_e"
     }
   ],
-  "time": 427
+  "time": 100
 }

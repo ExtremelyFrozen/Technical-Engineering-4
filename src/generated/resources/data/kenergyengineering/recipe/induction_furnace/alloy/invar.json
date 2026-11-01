@@ -1,0 +1,53 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:not",
+      "value": {
+        "type": "neoforge:tag_empty",
+        "tag": "c:mats/iron"
+      }
+    },
+    {
+      "type": "neoforge:not",
+      "value": {
+        "type": "neoforge:tag_empty",
+        "tag": "c:mats/nickel"
+      }
+    },
+    {
+      "type": "neoforge:not",
+      "value": {
+        "type": "neoforge:tag_empty",
+        "tag": "c:ingots/invar"
+      }
+    },
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "alltheores"
+    }
+  ],
+  "type": "kenergyengineering:induction_furnace",
+  "inputs": [
+    {
+      "type": "tag",
+      "count": 2,
+      "form": "item",
+      "key": "c:mats/iron"
+    },
+    {
+      "type": "tag",
+      "count": 1,
+      "form": "item",
+      "key": "c:mats/nickel"
+    }
+  ],
+  "outputs": [
+    {
+      "type": "static",
+      "count": 3,
+      "form": "item",
+      "key": "alltheores:invar_ingot"
+    }
+  ],
+  "time": 150
+}

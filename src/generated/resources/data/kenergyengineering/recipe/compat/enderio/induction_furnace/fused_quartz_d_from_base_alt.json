@@ -5,6 +5,13 @@
       "modid": "enderio"
     },
     {
+      "type": "neoforge:not",
+      "value": {
+        "type": "neoforge:tag_empty",
+        "tag": "c:storage_blocks/amethyst"
+      }
+    },
+    {
       "type": "kenergyengineering:compat_enabled",
       "source": "enderio"
     }
@@ -29,5 +36,5 @@
       "key": "enderio:fused_quartz_d"
     }
   ],
-  "time": 213
+  "time": 100
 }

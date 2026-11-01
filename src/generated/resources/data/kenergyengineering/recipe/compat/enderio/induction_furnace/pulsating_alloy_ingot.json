@@ -5,6 +5,20 @@
       "modid": "enderio"
     },
     {
+      "type": "neoforge:not",
+      "value": {
+        "type": "neoforge:tag_empty",
+        "tag": "c:mats/iron"
+      }
+    },
+    {
+      "type": "neoforge:not",
+      "value": {
+        "type": "neoforge:tag_empty",
+        "tag": "c:ender_pearls"
+      }
+    },
+    {
       "type": "kenergyengineering:compat_enabled",
       "source": "enderio"
     }
@@ -30,5 +44,5 @@
       "key": "enderio:pulsating_alloy_ingot"
     }
   ],
-  "time": 320
+  "time": 100
 }

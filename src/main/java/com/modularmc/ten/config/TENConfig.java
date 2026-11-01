@@ -266,9 +266,9 @@ public final class TENConfig {
      */
     public static final class CompatConfig {
 
-        /** 材料归属的默认顺序：本模组优先，邻居按「内容更贴近我们 / 更通用」排，原版垫底。 */
+        /** 材料归属的默认顺序：本模组优先，其后是自带矿石资产的 ECO，再按「内容更贴近我们 / 更通用」排，原版垫底。 */
         private static final List<String> DEFAULT_PROVIDER_PRIORITY = List.of(
-                "kenergyengineering", "enderio_evolution", "enderio", "mekanism",
+                "kenergyengineering", "neoecoae", "enderio_evolution", "enderio", "mekanism",
                 "immersiveengineering", "alltheores", "allthemodium", "minecraft");
 
         public final ModConfigSpec.ConfigValue<List<? extends String>> disabledSources;

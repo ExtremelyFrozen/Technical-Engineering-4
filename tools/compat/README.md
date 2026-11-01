@@ -22,19 +22,55 @@ unzip -o -q build/moddev/artifacts/neoforge-21.1.243-client-extra-aka-minecraft-
   "data/minecraft/tags/item/*" -d /d/Temp/mcall
 ```
 
+`dumps` 里还可以放只提供标签、不提供机器配方的模组（如 `ae2` 的 `c:dusts/certus_quartz`、
+`c:dusts/fluix`）——它们不参与 `providerPriority` 的归属顺序，只让 `check.js` 能证明
+「这个输入标签确实有人定义」，否则会误报成无人定义。
+
+> Info-ZIP 的 `unzip "dir/*"` 不跨目录层级：`unzip -o -q x.jar "data/*" -d out` 只会解出
+> `data/` 下一层的文件，邻居按材料分层的配方目录会被解成空壳。要么整包解压，要么显式写到底层目录。
+
+## 耗时尺规
+
+`config.json` 的 `timeRule` 是导入行的时长来源，**不再**用邻居能量换算
+（IE 一次冲压机 51200 FE ÷ 15 FE/t = 3413 tick，会被旧钳位压成 1200，与本模组原生差一个数量级）：
+
+| 机器 | 尺规 | 原生依据 |
+|---|---|---|
+| 感应炉 | 50 tick × 输入物料份数（线性，不夹上限） | 手写行 2 份 100、3 份 150、5 份 250 |
+| 粉碎机 | 一次操作 120；≥9 份输入（粗矿块）200 | 原生 80–200，1→8 出那一档 200 |
+| 压缩机 | 恒 100，不看份数 | 原生板/齿轮/杆/线全部 100 |
+
+`TENRecipeGen#furnaceTime` 用同一条感应炉尺规，原生 `recipe/induction_furnace/*.json` 也已按它重算。
+
 ## 日常流程
 
 | 步骤 | 命令 | 说明 |
 |---|---|---|
-| 1 | `node tools/compat/convert.js` | 邻居数据 → `out/rows.json`，并打印 `ORE_CHAIN` 候选建议 |
-| 2 | 手工核对建议 | 已有材料只补候选，别重复加行；新材料才加 `new ChainRow(...)` |
-| 3 | `node tools/compat/inject.js` | 只替换 `TENCompatGen` 的 `ALLOYS` / `GRIND` 数组体 |
-| 4 | `./gradlew runData -x compileTestJava` | 生成期断言会在这里拦住重复输入签名 |
-| 5 | `node tools/compat/check.js` | 全量校验，退出码非 0 即有问题 |
+| 1 | `./gradlew runData -x compileTestJava` | 先让生成物落到当前状态，转换器的「本模组已有配方」基准读它 |
+| 2 | `node tools/compat/convert.js` | 邻居数据 → `out/rows.json`，并打印 `ORE_CHAIN` 候选建议 |
+| 3 | 手工核对建议 | 已有材料只补候选，别重复加行；新材料才加 `new ChainRow(...)` |
+| 4 | `node tools/compat/inject.js` | 只替换 `TENCompatGen` 的 `ALLOYS` / `GRIND` / `PRESS` 数组体 |
+| 5 | `./gradlew runData -x compileTestJava` | 生成期断言会在这里拦住重复输入签名与同名覆盖 |
+| 6 | `node tools/compat/check.js` | 全量校验，退出码非 0 即有问题 |
 
-`config.json` 的 `providerPriority` 是**编写期**的候选顺序；游戏内生效顺序由配置项
-`compat.providerPriority` 决定（`TENConfig.CompatConfig`），两份要一起改，否则
-转换器给出的候选次序与实际归属不一致。
+第 1 步与第 5 步之间的顺序有意义：我们自己的通用段（锭→粉、粗矿块→粉）与邻居写的同输入兼容配方
+是**互斥**的，转换器靠读上一轮生成物判断「这个输入本模组是否已有配方」。
+本模组改了通用配方后要先跑一次 DataGen，再重跑转换器，否则会把已经被我们接管的那批导入进来，
+第 5 步的断言会直接报错（这是预期的报错，不是转换器坏了）。
+
+## 导入规则
+
+- 行名 = 相对该机器配方目录的路径（`aluminum/ingot.json` → `aluminum_ingot`）。只取文件名会让
+  ATO 那种按材料分层目录里的几十个 `ingot.json` 写进同一个输出文件、互相覆盖。
+- 对方配方自带的第三方 `neoforge:mod_loaded` 门控要带过来（EVO 的 industrialforegoing 合金行、
+  ATO 写给沉浸工程/通用机械/EIO 的兼容行都是这类）。
+- 输入按标签、输出按优先级解析成具体物品；解析不到就不导入。
+- 输入签名与本模组已有配方相同的条目不导入。
+- **IE 的 `alloysmelter` 不在导入清单里**：青铜/黄铜/因瓦/电子/康铜由 `TENRecipeGen.ALLOY_CHAIN`
+  按同一比率接管（比率照抄 IE 的原子守恒写法），邻居那份的输出是标签，我们要么写死一家、
+  要么写互斥变体，后者已由通用合金链覆盖。
+- `config.json` 的 `providerPriority` 是**编写期**的候选顺序；游戏内生效顺序由配置项
+  `compat.providerPriority` 决定（`TENConfig.CompatConfig`），两份要一起改。
 
 ## check.js 查什么
 

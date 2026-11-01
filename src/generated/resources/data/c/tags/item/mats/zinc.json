@@ -1,0 +1,13 @@
+{
+  "replace": false,
+  "values": [
+    {
+      "id": "#c:ingots/zinc",
+      "required": false
+    },
+    {
+      "id": "#c:dusts/zinc",
+      "required": false
+    }
+  ]
+}

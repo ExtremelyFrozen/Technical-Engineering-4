@@ -9,6 +9,13 @@
       "modid": "mekanism"
     },
     {
+      "type": "neoforge:not",
+      "value": {
+        "type": "neoforge:tag_empty",
+        "tag": "minecraft:coals"
+      }
+    },
+    {
       "type": "kenergyengineering:compat_enabled",
       "source": "enderio"
     }
@@ -40,5 +47,5 @@
       "key": "mekanism:dust_sulfur"
     }
   ],
-  "time": 160
+  "time": 120
 }

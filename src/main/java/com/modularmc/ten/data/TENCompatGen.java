@@ -23,7 +23,10 @@ import java.util.concurrent.CompletableFuture;
  * <ol>
  * <li>每条都带 {@code neoforge:mod_loaded} 条件，邻居缺席时整条在加载期消失；生成结果与本机
  *     是否安装邻居无关，CI 与本地产出一致。</li>
- * <li>时间按对方每次总能耗折算到本模组的 15 FE/t，钳位 20..1200 tick。</li>
+ * <li>耗时不按对方能量换算，而是统一到本模组的尺规（{@code tools/compat/config.json} 的 timeRule）：
+ *     感应炉 50 tick × 输入物料份数、粉碎机一次操作 120（粗矿块这类 9 份输入 200）、
+ *     压缩机恒 100 不看份数。原来的「对方总 FE ÷ 15 FE/t」在 IE 的 51200 FE 前会顶到 1200 tick 上限，
+ *     与原生配方差一个数量级。</li>
  * <li>金属输入写 {@code c:ingots/X}，该材料存在 {@code c:mats/X} 时自动升级为「锭或粉皆可」。</li>
  * <li>对方的 compound 输入（如 soul_sand｜soul_soil）展开成多条——本模组格式没有 any_of 输入。</li>
  * <li>输入签名与本模组已有配方相同的条目一律不导入：同一台机器不允许两条可匹配配方，
@@ -34,7 +37,11 @@ import java.util.concurrent.CompletableFuture;
  *     对方数据里的标签输出在<b>编写期</b>按优先级列表（本模组 → EVO → EIO）解析成该标签的第一个
  *     可用成员再落地；解析不到（该标签谁都不提供，如 {@code c:dusts/aluminum}）就不导入这条。
  *     邻居增减后重跑转换器即可对齐。</li>
- * <li>输入用标签是允许的，且是跨模组适配的主要手段；标签为空时配方永不匹配，不报错也不丢件。</li>
+ * <li>输入用标签是允许的，且是跨模组适配的主要手段；每条还会按输入标签补 {@code not(tag_empty)}
+ *     门控，材料缺席时整条在加载期消失——与邻居自己的写法一致，JEI 不会留下跑不起来的配方。</li>
+ * <li>对方配方自带的第三方 {@code neoforge:mod_loaded} 门控（例如 EVO 只在装了
+ *     Industrial Foregoing 时才有的合金行）会一并带过来，作为本行的额外门控；漏掉它等于
+ *     造出一条只在别的模组包里成立的配方。</li>
  * </ol>
  */
 public class TENCompatGen implements DataProvider {
@@ -48,126 +55,147 @@ public class TENCompatGen implements DataProvider {
 
     /** 感应炉 ← EIO / EVO 合金炉。 */
     private static final Recipe[] ALLOYS = {
-        alloy("enderio", "black_dye", "minecraft:black_dye", 1, 67, tag("c:dusts/coal"), item("minecraft:egg")),
-        alloy("enderio", "black_dye_double", "minecraft:black_dye", 2, 107, tagN("c:dusts/coal", 2), tag("c:slimeballs")),
-        alloy("enderio", "brown_dye_twigs", "minecraft:brown_dye", 1, 67, itemN("enderio:plant_matter_brown", 6), item("minecraft:egg")),
-        alloy("enderio", "brown_dye_twigs_double", "minecraft:brown_dye", 2, 107, itemN("enderio:plant_matter_brown", 12), tag("c:slimeballs")),
-        alloy("enderio", "clear_glass", "enderio:clear_glass", 1, 213, tag("c:glass_blocks/colorless")),
-        alloy("enderio", "clear_glass_d_from_base", "enderio:clear_glass_d", 1, 107, item("enderio:clear_glass"), tagN("c:gems/amethyst", 4)),
-        alloy("enderio", "clear_glass_d_from_base_alt", "enderio:clear_glass_d", 1, 107, item("enderio:clear_glass"), tag("c:storage_blocks/amethyst")),
-        alloy("enderio", "clear_glass_d_from_main", "enderio:clear_glass_d", 1, 213, tag("c:glass_blocks/colorless"), tagN("c:gems/amethyst", 4)),
-        alloy("enderio", "clear_glass_d_from_main_alt", "enderio:clear_glass_d", 1, 213, tag("c:glass_blocks/colorless"), tag("c:storage_blocks/amethyst")),
-        alloy("enderio", "clear_glass_e_from_base", "enderio:clear_glass_e", 1, 107, item("enderio:clear_glass"), tagN("c:dusts/glowstone", 4)),
-        alloy("enderio", "clear_glass_e_from_base_alt", "enderio:clear_glass_e", 1, 107, item("enderio:clear_glass"), item("minecraft:glowstone")),
-        alloy("enderio", "clear_glass_e_from_main", "enderio:clear_glass_e", 1, 213, tag("c:glass_blocks/colorless"), tagN("c:dusts/glowstone", 4)),
-        alloy("enderio", "clear_glass_e_from_main_alt", "enderio:clear_glass_e", 1, 213, tag("c:glass_blocks/colorless"), item("minecraft:glowstone")),
-        alloy("enderio", "conductive_alloy_ingot", "enderio:conductive_alloy_ingot", 2, 213, ingot("iron"), ingot("copper")),
-        alloy("enderio", "dark_steel_ingot", "enderio:dark_steel_ingot", 2, 213, ingot("iron"), tag("c:dusts/coal"), tag("c:obsidians")),
-        alloy("enderio", "dead_bush", "minecraft:dead_bush", 1, 33, tag("minecraft:saplings")),
-        alloy("enderio", "ender_pearl", "minecraft:ender_pearl", 1, 133, tagN("c:dusts/ender_pearl", 9)),
-        alloy("enderio", "end_steel_ingot", "enderio:end_steel_ingot", 2, 427, tag("c:end_stones"), tag("c:ingots/dark_steel"), tag("c:obsidians")),
-        alloy("enderio", "energetic_alloy_ingot", "enderio:energetic_alloy_ingot", 2, 320, tag("c:dusts/redstone"), tag("c:ingots/conductive_alloy"), ingot("gold")),
-        alloy("enderio", "fused_quartz", "enderio:fused_quartz", 1, 427, tagN("c:gems/quartz", 4)),
-        alloy("enderio", "fused_quartz_alt", "enderio:fused_quartz", 1, 427, tag("c:storage_blocks/quartz")),
-        alloy("enderio", "fused_quartz_d_from_base", "enderio:fused_quartz_d", 1, 213, item("enderio:fused_quartz"), tagN("c:gems/amethyst", 4)),
-        alloy("enderio", "fused_quartz_d_from_base_alt", "enderio:fused_quartz_d", 1, 213, item("enderio:fused_quartz"), tag("c:storage_blocks/amethyst")),
-        alloy("enderio", "fused_quartz_d_from_main", "enderio:fused_quartz_d", 1, 427, tagN("c:gems/quartz", 4), tagN("c:gems/amethyst", 4)),
-        alloy("enderio", "fused_quartz_d_from_main_alt", "enderio:fused_quartz_d", 1, 427, tagN("c:gems/quartz", 4), tag("c:storage_blocks/amethyst")),
-        alloy("enderio", "fused_quartz_d_from_storage", "enderio:fused_quartz_d", 1, 427, tag("c:storage_blocks/quartz"), tagN("c:gems/amethyst", 4)),
-        alloy("enderio", "fused_quartz_d_from_storage_alt", "enderio:fused_quartz_d", 1, 427, tag("c:storage_blocks/quartz"), tag("c:storage_blocks/amethyst")),
-        alloy("enderio", "fused_quartz_e_from_base", "enderio:fused_quartz_e", 1, 213, item("enderio:fused_quartz"), tagN("c:dusts/glowstone", 4)),
-        alloy("enderio", "fused_quartz_e_from_base_alt", "enderio:fused_quartz_e", 1, 213, item("enderio:fused_quartz"), item("minecraft:glowstone")),
-        alloy("enderio", "fused_quartz_e_from_main", "enderio:fused_quartz_e", 1, 427, tagN("c:gems/quartz", 4), tagN("c:dusts/glowstone", 4)),
-        alloy("enderio", "fused_quartz_e_from_main_alt", "enderio:fused_quartz_e", 1, 427, tagN("c:gems/quartz", 4), item("minecraft:glowstone")),
-        alloy("enderio", "fused_quartz_e_from_storage", "enderio:fused_quartz_e", 1, 427, tag("c:storage_blocks/quartz"), tagN("c:dusts/glowstone", 4)),
-        alloy("enderio", "fused_quartz_e_from_storage_alt", "enderio:fused_quartz_e", 1, 427, tag("c:storage_blocks/quartz"), item("minecraft:glowstone")),
-        alloy("enderio", "green_dye_clippings", "minecraft:green_dye", 1, 67, itemN("enderio:plant_matter_green", 6), item("minecraft:egg")),
-        alloy("enderio", "green_dye_double_clippings", "minecraft:green_dye", 2, 107, itemN("enderio:plant_matter_green", 12), tag("c:slimeballs")),
-        alloy("enderio", "industrial_insulation", "enderio:industrial_insulation", 1, 213, tag("c:dusts/lapis"), tag("minecraft:wool"), tag("enderio:insulation_metals")),
-        alloy("enderio", "photovoltaic_plate", "enderio:photovoltaic_plate", 1, 373, itemN("enderio:photovoltaic_composite", 2)),
-        alloy("enderio", "pulsating_alloy_ingot", "enderio:pulsating_alloy_ingot", 2, 320, ingot("iron"), tag("c:ender_pearls")),
-        alloy("enderio", "redstone_alloy_ingot", "enderio:redstone_alloy_ingot", 1, 213, tag("c:dusts/redstone"), ingot("copper")),
-        alloy("enderio", "red_dye", "minecraft:red_dye", 12, 107, item("minecraft:beetroot"), itemN("minecraft:clay_ball", 3), itemN("minecraft:egg", 6)),
-        alloy("enderio", "soularium_ingot_soul_sand", "enderio:soularium_ingot", 1, 373, item("minecraft:soul_sand"), ingot("gold")),
-        alloy("enderio", "soularium_ingot_soul_soil", "enderio:soularium_ingot", 1, 373, item("minecraft:soul_soil"), ingot("gold")),
-        alloy("enderio", "vibrant_alloy_ingot", "enderio:vibrant_alloy_ingot", 2, 373, tag("c:ingots/energetic_alloy"), tag("c:ender_pearls"), tag("c:dusts/glowstone")),
-        alloy("enderio_evolution", "construction_alloy_ingot", "enderio_evolution:construction_alloy_ingot", 1, 667, item("minecraft:copper_ingot"), item("enderio_evolution:crude_steel_ingot"), item("minecraft:gravel")),
-        alloy("enderio_evolution", "crude_steel_ingot", "enderio_evolution:crude_steel_ingot", 1, 667, item("minecraft:iron_ingot"), item("minecraft:clay_ball"), tag("c:cobblestones")),
-        alloy("enderio_evolution", "crystalline_alloy_ingot", "enderio_evolution:crystalline_alloy_ingot", 2, 667, item("enderio:pulsating_powder"), item("enderio:pulsating_alloy_ingot"), item("enderio_evolution:vivid_alloy_ingot")),
-        alloy("enderio_evolution", "crystalline_alloy_ingot_from_vibrant", "enderio_evolution:crystalline_alloy_ingot", 2, 667, item("enderio:pulsating_powder"), item("enderio:pulsating_alloy_ingot"), item("enderio:vibrant_alloy_ingot")),
-        alloy("enderio_evolution", "crystalline_pink_slime_ingot", "enderio_evolution:crystalline_pink_slime_ingot", 1, 667, item("industrialforegoing:pink_slime"), item("enderio_evolution:crystalline_alloy_ingot")),
-        alloy("enderio_evolution", "crystalline_pink_slime_ingot_synthetic", "enderio_evolution:crystalline_pink_slime_ingot", 1, 1000, itemN("minecraft:slime_ball", 2), item("enderio_evolution:crystalline_alloy_ingot"), tag("c:dyes/pink")),
-        alloy("enderio_evolution", "energetic_silver_ingot_from_iron", "enderio_evolution:energetic_silver_ingot", 1, 667, item("minecraft:redstone"), item("minecraft:iron_ingot"), item("minecraft:glowstone_dust")),
-        alloy("enderio_evolution", "energetic_silver_ingot_from_silver", "enderio_evolution:energetic_silver_ingot", 1, 667, item("minecraft:redstone"), tag("c:ingots/silver"), item("minecraft:glowstone_dust")),
-        alloy("enderio_evolution", "melodic_alloy_ingot", "enderio_evolution:melodic_alloy_ingot", 2, 667, item("enderio_evolution:crystalline_pink_slime_ingot"), item("minecraft:popped_chorus_fruit"), item("enderio:end_steel_ingot")),
-        alloy("enderio_evolution", "stellar_alloy_ingot", "enderio_evolution:stellar_alloy_ingot", 2, 1200, item("minecraft:nether_star"), item("enderio_evolution:melodic_alloy_ingot"), itemN("minecraft:clay_ball", 4)),
-        alloy("enderio_evolution", "vivid_alloy_ingot", "enderio_evolution:vivid_alloy_ingot", 1, 667, item("enderio_evolution:energetic_silver_ingot"), item("minecraft:ender_pearl"))
+        alloy("enderio", "black_dye", "minecraft:black_dye", 1, 100, tag("c:dusts/coal"), item("minecraft:egg")),
+        alloy("enderio", "black_dye_double", "minecraft:black_dye", 2, 150, tagN("c:dusts/coal", 2), tag("c:slimeballs")),
+        alloy("enderio", "brown_dye_twigs", "minecraft:brown_dye", 1, 350, itemN("enderio:plant_matter_brown", 6), item("minecraft:egg")),
+        alloy("enderio", "brown_dye_twigs_double", "minecraft:brown_dye", 2, 650, itemN("enderio:plant_matter_brown", 12), tag("c:slimeballs")),
+        alloy("enderio", "clear_glass", "enderio:clear_glass", 1, 50, tag("c:glass_blocks/colorless")),
+        alloy("enderio", "clear_glass_d_from_base", "enderio:clear_glass_d", 1, 250, item("enderio:clear_glass"), tagN("c:gems/amethyst", 4)),
+        alloy("enderio", "clear_glass_d_from_base_alt", "enderio:clear_glass_d", 1, 100, item("enderio:clear_glass"), tag("c:storage_blocks/amethyst")),
+        alloy("enderio", "clear_glass_d_from_main", "enderio:clear_glass_d", 1, 250, tag("c:glass_blocks/colorless"), tagN("c:gems/amethyst", 4)),
+        alloy("enderio", "clear_glass_d_from_main_alt", "enderio:clear_glass_d", 1, 100, tag("c:glass_blocks/colorless"), tag("c:storage_blocks/amethyst")),
+        alloy("enderio", "clear_glass_e_from_base", "enderio:clear_glass_e", 1, 250, item("enderio:clear_glass"), tagN("c:dusts/glowstone", 4)),
+        alloy("enderio", "clear_glass_e_from_base_alt", "enderio:clear_glass_e", 1, 100, item("enderio:clear_glass"), item("minecraft:glowstone")),
+        alloy("enderio", "clear_glass_e_from_main", "enderio:clear_glass_e", 1, 250, tag("c:glass_blocks/colorless"), tagN("c:dusts/glowstone", 4)),
+        alloy("enderio", "clear_glass_e_from_main_alt", "enderio:clear_glass_e", 1, 100, tag("c:glass_blocks/colorless"), item("minecraft:glowstone")),
+        alloy("enderio", "conductive_alloy_ingot", "enderio:conductive_alloy_ingot", 2, 100, ingot("iron"), ingot("copper")),
+        alloy("enderio", "dark_steel_ingot", "enderio:dark_steel_ingot", 2, 150, ingot("iron"), tag("c:dusts/coal"), tag("c:obsidians")),
+        alloy("enderio", "dead_bush", "minecraft:dead_bush", 1, 50, tag("minecraft:saplings")),
+        alloy("enderio", "ender_pearl", "minecraft:ender_pearl", 1, 450, tagN("c:dusts/ender_pearl", 9)),
+        alloy("enderio", "end_steel_ingot", "enderio:end_steel_ingot", 2, 150, tag("c:end_stones"), tag("c:ingots/dark_steel"), tag("c:obsidians")),
+        alloy("enderio", "energetic_alloy_ingot", "enderio:energetic_alloy_ingot", 2, 150, tag("c:dusts/redstone"), tag("c:ingots/conductive_alloy"), ingot("gold")),
+        alloy("enderio", "fused_quartz", "enderio:fused_quartz", 1, 200, tagN("c:gems/quartz", 4)),
+        alloy("enderio", "fused_quartz_alt", "enderio:fused_quartz", 1, 50, tag("c:storage_blocks/quartz")),
+        alloy("enderio", "fused_quartz_d_from_base", "enderio:fused_quartz_d", 1, 250, item("enderio:fused_quartz"), tagN("c:gems/amethyst", 4)),
+        alloy("enderio", "fused_quartz_d_from_base_alt", "enderio:fused_quartz_d", 1, 100, item("enderio:fused_quartz"), tag("c:storage_blocks/amethyst")),
+        alloy("enderio", "fused_quartz_d_from_main", "enderio:fused_quartz_d", 1, 400, tagN("c:gems/quartz", 4), tagN("c:gems/amethyst", 4)),
+        alloy("enderio", "fused_quartz_d_from_main_alt", "enderio:fused_quartz_d", 1, 250, tagN("c:gems/quartz", 4), tag("c:storage_blocks/amethyst")),
+        alloy("enderio", "fused_quartz_d_from_storage", "enderio:fused_quartz_d", 1, 250, tag("c:storage_blocks/quartz"), tagN("c:gems/amethyst", 4)),
+        alloy("enderio", "fused_quartz_d_from_storage_alt", "enderio:fused_quartz_d", 1, 100, tag("c:storage_blocks/quartz"), tag("c:storage_blocks/amethyst")),
+        alloy("enderio", "fused_quartz_e_from_base", "enderio:fused_quartz_e", 1, 250, item("enderio:fused_quartz"), tagN("c:dusts/glowstone", 4)),
+        alloy("enderio", "fused_quartz_e_from_base_alt", "enderio:fused_quartz_e", 1, 100, item("enderio:fused_quartz"), item("minecraft:glowstone")),
+        alloy("enderio", "fused_quartz_e_from_main", "enderio:fused_quartz_e", 1, 400, tagN("c:gems/quartz", 4), tagN("c:dusts/glowstone", 4)),
+        alloy("enderio", "fused_quartz_e_from_main_alt", "enderio:fused_quartz_e", 1, 250, tagN("c:gems/quartz", 4), item("minecraft:glowstone")),
+        alloy("enderio", "fused_quartz_e_from_storage", "enderio:fused_quartz_e", 1, 250, tag("c:storage_blocks/quartz"), tagN("c:dusts/glowstone", 4)),
+        alloy("enderio", "fused_quartz_e_from_storage_alt", "enderio:fused_quartz_e", 1, 100, tag("c:storage_blocks/quartz"), item("minecraft:glowstone")),
+        alloy("enderio", "green_dye_clippings", "minecraft:green_dye", 1, 350, itemN("enderio:plant_matter_green", 6), item("minecraft:egg")),
+        alloy("enderio", "green_dye_double_clippings", "minecraft:green_dye", 2, 650, itemN("enderio:plant_matter_green", 12), tag("c:slimeballs")),
+        alloy("enderio", "industrial_insulation", "enderio:industrial_insulation", 1, 150, tag("c:dusts/lapis"), tag("minecraft:wool"), tag("enderio:insulation_metals")),
+        alloy("enderio", "photovoltaic_plate", "enderio:photovoltaic_plate", 1, 100, itemN("enderio:photovoltaic_composite", 2)),
+        alloy("enderio", "pulsating_alloy_ingot", "enderio:pulsating_alloy_ingot", 2, 100, ingot("iron"), tag("c:ender_pearls")),
+        alloy("enderio", "redstone_alloy_ingot", "enderio:redstone_alloy_ingot", 1, 100, tag("c:dusts/redstone"), ingot("copper")),
+        alloy("enderio", "red_dye", "minecraft:red_dye", 12, 500, item("minecraft:beetroot"), itemN("minecraft:clay_ball", 3), itemN("minecraft:egg", 6)),
+        alloy("enderio", "soularium_ingot_soul_sand", "enderio:soularium_ingot", 1, 100, item("minecraft:soul_sand"), ingot("gold")),
+        alloy("enderio", "soularium_ingot_soul_soil", "enderio:soularium_ingot", 1, 100, item("minecraft:soul_soil"), ingot("gold")),
+        alloy("enderio", "vibrant_alloy_ingot", "enderio:vibrant_alloy_ingot", 2, 150, tag("c:ingots/energetic_alloy"), tag("c:ender_pearls"), tag("c:dusts/glowstone")),
+        alloy("enderio_evolution", "construction_alloy_ingot", "enderio_evolution:construction_alloy_ingot", 1, 150, item("minecraft:copper_ingot"), item("enderio_evolution:crude_steel_ingot"), item("minecraft:gravel")),
+        alloy("enderio_evolution", "crude_steel_ingot", "enderio_evolution:crude_steel_ingot", 1, 150, item("minecraft:iron_ingot"), item("minecraft:clay_ball"), tag("c:cobblestones")),
+        alloy("enderio_evolution", "crystalline_alloy_ingot", "enderio_evolution:crystalline_alloy_ingot", 2, 150, item("enderio:pulsating_powder"), item("enderio:pulsating_alloy_ingot"), item("enderio_evolution:vivid_alloy_ingot")),
+        alloy("enderio_evolution", "crystalline_alloy_ingot_from_vibrant", "enderio_evolution:crystalline_alloy_ingot", 2, 150, item("enderio:pulsating_powder"), item("enderio:pulsating_alloy_ingot"), item("enderio:vibrant_alloy_ingot")),
+        alloy("enderio_evolution,industrialforegoing", "crystalline_pink_slime_ingot", "enderio_evolution:crystalline_pink_slime_ingot", 1, 100, item("industrialforegoing:pink_slime"), item("enderio_evolution:crystalline_alloy_ingot")),
+        alloy("enderio_evolution", "crystalline_pink_slime_ingot_synthetic", "enderio_evolution:crystalline_pink_slime_ingot", 1, 200, itemN("minecraft:slime_ball", 2), item("enderio_evolution:crystalline_alloy_ingot"), tag("c:dyes/pink")),
+        alloy("enderio_evolution", "energetic_silver_ingot_from_iron", "enderio_evolution:energetic_silver_ingot", 1, 150, item("minecraft:redstone"), item("minecraft:iron_ingot"), item("minecraft:glowstone_dust")),
+        alloy("enderio_evolution", "energetic_silver_ingot_from_silver", "enderio_evolution:energetic_silver_ingot", 1, 150, item("minecraft:redstone"), ingot("silver"), item("minecraft:glowstone_dust")),
+        alloy("enderio_evolution", "melodic_alloy_ingot", "enderio_evolution:melodic_alloy_ingot", 2, 150, item("enderio_evolution:crystalline_pink_slime_ingot"), item("minecraft:popped_chorus_fruit"), item("enderio:end_steel_ingot")),
+        alloy("enderio_evolution", "stellar_alloy_ingot", "enderio_evolution:stellar_alloy_ingot", 2, 300, item("minecraft:nether_star"), item("enderio_evolution:melodic_alloy_ingot"), itemN("minecraft:clay_ball", 4)),
+        alloy("enderio_evolution", "vivid_alloy_ingot", "enderio_evolution:vivid_alloy_ingot", 1, 100, item("enderio_evolution:energetic_silver_ingot"), item("minecraft:ender_pearl"))
     };
 
     /** 粉碎机 ← EIO / EVO SAG 研磨（已剔除与本模组输入撞车的条目）。 */
     private static final Recipe[] GRIND = {
-        grind("enderio", "allium", item("minecraft:allium"), 160, out("minecraft:magenta_dye", 1, 0.8), out("minecraft:magenta_dye", 1, 0.6), out("minecraft:magenta_dye", 1, 0.3), out("enderio:plant_matter_green", 1, 0.1)),
-        grind("enderio,immersiveengineering", "aluminum", tag("c:ingots/aluminum"), 160, out("immersiveengineering:dust_aluminum", 1)),
-        grind("enderio", "azure_bluet", item("minecraft:azure_bluet"), 160, out("minecraft:light_gray_dye", 1, 0.8), out("minecraft:light_gray_dye", 1, 0.6), out("minecraft:light_gray_dye", 1, 0.3), out("enderio:plant_matter_green", 1, 0.1)),
-        grind("enderio", "blaze_powder", tag("c:rods/blaze"), 160, out("minecraft:blaze_powder", 4)),
-        grind("enderio", "blue_orchid", item("minecraft:blue_orchid"), 160, out("minecraft:light_blue_dye", 1, 0.8), out("minecraft:light_blue_dye", 1, 0.6), out("minecraft:light_blue_dye", 1, 0.3), out("enderio:plant_matter_green", 1, 0.1)),
-        grind("enderio", "bone", tag("c:bones"), 160, out("minecraft:bone_meal", 6), out("minecraft:bone_meal", 2, 0.1)),
-        grind("enderio", "bone_block", item("minecraft:bone_block"), 160, out("minecraft:bone_meal", 9)),
-        grind("enderio", "cactus", item("minecraft:cactus"), 160, out("enderio:plant_matter_green", 3), out("enderio:plant_matter_green", 3, 0.75), out("enderio:plant_matter_green", 3, 0.5), out("enderio:plant_matter_brown", 3, 0.25)),
-        grind("enderio", "clay", item("minecraft:clay"), 160, out("minecraft:clay_ball", 2), out("minecraft:clay_ball", 1, 0.1), out("enderio:silicon", 2, 0.8)),
-        grind("enderio,mekanism", "coal", tag("minecraft:coals"), 160, out("enderio:powdered_coal", 1), out("enderio:powdered_coal", 1, 0.1), out("mekanism:dust_sulfur", 1, 0.1)),
-        grind("enderio", "coal_ore", tag("c:ores/coal"), 160, out("minecraft:coal", 3), out("enderio:powdered_coal", 1, 0.6), out("minecraft:diamond", 1, 0.005), out("minecraft:cobblestone", 1, 0.15)),
-        grind("enderio", "cobbled_deepslate", tag("c:cobblestones/deepslate"), 160, out("minecraft:cobblestone", 1), out("enderio:grains_of_infinity", 1, 0.12)),
-        grind("enderio", "cobblestone", tag("c:cobblestones/normal"), 160, out("minecraft:gravel", 1, 0.7), out("minecraft:gravel", 1, 0.3), out("minecraft:sand", 1, 0.1), out("minecraft:flint", 1, 0.05)),
-        grind("enderio", "cobweb", item("minecraft:cobweb"), 160, out("minecraft:string", 2), out("minecraft:string", 1, 0.6), out("minecraft:string", 1, 0.3)),
-        grind("enderio", "dandelion", item("minecraft:dandelion"), 160, out("minecraft:yellow_dye", 1, 0.8), out("minecraft:yellow_dye", 1, 0.6), out("minecraft:yellow_dye", 1, 0.3), out("enderio:plant_matter_green", 1, 0.1)),
-        grind("enderio", "deepslate", item("minecraft:deepslate"), 160, out("minecraft:cobbled_deepslate", 1)),
-        grind("enderio", "diamond_ore", tag("c:ores/diamond"), 160, out("minecraft:diamond", 2), out("minecraft:diamond", 1, 0.25), out("enderio:powdered_coal", 1, 0.1), out("minecraft:cobblestone", 1, 0.15)),
-        grind("enderio", "emerald_ore", tag("c:ores/emerald"), 160, out("minecraft:emerald", 2), out("minecraft:emerald", 1, 0.25), out("minecraft:cobblestone", 1, 0.15)),
-        grind("enderio", "ender_crystal", tag("c:gems/ender_crystal"), 160, out("enderio:ender_crystal_powder", 1)),
-        grind("enderio", "ender_pearl", tag("c:ender_pearls"), 160, out("enderio:powdered_ender_pearl", 9)),
-        grind("enderio", "fern", item("minecraft:fern"), 160, out("enderio:plant_matter_green", 1, 0.6), out("enderio:plant_matter_green", 1, 0.3), out("enderio:plant_matter_green", 1, 0.1), out("enderio:plant_matter_brown", 1, 0.05)),
-        grind("enderio", "flower_pot", item("minecraft:flower_pot"), 160, out("minecraft:brick", 1, 0.9), out("minecraft:brick", 1, 0.3), out("minecraft:brick", 1, 0.1), out("enderio:powdered_coal", 1, 0.05)),
-        grind("enderio", "glass", tag("c:glass_blocks"), 160, out("minecraft:sand", 1)),
-        grind("enderio", "lapis_ore", tag("c:ores/lapis"), 160, out("minecraft:lapis_lazuli", 8), out("minecraft:lapis_lazuli", 1, 0.2), out("minecraft:cobblestone", 1, 0.15)),
-        grind("enderio", "large_fern", item("minecraft:large_fern"), 160, out("enderio:plant_matter_green", 2, 0.6), out("enderio:plant_matter_green", 1, 0.3), out("enderio:plant_matter_green", 2, 0.1), out("enderio:plant_matter_brown", 1, 0.15)),
-        grind("enderio,mekanism", "lead", tag("c:ingots/lead"), 160, out("mekanism:dust_lead", 1)),
-        grind("enderio", "leaves", tag("minecraft:leaves"), 160, out("enderio:plant_matter_green", 1, 0.3), out("enderio:plant_matter_green", 1, 0.1), out("enderio:plant_matter_green", 1, 0.02)),
-        grind("enderio", "lily_pad", item("minecraft:lily_pad"), 160, out("enderio:plant_matter_green", 3, 0.15), out("enderio:plant_matter_green", 3, 0.1)),
-        grind("enderio", "mossy_cobblestone", tag("c:cobblestones/mossy"), 160, out("minecraft:cobblestone", 1), out("minecraft:vine", 1, 0.7)),
-        grind("enderio", "obsidian", tag("c:obsidians"), 160, out("enderio:powdered_obsidian", 4)),
-        grind("enderio", "orange_tulip", item("minecraft:orange_tulip"), 160, out("minecraft:orange_dye", 1, 0.8), out("minecraft:orange_dye", 1, 0.6), out("minecraft:orange_dye", 1, 0.3), out("enderio:plant_matter_green", 1, 0.1)),
-        grind("enderio,mekanism", "osmium", tag("c:ingots/osmium"), 160, out("mekanism:dust_osmium", 1)),
-        grind("enderio", "oxeye_daisy", item("minecraft:oxeye_daisy"), 160, out("minecraft:white_dye", 1, 0.8), out("minecraft:white_dye", 1, 0.6), out("minecraft:white_dye", 1, 0.3), out("enderio:plant_matter_green", 1, 0.1)),
-        grind("enderio", "pink_tulip", item("minecraft:pink_tulip"), 160, out("minecraft:pink_dye", 1, 0.8), out("minecraft:pink_dye", 1, 0.6), out("minecraft:pink_dye", 1, 0.3), out("enderio:plant_matter_green", 1, 0.1)),
-        grind("enderio", "poeny", item("minecraft:peony"), 160, out("minecraft:pink_dye", 2, 0.8), out("minecraft:pink_dye", 1, 0.6), out("minecraft:pink_dye", 2, 0.3), out("enderio:plant_matter_green", 1, 0.2)),
-        grind("enderio", "poppy", item("minecraft:poppy"), 160, out("minecraft:red_dye", 1, 0.8), out("minecraft:red_dye", 1, 0.6), out("minecraft:red_dye", 1, 0.3), out("enderio:plant_matter_green", 1, 0.1)),
-        grind("enderio", "precient_crystal", tag("c:gems/prescient_crystal"), 160, out("enderio:prescient_powder", 1)),
-        grind("enderio", "prismarine_shard", item("minecraft:prismarine_shard"), 160, out("minecraft:prismarine_crystals", 1), out("minecraft:prismarine_crystals", 1, 0.1)),
-        grind("enderio", "pulsating_crystal", tag("c:gems/pulsating_crystal"), 160, out("enderio:pulsating_powder", 1)),
-        grind("enderio", "quartz_block", tag("c:storage_blocks/quartz"), 160, out("minecraft:quartz", 2), out("minecraft:quartz", 2, 0.25)),
-        grind("enderio", "quartz_ore", tag("c:ores/quartz"), 160, out("minecraft:quartz", 2), out("enderio:powdered_quartz", 1, 0.1), out("minecraft:netherrack", 1, 0.15)),
-        grind("enderio", "quartz_slabs", item("minecraft:quartz_slab"), 160, out("minecraft:quartz", 1), out("minecraft:quartz", 1, 0.25)),
-        grind("enderio", "quartz_stairs", item("minecraft:quartz_stairs"), 160, out("minecraft:quartz", 2), out("minecraft:quartz", 2, 0.25)),
-        grind("enderio", "redstone_ore", tag("c:ores/redstone"), 160, out("minecraft:redstone", 8), out("minecraft:redstone", 1, 0.2), out("enderio:silicon", 1, 0.8), out("minecraft:cobblestone", 1, 0.15)),
-        grind("enderio", "red_tulip", item("minecraft:red_tulip"), 160, out("minecraft:red_dye", 1, 0.8), out("minecraft:red_dye", 1, 0.6), out("minecraft:red_dye", 1, 0.3), out("enderio:plant_matter_green", 1, 0.1)),
-        grind("enderio", "rose_bush", item("minecraft:rose_bush"), 160, out("minecraft:red_dye", 2, 0.8), out("minecraft:red_dye", 1, 0.6), out("minecraft:red_dye", 2, 0.3), out("enderio:plant_matter_green", 1, 0.2)),
-        grind("enderio", "sandstone", tag("c:sandstone/blocks"), 160, out("minecraft:sand", 2), out("minecraft:sand", 2, 0.4)),
-        grind("enderio", "shrub", item("minecraft:dead_bush"), 160, out("enderio:plant_matter_brown", 1, 0.8), out("enderio:plant_matter_brown", 1, 0.6), out("enderio:plant_matter_brown", 1, 0.3)),
-        grind("enderio", "soularium", tag("c:ingots/soularium"), 160, out("enderio:soul_powder", 1)),
-        grind("enderio", "sugar_canes", item("minecraft:sugar_cane"), 160, out("minecraft:sugar", 1), out("minecraft:sugar", 1, 0.5), out("minecraft:sugar", 2, 0.5), out("enderio:plant_matter_green", 1, 0.2)),
-        grind("enderio", "sun_flower", item("minecraft:sunflower"), 160, out("minecraft:yellow_dye", 2, 0.8), out("minecraft:yellow_dye", 1, 0.6), out("minecraft:yellow_dye", 2, 0.3), out("enderio:plant_matter_green", 1, 0.2)),
-        grind("enderio", "tall_grass", item("minecraft:tall_grass"), 160, out("enderio:plant_matter_green", 2, 0.6), out("enderio:plant_matter_green", 1, 0.3), out("enderio:plant_matter_green", 2, 0.1), out("enderio:plant_matter_brown", 1, 0.15)),
-        grind("enderio,mekanism", "uranium", tag("c:ingots/uranium"), 160, out("mekanism:dust_uranium", 1)),
-        grind("enderio", "vibrant_crystal", tag("c:gems/vibrant_crystal"), 160, out("enderio:vibrant_powder", 1)),
-        grind("enderio", "vines", item("minecraft:vine"), 160, out("enderio:plant_matter_green", 1, 0.15), out("enderio:plant_matter_green", 1, 0.1)),
-        grind("enderio", "white_tulip", item("minecraft:white_tulip"), 160, out("minecraft:white_dye", 1, 0.8), out("minecraft:white_dye", 1, 0.6), out("minecraft:white_dye", 1, 0.3), out("enderio:plant_matter_green", 1, 0.1)),
-        grind("enderio", "wither_rose", item("minecraft:wither_rose"), 160, out("enderio:withering_powder", 1, 0.4)),
-        grind("enderio", "wither_skull", item("minecraft:wither_skeleton_skull"), 160, out("enderio:withering_powder", 2), out("enderio:withering_powder", 1, 0.2)),
-        grind("enderio", "wool", tag("minecraft:wool"), 160, out("minecraft:string", 2), out("minecraft:string", 1, 0.1)),
-        grind("enderio_evolution,enderio", "compressed_infinity_dust_block", item("enderio_evolution:compressed_infinity_dust_block"), 160, out("enderio_evolution:infinity_dust_block", 9), out("enderio_evolution:compressed_infinity_dust_block", 1, 0.05), out("enderio:grains_of_infinity", 1, 0.1)),
-        grind("enderio_evolution,enderio", "double_compressed_infinity_dust_block", item("enderio_evolution:double_compressed_infinity_dust_block"), 160, out("enderio_evolution:compressed_infinity_dust_block", 9), out("enderio_evolution:double_compressed_infinity_dust_block", 1, 0.05), out("enderio:grains_of_infinity", 1, 0.1)),
-        grind("enderio_evolution,enderio", "infinity_dust_block", item("enderio_evolution:infinity_dust_block"), 160, out("enderio:grains_of_infinity", 9), out("enderio_evolution:infinity_dust_block", 1, 0.05), out("enderio:grains_of_infinity", 1, 0.1))
+        grind("enderio", "allium", item("minecraft:allium"), 120, out("minecraft:magenta_dye", 1, 0.8), out("minecraft:magenta_dye", 1, 0.6), out("minecraft:magenta_dye", 1, 0.3), out("enderio:plant_matter_green", 1, 0.1)),
+        grind("enderio", "azure_bluet", item("minecraft:azure_bluet"), 120, out("minecraft:light_gray_dye", 1, 0.8), out("minecraft:light_gray_dye", 1, 0.6), out("minecraft:light_gray_dye", 1, 0.3), out("enderio:plant_matter_green", 1, 0.1)),
+        grind("enderio", "blaze_powder", tag("c:rods/blaze"), 120, out("minecraft:blaze_powder", 4)),
+        grind("enderio", "blue_orchid", item("minecraft:blue_orchid"), 120, out("minecraft:light_blue_dye", 1, 0.8), out("minecraft:light_blue_dye", 1, 0.6), out("minecraft:light_blue_dye", 1, 0.3), out("enderio:plant_matter_green", 1, 0.1)),
+        grind("enderio", "bone", tag("c:bones"), 120, out("minecraft:bone_meal", 6), out("minecraft:bone_meal", 2, 0.1)),
+        grind("enderio", "bone_block", item("minecraft:bone_block"), 120, out("minecraft:bone_meal", 9)),
+        grind("enderio", "cactus", item("minecraft:cactus"), 120, out("enderio:plant_matter_green", 3), out("enderio:plant_matter_green", 3, 0.75), out("enderio:plant_matter_green", 3, 0.5), out("enderio:plant_matter_brown", 3, 0.25)),
+        grind("enderio", "clay", item("minecraft:clay"), 120, out("minecraft:clay_ball", 2), out("minecraft:clay_ball", 1, 0.1), out("enderio:silicon", 2, 0.8)),
+        grind("enderio,mekanism", "coal", tag("minecraft:coals"), 120, out("enderio:powdered_coal", 1), out("enderio:powdered_coal", 1, 0.1), out("mekanism:dust_sulfur", 1, 0.1)),
+        grind("enderio", "coal_ore", tag("c:ores/coal"), 120, out("minecraft:coal", 3), out("enderio:powdered_coal", 1, 0.6), out("minecraft:diamond", 1, 0.005), out("minecraft:cobblestone", 1, 0.15)),
+        grind("enderio", "cobbled_deepslate", tag("c:cobblestones/deepslate"), 120, out("minecraft:cobblestone", 1), out("enderio:grains_of_infinity", 1, 0.12)),
+        grind("enderio", "cobblestone", tag("c:cobblestones/normal"), 120, out("minecraft:gravel", 1, 0.7), out("minecraft:gravel", 1, 0.3), out("minecraft:sand", 1, 0.1), out("minecraft:flint", 1, 0.05)),
+        grind("enderio", "cobweb", item("minecraft:cobweb"), 120, out("minecraft:string", 2), out("minecraft:string", 1, 0.6), out("minecraft:string", 1, 0.3)),
+        grind("enderio", "dandelion", item("minecraft:dandelion"), 120, out("minecraft:yellow_dye", 1, 0.8), out("minecraft:yellow_dye", 1, 0.6), out("minecraft:yellow_dye", 1, 0.3), out("enderio:plant_matter_green", 1, 0.1)),
+        grind("enderio", "deepslate", item("minecraft:deepslate"), 120, out("minecraft:cobbled_deepslate", 1)),
+        grind("enderio", "diamond_ore", tag("c:ores/diamond"), 120, out("minecraft:diamond", 2), out("minecraft:diamond", 1, 0.25), out("enderio:powdered_coal", 1, 0.1), out("minecraft:cobblestone", 1, 0.15)),
+        grind("enderio", "emerald_ore", tag("c:ores/emerald"), 120, out("minecraft:emerald", 2), out("minecraft:emerald", 1, 0.25), out("minecraft:cobblestone", 1, 0.15)),
+        grind("enderio", "ender_crystal", tag("c:gems/ender_crystal"), 120, out("enderio:ender_crystal_powder", 1)),
+        grind("enderio", "ender_pearl", tag("c:ender_pearls"), 120, out("enderio:powdered_ender_pearl", 9)),
+        grind("enderio", "fern", item("minecraft:fern"), 120, out("enderio:plant_matter_green", 1, 0.6), out("enderio:plant_matter_green", 1, 0.3), out("enderio:plant_matter_green", 1, 0.1), out("enderio:plant_matter_brown", 1, 0.05)),
+        grind("enderio", "flower_pot", item("minecraft:flower_pot"), 120, out("minecraft:brick", 1, 0.9), out("minecraft:brick", 1, 0.3), out("minecraft:brick", 1, 0.1), out("enderio:powdered_coal", 1, 0.05)),
+        grind("enderio", "glass", tag("c:glass_blocks"), 120, out("minecraft:sand", 1)),
+        grind("enderio", "grass", item("minecraft:tall_grass"), 120, out("enderio:plant_matter_green", 1, 0.6), out("enderio:plant_matter_green", 1, 0.3), out("enderio:plant_matter_green", 1, 0.1), out("enderio:plant_matter_brown", 1, 0.05)),
+        grind("enderio", "lapis_ore", tag("c:ores/lapis"), 120, out("minecraft:lapis_lazuli", 8), out("minecraft:lapis_lazuli", 1, 0.2), out("minecraft:cobblestone", 1, 0.15)),
+        grind("enderio", "large_fern", item("minecraft:large_fern"), 120, out("enderio:plant_matter_green", 2, 0.6), out("enderio:plant_matter_green", 1, 0.3), out("enderio:plant_matter_green", 2, 0.1), out("enderio:plant_matter_brown", 1, 0.15)),
+        grind("enderio", "leaves", tag("minecraft:leaves"), 120, out("enderio:plant_matter_green", 1, 0.3), out("enderio:plant_matter_green", 1, 0.1), out("enderio:plant_matter_green", 1, 0.02)),
+        grind("enderio", "lily_pad", item("minecraft:lily_pad"), 120, out("enderio:plant_matter_green", 3, 0.15), out("enderio:plant_matter_green", 3, 0.1)),
+        grind("enderio", "mossy_cobblestone", tag("c:cobblestones/mossy"), 120, out("minecraft:cobblestone", 1), out("minecraft:vine", 1, 0.7)),
+        grind("enderio", "obsidian", tag("c:obsidians"), 120, out("enderio:powdered_obsidian", 4)),
+        grind("enderio", "orange_tulip", item("minecraft:orange_tulip"), 120, out("minecraft:orange_dye", 1, 0.8), out("minecraft:orange_dye", 1, 0.6), out("minecraft:orange_dye", 1, 0.3), out("enderio:plant_matter_green", 1, 0.1)),
+        grind("enderio", "oxeye_daisy", item("minecraft:oxeye_daisy"), 120, out("minecraft:white_dye", 1, 0.8), out("minecraft:white_dye", 1, 0.6), out("minecraft:white_dye", 1, 0.3), out("enderio:plant_matter_green", 1, 0.1)),
+        grind("enderio", "pink_tulip", item("minecraft:pink_tulip"), 120, out("minecraft:pink_dye", 1, 0.8), out("minecraft:pink_dye", 1, 0.6), out("minecraft:pink_dye", 1, 0.3), out("enderio:plant_matter_green", 1, 0.1)),
+        grind("enderio", "poeny", item("minecraft:peony"), 120, out("minecraft:pink_dye", 2, 0.8), out("minecraft:pink_dye", 1, 0.6), out("minecraft:pink_dye", 2, 0.3), out("enderio:plant_matter_green", 1, 0.2)),
+        grind("enderio", "poppy", item("minecraft:poppy"), 120, out("minecraft:red_dye", 1, 0.8), out("minecraft:red_dye", 1, 0.6), out("minecraft:red_dye", 1, 0.3), out("enderio:plant_matter_green", 1, 0.1)),
+        grind("enderio", "precient_crystal", tag("c:gems/prescient_crystal"), 120, out("enderio:prescient_powder", 1)),
+        grind("enderio", "prismarine_shard", item("minecraft:prismarine_shard"), 120, out("minecraft:prismarine_crystals", 1), out("minecraft:prismarine_crystals", 1, 0.1)),
+        grind("enderio", "pulsating_crystal", tag("c:gems/pulsating_crystal"), 120, out("enderio:pulsating_powder", 1)),
+        grind("enderio", "quartz_block", tag("c:storage_blocks/quartz"), 120, out("minecraft:quartz", 2), out("minecraft:quartz", 2, 0.25)),
+        grind("enderio", "quartz_ore", tag("c:ores/quartz"), 120, out("minecraft:quartz", 2), out("enderio:powdered_quartz", 1, 0.1), out("minecraft:netherrack", 1, 0.15)),
+        grind("enderio", "quartz_slabs", item("minecraft:quartz_slab"), 120, out("minecraft:quartz", 1), out("minecraft:quartz", 1, 0.25)),
+        grind("enderio", "quartz_stairs", item("minecraft:quartz_stairs"), 120, out("minecraft:quartz", 2), out("minecraft:quartz", 2, 0.25)),
+        grind("enderio", "redstone_ore", tag("c:ores/redstone"), 120, out("minecraft:redstone", 8), out("minecraft:redstone", 1, 0.2), out("enderio:silicon", 1, 0.8), out("minecraft:cobblestone", 1, 0.15)),
+        grind("enderio", "red_tulip", item("minecraft:red_tulip"), 120, out("minecraft:red_dye", 1, 0.8), out("minecraft:red_dye", 1, 0.6), out("minecraft:red_dye", 1, 0.3), out("enderio:plant_matter_green", 1, 0.1)),
+        grind("enderio", "rose_bush", item("minecraft:rose_bush"), 120, out("minecraft:red_dye", 2, 0.8), out("minecraft:red_dye", 1, 0.6), out("minecraft:red_dye", 2, 0.3), out("enderio:plant_matter_green", 1, 0.2)),
+        grind("enderio", "sandstone", tag("c:sandstone/blocks"), 120, out("minecraft:sand", 2), out("minecraft:sand", 2, 0.4)),
+        grind("enderio", "shrub", item("minecraft:dead_bush"), 120, out("enderio:plant_matter_brown", 1, 0.8), out("enderio:plant_matter_brown", 1, 0.6), out("enderio:plant_matter_brown", 1, 0.3)),
+        grind("enderio", "soularium", tag("c:ingots/soularium"), 120, out("enderio:soul_powder", 1)),
+        grind("enderio", "sugar_canes", item("minecraft:sugar_cane"), 120, out("minecraft:sugar", 1), out("minecraft:sugar", 1, 0.5), out("minecraft:sugar", 2, 0.5), out("enderio:plant_matter_green", 1, 0.2)),
+        grind("enderio", "sun_flower", item("minecraft:sunflower"), 120, out("minecraft:yellow_dye", 2, 0.8), out("minecraft:yellow_dye", 1, 0.6), out("minecraft:yellow_dye", 2, 0.3), out("enderio:plant_matter_green", 1, 0.2)),
+        grind("enderio", "vibrant_crystal", tag("c:gems/vibrant_crystal"), 120, out("enderio:vibrant_powder", 1)),
+        grind("enderio", "vines", item("minecraft:vine"), 120, out("enderio:plant_matter_green", 1, 0.15), out("enderio:plant_matter_green", 1, 0.1)),
+        grind("enderio", "white_tulip", item("minecraft:white_tulip"), 120, out("minecraft:white_dye", 1, 0.8), out("minecraft:white_dye", 1, 0.6), out("minecraft:white_dye", 1, 0.3), out("enderio:plant_matter_green", 1, 0.1)),
+        grind("enderio", "wither_rose", item("minecraft:wither_rose"), 120, out("enderio:withering_powder", 1, 0.4)),
+        grind("enderio", "wither_skull", item("minecraft:wither_skeleton_skull"), 120, out("enderio:withering_powder", 2), out("enderio:withering_powder", 1, 0.2)),
+        grind("enderio", "wool", tag("minecraft:wool"), 120, out("minecraft:string", 2), out("minecraft:string", 1, 0.1)),
+        grind("enderio_evolution,enderio", "compressed_infinity_dust_block", item("enderio_evolution:compressed_infinity_dust_block"), 120, out("enderio_evolution:infinity_dust_block", 9), out("enderio_evolution:compressed_infinity_dust_block", 1, 0.05), out("enderio:grains_of_infinity", 1, 0.1)),
+        grind("enderio_evolution,enderio", "double_compressed_infinity_dust_block", item("enderio_evolution:double_compressed_infinity_dust_block"), 120, out("enderio_evolution:compressed_infinity_dust_block", 9), out("enderio_evolution:double_compressed_infinity_dust_block", 1, 0.05), out("enderio:grains_of_infinity", 1, 0.1)),
+        grind("enderio_evolution,enderio", "infinity_dust_block", item("enderio_evolution:infinity_dust_block"), 120, out("enderio:grains_of_infinity", 9), out("enderio_evolution:infinity_dust_block", 1, 0.05), out("enderio:grains_of_infinity", 1, 0.1)),
+        grind("alltheores,enderio", "brass_ingot", ingot("brass"), 120, out("alltheores:brass_dust", 1)),
+        grind("alltheores,enderio,mekanism", "bronze_ingot", ingot("bronze"), 120, out("alltheores:bronze_dust", 1)),
+        grind("alltheores,enderio", "cinnabar_gem", tag("c:gems/cinnabar"), 120, out("alltheores:cinnabar_dust", 1)),
+        grind("alltheores,enderio", "cinnabar_ore", tag("c:ores/cinnabar"), 120, out("alltheores:cinnabar", 6), out("minecraft:cobblestone", 1, 0.15)),
+        grind("alltheores,enderio,immersiveengineering", "constantan_ingot", ingot("constantan"), 120, out("alltheores:constantan_dust", 1)),
+        grind("alltheores,enderio,immersiveengineering", "electrum_ingot", ingot("electrum"), 120, out("alltheores:electrum_dust", 1)),
+        grind("alltheores,enderio", "enderium_ingot", ingot("enderium"), 120, out("alltheores:enderium_dust", 1)),
+        grind("alltheores,enderio,mekanism", "fluorite_gem", tag("c:gems/fluorite"), 120, out("alltheores:fluorite_dust", 1)),
+        grind("alltheores,enderio,mekanism", "fluorite_ore", tag("c:ores/fluorite"), 120, out("alltheores:fluorite", 6), out("minecraft:cobblestone", 1, 0.15)),
+        grind("alltheores,enderio", "invar_ingot", ingot("invar"), 120, out("alltheores:invar_dust", 1)),
+        grind("alltheores,enderio", "lumium_ingot", ingot("lumium"), 120, out("alltheores:lumium_dust", 1)),
+        grind("alltheores,enderio", "peridot_gem", tag("c:gems/peridot"), 120, out("alltheores:peridot_dust", 1)),
+        grind("alltheores,enderio", "peridot_ore", tag("c:ores/peridot"), 120, out("alltheores:peridot", 6), out("minecraft:cobblestone", 1, 0.15)),
+        grind("alltheores,enderio", "ruby_gem", tag("c:gems/ruby"), 120, out("alltheores:ruby_dust", 1)),
+        grind("alltheores,enderio", "ruby_ore", tag("c:ores/ruby"), 120, out("alltheores:ruby", 6), out("minecraft:cobblestone", 1, 0.15)),
+        grind("alltheores,enderio", "salt_ore", tag("c:ores/salt"), 120, out("alltheores:salt", 6)),
+        grind("alltheores,enderio", "sapphire_gem", tag("c:gems/sapphire"), 120, out("alltheores:sapphire_dust", 1)),
+        grind("alltheores,enderio", "sapphire_ore", tag("c:ores/sapphire"), 120, out("alltheores:sapphire", 6), out("minecraft:cobblestone", 1, 0.15)),
+        grind("alltheores,enderio", "signalum_ingot", ingot("signalum"), 120, out("alltheores:signalum_dust", 1)),
+        grind("alltheores,enderio,mekanism", "steel_ingot", ingot("steel"), 120, out("alltheores:steel_dust", 1)),
+        grind("alltheores,enderio", "sulfur_ore", tag("c:ores/sulfur"), 120, out("alltheores:sulfur", 6)),
+        grind("neoecoae,mekanism", "aluminum_alloy_dust", ingot("aluminum_alloy"), 120, out("neoecoae:aluminum_alloy_dust", 1)),
+        grind("neoecoae,mekanism", "black_tungsten_alloy_dust", ingot("black_tungsten_alloy"), 120, out("neoecoae:black_tungsten_alloy_dust", 1)),
+        grind("neoecoae,mekanism", "energized_crystal_dust", tag("c:gems/energized_crystal"), 120, out("neoecoae:energized_crystal_dust", 1)),
+        grind("neoecoae,mekanism", "energized_flux_crystal_dust", tag("c:gems/energized_fluix_crystal"), 120, out("neoecoae:energized_fluix_crystal_dust", 1))
     };
 
     /** 压缩机承接 EVO 的 infinity 粉尘压缩（对方只有工作台形状合成，这是增量）。
@@ -178,8 +206,46 @@ public class TENCompatGen implements DataProvider {
         press(EVO, "compressed_to_double", COMPRESSED, 9, DOUBLE_COMPRESSED)
     };
 
-    private final PackOutput output;
+    /** 压缩机承接邻居冲压机的板/齿轮/杆/线（模具换成本模组的对应模具，chance 0 = 催化位）。
+     *  行内容由 tools/compat/convert.js 从对方数据机械导入，inject.js 只替换本数组体。 */
+    private static final Recipe[] PRESS = {
+        pressed("alltheores,immersiveengineering", "aluminum_gear", ingot("aluminum"), "kenergyengineering:mould_gear", "alltheores:aluminum_gear", 1, 100),
+        pressed("alltheores,immersiveengineering", "aluminum_plate", ingot("aluminum"), "kenergyengineering:mould_plate", "alltheores:aluminum_plate", 1, 100),
+        pressed("alltheores,immersiveengineering", "brass_gear", ingot("brass"), "kenergyengineering:mould_gear", "alltheores:brass_gear", 1, 100),
+        pressed("alltheores,immersiveengineering", "brass_plate", ingot("brass"), "kenergyengineering:mould_plate", "alltheores:brass_plate", 1, 100),
+        pressed("alltheores,immersiveengineering", "bronze_gear", ingot("bronze"), "kenergyengineering:mould_gear", "alltheores:bronze_gear", 1, 100),
+        pressed("alltheores,immersiveengineering", "bronze_plate", ingot("bronze"), "kenergyengineering:mould_plate", "alltheores:bronze_plate", 1, 100),
+        pressed("alltheores,immersiveengineering", "constantan_gear", ingot("constantan"), "kenergyengineering:mould_gear", "alltheores:constantan_gear", 1, 100),
+        pressed("alltheores,immersiveengineering", "constantan_plate", ingot("constantan"), "kenergyengineering:mould_plate", "alltheores:constantan_plate", 1, 100),
+        pressed("alltheores,immersiveengineering", "electrum_gear", ingot("electrum"), "kenergyengineering:mould_gear", "alltheores:electrum_gear", 1, 100),
+        pressed("alltheores,immersiveengineering", "electrum_plate", ingot("electrum"), "kenergyengineering:mould_plate", "alltheores:electrum_plate", 1, 100),
+        pressed("alltheores,immersiveengineering", "enderium_gear", ingot("enderium"), "kenergyengineering:mould_gear", "alltheores:enderium_gear", 1, 100),
+        pressed("alltheores,immersiveengineering", "enderium_plate", ingot("enderium"), "kenergyengineering:mould_plate", "alltheores:enderium_plate", 1, 100),
+        pressed("alltheores,immersiveengineering", "invar_gear", ingot("invar"), "kenergyengineering:mould_gear", "alltheores:invar_gear", 1, 100),
+        pressed("alltheores,immersiveengineering", "invar_plate", ingot("invar"), "kenergyengineering:mould_plate", "alltheores:invar_plate", 1, 100),
+        pressed("alltheores,immersiveengineering", "iridium_gear", ingot("iridium"), "kenergyengineering:mould_gear", "alltheores:iridium_gear", 1, 100),
+        pressed("alltheores,immersiveengineering", "iridium_plate", ingot("iridium"), "kenergyengineering:mould_plate", "alltheores:iridium_plate", 1, 100),
+        pressed("alltheores,immersiveengineering", "lead_gear", ingot("lead"), "kenergyengineering:mould_gear", "alltheores:lead_gear", 1, 100),
+        pressed("alltheores,immersiveengineering", "lead_plate", ingot("lead"), "kenergyengineering:mould_plate", "alltheores:lead_plate", 1, 100),
+        pressed("alltheores,immersiveengineering", "lumium_gear", ingot("lumium"), "kenergyengineering:mould_gear", "alltheores:lumium_gear", 1, 100),
+        pressed("alltheores,immersiveengineering", "lumium_plate", ingot("lumium"), "kenergyengineering:mould_plate", "alltheores:lumium_plate", 1, 100),
+        pressed("alltheores,immersiveengineering", "osmium_gear", ingot("osmium"), "kenergyengineering:mould_gear", "alltheores:osmium_gear", 1, 100),
+        pressed("alltheores,immersiveengineering", "osmium_plate", ingot("osmium"), "kenergyengineering:mould_plate", "alltheores:osmium_plate", 1, 100),
+        pressed("alltheores,immersiveengineering", "platinum_gear", ingot("platinum"), "kenergyengineering:mould_gear", "alltheores:platinum_gear", 1, 100),
+        pressed("alltheores,immersiveengineering", "platinum_plate", ingot("platinum"), "kenergyengineering:mould_plate", "alltheores:platinum_plate", 1, 100),
+        pressed("alltheores,immersiveengineering", "signalum_gear", ingot("signalum"), "kenergyengineering:mould_gear", "alltheores:signalum_gear", 1, 100),
+        pressed("alltheores,immersiveengineering", "signalum_plate", ingot("signalum"), "kenergyengineering:mould_plate", "alltheores:signalum_plate", 1, 100),
+        pressed("alltheores,immersiveengineering", "silver_gear", ingot("silver"), "kenergyengineering:mould_gear", "alltheores:silver_gear", 1, 100),
+        pressed("alltheores,immersiveengineering", "silver_plate", ingot("silver"), "kenergyengineering:mould_plate", "alltheores:silver_plate", 1, 100),
+        pressed("alltheores,immersiveengineering", "steel_gear", ingot("steel"), "kenergyengineering:mould_gear", "alltheores:steel_gear", 1, 100),
+        pressed("alltheores,immersiveengineering", "steel_plate", ingot("steel"), "kenergyengineering:mould_plate", "alltheores:steel_plate", 1, 100),
+        pressed("alltheores,immersiveengineering", "uranium_gear", ingot("uranium"), "kenergyengineering:mould_gear", "alltheores:uranium_gear", 1, 100),
+        pressed("alltheores,immersiveengineering", "uranium_plate", ingot("uranium"), "kenergyengineering:mould_plate", "alltheores:uranium_plate", 1, 100),
+        pressed("alltheores,immersiveengineering", "zinc_gear", ingot("zinc"), "kenergyengineering:mould_gear", "alltheores:zinc_gear", 1, 100),
+        pressed("alltheores,immersiveengineering", "zinc_plate", ingot("zinc"), "kenergyengineering:mould_plate", "alltheores:zinc_plate", 1, 100)
+    };
 
+    private final PackOutput output;
     public TENCompatGen(PackOutput output) {
         this.output = output;
     }
@@ -191,6 +257,7 @@ public class TENCompatGen implements DataProvider {
         for (var r : ALLOYS) emit(futures, cache, base, r);
         for (var r : GRIND) emit(futures, cache, base, r);
         for (var r : INFINITY) emit(futures, cache, base, r);
+        for (var r : PRESS) emit(futures, cache, base, r);
         return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
     }
 
@@ -266,10 +333,36 @@ public class TENCompatGen implements DataProvider {
         return machine(mod, "compressor", name, ins, outs, 100);
     }
 
+    /**
+     * 冲压机承接：材料（锭）+ 本模组的对应模具（催化位）→ 板/齿轮/杆/线。
+     * 模具与 {@code press} 同理用 {@code chance 0}，不消耗、不随批量倍增。
+     */
+    private static Recipe pressed(String mod, String name, Input input, String mould, String outputId, int outputCount, int time) {
+        var ins = new JsonArray();
+        ins.add(ingr(input.key(), input.count(), input.isTag(), null));
+        ins.add(ingr(mould, null, false, 0.0));
+        var outs = new JsonArray();
+        outs.add(ingr(outputId, outputCount > 1 ? outputCount : null, false, null));
+        return machine(mod, "compressor", name, ins, outs, time);
+    }
+
     private static Recipe machine(String mod, String type, String name, JsonArray inputs, JsonArray outputs, int time) {
         var j = new JsonObject();
         j.addProperty("type", TEN.MOD_ID + ":" + type);
         var conds = modLoadedAll(mod);
+        // 输入标签缺席 → 整条配方在加载期消失。邻居自己就是这么写的（EIO 的 sag_milling 有 15 条
+        // not(tag_empty) 门控），少了它，JEI 会显示一条原料根本不存在、永远跑不起来的配方。
+        for (var e : inputs) {
+            var in = e.getAsJsonObject();
+            if (!"tag".equals(in.get("type").getAsString())) continue;
+            var absent = new JsonObject();
+            absent.addProperty("type", "neoforge:tag_empty");
+            absent.addProperty("tag", in.get("key").getAsString());
+            var guard = new JsonObject();
+            guard.addProperty("type", "neoforge:not");
+            guard.add("value", absent);
+            conds.add(guard);
+        }
         // 每源开关：关掉该来源即整条配方在加载期消失（JEI 同步不显示）
         var toggle = new JsonObject();
         toggle.addProperty("type", TEN.MOD_ID + ":compat_enabled");

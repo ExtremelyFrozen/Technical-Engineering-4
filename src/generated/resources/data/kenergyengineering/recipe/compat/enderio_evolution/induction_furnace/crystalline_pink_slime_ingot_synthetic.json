@@ -5,6 +5,13 @@
       "modid": "enderio_evolution"
     },
     {
+      "type": "neoforge:not",
+      "value": {
+        "type": "neoforge:tag_empty",
+        "tag": "c:dyes/pink"
+      }
+    },
+    {
       "type": "kenergyengineering:compat_enabled",
       "source": "enderio_evolution"
     }
@@ -35,5 +42,5 @@
       "key": "enderio_evolution:crystalline_pink_slime_ingot"
     }
   ],
-  "time": 1000
+  "time": 200
 }

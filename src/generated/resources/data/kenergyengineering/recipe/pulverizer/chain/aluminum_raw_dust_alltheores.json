@@ -10,6 +10,7 @@
     {
       "type": "kenergyengineering:provider_priority",
       "candidates": [
+        "neoecoae",
         "immersiveengineering",
         "alltheores"
       ],

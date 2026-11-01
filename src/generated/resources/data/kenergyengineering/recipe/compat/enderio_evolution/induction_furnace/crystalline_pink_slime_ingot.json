@@ -5,6 +5,10 @@
       "modid": "enderio_evolution"
     },
     {
+      "type": "neoforge:mod_loaded",
+      "modid": "industrialforegoing"
+    },
+    {
       "type": "kenergyengineering:compat_enabled",
       "source": "enderio_evolution"
     }
@@ -29,5 +33,5 @@
       "key": "enderio_evolution:crystalline_pink_slime_ingot"
     }
   ],
-  "time": 667
+  "time": 100
 }

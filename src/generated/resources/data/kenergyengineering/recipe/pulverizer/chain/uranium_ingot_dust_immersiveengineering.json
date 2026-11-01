@@ -1,0 +1,37 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:not",
+      "value": {
+        "type": "neoforge:tag_empty",
+        "tag": "c:ingots/uranium"
+      }
+    },
+    {
+      "type": "kenergyengineering:provider_priority",
+      "candidates": [
+        "mekanism",
+        "immersiveengineering",
+        "alltheores"
+      ],
+      "mod": "immersiveengineering"
+    }
+  ],
+  "type": "kenergyengineering:pulverizer",
+  "inputs": [
+    {
+      "type": "tag",
+      "form": "item",
+      "key": "c:ingots/uranium"
+    }
+  ],
+  "outputs": [
+    {
+      "type": "static",
+      "count": 1,
+      "form": "item",
+      "key": "immersiveengineering:dust_uranium"
+    }
+  ],
+  "time": 100
+}

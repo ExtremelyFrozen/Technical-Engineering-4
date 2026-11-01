@@ -212,6 +212,12 @@ CmBlockEntity (implements ISyncPersistRPCBlockEntity)
 `usesRemaining` / `coolantTotalUses` 是服务端每 tick 写的 `@DescSynced` 镜像——GUI 进度栏在客户端求值，
 不经 `@DescSynced`/RPC 的字段到不了客户端。
 
+**非机器页面靠一份清单登记**：`TENJeiPlugin.buildAuxCategories()` 同时供
+`registerCategories` 与 `registerRecipeCatalysts` 使用（熔炉桥接 3 页、引擎燃料 3 页、冷却剂 1 页）。
+JEI 的模组分页按 `RecipeType` uid 的命名空间归组，这些页面全是 `kenergyengineering:` 前缀，
+所以「同一模组一组」要靠同一份清单保证；此前冷却剂页是两处手写清单末尾各追一行，
+加页面时漏一处就会与其余 KER 页面脱节——不再保留那种写法。
+
 ### 2.9 槽位堆叠、插入去重与超 99 持久化
 
 堆叠上限由 `CmMachineBlockEntity.installBatchSlotLimit()` 一处给出，全机器统一：
@@ -265,7 +271,7 @@ TENBlocks → TENFluids → TENBlockEntities → TENRecipeTypes → TENItems
 | `DataGenerators.gatherData` | `data/DataGenerators.java` | `zh_cn` 语言 Provider、材料变体配方、材料聚合标签、邻居兼容配方、原版打包/拆分配方 |
 | `TENDataGen.init` | `data/TENDataGen.java` | 给 Registrate 挂语言 Provider（`TENLangHandler`、`TENTagLangGen`） |
 | `TENRecipeGen` | `data/TENRecipeGen.java` | 材料变体配方 |
-| `TENMaterialTagGen` | `data/TENMaterialTagGen.java` | `c:mats/<材料>` 聚合标签（锭或粉） |
+| `TENMaterialTagGen` | `data/TENMaterialTagGen.java` | `c:mats/<材料>` 聚合标签（锭或粉）；含 `NEIGHBOUR_MATS` 的邻居材料与合金 |
 | `TENCompatGen` | `data/TENCompatGen.java` | 邻居模组兼容配方（EIO 系，`mod_loaded` 条件门控） |
 | `TENVanillaPackGen` | `data/TENVanillaPackGen.java` | 原版打包/拆分配方 |
 
@@ -316,23 +322,53 @@ Registrate 自动产出方块/物品模型、blockstate 与英文语言；`src/g
 变体之间输入签名相同，但只有一条进配方表，所以不算 `findRecipe` 歧义（`RecipeSignature` 认这个例外）。
 两段各自选人，粗料与粉允许来自不同模组——第二段吃 `c:raw_materials/X` 标签，接得住任何一家的粗料。
 新增邻居后由兼容层转换器按同一优先级报出可补候选，再往表里加候选，不必重新决定归属。
+默认顺序是「本模组 → ECO（自带铝/钨矿石与铝/钨/铁粉，排第二）→ EIO 进化 → EIO → 通用机械 →
+沉浸工程 → ATO → Allthemodium → 原版」，写在 `TENConfig.CompatConfig.DEFAULT_PROVIDER_PRIORITY`；
+`tools/compat/config.json` 里的同名列表是编写期版本，两者要一起改。
 
 **同一台机器不得有两条可匹配配方**：`RecipeSignature` 定义「类型 + 输入集合」签名，两处强制——
 生成期 `TENRecipeGen`/`TENCompatGen` 落盘前 `claim`，撞车直接让 DataGen 失败；运行期 `TENRecipeAudit`
 在 `RecipesUpdatedEvent` 里按机器类型分组复查，冲突打 ERROR（它看的是条件过滤与数据包覆盖之后真正加载的那份）。
 NeoForge 1.21.1 只有客户端的 `RecipesUpdatedEvent`，没有加载后增删配方的钩子，
 所以专用服务器上的冲突要等配方同步到客户端才报得出来；成批的机械导入还要靠 `tools/compat` 的校验脚本兜底。
+`claim` 另外登记「输出文件 → 签名」：邻居按材料分层存放配方（ATO 的 `sag_milling/aluminum/ingot.json`），
+只取文件名会让几十条写进同一个输出路径、静默互相覆盖，这条检测专门拦它。
+
+**自适应池里不只有矿石链**：`TENRecipeGen` 还按材料生成 `c:storage_blocks/raw_X → 粉 9(+9×40%)`
+与 `c:ingots/X → 粉`（后一段只补本模组没注册粉的材料，否则与 `PULV` 表撞同一输入），
+输入全部走标签，所以邻居材料自动接得上。固定比率合金（默认配比按 ATO 的
+`crafting/<alloy>/alloy_blending_from_dust.json`：青铜 3 铜 + 1 锡 → 4、黄铜 3 铜 + 1 锌 → 4、
+因瓦 2 铁 + 1 镍 → 3、电子与康铜 1 + 1 → 2）也在池里，表内只写材料 id 与份数，
+实际标签由 `TENRecipeGen#matInput` 决定——该材料有 `c:mats/X` 聚合标签就自动升级成粉或锭皆可入，
+聚合标签由 `TENMaterialTagGen` 生成，成员是对 `#c:ingots/X` / `#c:dusts/X` 的可选引用，
+所以「谁提供这种金属」完全交给数据，不在代码里点名物品；`NEIGHBOUR_MATS` 那批邻居材料与五种合金
+因此也自动进池。输出侧仍必须是具体物品，按候选模组写互斥变体（`provider_priority`）。
 
 **兼容层每源可关**：`TENCompatGen` 每条配方除 `neoforge:mod_loaded` 外还带
 `kenergyengineering:compat_enabled`（`source` = 该行首个门控模组），`compat.disabledSources` 列出的来源
 其配方在加载期整体消失，JEI 也就无从显示——「关闭」与「隐藏」是同一件事。
 关掉某来源同时让它退出上面的材料归属竞选，两个开关语义一致。
+邻居配方自带的第三方 `mod_loaded`（如 EVO 只在装了 Industrial Foregoing 时才有的合金行）与
+`not(tag_empty)` 材料门控都要一并带过来：少了它们，JEI 会显示一条原料或前置根本不在场、
+永远跑不起来的配方——「同步的兼容显示」靠的就是这两条。
+
+**配置界面入口**：`TENClientSetup` 里注册 `IConfigScreenFactory` → `ConfigurationScreen::new`。
+NeoForge 自带这套配置界面，FML 的 Mods 面板与 Mod Menu 读的都是同一个扩展点，
+不注册则两边都不出现 Config 按钮；注册留在客户端源集，专用服不会加载这些客户端类型。
+界面文案的键由 NeoForge 拼成 `<modid>.configuration.<点分路径>` 与 `...<路径>.tooltip`
+（没有 tooltip 时回退 TOML 注释原文），少一条就在界面上直接暴露键名。因此**每个 define 都要在
+`TENLangHandler#addConfig` 里有名字**，分组（`machine`/`energyUnit`/`farm`/`compat`/`client`/`panelAnimation`）
+与 `section.common`/`section.client`/`title` 同样要写；加配置项时按同一处补中英文。
 
 **配方输出一律是具体物品**：标准语义里输出是一个确定的 ItemStack，写成标签按标准处理会得到空产物，
 而且症状是「产物少了一件」而不是报错（输入侧走实时 `contains()`，照常匹配）。需要标签匹配时，
 在编写期按「期望兼容 mod 优先级」（本模组 → EVO → EIO → Mekanism → 沉浸工程 → NeoForge 原版包装）
 取该标签的第一个可用成员落成具体物品，解析不到就不导入，邻居增减后重跑转换器对齐。
 配方行的 `neoforge:mod_loaded` 门控按输出物品所属命名空间自动推导，可叠加多个模组。
+**模具只用一个通用标签**：压缩机 `valid(slot, stack)` 只读 `c:moulds` 决定模具能否进催化槽，
+不再有 `c:moulds/shape` 那类功能子标签（成员直接列在 `c:moulds` 里，`TENTagLangGen` 也不再为子标签出语言键）；
+具体用哪种模具由配方自己写明 `kenergyengineering:mould_*` 的静态输入（`chance: 0` = 催化位，不消耗、不随批量倍增），
+分类标签对匹配没有任何作用，留着只会让人以为删掉某个子标签会改变行为。
 `FormsCombinedIngredient#itemMembers`/`fluidMembers` 的惰性解析只服务于标签输入的判定与展示，
 不是允许标签输出的理由。
 
@@ -340,7 +376,10 @@ NeoForge 1.21.1 只有客户端的 `RecipesUpdatedEvent`，没有加载后增删
 （必须分子目录——EIO 的 `alloy_smelting` 与 `sag_milling` 存在同名文件，平铺会互相覆盖），
 每条带 `neoforge:mod_loaded` 条件，未装邻居时整体消失，所以生成结果与本机是否安装邻居无关，
 CI 与本地产出一致。合金表与研磨表都从对方数据机械导入：时间按对方每次总能耗折算到本模组的
-15 FE/t；金属输入写 `c:ingots/X`，该材料存在 `c:mats/X` 时自动升级为「锭或粉皆可入」；
+15 FE/t 换算已废弃——IE 一次 51200 FE 会顶到旧的 1200 tick 上限，与原生差一个数量级；
+现在按机器尺规给时长：感应炉 50 tick × 输入物料份数、粉碎机一次操作 120（粗矿块类 9 份输入 200）、
+压缩机恒 100（规则写在 `tools/compat/config.json` 的 `timeRule`，与 `TENRecipeGen#furnaceTime` 同一套）；
+金属输入写 `c:ingots/X`，该材料存在 `c:mats/X` 时自动升级为「锭或粉皆可入」；
 输入签名与本模组已有配方相同的条目不导入，本模组语义优先；两张表在同一次 DataGen 里互相 `claim`，
 漏网的重复会在生成期直接失败，而不是等到实机里发现某条配方永远匹配不上。
 

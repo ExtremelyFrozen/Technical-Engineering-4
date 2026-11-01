@@ -1,0 +1,13 @@
+{
+  "replace": false,
+  "values": [
+    {
+      "id": "#c:ingots/iridium",
+      "required": false
+    },
+    {
+      "id": "#c:dusts/iridium",
+      "required": false
+    }
+  ]
+}

@@ -103,9 +103,6 @@ public final class TENTagLangGen {
         addTag(provider, "item", "c", "storage_blocks/raw_tin", "Raw Tin Block", "粗锡块");
         addTag(provider, "item", "c", "storage_blocks/raw_nickel", "Raw Nickel Block", "粗镍块");
 
-        // ── c: 模具子类 ──
-        addTag(provider, "item", "c", "moulds/shape", "Shaping Moulds", "成型模具");
-
         // ── c: 冷却剂分档（数值见 Coolants.TIERS）──
         addTag(provider, "item", "c", "coolants/basic", "Basic Coolants", "基础冷却剂");
         addTag(provider, "item", "c", "coolants/standard", "Standard Coolants", "标准冷却剂");

@@ -23,6 +23,8 @@ public final class RecipeSignature {
     private static final Map<String, String> CLAIMS = new ConcurrentHashMap<>();
     /** 互斥变体组登记：签名 → 首个占用该输入的候选模组组与其文件（一个输入只允许一条链）。 */
     private static final Map<String, ChainOwner> CHAIN_GROUPS = new ConcurrentHashMap<>();
+    /** 输出路径 → 首个写到该路径的签名（拦生成器的同名覆盖）。 */
+    private static final Map<String, String> PATHS = new ConcurrentHashMap<>();
 
     /**
      * 运行期用：只算输入部分，机器类型由调用方分组（见 {@code TENRecipeAudit}）。
@@ -68,6 +70,12 @@ public final class RecipeSignature {
     public static void claim(JsonObject json, String path) {
         String sig = ofJson(json);
         if (sig == null) return;
+        // 两条不同配方抢同一个输出文件＝生成器命名有缺陷（邻居按材料分层时只取文件名会撞在一起，
+        // 后写的静默覆盖前写的，日志里看不出来）
+        String written = PATHS.putIfAbsent(path, sig);
+        if (written != null && !written.equals(sig)) {
+            throw new IllegalStateException("同一个输出文件被两条不同配方占用：" + shorten(path) + " 先写入 " + written + "，又写入 " + sig);
+        }
         Variant variant = exclusiveVariant(json);
         if (variant == null) {
             ChainOwner owner = CHAIN_GROUPS.get(sig);

@@ -11,6 +11,7 @@
       "type": "kenergyengineering:provider_priority",
       "candidates": [
         "kenergyengineering",
+        "neoecoae",
         "enderio",
         "mekanism",
         "immersiveengineering",

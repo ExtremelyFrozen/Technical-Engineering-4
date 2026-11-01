@@ -5,6 +5,13 @@
       "modid": "enderio"
     },
     {
+      "type": "neoforge:not",
+      "value": {
+        "type": "neoforge:tag_empty",
+        "tag": "c:rods/blaze"
+      }
+    },
+    {
       "type": "kenergyengineering:compat_enabled",
       "source": "enderio"
     }
@@ -25,5 +32,5 @@
       "key": "minecraft:blaze_powder"
     }
   ],
-  "time": 160
+  "time": 120
 }

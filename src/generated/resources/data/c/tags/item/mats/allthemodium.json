@@ -1,0 +1,13 @@
+{
+  "replace": false,
+  "values": [
+    {
+      "id": "#c:ingots/allthemodium",
+      "required": false
+    },
+    {
+      "id": "#c:dusts/allthemodium",
+      "required": false
+    }
+  ]
+}

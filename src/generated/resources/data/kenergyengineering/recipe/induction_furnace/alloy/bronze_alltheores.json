@@ -1,0 +1,57 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:not",
+      "value": {
+        "type": "neoforge:tag_empty",
+        "tag": "c:mats/copper"
+      }
+    },
+    {
+      "type": "neoforge:not",
+      "value": {
+        "type": "neoforge:tag_empty",
+        "tag": "c:mats/tin"
+      }
+    },
+    {
+      "type": "neoforge:not",
+      "value": {
+        "type": "neoforge:tag_empty",
+        "tag": "c:ingots/bronze"
+      }
+    },
+    {
+      "type": "kenergyengineering:provider_priority",
+      "candidates": [
+        "alltheores",
+        "mekanism"
+      ],
+      "mod": "alltheores"
+    }
+  ],
+  "type": "kenergyengineering:induction_furnace",
+  "inputs": [
+    {
+      "type": "tag",
+      "count": 3,
+      "form": "item",
+      "key": "c:mats/copper"
+    },
+    {
+      "type": "tag",
+      "count": 1,
+      "form": "item",
+      "key": "c:mats/tin"
+    }
+  ],
+  "outputs": [
+    {
+      "type": "static",
+      "count": 4,
+      "form": "item",
+      "key": "alltheores:bronze_ingot"
+    }
+  ],
+  "time": 200
+}

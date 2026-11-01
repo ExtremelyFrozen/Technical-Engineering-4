@@ -1,0 +1,57 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:not",
+      "value": {
+        "type": "neoforge:tag_empty",
+        "tag": "c:mats/gold"
+      }
+    },
+    {
+      "type": "neoforge:not",
+      "value": {
+        "type": "neoforge:tag_empty",
+        "tag": "c:mats/silver"
+      }
+    },
+    {
+      "type": "neoforge:not",
+      "value": {
+        "type": "neoforge:tag_empty",
+        "tag": "c:ingots/electrum"
+      }
+    },
+    {
+      "type": "kenergyengineering:provider_priority",
+      "candidates": [
+        "immersiveengineering",
+        "alltheores"
+      ],
+      "mod": "alltheores"
+    }
+  ],
+  "type": "kenergyengineering:induction_furnace",
+  "inputs": [
+    {
+      "type": "tag",
+      "count": 1,
+      "form": "item",
+      "key": "c:mats/gold"
+    },
+    {
+      "type": "tag",
+      "count": 1,
+      "form": "item",
+      "key": "c:mats/silver"
+    }
+  ],
+  "outputs": [
+    {
+      "type": "static",
+      "count": 2,
+      "form": "item",
+      "key": "alltheores:electrum_ingot"
+    }
+  ],
+  "time": 100
+}

@@ -5,6 +5,13 @@
       "modid": "enderio_evolution"
     },
     {
+      "type": "neoforge:not",
+      "value": {
+        "type": "neoforge:tag_empty",
+        "tag": "c:cobblestones"
+      }
+    },
+    {
       "type": "kenergyengineering:compat_enabled",
       "source": "enderio_evolution"
     }
@@ -34,5 +41,5 @@
       "key": "enderio_evolution:crude_steel_ingot"
     }
   ],
-  "time": 667
+  "time": 150
 }

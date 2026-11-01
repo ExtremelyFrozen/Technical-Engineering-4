@@ -1,0 +1,66 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:not",
+      "value": {
+        "type": "neoforge:tag_empty",
+        "tag": "c:mats/copper"
+      }
+    },
+    {
+      "type": "neoforge:not",
+      "value": {
+        "type": "neoforge:tag_empty",
+        "tag": "c:mats/silver"
+      }
+    },
+    {
+      "type": "neoforge:not",
+      "value": {
+        "type": "neoforge:tag_empty",
+        "tag": "c:dusts/redstone"
+      }
+    },
+    {
+      "type": "neoforge:not",
+      "value": {
+        "type": "neoforge:tag_empty",
+        "tag": "c:ingots/signalum"
+      }
+    },
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "alltheores"
+    }
+  ],
+  "type": "kenergyengineering:induction_furnace",
+  "inputs": [
+    {
+      "type": "tag",
+      "count": 3,
+      "form": "item",
+      "key": "c:mats/copper"
+    },
+    {
+      "type": "tag",
+      "count": 1,
+      "form": "item",
+      "key": "c:mats/silver"
+    },
+    {
+      "type": "tag",
+      "count": 4,
+      "form": "item",
+      "key": "c:dusts/redstone"
+    }
+  ],
+  "outputs": [
+    {
+      "type": "static",
+      "count": 4,
+      "form": "item",
+      "key": "alltheores:signalum_ingot"
+    }
+  ],
+  "time": 400
+}

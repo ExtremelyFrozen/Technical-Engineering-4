@@ -1,0 +1,13 @@
+{
+  "replace": false,
+  "values": [
+    {
+      "id": "#c:ingots/tungsten",
+      "required": false
+    },
+    {
+      "id": "#c:dusts/tungsten",
+      "required": false
+    }
+  ]
+}

@@ -74,17 +74,88 @@
   电池仓 / 频道存储豁免生效；漏斗 / AE2 总线从外面向输入槽塞重复物品被拒且不丢件。
 
 ### 兼容层配方与开关实机验证 — P2 🧪
-- 2026-11-01 兼容层 119 条配方（`recipe/compat/<modid>/<机器类型>/`）由 `TENCompatGen` 生成，
-  每条带 `neoforge:mod_loaded` + 自定义条件 `kenergyengineering:compat_enabled`；
-  三段式改成候选模组的互斥变体（`kenergyengineering:provider_priority` + `compat.providerPriority`）。
+- 2026-11-01 兼容层现有 175 条（EIO 102 / EVO 17 / ATO 55 等，`recipe/compat/<modid>/<机器类型>/`），
+  每条带 `neoforge:mod_loaded` + 第三方门控 + `not(tag_empty(输入标签))` +
+  `kenergyengineering:compat_enabled`；三段式改成候选模组的互斥变体
+  （`kenergyengineering:provider_priority` + `compat.providerPriority`）。
 - 需复验：JEI 能看到承接配方且能真的产出；把 `compat.disabledSources` 填 `enderio_evolution` 后
   重启世界，该来源配方与 JEI 页一并消失；把 `compat.providerPriority` 里 `mekanism` 提到
-  `kenergyengineering` 之前，锡/铅的粗料与粉改由通用机械提供（三段式两段的归属独立选人）。
+  `kenergyengineering` 之前，锡/铅的粗料与粉改由通用机械提供、青铜锭改用通用机械的锭。
+- 需复验显示同步：把沉浸工程或 EIO 单独摘掉后重启，ATO 的冲压/研磨行应整条从 JEI 消失
+  （此前就是这里对不上）；材料缺席（如没有锌）时黄铜行也应消失。
+- 需复验新增内容：粗矿块→粉 9(+40%×9) 与锭→粉对邻居材料可用；感应炉按
+  3 铜 + 1 锡 → 4 青铜（黄铜/因瓦/电子/康铜同理），输入只认 `c:ingots/*` 标签。
 - 需复验日志：`TENRecipeAudit` 在本次加载不输出「机器配方歧义」；`tools/compat/check.js` 退出码 0。
 - 未做：`runGameTestServer` / 单元测试跑不了（`net.neoforged:testframework` 拉不到），
   条件求值与配置读取时序目前只有静态取证，须以实机为准。
 
+### 采矿场循环与可挖判定实机验证 — P2 🧪
+- 2026-11-01 `scanExhausted()` 的下界由常量 `WORLD_MIN` 改为 `level.getMinBuildHeight()`；
+  到底且本轮确实挖到过方块时 `tick()` 复位游标，以机器自身为新起点重扫（空手到底不复位，防空转）；
+  `canBreak(state, pos)` 增加 `state.getDestroySpeed(level, pos) < 0` 拒绝。
+- 需复验：主世界挖到 -64 后能重新开始下一轮，输出继续进槽；基岩/屏障/结构空位不被挖掉；
+  下界（底 -128）与末地（底 0）按各自底高判定，范围线框不再画到主世界的 -64。
+- 需复验停机语义：挖尽且本轮无产出后不再消耗能量、不启动批次；切换标准/极速模式仍能复位重扫。
+- 注意：`c:.../quarry_valids` 方块标签在 `CmMachineBlockEntity`/生成器里存在但从未被读取（死配置），
+  本轮没有启用它；若要让白名单真正生效需另做决策。
+
+### 配置界面与 Mod Menu 实机验证 — P2 🧪
+- 2026-11-01 `TENClientSetup` 注册 `IConfigScreenFactory` → `ConfigurationScreen::new`，
+  开发运行期加入 Mod Menu (NeoForge Edition) `1393224:7312908`（1.21.1-1.0.2，MIT，无声明前置）。
+  Better ModList 未选：CF 上标到 1.21.1 的 fileId 无法核实，且其配置界面另需 config-screen 库。
+- 需复验：主菜单 Mods → 科能工程 → Config 能打开，`compat.disabledSources` /
+  `compat.providerPriority` 改值写回 `config/kenergyengineering-common.toml` 并在下一次进世界生效；
+  Mod Menu 面板同样出现 Config 按钮（两者读同一扩展点）。
+- 首次 `runClient` 才会真正下载该 jar（`dependencies` 报告只取到 POM），坐标已确认可解析。
+
+### 合金配比、mats 聚合与模具标签实机复验 — P2 🧪
+- 2026-11-01 感应炉默认配比按 ATO 的 `crafting/<alloy>/alloy_blending_from_dust.json`（青铜/黄铜 3+1→4、
+  因瓦 2+1→3、电子/康铜 1+1→2），输入写 `c:mats/<材料>`；`TENMaterialTagGen.NEIGHBOUR_MATS`
+  给邻居材料与五种合金也生成聚合标签（成员是对 `#c:ingots/X` / `#c:dusts/X` 的可选引用）。
+  模具侧只保留 `c:moulds`，`c:moulds/shape` 子标签与其语言键删除。
+- 需复验：感应炉同时接受铜粉与铜锭参与合青铜；JEI 该页显示 `c:mats/copper x3` + `c:mats/tin x1 → 4 青铜锭`；
+  把 `compat.providerPriority` 的 `mekanism` 提到 `alltheores` 之前，青铜应变为通用机械的锭
+  （黄铜/因瓦仍只有 ATO 提供，配方不变）。
+- 需复验模具：任意模具可放入压缩机催化槽（含成型模具），取出与批量运行不被消耗；
+  删掉的 `c:moulds/shape` 不影响任何配方匹配（若出现某台机器拒收模具，说明还有隐藏的按分类标签读取点）。
+- 需复验冷却剂页：与熔炉桥接、引擎燃料页同组出现在 JEI 的 KER 模组分页里，
+  冷却器方块作为催化剂可点开该页（类别与催化剂现在共用 `buildAuxCategories()` 一份清单）。
+- 未做：EMI 侧仍没有冷却剂页（`TENEmiPlugin` 只登记机器/熔炉/引擎），与 dev 环境禁用 EMI 一致。
+
+### 合金扩容与耗时尺规实机复验 — P2 🧪
+- 2026-11-01 感应炉合金从 5 种扩到 **11 种**（新增钢、蓝金/enderium、荧石金/lumium、信号金/signalum
+  与 ECO 的铝合金、黑钨合金），全部由邻居的**粉末**配方推导；耗时尺规改为线性
+  50 tick × 输入物料份数，原生 9 条手写感应炉配方同步重算。
+- 需复验：钢的三条变体在只装其一时能自动落到下一家（`c:ingots/steel` 由 ATO/通用机械/沉浸工程都提供，
+  默认归属按 `compat.providerPriority`）；lumium/signalum 需要 AE2 的 `c:dusts/certus_quartz`、
+  `c:dusts/fluix`——没装 AE2 时这两条与铝合金行应整条从 JEI 消失，而不是显示跑不了的配方。
+- 需复验耗时：感应炉 2 份输入 100 tick、8 份输入 400 tick；压缩机所有冲压/压缩配方恒 100 tick；
+  装功率升级卡后时长随实际效率缩短、`B` 锁定值不因耗时改变而漂移。
+- 需复验 ECO 侧：`neoecoae` 现在进 `compat.providerPriority`（默认在 `allthemodium` 之后、`minecraft` 之前）；
+  把它写进 `compat.disabledSources` 会**同时**让它退出材料归属竞选（`firstProvider` 用 `enabled()` 过滤），
+  而铝合金/黑钨合金目前没有第二家候选，所以那两条会整条消失而不是回退给别人——确认这是否符合预期。
+
+### 配置界面文案与 ECO 归属实机复验 — P2 🧪
+- 2026-11-01 配置语言键从 10 条补到 63 条（`kenergyengineering.configuration.*`，中英与 en_ud 三份齐），
+  覆盖机器/能量模块/农场/兼容四组、分区名与标题；键的格式由 NeoForge 拼
+  `<modid>.configuration.<点分路径>` 与 `.tooltip`（无 tooltip 时回退 TOML 注释）。
+- 需复验：打开配置界面不再出现任何裸键名；`compat.disabledSources` 的列表编辑（增删行）
+  在界面上可用并写回 `config/kenergyengineering-common.toml`；tooltip 显示中文说明。
+- 需复验 ECO 归属：`neoecoae` 已排到 `compat.providerPriority` 第二（仅次于本模组），
+  铝的粗料与粉、钨的整条链（`c:ores/tungsten → 粗钨 → 钨粉`）应默认由 ECO 提供；
+  把 `neoecoae` 从列表移除后，铝应退回沉浸工程、钨的配方整条消失。
+- 需复验：`c:storage_blocks/raw_tungsten` 与 `c:storage_blocks/raw_aluminum` 两条粗矿块→粉
+  在装了 ECO 时可用（ECO 提供 `raw_tungsten_block` / `raw_aluminum_block`）。
+
 ## 二、未开始
+
+### 机器 enable* 开关没有消费点 — P2 ⬜
+- `TENConfig.MachineConfig` 的 12 个 `enableX`（熔炼机/粉碎机/压缩机/精炼机/感应炉/灵能处理器/
+  信标/生物啃噬器/采矿场/祛魔机/物质结晶器/农场管理器）只被 `ConfigHolder.enableMachine()` 读取，
+  而后者在 `src/main` 与 `src/client` 里**没有任何调用点**——改这些开关当前不产生任何效果。
+- 需要决策：(a) 接到机器可用性（放置/工作/配方显示）上；(b) 删掉这 12 项与 `enableMachine()`；
+  (c) 保留但改成别的语义。语言键已按 (a) 的前提补齐，若选 (b) 需同步删除对应 `configuration.machine.enable*`。
+
 
 ### EMI 运行时切换 — P3 ⬜
 - 当前开发运行期只挂 JEI，`dependencies.gradle` 里 EMI 的 `localRuntime` 行被注释。

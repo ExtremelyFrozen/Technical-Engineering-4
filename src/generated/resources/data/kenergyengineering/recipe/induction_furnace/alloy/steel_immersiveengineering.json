@@ -1,0 +1,58 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:not",
+      "value": {
+        "type": "neoforge:tag_empty",
+        "tag": "c:mats/iron"
+      }
+    },
+    {
+      "type": "neoforge:not",
+      "value": {
+        "type": "neoforge:tag_empty",
+        "tag": "minecraft:coals"
+      }
+    },
+    {
+      "type": "neoforge:not",
+      "value": {
+        "type": "neoforge:tag_empty",
+        "tag": "c:ingots/steel"
+      }
+    },
+    {
+      "type": "kenergyengineering:provider_priority",
+      "candidates": [
+        "alltheores",
+        "mekanism",
+        "immersiveengineering"
+      ],
+      "mod": "immersiveengineering"
+    }
+  ],
+  "type": "kenergyengineering:induction_furnace",
+  "inputs": [
+    {
+      "type": "tag",
+      "count": 1,
+      "form": "item",
+      "key": "c:mats/iron"
+    },
+    {
+      "type": "tag",
+      "count": 1,
+      "form": "item",
+      "key": "minecraft:coals"
+    }
+  ],
+  "outputs": [
+    {
+      "type": "static",
+      "count": 1,
+      "form": "item",
+      "key": "immersiveengineering:ingot_steel"
+    }
+  ],
+  "time": 100
+}

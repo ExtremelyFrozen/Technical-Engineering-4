@@ -1,7 +1,10 @@
 {
 	"replace": false,
 	"values": [
-		"#c:moulds/shape",
+		"kenergyengineering:mould_gear",
+		"kenergyengineering:mould_plate",
+		"kenergyengineering:mould_rod",
+		"kenergyengineering:mould_string",
 		"kenergyengineering:mould_compressed_small",
 		"kenergyengineering:mould_compressed_large",
 		"kenergyengineering:mould_split",

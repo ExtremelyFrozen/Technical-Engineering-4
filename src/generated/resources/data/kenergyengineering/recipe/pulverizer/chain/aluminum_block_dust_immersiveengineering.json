@@ -1,0 +1,45 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:not",
+      "value": {
+        "type": "neoforge:tag_empty",
+        "tag": "c:storage_blocks/raw_aluminum"
+      }
+    },
+    {
+      "type": "kenergyengineering:provider_priority",
+      "candidates": [
+        "neoecoae",
+        "immersiveengineering",
+        "alltheores"
+      ],
+      "mod": "immersiveengineering"
+    }
+  ],
+  "type": "kenergyengineering:pulverizer",
+  "inputs": [
+    {
+      "type": "tag",
+      "form": "item",
+      "key": "c:storage_blocks/raw_aluminum"
+    }
+  ],
+  "outputs": [
+    {
+      "type": "static",
+      "count": 9,
+      "form": "item",
+      "key": "immersiveengineering:dust_aluminum"
+    },
+    {
+      "type": "static",
+      "chance": 0.4,
+      "count": 1,
+      "form": "item",
+      "key": "immersiveengineering:dust_aluminum",
+      "rolls": 9
+    }
+  ],
+  "time": 200
+}

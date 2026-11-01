@@ -34,6 +34,19 @@ public class TENMaterialTagGen implements DataProvider {
     }
 
     /**
+     * 不由本模组注册、但自适应池要能引用的材料：{@code TENRecipeGen.ORE_CHAIN} 里来自邻居的那批，
+     * 以及 ATO 系合金。成员只是 {@code #c:ingots/X} 与 {@code #c:dusts/X} 的可选引用，
+     * 谁提供谁进标签、没人提供就是空标签，因此给它们建聚合标签没有副作用；
+     * 有了它，感应炉与兼容层里的「锭或粉皆可入」对这些材料同样自动成立，不必再逐个手写物品。
+     */
+    public static final List<String> NEIGHBOUR_MATS = List.of(
+            "lead", "osmium", "uranium", "aluminum", "silver", "iridium", "platinum", "zinc",
+            "allthemodium", "unobtainium", "vibranium",
+            "steel", "enderium", "lumium", "signalum",
+            "tungsten", "aluminum_alloy", "black_tungsten_alloy",
+            "bronze", "brass", "invar", "electrum", "constantan");
+
+    /**
      * 有粉形态的材料才生成聚合标签。锭侧不作判据：铁/铜/金的锭用原版物品，
      * {@code isRegistered("ingot")} 为 false，但 {@code c:ingots/X} 标签照样存在；
      * 真缺席时 optional 成员自动为空，不影响标签。
@@ -44,6 +57,7 @@ public class TENMaterialTagGen implements DataProvider {
 
     /** 按材料 id 查（兼容表里只有字符串，拿不到 {@link Mat} 枚举）。 */
     public static boolean hasMatTag(String id) {
+        if (NEIGHBOUR_MATS.contains(id)) return true;
         for (var mat : Mat.values())
             if (mat.id.equals(id)) return hasMatTag(mat);
         return false;
@@ -55,17 +69,20 @@ public class TENMaterialTagGen implements DataProvider {
         List<CompletableFuture<?>> futures = new ArrayList<>();
         for (var mat : Mat.values()) {
             if (hasMatTag(mat))
-                futures.add(save(cache, dir.resolve(mat.id + ".json"), build(mat)));
+                futures.add(save(cache, dir.resolve(mat.id + ".json"), build(mat.id)));
+        }
+        for (String id : NEIGHBOUR_MATS) {
+            futures.add(save(cache, dir.resolve(id + ".json"), build(id)));
         }
         return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
     }
 
-    private JsonObject build(Mat mat) {
+    private JsonObject build(String id) {
         var j = new JsonObject();
         j.addProperty("replace", false);
         var values = new JsonArray();
-        values.add(optionalTagRef("c:ingots/" + mat.id));
-        values.add(optionalTagRef("c:dusts/" + mat.id));
+        values.add(optionalTagRef("c:ingots/" + id));
+        values.add(optionalTagRef("c:dusts/" + id));
         j.add("values", values);
         return j;
     }

@@ -10,6 +10,8 @@
     "immersiveengineering": ["D:/Temp/ieall/data"],
     "alltheores": ["D:/Temp/atoall/data"],
     "allthemodium": ["D:/Temp/atmdall/data"],
+    "neoecoae": ["D:/Temp/ecoall/data"],
+    "ae2": ["D:/Temp/ae2all/data"],
     "minecraft": ["D:/Temp/nfall/data", "D:/Temp/mcall/data"]
   },
   "neighbourRecipes": {
@@ -19,11 +21,18 @@
     ],
     "pulverizer": [
       ["enderio", "enderio/recipe/sag_milling"],
-      ["enderio_evolution", "enderio_evolution/recipe/sag_milling"]
+      ["enderio_evolution", "enderio_evolution/recipe/sag_milling"],
+      ["alltheores", "alltheores/recipe/sag_milling"],
+      ["alltheores", "alltheores/recipe/crusher"],
+      ["neoecoae", "neoecoae/recipe/crushing"]
+    ],
+    "compressor": [
+      ["alltheores", "alltheores/recipe/metalpress"]
     ]
   },
   "providerPriority": [
     "kenergyengineering",
+    "neoecoae",
     "enderio_evolution",
     "enderio",
     "mekanism",
@@ -32,7 +41,10 @@
     "allthemodium",
     "minecraft"
   ],
-  "fePerTick": 15,
-  "timeFloor": 20,
-  "timeCeil": 1200
+  "timeRule": {
+    "comment": "耗时不按邻居能量换算（IE 一次 51200 FE 会把时长推到 1200 tick 上限，完全脱离本模组原生尺度）。感应炉 = 50 tick × 输入物料份数；粉碎机一次操作 120、粗矿块这类 9 份输入 200；压缩机恒 100 不看份数（与原生压缩配方一致）。",
+    "induction_furnace": { "perUnit": 50 },
+    "pulverizer": { "base": 120, "blockUnits": 9, "blockTime": 200 },
+    "compressor": { "flat": 100 }
+  }
 }
