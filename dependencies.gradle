@@ -96,4 +96,34 @@ dependencies {
     // ResolutionException（实测：带 powah 报 powah，摘掉 powah 改报 ae2wtlib_api）。
     // KER 已对齐到 MC1.21.1-1.4.8，下面这行用于复测冲突是否随之消失。
     localRuntime(forge.neoecoae)
+
+    // Ender IO（EIO）+ EIO 进化（Ender IO: Evolution）—— dev 共存与配方/管道对照
+    // 硬前置（读自各 jar 的 META-INF/neoforge.mods.toml）：
+    //   enderio: neoforge 21.1.216（我们在 21.1.243）+ endercore 8.2.12-beta —— EnderCore 已随
+    //     单体 jar jarJar 内嵌（META-INF/jarjar/com.enderio.endercore-*.jar），不用另声明坐标
+    //   enderio_conduit_opt 1.1.6: enderio[8.2.11-beta,)（进化版硬依赖它，故三件一起装）
+    //   enderio_evolution 3.1.5: enderio[8.2.7-beta,) + enderio_conduit_opt[1.0.3-1.21.1,)
+    // 可选集成 ftbultimine / mekanism 未装，缺场不报错
+    localRuntime(forge.enderio)
+    localRuntime(forge.enderioconduitopt)
+    localRuntime(forge.enderioevolution)
+
+    // Mekanism + Immersive Engineering —— 兼容层的标签解析优先级里要用到它们的材料家族
+    // （c:dusts/lead、c:raw_materials/osmium 等由 MEK 提供，铝粉一类仍无人提供）
+    // 硬前置（读自各 jar 的 META-INF/neoforge.mods.toml）：
+    //   mekanism: minecraft[1.21.1] / neoforge[21.1.194,) / jei[19.19.0.219,) —— 我们 243 + JEI 19.64 ✓
+    //   immersiveengineering: minecraft[1.21.1] / neoforge[21.1.164,) / jei[19.10.0.126,) ✓
+    localRuntime(forge.mekanism)
+    localRuntime(forge.immersiveengineering)
+
+    // ATO - All the Ores（mod id alltheores，ATM 系的矿石统一）+ Allthemodium（ATM 顶级金属）
+    // 硬前置（读自各 jar 的 META-INF/neoforge.mods.toml）：
+    //   alltheores: neoforge[21.1.0,) / minecraft[1.21.1,1.22) ✓
+    //   allthemodium: neoforge[21.1.195,) / minecraft[1.21.1,) / geckolib[4.7.5.1,) —— 实测缺 GeckLib
+    //     会在预加载期直接 FATAL「Mod allthemodium requires geckolib 4.7.5.1 or above」，故一并装上
+    //   三者都没有 jarJar 内嵌，不会与我们的 Registrate 1.4.8 撞导出
+    // 作用：给兼容层的标签解析补上 silver/zinc/iridium/platinum 家族与 allthemodium 系金属
+    localRuntime(forge.alltheores)
+    localRuntime(forge.allthemodium)
+    localRuntime(forge.geckolib)
 }
