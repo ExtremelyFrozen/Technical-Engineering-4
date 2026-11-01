@@ -26,7 +26,7 @@
 | `build` | `publish.yml` | `./gradlew assemble`，上传 `build/libs/*` 为 3 天 artifact |
 | `upload-release-artifacts` | 同上 | 用 `softprops/action-gh-release` 把 jar 挂到 Release |
 | `publish-modrinth` | `simulate == false` | `Kir-Antipov/mc-publish@v3.3.0`，项目 id `PS4p8SFk` |
-| `publish-cf` | `simulate == false` | 同 action，CurseForge 项目 id `1545758` |
+| `publish-cf` | `simulate == false` | `Kir-Antipov/mc-publish@v3.3.2`，CurseForge 项目 id `1545758` |
 | `bump-version-and-changelog` | `build` 与附件上传后 | 升 `mod_version`，按需补录 changelog，推分支并开 PR |
 
 `simulate` 的判定在 `publish-on-release.yml`：
@@ -83,5 +83,11 @@
   发布前用一次 dry run 确认。修好后改版本号重新打 tag 发版；同一 Release Re-run 仍会用旧 tag 的 `config.json`。
 - **版本 bump 的 `sed`**：没有 `g`，只替换每行的第一处匹配；若其他键出现同值，仍可能误伤。
   改文件前先看当前内容。
+- **CurseForge 要求环境组**：不带环境的版本会被 CF 拒绝，报
+  `400 (Bad Request, {"errorCode":1021,"errorMessage":"You must select at least one version from the environment group of versions"})`。
+  `publish-cf` 必须传 `curseforge-environment: 'client | server'`。这个输入从 mc-publish v3.3.2 才有，
+  v3.3.0 的 `action.yml` 里没有该键，所以 CF 的 action 版本卡在 v3.3.2，不能跟 Modrinth 一起降回去。
+  Modrinth 不需要这个字段。CF 失败时 Modrinth、附件与 bump PR 已经完成，不要重发同版本（Modrinth 同版本会失败），
+  手动在 CF 后台上传 Release 附件里的主 jar 补这一版。
 - **Actions 版本**：workflow 里仍是 `actions/checkout@v4`、`setup-java@v4`、`gradle/actions/setup-gradle@v4`。
   升级时先确认 Node 运行时与缓存参数没有行为变化，再一起改。

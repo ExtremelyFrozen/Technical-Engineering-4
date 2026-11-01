@@ -131,10 +131,11 @@ jobs:
           LOADER: 'neoforge'
           JAVA: '21'
           VERSION_TYPE: 'release'
-        uses: Kir-Antipov/mc-publish@v3.3.0
+        uses: Kir-Antipov/mc-publish@v3.3.2
         with:
           curseforge-id: 1545758
           curseforge-token: ${{ secrets.CURSEFORGE_TOKEN }}
+          curseforge-environment: 'client | server'
           files: |
             ./kenergyengineering-${{ env.MC_VERSION }}-${{ needs.build.outputs.ver }}.jar
             ./!(kenergyengineering-${{ env.MC_VERSION }}-${{ needs.build.outputs.ver }}.jar)
