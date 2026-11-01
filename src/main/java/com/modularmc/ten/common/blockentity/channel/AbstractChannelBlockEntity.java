@@ -91,6 +91,12 @@ public abstract class AbstractChannelBlockEntity extends CmMachineBlockEntity {
     }
 
     @Override
+    protected boolean enforcesUniqueItemSlots() {
+        // 频道是共享存储，同一物品跨成员槽聚合是核心用法
+        return false;
+    }
+
+    @Override
     public boolean hasSideBar() {
         return true;
     }

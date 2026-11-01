@@ -214,9 +214,9 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         if (maxStorageEnergy <= 0) maxStorageEnergy = initialEnergyStorage;
 
         if (itemHandler == null || itemHandler.getSlots() != inventorySize()) {
-            itemHandler = new MachineItemHandler(inventorySize(), this::valid);
+            itemHandler = new MachineItemHandler(inventorySize(), this::canPlaceItem);
         } else {
-            itemHandler.setValidator(this::valid);
+            itemHandler.setValidator(this::canPlaceItem);
         }
         itemHandler.setChangeListener(this::markDirty);
 
@@ -254,6 +254,10 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
      * （工具槽等自动落在此规则内），其余槽用 {@value #DEFAULT_SLOT_LIMIT}。
      * 超 99 的部分由 {@code MachineItemHandler} 的 BigCount 负责持久化。
      * 子类可覆写以表达个别槽位的特殊语义。
+     * <p>
+     * 注意：这里不能用 {@code Item.ABSOLUTE_MAX_STACK_SIZE} 钳制——该常量在 1.21.1 就是 99，
+     * 一旦套上会把所有批量倍增上限统一压回 99（B≥2 时 128/192/…全变 99），
+     * 使批处理堆叠特性静默失效。
      */
     protected int batchSlotLimitFor(int slot, ItemStack candidate) {
         IngredientType type = slotType(slot);
@@ -265,8 +269,7 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         if (maxStackSize <= 1) {
             return 1;
         }
-        long limit = (long) maxStackSize * getTheoreticalBatchSize();
-        return (int) Math.min(limit, net.minecraft.world.item.Item.ABSOLUTE_MAX_STACK_SIZE);
+        return (int) Math.min((long) maxStackSize * getTheoreticalBatchSize(), Integer.MAX_VALUE);
     }
 
     // ───── ldlib2 NBT: 确保反序列化前 handler 已初始化 ─────
@@ -703,6 +706,42 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
     }
 
     public boolean valid(int slot, ItemStack stack) {
+        return true;
+    }
+
+    /**
+     * 是否启用「同角色槽位内同一物品唯一」。电池仓（放电/充电两槽可同电池）、
+     * 频道共享存储（同物品跨槽聚合）这类合法占用多槽的机器覆写返回 false。
+     */
+    protected boolean enforcesUniqueItemSlots() {
+        return true;
+    }
+
+    /**
+     * 插入校验总入口：子类 {@link #valid(int, ItemStack)} 钩子 + 同角色去重。
+     * item handler 的 validator、面 capability、GUI mayPlace 都走这里；
+     * 机器自身产出走 {@code setStackInSlot}/{@code grow}，不经此门，产出不受去重影响。
+     * <p>
+     * 去重按槽位角色分组：可插入的槽之间互斥、可抽出的槽之间互斥，输入与输出互不影响
+     * ——跨组互斥会让翻倍配方（输入=输出同物品）被机器自己的产物堵死输入槽。
+     * 只比物品本体、不比 components：配方原料匹配同样只按物品
+     * （{@code FormsCombinedIngredient#contains}），按 components 放过等于继续让
+     * 感应炉那种严格匹配的机器「占用槽数 &gt; 原料种类数」而不出配方。
+     */
+    public boolean canPlaceItem(int slot, ItemStack stack) {
+        if (!valid(slot, stack)) return false;
+        if (!enforcesUniqueItemSlots() || stack.isEmpty()) return true;
+        var handler = itemHandler;
+        if (handler == null) return true; // 子类 slotType 会读 handler，初始化顺序上先兜住
+        IngredientType type = slotType(slot);
+        if (!type.canIn() && !type.canOut()) return true;
+        boolean inputGroup = type.canIn();
+        for (int i = 0; i < handler.getSlots(); i++) {
+            if (i == slot) continue;
+            IngredientType other = slotType(i);
+            if (inputGroup ? !other.canIn() : !other.canOut()) continue;
+            if (ItemStack.isSameItem(handler.getStackInSlot(i), stack)) return false;
+        }
         return true;
     }
 

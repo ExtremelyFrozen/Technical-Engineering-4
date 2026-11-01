@@ -38,6 +38,12 @@ public class CreativeCellBlockEntity extends CmMachineBlockEntity {
     }
 
     @Override
+    protected boolean enforcesUniqueItemSlots() {
+        // 两槽同为充电位，同款电池分放两槽是正常用法
+        return false;
+    }
+
+    @Override
     public boolean valid(int slot, ItemStack stack) {
         var energy = stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM);
         if (energy == null) return false;

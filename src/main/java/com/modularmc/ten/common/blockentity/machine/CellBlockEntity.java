@@ -38,6 +38,12 @@ public class CellBlockEntity extends CmMachineBlockEntity {
     }
 
     @Override
+    protected boolean enforcesUniqueItemSlots() {
+        // 槽 0 放电、槽 1 充电，同款电池一满一空分放两槽是正常用法
+        return false;
+    }
+
+    @Override
     public boolean valid(int slot, ItemStack stack) {
         var energy = stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM);
         if (energy == null) return false;

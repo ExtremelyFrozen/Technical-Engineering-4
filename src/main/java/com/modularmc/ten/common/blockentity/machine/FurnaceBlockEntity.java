@@ -145,12 +145,14 @@ public class FurnaceBlockEntity extends ProcessingMachineBlockEntity {
             int inputCount = input.getCount();
             int B_byInput = inputCount;
 
+            // 输出容量按「物品上限 × 理论 B」的动态槽位上限算，不按原版 64 封顶
+            // （旧写法在非空槽上用 getMaxStackSize()，会让输出槽永远停在 64）
             ItemStack existingOutput = itemHandler.getStackInSlot(1);
             int availOutputSpace;
             if (existingOutput.isEmpty()) {
-                availOutputSpace = itemHandler.getSlotLimit(1);
+                availOutputSpace = itemHandler.getEffectiveSlotLimit(1, result);
             } else if (ItemStack.isSameItem(existingOutput, result)) {
-                availOutputSpace = existingOutput.getMaxStackSize() - existingOutput.getCount();
+                availOutputSpace = itemHandler.getEffectiveSlotLimit(1, existingOutput) - existingOutput.getCount();
             } else {
                 availOutputSpace = 0;
             }
@@ -197,7 +199,7 @@ public class FurnaceBlockEntity extends ProcessingMachineBlockEntity {
 
         if (output.isEmpty()) return false;
         if (!ItemStack.isSameItem(output, result)) return true;
-        if (output.getCount() + result.getCount() * B > output.getMaxStackSize()) return true;
+        if (output.getCount() + result.getCount() * B > itemHandler.getEffectiveSlotLimit(1, output)) return true;
 
         // Knowledge 门控 XP 罐空间检查（仅生产路径）
         if (hasUpgrade(LevelupKnow.class)) {
@@ -248,7 +250,7 @@ public class FurnaceBlockEntity extends ProcessingMachineBlockEntity {
                 clearLockedBatch();
                 return;
             }
-            int outputLimit = Math.min(itemHandler.getSlotLimit(1), output.getMaxStackSize());
+            int outputLimit = itemHandler.getEffectiveSlotLimit(1, output);
             if (output.getCount() + resultCount > outputLimit) {
                 return;
             }

@@ -641,7 +641,7 @@ public final class TENMachineBlockUIFactory {
             @Override
             public boolean mayPlace(net.minecraft.world.item.ItemStack stack) {
                 var type = machine.slotType(getSlotIndex());
-                return type.canIn() && machine.valid(getSlotIndex(), stack) && super.mayPlace(stack);
+                return type.canIn() && machine.canPlaceItem(getSlotIndex(), stack) && super.mayPlace(stack);
             }
 
             @Override
