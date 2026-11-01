@@ -126,4 +126,12 @@ dependencies {
     localRuntime(forge.alltheores)
     localRuntime(forge.allthemodium)
     localRuntime(forge.geckolib)
+
+    // Mod Menu (NeoForge Edition) —— 只为 dev 侧打开配置界面（compat.disabledSources /
+    // compat.providerPriority 需要实测改值生效）。它的 Config 按钮与 NeoForge 自带 Mods 界面
+    // 读的是同一个扩展点 IConfigScreenFactory，因此本模组在 TENClientSetup 里注册
+    // ConfigurationScreen::new 才是关键，本模组不把它当依赖。
+    // Better ModList 未选：CF 上标到 1.21.1 的 fileId 无法核实，且其配置界面依赖额外的
+    // config-screen 库；Mod Menu 该版本 MIT、无声明前置。
+    localRuntime(forge.modmenu)
 }

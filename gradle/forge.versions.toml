@@ -29,6 +29,7 @@ immersiveengineering = "6733669" # Immersive Engineering 12.4.2-194
 alltheores = "7825464" # ATO - All the Ores 3.2.0_neoforge_1.21.1（mod id alltheores，矿石统一）
 allthemodium = "9143638" # Allthemodium 3.2.1（ATM 顶级金属）
 geckolib = "8893490" # GeckoLib 4.9.3（Allthemodium 硬前置 ≥4.7.5.1）
+modmenu = "7312908" # Mod Menu (NeoForge Edition) 1.21.1-1.0.2（Raguto 移植，非 terraformers 官方）
 
 ## modrinth maven ##
 sodium = "mc1.21.1-0.6.13-neoforge"
@@ -49,6 +50,7 @@ jei-neoforge-impl   = { module = "mezz.jei:jei-1.21.1-neoforge", version.ref = "
 emi                 = { module = "curse.maven:emi-580555", version.ref = "emi" }
 
 jade                = { module = "curse.maven:jade-324717", version.ref = "jade" }
+modmenu             = { module = "curse.maven:mod-menu-neoforge-edition-1393224", version.ref = "modmenu" }
 sodium              = { module = "maven.modrinth:sodium", version.ref = "sodium" }
 iris                = { module = "maven.modrinth:iris", version.ref = "iris" }
 modernui            = { module = "curse.maven:modern-ui-352491", version.ref = "modernui" }
