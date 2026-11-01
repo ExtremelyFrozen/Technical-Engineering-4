@@ -29,6 +29,7 @@ import mezz.jei.api.IModPlugin;
 import mezz.jei.api.JeiPlugin;
 import mezz.jei.api.helpers.IGuiHelper;
 import mezz.jei.api.recipe.IRecipeManager;
+import mezz.jei.api.recipe.category.IRecipeCategory;
 import mezz.jei.api.runtime.IJeiRuntime;
 import mezz.jei.api.registration.IGuiHandlerRegistration;
 import mezz.jei.api.registration.IRecipeCatalystRegistration;
@@ -109,6 +110,14 @@ public class TENJeiPlugin implements IModPlugin {
 
     private record CategoryDef(String name, ResourceLocation id, ItemStack icon) {}
 
+    /**
+     * 非机器页面（熔炉桥接、引擎燃料、冷却剂）的登记清单。
+     * 类别与催化剂两处注册共用这一份，不再各写一遍：冷却剂页此前是末尾单独追一行，
+     * 与其余 KER 页面不同组，加页面时只改一处就会漏掉另一处。
+     */
+    private record AuxDef(ItemStack icon, mezz.jei.api.recipe.RecipeType<?> type,
+            java.util.function.Function<IGuiHelper, IRecipeCategory<?>> category) {}
+
     private List<CategoryDef> buildCategories() {
         return List.of(
                 new CategoryDef("Pulverizer", TEN.id("pulverizer"), icon("machine_pulverizer")),
@@ -116,6 +125,28 @@ public class TENJeiPlugin implements IModPlugin {
                 new CategoryDef("Refiner", TEN.id("refiner"), icon("machine_refiner")),
                 new CategoryDef("Induction Furnace", TEN.id("induction_furnace"), icon("machine_induction_furnace")),
                 new CategoryDef("Psionicant", TEN.id("psionicant"), icon("machine_psionicant")));
+    }
+
+    private List<AuxDef> buildAuxCategories() {
+        return List.of(
+                new AuxDef(smelterIcon(), SMELTER_SMELTING,
+                        h -> new SmelterJeiCategory(h, TEN.id("smelter_smelting"), SMELTER_SMELTING, smelterIcon())),
+                new AuxDef(smelterIcon(), SMELTER_BLASTING,
+                        h -> new SmelterJeiCategory(h, TEN.id("smelter_blasting"), SMELTER_BLASTING, smelterIcon())),
+                new AuxDef(smelterIcon(), SMELTER_SMOKING,
+                        h -> new SmelterJeiCategory(h, TEN.id("smelter_smoking"), SMELTER_SMOKING, smelterIcon())),
+                new AuxDef(engineIcon("extraction"), EXTRACTOR_FUEL,
+                        h -> new EngineFuelCategory(h, TEN.id("extractor_fuel"), EXTRACTOR_FUEL,
+                                engineIcon("extraction"), TENBlocks.ENGINE_EXTRACTION.get().getName())),
+                new AuxDef(engineIcon("metal"), METALIZER_FUEL,
+                        h -> new EngineFuelCategory(h, TEN.id("metalizer_fuel"), METALIZER_FUEL,
+                                engineIcon("metal"), TENBlocks.ENGINE_METAL.get().getName())),
+                new AuxDef(engineIcon("biomass"), BIOMASS_FUEL,
+                        h -> new EngineFuelCategory(h, TEN.id("biomass_fuel"), BIOMASS_FUEL,
+                                engineIcon("biomass"), TENBlocks.ENGINE_BIOMASS.get().getName())),
+                new AuxDef(icon("machine_cooler"), COOLER_COOLANT,
+                        h -> new CoolantJeiCategory(h, TEN.id("cooler_coolant"), COOLER_COOLANT,
+                                icon("machine_cooler"), TENBlocks.MACHINE_COOLER.get().getName())));
     }
 
     private static List<MachineTypeDef> buildMachineTypeDefs() {
@@ -155,29 +186,10 @@ public class TENJeiPlugin implements IModPlugin {
             registration.addRecipeCategories(new TENJeiCategory(helper, data.id, type, data.icon));
         }
 
-        registration.addRecipeCategories(
-                new SmelterJeiCategory(helper, TEN.id("smelter_smelting"), SMELTER_SMELTING, smelterIcon()),
-                new SmelterJeiCategory(helper, TEN.id("smelter_blasting"), SMELTER_BLASTING, smelterIcon()),
-                new SmelterJeiCategory(helper, TEN.id("smelter_smoking"), SMELTER_SMOKING, smelterIcon())
-        );
-
-        registration.addRecipeCategories(
-                new EngineFuelCategory(helper, TEN.id("extractor_fuel"), EXTRACTOR_FUEL,
-                        engineIcon("extraction"),
-                        TENBlocks.ENGINE_EXTRACTION.get().getName()),
-                new EngineFuelCategory(helper, TEN.id("metalizer_fuel"), METALIZER_FUEL,
-                        engineIcon("metal"),
-                        TENBlocks.ENGINE_METAL.get().getName()),
-                new EngineFuelCategory(helper, TEN.id("biomass_fuel"), BIOMASS_FUEL,
-                        engineIcon("biomass"),
-                        TENBlocks.ENGINE_BIOMASS.get().getName())
-        );
-
-        registration.addRecipeCategories(
-                new CoolantJeiCategory(helper, TEN.id("cooler_coolant"), COOLER_COOLANT,
-                        icon("machine_cooler"),
-                        TENBlocks.MACHINE_COOLER.get().getName())
-        );
+        // 非机器页面与机器页面同组登记：熔炉桥接、引擎燃料、冷却剂按同一份清单顺序进来
+        for (var aux : buildAuxCategories()) {
+            registration.addRecipeCategories(aux.category().apply(helper));
+        }
 
         TEN.LOGGER.info("TEN JEI plugin categories registered — uid: {}", UID);
     }
@@ -384,15 +396,9 @@ public class TENJeiPlugin implements IModPlugin {
             registration.addRecipeCatalyst(data.icon, type);
         }
 
-        registration.addRecipeCatalyst(smelterIcon(), SMELTER_SMELTING);
-        registration.addRecipeCatalyst(smelterIcon(), SMELTER_BLASTING);
-        registration.addRecipeCatalyst(smelterIcon(), SMELTER_SMOKING);
-
-        registration.addRecipeCatalyst(engineIcon("extraction"), EXTRACTOR_FUEL);
-        registration.addRecipeCatalyst(engineIcon("metal"), METALIZER_FUEL);
-        registration.addRecipeCatalyst(engineIcon("biomass"), BIOMASS_FUEL);
-
-        registration.addRecipeCatalyst(icon("machine_cooler"), COOLER_COOLANT);
+        for (var aux : buildAuxCategories()) {
+            registration.addRecipeCatalyst(aux.icon(), aux.type());
+        }
     }
 
     @Override

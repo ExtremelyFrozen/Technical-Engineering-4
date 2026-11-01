@@ -77,6 +77,22 @@ public class QuarryBlockEntity extends RadiusMachineBlockEntity {
     public boolean scanCursorInitialized = false;
 
     /**
+     * 本轮扫描是否真的挖到过东西。到底后据此决定要不要以机器自身为新起点再扫一轮：
+     * 挖到过 → 上层可能因下游被挖空而塌落出新的可挖层，重扫有收益；
+     * 一轮完全空手 → 保持停机，避免无休止重扫空层。
+     */
+    @Persisted
+    public boolean scanPassMined;
+
+    /**
+     * 本维度可挖下界。原来固定用 {@code TENConstants.WORLD_MIN}（主世界 -64），
+     * 下界实际到 -128、末地底在 0，按维度取值才不会提前判挖尽、也不会画到虚空层。
+     */
+    private int minScanY() {
+        return level == null ? TENConstants.WORLD_MIN : level.getMinBuildHeight();
+    }
+
+    /**
      * 极速跳层限步：findNextNonAirLayer 每调用最多跳过 MAX_LAYER_SKIP 层
      * （防单 tick 长循环；未找到则推进限步层数由 scanExhausted 判定挖尽）。
      */
@@ -167,8 +183,8 @@ public class QuarryBlockEntity extends RadiusMachineBlockEntity {
         int minZ = (worldPosition.getZ() & ~15) - e;      // 区块北边界外扩（含）
         int span = 16 + 2 * e;
         return List.of(new net.minecraft.world.phys.AABB(
-                minX, TENConstants.WORLD_MIN, minZ,
-                minX + span, Math.max(top, TENConstants.WORLD_MIN) + 1, minZ + span));
+                minX, minScanY(), minZ,
+                minX + span, Math.max(top, minScanY()) + 1, minZ + span));
     }
 
     @Override
@@ -243,6 +259,11 @@ public class QuarryBlockEntity extends RadiusMachineBlockEntity {
             // 恢复路径：模式变化 → 复位游标重扫（半径已退出范围计算，不再触发复位）
             if (lastMode != mode) {
                 lastMode = mode;
+                resetScanCursor();
+            } else if (scanPassMined) {
+                // 到底且本轮确实挖到过方块 → 以机器自身为新起点再扫一轮（用户要求的循环采矿）。
+                // 空手到底的那轮不复位，否则会永远重扫空气层。
+                scanPassMined = false;
                 resetScanCursor();
             }
         } else {
@@ -358,7 +379,7 @@ public class QuarryBlockEntity extends RadiusMachineBlockEntity {
             scanCursorInitialized = true;
             initScanCursor();
         }
-        if (scanY < TENConstants.WORLD_MIN) {
+        if (scanY < minScanY()) {
             return false; // 挖尽
         }
         // 扫描区锚定：以区块中心对称的正方形（基础区块 16×16，Rg 外扩 e 格）
@@ -390,7 +411,7 @@ public class QuarryBlockEntity extends RadiusMachineBlockEntity {
             }
             layerHasBlock = true;
             BlockPos pos = new BlockPos(x, scanY, z);
-            if (!canBreak(state)) {
+            if (!canBreak(state, pos)) {
                 advanceCursorInLayer();
                 continue;
             }
@@ -405,6 +426,7 @@ public class QuarryBlockEntity extends RadiusMachineBlockEntity {
             }
             fitAll(drops);
             level.destroyBlock(pos, false);
+            scanPassMined = true; // 本轮有实际产出，允许到底后再以自身为起点重扫一轮
             ItemNBTHelper.damage(tool, level, 1);
             advanceCursorInLayer();
             return true;
@@ -416,12 +438,12 @@ public class QuarryBlockEntity extends RadiusMachineBlockEntity {
         if (scanFast || !layerHasBlock) {
             // 极速 或 本层全空气 → 跳过空气层直达下一非空气层（按层限步）
             int next = findNextNonAirLayer(scanY - 1, MAX_LAYER_SKIP);
-            if (next >= TENConstants.WORLD_MIN) {
+            if (next >= minScanY()) {
                 scanY = next;
             } else {
                 // 限步内未找到：推进 MAX_LAYER_SKIP 层继续；
                 // 钳位下界 = WORLD_MIN - 1，使 scanExhausted（scanY < WORLD_MIN）可触发停机
-                scanY = Math.max(scanY - 1 - MAX_LAYER_SKIP, TENConstants.WORLD_MIN - 1);
+                scanY = Math.max(scanY - 1 - MAX_LAYER_SKIP, minScanY() - 1);
             }
         } else {
             scanY--;
@@ -454,14 +476,14 @@ public class QuarryBlockEntity extends RadiusMachineBlockEntity {
      */
     private int findNextNonAirLayer(int fromY, int maxLayers) {
         if (level == null) {
-            return TENConstants.WORLD_MIN - 1;
+            return minScanY() - 1;
         }
         int expand = Math.max(0, radius - initialRadius);
         int minX = (worldPosition.getX() & ~15) - expand;
         int minZ = (worldPosition.getZ() & ~15) - expand;
         int span = 16 + 2 * expand;
         Map<Long, ChunkAccess> cache = new HashMap<>(2);
-        int limit = (maxLayers <= 0) ? TENConstants.WORLD_MIN : Math.max(fromY - maxLayers + 1, TENConstants.WORLD_MIN);
+        int limit = (maxLayers <= 0) ? minScanY() : Math.max(fromY - maxLayers + 1, minScanY());
         for (int y = fromY; y >= limit; y--) {
             for (int dx = 0; dx < span; dx++) {
                 for (int dz = 0; dz < span; dz++) {
@@ -472,7 +494,7 @@ public class QuarryBlockEntity extends RadiusMachineBlockEntity {
                 }
             }
         }
-        return TENConstants.WORLD_MIN - 1;
+        return minScanY() - 1;
     }
 
     /**
@@ -515,7 +537,7 @@ public class QuarryBlockEntity extends RadiusMachineBlockEntity {
         int startX = (worldPosition.getX() & ~15) - expand;
         int startZ = (worldPosition.getZ() & ~15) - expand;
         int startY = worldPosition.getY() - 1;
-        if (scanY < TENConstants.WORLD_MIN || scanY > startY) {
+        if (scanY < minScanY() || scanY > startY) {
             scanY = startY;
         }
         if (scanFast) {
@@ -534,7 +556,7 @@ public class QuarryBlockEntity extends RadiusMachineBlockEntity {
      * 恢复经 {@link #rpcToggleScanFast} / tick() 模式变化。
      */
     public boolean scanExhausted() {
-        return scanY < TENConstants.WORLD_MIN;
+        return scanY < minScanY();
     }
 
     /**
@@ -553,10 +575,18 @@ public class QuarryBlockEntity extends RadiusMachineBlockEntity {
         }
     }
 
-    private boolean canBreak(BlockState state) {
+    /**
+     * 可挖判定。原来只有「无方块实体」这一道，基岩/屏障/结构空位/末地传送门框架
+     * 全靠它们恰好没有掉落表才没被挖走——那是巧合不是规则，任何带掉落表的不可破坏方块都会被挖穿。
+     * 现在先按 {@code destroyTime < 0}（原版不可破坏方块的统一标记，模组的也走这条）拦下。
+     */
+    private boolean canBreak(BlockState state, BlockPos pos) {
         ItemStack tool = firstAvailableTool();
         if (tool.isEmpty()) {
             return false;
+        }
+        if (level != null && state.getDestroySpeed(level, pos) < 0) {
+            return false; // 基岩一类不可破坏方块：不靠掉落表为空来兜底
         }
         if (mode == 0) {
             // 标准模式（用户调整）：仅跳过带方块实体（组件信息）的方块；
