@@ -15,6 +15,8 @@ import net.neoforged.fml.ModList;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.neoforge.client.event.ModelEvent;
+import net.neoforged.neoforge.client.gui.ConfigurationScreen;
+import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 
 /**
  * Client setup handler that initializes client-only subsystems.
@@ -33,6 +35,12 @@ public class TENClientSetup {
         TENClientRecipeCache.init();
         // 同一次同步也用来扫描同类型内的重复输入签名（兼容层导入邻居数据时的主要回归）
         TENRecipeAudit.init();
+
+        // 配置界面入口：NeoForge 自带的 ConfigurationScreen 靠 IConfigScreenFactory 扩展点被发现，
+        // 不注册则 FML 的 Mods 界面与 Mod Menu 都不显示 Config 按钮（两者读同一扩展点）。
+        // 注册留在客户端源集：专用服完全不会加载这三个客户端类型。
+        ModList.get().getModContainerById(TEN.MOD_ID).ifPresent(container -> container
+                .registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new));
 
         if (ModList.get().isLoaded("guideme")) {
             TENGuideMeClient.init();

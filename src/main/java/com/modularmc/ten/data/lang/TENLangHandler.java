@@ -337,10 +337,76 @@ public final class TENLangHandler {
         addRaw(provider, "item.kenergyengineering.guide.tooltip", "Open the in-game guide", "打开游戏内指南");
     }
 
+    /**
+     * 配置界面的键由 NeoForge 拼：{@code <modid>.configuration.<路径>}（分区/组同理，点分）
+     * 与 {@code ...<路径>.tooltip}（没有 tooltip 时回退 TOML 注释原文）。
+     * 少一条就在界面上直接显示键名，所以每个 define 项都要有名字，说明按需要补 tooltip。
+     */
     private static void addConfig(RegistrateLangProvider provider) {
+        addRaw(provider, "kenergyengineering.configuration.title", "Kenergy Engineering Configuration", "科能工程：再技术化 配置");
+        addRaw(provider, "kenergyengineering.configuration.section.common", "Common", "通用");
+        addRaw(provider, "kenergyengineering.configuration.section.client", "Client", "客户端");
+
         addRaw(provider, "kenergyengineering.configuration.client", "Client", "客户端");
         addRaw(provider, "kenergyengineering.configuration.client.showMachineHUD", "Show machine HUD", "显示机器 HUD");
+        addRaw(provider, "kenergyengineering.configuration.client.showMachineHUD.tooltip", "Show the machine information overlay on HUD.", "在 HUD 上显示机器信息栏。");
         addRaw(provider, "kenergyengineering.configuration.client.showCableHUD", "Show cable HUD", "显示管道 HUD");
+        addRaw(provider, "kenergyengineering.configuration.client.showCableHUD.tooltip", "Show the cable network statistics overlay on HUD.", "在 HUD 上显示管道的能量传输统计。");
+
+        addRaw(provider, "kenergyengineering.configuration.machine", "Machines", "机器");
+        addRaw(provider, "kenergyengineering.configuration.machine.energyMultiplier", "Energy multiplier", "能量倍率");
+        addRaw(provider, "kenergyengineering.configuration.machine.energyMultiplier.tooltip",
+                "Global energy multiplier applied to every machine.", "作用于所有机器的全局能量倍率。");
+        addRaw(provider, "kenergyengineering.configuration.machine.baseEnergyCapacity", "Base energy capacity", "基础能量容量");
+        addRaw(provider, "kenergyengineering.configuration.machine.baseEnergyCapacity.tooltip",
+                "Base FE buffer of a machine before upgrades.", "升级前机器自身的能量缓冲上限（FE）。");
+        addMachineToggle(provider, "enableSmelter", "Smelter", "熔炼机");
+        addMachineToggle(provider, "enablePulverizer", "Pulverizer", "粉碎机");
+        addMachineToggle(provider, "enableCompressor", "Compressor", "压缩机");
+        addMachineToggle(provider, "enableRefiner", "Refiner", "精炼机");
+        addMachineToggle(provider, "enableInductionFurnace", "Induction Furnace", "感应炉");
+        addMachineToggle(provider, "enablePsionicant", "Psionicant", "灵能处理器");
+        addMachineToggle(provider, "enableBeacon", "Beacon", "信标");
+        addMachineToggle(provider, "enableMobRipper", "Mob Ripper", "生物啃噬者");
+        addMachineToggle(provider, "enableQuarry", "Quarry", "采矿场");
+        addMachineToggle(provider, "enableEnchantmentFlusher", "Enchantment Flusher", "祛魔机");
+        addMachineToggle(provider, "enableCondenser", "Matter Condenser", "物质结晶器");
+        addMachineToggle(provider, "enableFarmManager", "Farm Manager", "农场管理器");
+
+        addRaw(provider, "kenergyengineering.configuration.energyUnit", "Energy Unit", "能量模块");
+        addRaw(provider, "kenergyengineering.configuration.energyUnit.maxEnergy", "Maximum energy", "最大能量");
+        addRaw(provider, "kenergyengineering.configuration.energyUnit.maxEnergy.tooltip",
+                "Energy stored by one Energy Unit (FE).", "单个能量模块可存储的能量上限（FE）。");
+        addRaw(provider, "kenergyengineering.configuration.energyUnit.chargeRate", "Charge rate (FE/t)", "充电速率（FE/刻）");
+        addRaw(provider, "kenergyengineering.configuration.energyUnit.chargeRate.tooltip",
+                "How fast an Energy Unit charges inside a machine.", "能量模块在机器内被充电的速率。");
+        addRaw(provider, "kenergyengineering.configuration.energyUnit.inputRate", "Input rate (FE/t)", "输入速率（FE/刻）");
+        addRaw(provider, "kenergyengineering.configuration.energyUnit.inputRate.tooltip",
+                "Energy accepted per tick from outside.", "每 tick 可从外部接收的能量上限。");
+        addRaw(provider, "kenergyengineering.configuration.energyUnit.outputRate", "Output rate (FE/t)", "输出速率（FE/刻）");
+        addRaw(provider, "kenergyengineering.configuration.energyUnit.outputRate.tooltip",
+                "Energy emitted per tick to outside.", "每 tick 可向外部输出的能量上限。");
+        addRaw(provider, "kenergyengineering.configuration.energyUnit.chargingDefault", "Charging mode by default", "默认充电模式");
+        addRaw(provider, "kenergyengineering.configuration.energyUnit.chargingDefault.tooltip",
+                "Initial mode of a newly crafted Energy Unit.", "新制作的能量模块的初始模式。");
+
+        addRaw(provider, "kenergyengineering.configuration.farm", "Farm Manager", "农场管理器");
+        addRaw(provider, "kenergyengineering.configuration.farm.bushCrops", "Bush crop blocks", "灌木状作物");
+        addRaw(provider, "kenergyengineering.configuration.farm.bushCrops.tooltip",
+                "Block IDs harvested as bushes (multi-tile crops) instead of by age.",
+                "按灌木整体收获（而非按生长阶段）的作物方块 id 列表。");
+
+        addRaw(provider, "kenergyengineering.configuration.compat", "Neighbour mod compatibility", "邻居模组兼容");
+        addRaw(provider, "kenergyengineering.configuration.compat.disabledSources", "Disabled compat sources", "关闭的兼容来源");
+        addRaw(provider, "kenergyengineering.configuration.compat.disabledSources.tooltip",
+                "Sources whose compat recipes are dropped at load time and hidden in JEI, e.g. enderio_evolution.",
+                "列出的来源其兼容配方在加载期整体消失，JEI 也不再显示，例如 enderio_evolution。");
+        addRaw(provider, "kenergyengineering.configuration.compat.providerPriority", "Material provider priority", "材料归属优先级");
+        addRaw(provider, "kenergyengineering.configuration.compat.providerPriority.tooltip",
+                "Best first. Decides which mod owns an item when several mods ship the same material"
+                        + " (ore chain, alloys). A switched-off source is skipped here too.",
+                "从优到劣排列。同一种材料（矿石链、合金）由列表中最先「已加载且未被关闭」的模组提供。");
+
         addRaw(provider, "kenergyengineering.configuration.panelAnimation", "Panel Animation", "面板动画");
         addRaw(provider, "kenergyengineering.configuration.panelAnimation.enabled", "Enable panel animation", "启用面板展开动画");
         addRaw(provider, "kenergyengineering.configuration.panelAnimation.enabled.tooltip", "Animate the config & upgrade panels expanding/collapsing. Disable for instant toggle.", "配置面板与升级面板展开/收起时播放动画。关闭后立即展开/收起（无动画）。");
@@ -348,6 +414,13 @@ public final class TENLangHandler {
         addRaw(provider, "kenergyengineering.configuration.panelAnimation.speed.tooltip", "Expand/collapse speed shared by all panels. Higher = faster. Per-panel override takes precedence when nonzero.", "所有展开面板共用的展开/收起速度，数值越大越快。面板独立速度非 0 时优先生效。");
         addRaw(provider, "kenergyengineering.configuration.panelAnimation.upgradeSpeed", "Upgrade panel speed override (px/tick)", "升级面板独立速度（像素/刻）");
         addRaw(provider, "kenergyengineering.configuration.panelAnimation.upgradeSpeed.tooltip", "Speed override for the upgrade panel only. 0 = use common speed.", "仅升级面板使用的独立展开/收起速度，0 = 使用通用面板速度。");
+    }
+
+    /** 机器开关：中英文都跟着方块术语走，避免界面里出现第二套机器名称。 */
+    private static void addMachineToggle(RegistrateLangProvider provider, String path, String en, String cn) {
+        addRaw(provider, "kenergyengineering.configuration.machine." + path, "Enable the " + en, "启用" + cn);
+        addRaw(provider, "kenergyengineering.configuration.machine." + path + ".tooltip",
+                "Whether the " + en + " is available.", cn + "是否可用。");
     }
 
     private static void addRaw(RegistrateLangProvider provider, String key, String en, String cn) {
