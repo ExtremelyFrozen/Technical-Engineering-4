@@ -8,11 +8,13 @@ import com.modularmc.ten.common.data.TENBlockEntities;
 
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderers;
+import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.ModList;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
+import net.neoforged.neoforge.client.event.ModelEvent;
 
 /**
  * Client setup handler that initializes client-only subsystems.
@@ -29,6 +31,8 @@ public class TENClientSetup {
         // from the NeoForge game bus. This cache provides TEN machine recipes
         // to the JEI plugin without requiring an integrated server.
         TENClientRecipeCache.init();
+        // 同一次同步也用来扫描同类型内的重复输入签名（兼容层导入邻居数据时的主要回归）
+        TENRecipeAudit.init();
 
         if (ModList.get().isLoaded("guideme")) {
             TENGuideMeClient.init();
@@ -47,5 +51,15 @@ public class TENClientSetup {
             BlockEntityRenderers.register(TENBlockEntities.BLOCK_FORMER.get(), provider);
             BlockEntityRenderers.register(TENBlockEntities.COOLER.get(), provider);
         });
+    }
+
+    @SubscribeEvent
+    public static void onRegisterAdditionalModels(ModelEvent.RegisterAdditional event) {
+        // GuideME 的 dispatch 模型只把自家 guideme:item/guide_base 登记进烘焙表，
+        // 各册 itemSettings 自带的 itemModel 它不管 → ItemOverrides 现场 getModel() 拿到
+        // missing 模型（紫黑方块）。AE2/Powah 都不用这个字段，所以踩不到这条。
+        if (ModList.get().isLoaded("guideme")) {
+            event.register(new ModelResourceLocation(TENGuideMeClient.GUIDE_ITEM_MODEL, "standalone"));
+        }
     }
 }
