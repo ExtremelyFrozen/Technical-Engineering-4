@@ -35,6 +35,17 @@ enumExtensions = "META-INF/enum_extensions.json"
     ordering = "NONE"
     side = "BOTH"
 
+# LDLib2 是机器框架的硬前置。内嵌版本由 jarJar 提供，但 jarJar 的版本范围只服务于
+# Maven 坐标解析，不参与 FML 的 mod 版本校验；不在这里声明的话，玩家自装旧版
+# LDLib2 会覆盖内嵌版本，运行到核心 BE 才 NoSuchMethodError。下限对齐
+# gradle/forge.versions.toml 的 ldlib2 条目（文件 id 9304898 = 2.2.44），升级时两处同步。
+[[dependencies.${mod_id}]]
+    modId = "ldlib2"
+    type = "required"
+    versionRange = "[2.2.44,)"
+    ordering = "NONE"
+    side = "BOTH"
+
 [[dependencies.${mod_id}]]
     modId = "guideme"
     type = "optional"

@@ -3,10 +3,17 @@ dependencies {
 
     testImplementation(libs.testframework.get())
 
-    // LDLIB 2（CurseForge 的 -all 包内含 taffy/yoga/kotlin，taffy 另加 compileOnly 供源码引用）
+    // LDLIB 2（CurseForge 的 -all 包内含 taffy/yoga/kotlin）
     implementation(forge.ldlib2.get())
     jarJar(api(forge.ldlib2.get()))
+    // taffy 被 7 个类直接引用（CmMachineBlockEntity / CableBlockEntity / AbstractChannelBlockEntity /
+    // QuarryBlockEntity / PipeBlockEntity / RevealProgressBar / TENMachineBlockUIFactory），
+    // 是事实上的硬前置。原先只靠 LDLib2 的二次 jarJar 传递（KER → ldlib → taffy 三层嵌套）：
+    // 玩家装更高版本 LDLib2 时，若上游改包名或去掉内嵌，KER 会在加载核心 BE 时
+    // NoClassDefFoundError，且报错栈指向 KER 而非 LDLib2。自行 jarJar 把版本契约收回本仓库。
+    // compileOnly 保留编译期可见性，dev 侧仍由 LDLib2 的嵌套 jarJar 提供，避免双份类。
     compileOnly(forge.taffy)
+    jarJar(forge.taffy.get())
     compileOnly(forge.yoga)
 
     // Registrate
