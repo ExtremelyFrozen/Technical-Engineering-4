@@ -298,15 +298,25 @@ public final class TENConfig {
     /**
      * 邻居兼容层开关。按来源模组关闭：列出的来源其 compat 配方在加载期整体消失，
      * JEI 也不再显示——1.21.1 没有加载后摘除配方的钩子，只能靠条件过滤。
-     * 取值见 {@code TENCompatGen} 的来源表（enderio / enderio_evolution / mekanism /
-     * immersiveengineering / alltheores / allthemodium / neoecoae / ae2 / ae2cs / extendedae /
-     * extendedae_plus / data_energistics）。
+     * 取值见 {@link CompatConfig#KNOWN_SOURCES}（不在表内的 id 会被 validator 拒绝）。
      * <p>
      * {@code providerPriority} 是同一材料被多个模组提供时的归属顺序，由
      * {@code kenergyengineering:provider_priority} 条件在加载期求值：数据为每个候选模组
      * 各写一条互斥配方，装了什么模组、顺序怎么排，决定哪一条真的进配方表。
      */
     public static final class CompatConfig {
+
+        /**
+         * 可关闭的兼容来源，与 {@code TENCompatGen} 的表行一一对应。
+         * <p>
+         * NeoForge 只有单选 {@code defineEnum}，没有枚举列表，多选只能走字符串列表，所以用
+         * validator 把可取值收窄到这张表：手打一个不存在的 id 既不报错也不生效，与其静默无效，
+         * 不如让配置界面直接拒绝。{@code TENCompatGen} 生成表行时也拿它做断言。
+         */
+        public static final List<String> KNOWN_SOURCES = List.of(
+                "enderio", "enderio_evolution", "mekanism", "immersiveengineering",
+                "alltheores", "allthemodium", "neoecoae", "ae2", "ae2cs",
+                "extendedae", "extendedae_plus", "data_energistics", "industrialforegoing");
 
         /** 材料归属的默认顺序：本模组优先，其后是自带矿石资产的 ECO，再按「内容更贴近我们 / 更通用」排，原版垫底。 */
         private static final List<String> DEFAULT_PROVIDER_PRIORITY = List.of(
@@ -320,13 +330,15 @@ public final class TENConfig {
             builder.push("compat").comment("Neighbour-mod compat recipe toggles")
                     .translation(key("compat"));
             disabledSources = builder
-                    .comment("Compat sources to switch off, e.g. [\"enderio_evolution\"]. Empty = all on.",
+                    .comment("Compat sources to switch off. Empty = all on.",
+                            "Valid values: " + String.join(", ", KNOWN_SOURCES) + ".",
                             "A switched-off source loses its compat recipes and stops owning shared",
                             "materials, so the ore chain falls through to the next provider.")
                     .translation(key("compat.disabledSources"))
                     // 必须给 newElementSupplier：不带 supplier 的重载在配置界面里无法新增条目，
                     // 默认空列表时整页是空白的（4.0.2 的「关闭的兼容来源」就是这个症状）。
-                    .defineListAllowEmpty("disabledSources", List.of(), () -> "", s -> s instanceof String);
+                    .defineListAllowEmpty("disabledSources", List.of(), () -> "",
+                            s -> s instanceof String str && KNOWN_SOURCES.contains(str));
             providerPriority = builder
                     .comment("Which mod owns an item when several mods ship the same material,",
                             "best first. Only consulted where the data ships one variant per provider,",
@@ -337,9 +349,18 @@ public final class TENConfig {
             builder.pop();
         }
 
-        /** 该来源的兼容配方是否启用。 */
+        /**
+         * 该来源的兼容配方是否启用。
+         * <p>
+         * 表行的 source 可能是 {@code "a,b"} 形式（一条配方同时依赖多个邻居，见
+         * {@code TENCompatGen} 的 {@code modLoadedAll}），任一来源被关闭就整条消失。
+         */
         public boolean enabled(String source) {
-            return !read(disabledSources, () -> List.<String>of()).contains(source);
+            var disabled = read(disabledSources, () -> List.<String>of());
+            for (String s : source.split(",")) {
+                if (disabled.contains(s)) return false;
+            }
+            return true;
         }
 
         /**
