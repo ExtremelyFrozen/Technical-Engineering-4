@@ -488,6 +488,10 @@ public final class TENLangHandler {
                 collectMissingKeys(spec, sub, child, missing);
             } else if (entry.getValue() instanceof ModConfigSpec.ValueSpec valueSpec) {
                 checkKey(valueSpec.getTranslationKey(), String.join(".", child), "配置项", missing);
+                // 列表没有 newElementSupplier 时配置界面无法新增条目，默认空列表会整页空白。
+                if (valueSpec instanceof ModConfigSpec.ListValueSpec listSpec && listSpec.getNewElementSupplier() == null) {
+                    missing.add("列表 " + String.join(".", child) + " 缺少 newElementSupplier，界面无法新增条目");
+                }
             }
         }
     }

@@ -225,7 +225,8 @@ public final class TENConfig {
 
             bushCrops = builder.comment("List of bush crop block IDs")
                     .translation(key("farm.bushCrops"))
-                    .defineList("bushCrops", List.of("minecraft:sweet_berry_bush"), o -> o instanceof String);
+                    .defineList("bushCrops", List.of("minecraft:sweet_berry_bush"),
+                            () -> "minecraft:sweet_berry_bush", o -> o instanceof String);
 
             builder.pop();
         }
@@ -323,14 +324,16 @@ public final class TENConfig {
                             "A switched-off source loses its compat recipes and stops owning shared",
                             "materials, so the ore chain falls through to the next provider.")
                     .translation(key("compat.disabledSources"))
-                    .defineListAllowEmpty("disabledSources", List.of(), s -> s instanceof String);
+                    // 必须给 newElementSupplier：不带 supplier 的重载在配置界面里无法新增条目，
+                    // 默认空列表时整页是空白的（4.0.2 的「关闭的兼容来源」就是这个症状）。
+                    .defineListAllowEmpty("disabledSources", List.of(), () -> "", s -> s instanceof String);
             providerPriority = builder
                     .comment("Which mod owns an item when several mods ship the same material,",
                             "best first. Only consulted where the data ships one variant per provider,",
                             "i.e. the pulverizer ore chain. Candidates missing from this list keep",
                             "their order from the data and lose to anything listed.")
                     .translation(key("compat.providerPriority"))
-                    .defineList("providerPriority", DEFAULT_PROVIDER_PRIORITY, s -> s instanceof String);
+                    .defineList("providerPriority", DEFAULT_PROVIDER_PRIORITY, () -> "", s -> s instanceof String);
             builder.pop();
         }
 
