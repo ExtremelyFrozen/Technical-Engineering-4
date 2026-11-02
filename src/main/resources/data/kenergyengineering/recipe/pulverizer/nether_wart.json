@@ -1,0 +1,19 @@
+{
+	"type": "kenergyengineering:pulverizer",
+	"inputs": [
+		{
+			"form": "item",
+			"type": "static",
+			"key": "minecraft:nether_wart_block"
+		}
+	],
+	"outputs": [
+		{
+			"form": "item",
+			"type": "static",
+			"key": "minecraft:nether_wart",
+			"count": 9
+		}
+	],
+	"time": 120
+}

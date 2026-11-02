@@ -1,12 +1,26 @@
-// 把 convert.js 产出的表行写回 TENCompatGen.java 的 ALLOYS / GRIND 数组。
+// 把 convert.js 产出的表行写回 TENCompatGen.java 的 ALLOYS / GRIND / PRESS 数组。
 // 只替换数组体，工厂方法与 emit 逻辑保持原样（手改过的断言、门控不会被覆盖）。
-// 用法：node tools/compat/convert.js && node tools/compat/inject.js && ./gradlew runData
+// 自动生成只打基底：先看 out/review.md 的决定（排除/冲突/取代），确认后再运行本脚本。
+// 用法：node tools/compat/convert.js → 看 out/review.md → node tools/compat/inject.js → ./gradlew runData
 const fs = require("fs");
 const path = require("path");
 const { display } = require("./common");
 
 const TARGET = path.join(__dirname, "../../src/main/java/com/modularmc/ten/data/TENCompatGen.java");
-const rows = JSON.parse(fs.readFileSync(path.join(__dirname, "out/rows.json"), "utf8"));
+const ROWS = path.join(__dirname, "out/rows.json");
+const REVIEW = path.join(__dirname, "out/review.md");
+
+// 评审清单过期就拒绝写回：避免「跑完转换器直接注入」把没人看过的决定带进代码
+if (!process.argv.includes("--force")) {
+  const fresh = fs.existsSync(REVIEW) && fs.existsSync(ROWS)
+    && fs.statSync(REVIEW).mtimeMs >= fs.statSync(ROWS).mtimeMs;
+  if (!fresh) {
+    console.error("out/review.md 缺失或早于 out/rows.json：先核对评审清单再写回（确需跳过用 --force）");
+    process.exit(1);
+  }
+}
+
+const rows = JSON.parse(fs.readFileSync(ROWS, "utf8"));
 
 /** 用 rows.json 里的一组表行替换 `Recipe[] NAME = { ... };` 的数组体。 */
 function replaceTable(src, fieldName, list) {

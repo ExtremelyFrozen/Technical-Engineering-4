@@ -1,0 +1,19 @@
+{
+	"type": "kenergyengineering:pulverizer",
+	"inputs": [
+		{
+			"form": "item",
+			"type": "static",
+			"key": "minecraft:coarse_dirt"
+		}
+	],
+	"outputs": [
+		{
+			"form": "item",
+			"type": "static",
+			"key": "minecraft:dirt",
+			"count": 1
+		}
+	],
+	"time": 120
+}

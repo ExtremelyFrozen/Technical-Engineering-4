@@ -89,6 +89,14 @@ function ownSignatures(machineType) {
       if (short.includes("/recipe/compat/") && !PROTECTED.has(path.basename(file, ".json"))) continue;
       const j = load(file);
       if (!j || j.type !== "kenergyengineering:" + machineType) continue;
+      // 带 not(mod_loaded) 的是「邻居缺席时才生效」的兜底分支，与导入行按条件互斥，
+      // 不能算作「本模组已有配方」，否则邻居那条永远不会被导入（石头/圆石族就是这个形状）。
+      // 兜底条件现在写成 not(and(mod_loaded, compat_enabled))，两种形状都要认。
+      const isFallback = (j["neoforge:conditions"] || []).some(c => c && c.type === "neoforge:not"
+        && c.value && (c.value.type === "neoforge:mod_loaded"
+          || (c.value.type === "neoforge:and"
+            && (c.value.values || []).some(v => v && v.type === "neoforge:mod_loaded"))));
+      if (isFallback) continue;
       // key 要过 effectiveKey（按机器决定是否升级成 c:mats/X）：两侧拼写不一致会让去重形同无效
       set.set((j.inputs || []).map(i => {
         const n = i.count ?? i.amount ?? 1;
@@ -142,7 +150,7 @@ const notes = [];
       if (!outKey) continue;
       const resolved = resolveOutput(outKey);
       if (!resolved) {
-        notes.push(`合金 ${base}：输出标签 ${outKey} 无人提供，跳过`);
+        notes.push(`[缺失] 合金 ${base}：输出标签 ${outKey} 无人提供，跳过`);
         continue;
       }
       const count = outCountOf(o);
@@ -159,7 +167,7 @@ const notes = [];
         seen.add(sig);
         const ownSig = v.ins.map(i => effectiveKey(i, true) + "x" + (i.count || 1)).sort().join("+");
         if (ownAlloy.has(ownSig)) {
-          notes.push(`合金 ${base}：输入 ${ownSig} 本模组已有通用配方，跳过`);
+          notes.push(`[跳过] 合金 ${base}：输入 ${ownSig} 本模组已有通用配方，跳过`);
           continue;
         }
         const gates = [ns, ...extraGates(j, ns), resolved.gate].filter((g, i, a) => g && a.indexOf(g) === i);
@@ -186,6 +194,10 @@ const notes = [];
       const inp = inputOf(unwrap(j.input));
       if (!inp || inp.anyOf) continue;
       const name = nameOf(file, dir);
+      if ((CFG.droppedRows || {})[ns + "/pulverizer/" + name]) {
+        notes.push(`[排除] 研磨 ${name}：${(CFG.droppedRows || {})[ns + "/pulverizer/" + name]}`);
+        continue;
+      }
       const raw = ieCrusher
         ? [j.result, ...(j.secondaries || []).map(s => ({ ...s.output, chance: s.chance }))].filter(Boolean)
         : mekCrushing ? [j.output] : (j.outputs || []);
@@ -198,17 +210,19 @@ const notes = [];
         return { key: resolved.item, count: outCountOf(o), chance: o.chance, gate: resolved.gate };
       });
       if (!outs.length || outs.some(o => !o || o.missing)) {
-        notes.push(`研磨 ${name}：输出 ${outs.find(o => !o || o.missing)?.missing || "?"} 无人提供，跳过`);
+        notes.push(`[缺失] 研磨 ${name}：输出 ${outs.find(o => !o || o.missing)?.missing || "?"} 无人提供，跳过`);
         continue;
       }
       // 与 ownSignatures 同一拼写（感应炉以外不做 mats 升级）
       if (own.has(effectiveKey(inp) + "x" + (inp.count || 1))) {
-        notes.push(`研磨 ${name}：输入 ${inp.key} 本模组已有配方，跳过`);
+        notes.push(`[跳过] 研磨 ${name}：输入 ${inp.key} 本模组已有配方，跳过`);
         continue;
       }
-      // 门控 = 来源模组 + 对方自带第三方门控 + 输出物品归属
-      const inputOwner = inp.isTag ? ownerOf((TAGS.get(inp.key) || [])[0] || "") : ownerOf(inp.key);
-      const gates = [ns, ...extraGates(j, ns), ...outs.map(o => o.gate), gateOf(inputOwner)]
+      // 门控 = 来源模组 + 对方自带第三方门控 + 输出物品归属 + 具体物品输入的归属。
+      // 标签输入不再按「首个成员的所属模组」门控：标签存在性由 not(tag_empty) 兜住，
+      // 否则 ATO 行会因为 c:ingots/brass 的头部成员来自 EIO 而白带一个 enderio 条件。
+      const inputGate = inp.isTag ? null : gateOf(ownerOf(inp.key));
+      const gates = [ns, ...extraGates(j, ns), ...outs.map(o => o.gate), inputGate]
         .filter((g, i, a) => g && a.indexOf(g) === i);
       const yieldSum = outs.reduce((a, o) => a + o.count * (o.chance == null ? 1 : o.chance), 0);
       // 同一输入全池只留一条：机器按第一条命中，留两条等于一条死配方。
@@ -221,12 +235,12 @@ const notes = [];
       if (prev) {
         const keep = gates.length < prev.gates.length || (gates.length === prev.gates.length && yieldSum > prev.yield);
         if (!keep) {
-          notes.push(`研磨 ${name}：与 ${prev.name} 撞同一输入 ${inp.key}，保留门控更少/产量更高的那条`);
+          notes.push(`[取代] 研磨 ${name}：与 ${prev.name} 撞同一输入 ${inp.key}，保留门控更少/产量更高的那条`);
           continue;
         }
         const at = rows.grind.indexOf(prev.row);
         if (at >= 0) rows.grind.splice(at, 1);
-        notes.push(`研磨 ${prev.name}：被 ${name} 取代（同输入 ${inp.key}）`);
+        notes.push(`[取代] 研磨 ${prev.name}：被 ${name} 取代（同输入 ${inp.key}）`);
       }
       const built = row();
       rows.grind.push(built);
@@ -250,7 +264,7 @@ const notes = [];
       const name = nameOf(file, dir);
       const mould = MOULDS[String(j.mold).split(":").pop()];
       if (!mould) {
-        notes.push(`冲压 ${name}：模具 ${j.mold} 无对应本模组模具，跳过`);
+        notes.push(`[缺失] 冲压 ${name}：模具 ${j.mold} 无对应本模组模具，跳过`);
         continue;
       }
       const inp = inputOf(unwrap(j.input));
@@ -259,12 +273,12 @@ const notes = [];
       const res = unwrap(j.result);
       const outKey = outKeyOf(res);
       if (!outKey) {
-        notes.push(`冲压 ${name}：输出形状未识别，跳过（补 unwrap 或 inputOf 一类归一化）`);
+        notes.push(`[缺失] 冲压 ${name}：输出形状未识别，跳过（补 unwrap 或 inputOf 一类归一化）`);
         continue;
       }
       const resolved = resolveOutput(outKey);
       if (!resolved) {
-        notes.push(`冲压 ${name}：输出 ${outKey} 无人提供，跳过`);
+        notes.push(`[缺失] 冲压 ${name}：输出 ${outKey} 无人提供，跳过`);
         continue;
       }
       const mouldId = "kenergyengineering:" + mould;
@@ -272,15 +286,15 @@ const notes = [];
       // 压缩机不做 c:mats 升级，两侧都用原始 c:ingots/X 拼写比较。
       const sig = [effectiveKey(inp) + "x" + (inp.count || 1), mouldId + "x1"].sort().join("+");
       if (own.has(sig)) {
-        notes.push(`冲压 ${name}：本模组已有同输入压缩配方，跳过`);
+        notes.push(`[跳过] 冲压 ${name}：本模组已有同输入压缩配方，跳过`);
         continue;
       }
       const winner = seen.get(sig);
       if (winner) {
         if (winner.startsWith(ns + "/")) {
-          notes.push(`冲压 ${name}：与同来源的 ${winner} 输入签名相同，邻居数据需人工核对（不再静默丢弃，交由生成期断言）`);
+          notes.push(`[冲突] 冲压 ${name}：与同来源的 ${winner} 输入签名相同，邻居数据需人工核对（不再静默丢弃，交由生成期断言）`);
         } else {
-          notes.push(`冲压 ${name}：同输入已由前一个来源 ${winner} 提供，跳过`);
+          notes.push(`[取代] 冲压 ${name}：同输入已由前一个来源 ${winner} 提供，跳过`);
           continue;
         }
       } else {
@@ -307,10 +321,51 @@ for (const tag of TAGS.keys()) {
     `List.of(${dusts.map(d => `"${d}"`).join(", ")}))`);
 }
 
-fs.mkdirSync(path.join(__dirname, "out"), { recursive: true });
-fs.writeFileSync(path.join(__dirname, "out/rows.json"), JSON.stringify(rows, null, 2));
+const outDir = path.join(__dirname, "out");
+fs.mkdirSync(outDir, { recursive: true });
+const rowsPath = path.join(outDir, "rows.json");
+const prev = fs.existsSync(rowsPath) ? JSON.parse(fs.readFileSync(rowsPath, "utf8")) : { alloy: [], grind: [], press: [] };
+fs.writeFileSync(rowsPath, JSON.stringify(rows, null, 2));
+
+// ── 评审清单：自动生成只打基底，排除 / 冲突 / 取代由人复核 ──
+const buckets = { 排除: [], 冲突: [], 取代: [], 跳过: [], 缺失: [] };
+for (const n of notes) {
+  const m = n.match(/^\[(.+?)\]/);
+  if (m && buckets[m[1]]) buckets[m[1]].push(n.replace(/^\[.+?\]\s*/, ""));
+  else buckets.缺失.push(n);
+}
+const diff = key => {
+  const before = new Set(prev[key] || []), after = new Set(rows[key] || []);
+  return { added: [...after].filter(x => !before.has(x)), removed: [...before].filter(x => !after.has(x)) };
+};
+const md = [];
+md.push("# 兼容层改动评审", "");
+md.push("`convert.js` 只把邻居数据机械转成表行；下面这些是它替人做的判断，核对后才写回 `TENCompatGen`。", "");
+md.push(`- 表行：感应炉 ${rows.alloy.length}、粉碎机 ${rows.grind.length}、压缩机 ${rows.press.length}`);
+md.push(`- 排除 ${buckets.排除.length}、冲突 ${buckets.冲突.length}、取代 ${buckets.取代.length}、跳过 ${buckets.跳过.length}、缺失 ${buckets.缺失.length}`, "");
+for (const k of ["排除", "冲突", "取代", "跳过", "缺失"]) {
+  if (!buckets[k].length) continue;
+  md.push(`## ${k}（${buckets[k].length}）`, "");
+  for (const n of buckets[k]) md.push("- " + n);
+  md.push("");
+}
+md.push("## 表行变化", "");
+for (const [key, label] of [["alloy", "感应炉"], ["grind", "粉碎机"], ["press", "压缩机"]]) {
+  const d = diff(key);
+  if (!d.added.length && !d.removed.length) continue;
+  md.push(`### ${label}：新增 ${d.added.length} / 删除 ${d.removed.length}`, "");
+  for (const a of d.added) md.push("+ " + a);
+  for (const r of d.removed) md.push("- " + r);
+  md.push("");
+}
+md.push("## 核对完再写回", "");
+md.push("确认无误后跑 `node tools/compat/inject.js`；它拒绝在 `review.md` 缺失或早于 `rows.json` 时写入（确需跳过用 `--force`）。");
+md.push("判断不对的地方改 `config.json` 的 `droppedRows` 或 `neighbourRecipes` 的顺序，再重跑本脚本。");
+fs.writeFileSync(path.join(outDir, "review.md"), md.join("\n") + "\n", "utf8");
+
 console.log(`表行：感应炉 ${rows.alloy.length}，粉碎机 ${rows.grind.length}，压缩机 ${rows.press.length}；` +
   `ORE_CHAIN 候选 ${rows.chain.length} 个材料`);
-console.log("跳过的对方条目：\n" + notes.map(n => "  " + n).join("\n"));
+console.log(`评审清单 out/review.md：排除 ${buckets.排除.length}、冲突 ${buckets.冲突.length}、` +
+  `取代 ${buckets.取代.length}、跳过 ${buckets.跳过.length}、缺失 ${buckets.缺失.length}`);
 console.log("\n// 粘到 TENRecipeGen.ORE_CHAIN（已有材料请只补候选，不要重复加行）：");
 console.log(rows.chain.join(",\n            "));

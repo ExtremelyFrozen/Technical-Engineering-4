@@ -1,0 +1,59 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "enderio"
+    },
+    {
+      "type": "neoforge:not",
+      "value": {
+        "type": "neoforge:and",
+        "values": [
+          {
+            "type": "neoforge:mod_loaded",
+            "modid": "immersiveengineering"
+          },
+          {
+            "type": "kenergyengineering:compat_enabled",
+            "source": "immersiveengineering"
+          }
+        ]
+      }
+    },
+    {
+      "type": "neoforge:not",
+      "value": {
+        "type": "neoforge:tag_empty",
+        "tag": "c:sandstone/red_blocks"
+      }
+    },
+    {
+      "type": "kenergyengineering:compat_enabled",
+      "source": "enderio"
+    }
+  ],
+  "type": "kenergyengineering:pulverizer",
+  "inputs": [
+    {
+      "type": "tag",
+      "form": "item",
+      "key": "c:sandstone/red_blocks"
+    }
+  ],
+  "outputs": [
+    {
+      "type": "static",
+      "count": 2,
+      "form": "item",
+      "key": "minecraft:red_sand"
+    },
+    {
+      "type": "static",
+      "chance": 0.4,
+      "count": 2,
+      "form": "item",
+      "key": "minecraft:red_sand"
+    }
+  ],
+  "time": 120
+}
