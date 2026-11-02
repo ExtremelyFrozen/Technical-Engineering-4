@@ -1,5 +1,7 @@
 package com.modularmc.ten.config;
 
+import com.modularmc.ten.TEN;
+
 import net.neoforged.fml.ModList;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
@@ -40,6 +42,19 @@ public final class TENConfig {
 
     private TENConfig() {}
 
+    /**
+     * 配置界面的翻译键：{@code <modid>.configuration.<路径>}，与 {@code TENLangHandler.addConfig}
+     * 的条目一一对应。
+     * <p>
+     * 必须显式传给 {@code Builder.translation()}：NeoForge 的 {@code ConfigurationScreen} 在没设
+     * 翻译键时回退到 {@code <modid>.configuration.<当前层键名>}，**不带分组前缀**——嵌套在
+     * {@code compat} 里的 {@code disabledSources} 会去找 {@code ...configuration.disabledSources}，
+     * 界面就显示原始键名。
+     */
+    private static String key(String path) {
+        return TEN.MOD_ID + ".configuration." + path;
+    }
+
     public static final class MachineConfig {
 
         public final ModConfigSpec.DoubleValue energyMultiplier;
@@ -58,25 +73,37 @@ public final class TENConfig {
         public final ModConfigSpec.BooleanValue enableFarmManager;
 
         MachineConfig(ModConfigSpec.Builder builder) {
-            builder.push("machine").comment("Machine-related configuration options");
+            builder.push("machine").comment("Machine-related configuration options")
+                    .translation(key("machine"));
 
-            energyMultiplier = builder.comment("Global energy multiplier for all machines").defineInRange("energyMultiplier", 1.0, 0.01, 100.0);
-            baseEnergyCapacity = builder.comment("Base energy capacity for machines").defineInRange("baseEnergyCapacity", 10000, 1000, 1_000_000_000);
+            energyMultiplier = builder.comment("Global energy multiplier for all machines")
+                    .translation(key("machine.energyMultiplier"))
+                    .defineInRange("energyMultiplier", 1.0, 0.01, 100.0);
+            baseEnergyCapacity = builder.comment("Base energy capacity for machines")
+                    .translation(key("machine.baseEnergyCapacity"))
+                    .defineInRange("baseEnergyCapacity", 10000, 1000, 1_000_000_000);
 
-            enableSmelter = builder.comment("Enable the Smelter machine").define("enableSmelter", true);
-            enablePulverizer = builder.comment("Enable the Pulverizer machine").define("enablePulverizer", true);
-            enableCompressor = builder.comment("Enable the Compressor machine").define("enableCompressor", true);
-            enableRefiner = builder.comment("Enable the Refiner machine").define("enableRefiner", true);
-            enableInductionFurnace = builder.comment("Enable the Induction Furnace machine").define("enableInductionFurnace", true);
-            enablePsionicant = builder.comment("Enable the Psionicant machine").define("enablePsionicant", true);
-            enableBeacon = builder.comment("Enable the Beacon machine").define("enableBeacon", true);
-            enableMobRipper = builder.comment("Enable the Mob Ripper machine").define("enableMobRipper", true);
-            enableQuarry = builder.comment("Enable the Quarry machine").define("enableQuarry", true);
-            enableEnchantmentFlusher = builder.comment("Enable the Enchantment Flusher machine").define("enableEnchantmentFlusher", true);
-            enableCondenser = builder.comment("Enable the Condenser machine").define("enableCondenser", true);
-            enableFarmManager = builder.comment("Enable the Farm Manager machine").define("enableFarmManager", true);
+            enableSmelter = machineToggle(builder, "enableSmelter", "Smelter", true);
+            enablePulverizer = machineToggle(builder, "enablePulverizer", "Pulverizer", true);
+            enableCompressor = machineToggle(builder, "enableCompressor", "Compressor", true);
+            enableRefiner = machineToggle(builder, "enableRefiner", "Refiner", true);
+            enableInductionFurnace = machineToggle(builder, "enableInductionFurnace", "Induction Furnace", true);
+            enablePsionicant = machineToggle(builder, "enablePsionicant", "Psionicant", true);
+            enableBeacon = machineToggle(builder, "enableBeacon", "Beacon", true);
+            enableMobRipper = machineToggle(builder, "enableMobRipper", "Mob Ripper", true);
+            enableQuarry = machineToggle(builder, "enableQuarry", "Quarry", true);
+            enableEnchantmentFlusher = machineToggle(builder, "enableEnchantmentFlusher", "Enchantment Flusher", true);
+            enableCondenser = machineToggle(builder, "enableCondenser", "Matter Condenser", true);
+            enableFarmManager = machineToggle(builder, "enableFarmManager", "Farm Manager", true);
 
             builder.pop();
+        }
+
+        /** 机器开关的翻译键与开关名同构，集中一处避免逐个手写时漏掉 {@code .translation()}。 */
+        private static ModConfigSpec.BooleanValue machineToggle(ModConfigSpec.Builder builder, String name, String label, boolean def) {
+            return builder.comment("Enable the " + label + " machine")
+                    .translation(key("machine." + name))
+                    .define(name, def);
         }
 
         public double energyMultiplier() {
@@ -145,13 +172,24 @@ public final class TENConfig {
         public final ModConfigSpec.BooleanValue chargingDefault;
 
         EnergyUnitConfig(ModConfigSpec.Builder builder) {
-            builder.push("energyUnit").comment("Energy Unit item configuration");
+            builder.push("energyUnit").comment("Energy Unit item configuration")
+                    .translation(key("energyUnit"));
 
-            maxEnergy = builder.comment("Maximum energy storage of the Energy Unit").defineInRange("maxEnergy", 400_000, 1000, 100_000_000);
-            chargeRate = builder.comment("Energy Unit charge rate (FE/t)").defineInRange("chargeRate", 2_000, 1, 100_000);
-            inputRate = builder.comment("Energy Unit input rate (FE/t)").defineInRange("inputRate", 2_000, 1, 100_000);
-            outputRate = builder.comment("Energy Unit output rate (FE/t)").defineInRange("outputRate", 2_000, 1, 100_000);
-            chargingDefault = builder.comment("Default charging mode for new Energy Units").define("chargingDefault", false);
+            maxEnergy = builder.comment("Maximum energy storage of the Energy Unit")
+                    .translation(key("energyUnit.maxEnergy"))
+                    .defineInRange("maxEnergy", 400_000, 1000, 100_000_000);
+            chargeRate = builder.comment("Energy Unit charge rate (FE/t)")
+                    .translation(key("energyUnit.chargeRate"))
+                    .defineInRange("chargeRate", 2_000, 1, 100_000);
+            inputRate = builder.comment("Energy Unit input rate (FE/t)")
+                    .translation(key("energyUnit.inputRate"))
+                    .defineInRange("inputRate", 2_000, 1, 100_000);
+            outputRate = builder.comment("Energy Unit output rate (FE/t)")
+                    .translation(key("energyUnit.outputRate"))
+                    .defineInRange("outputRate", 2_000, 1, 100_000);
+            chargingDefault = builder.comment("Default charging mode for new Energy Units")
+                    .translation(key("energyUnit.chargingDefault"))
+                    .define("chargingDefault", false);
 
             builder.pop();
         }
@@ -182,10 +220,12 @@ public final class TENConfig {
         public final ModConfigSpec.ConfigValue<List<? extends String>> bushCrops;
 
         FarmConfig(ModConfigSpec.Builder builder) {
-            builder.push("farm").comment("Farm Manager crop configuration");
+            builder.push("farm").comment("Farm Manager crop configuration")
+                    .translation(key("farm"));
 
-            bushCrops = builder.comment("List of bush crop block IDs").defineList("bushCrops",
-                    List.of("minecraft:sweet_berry_bush"), o -> o instanceof String);
+            bushCrops = builder.comment("List of bush crop block IDs")
+                    .translation(key("farm.bushCrops"))
+                    .defineList("bushCrops", List.of("minecraft:sweet_berry_bush"), o -> o instanceof String);
 
             builder.pop();
         }
@@ -205,30 +245,30 @@ public final class TENConfig {
 
         ClientConfig(ModConfigSpec.Builder builder) {
             builder.push("client").comment("Client-side HUD configuration")
-                    .translation("kenergyengineering.configuration.client");
+                    .translation(key("client"));
 
             showMachineHUD = builder.comment("Show machine HUD overlay")
-                    .translation("kenergyengineering.configuration.client.showMachineHUD")
+                    .translation(key("client.showMachineHUD"))
                     .define("showMachineHUD", true);
             showCableHUD = builder.comment("Show cable HUD overlay")
-                    .translation("kenergyengineering.configuration.client.showCableHUD")
+                    .translation(key("client.showCableHUD"))
                     .define("showCableHUD", true);
 
             builder.pop();
 
             // ── 展开面板动画（用户需求 2026-09）：反馈展开过慢 → 可动态调速/关闭 ──
             builder.push("panelAnimation").comment("Expandable panel animation")
-                    .translation("kenergyengineering.configuration.panelAnimation");
+                    .translation(key("panelAnimation"));
 
             panelAnimationEnabled = builder.comment("Enable expand/collapse animation for config & upgrade panels. False = instant toggle")
-                    .translation("kenergyengineering.configuration.panelAnimation.enabled")
+                    .translation(key("panelAnimation.enabled"))
                     .define("enabled", true);
             // 统一速度（px/tick）：两面板共用；独立项覆盖统一值（独立函数部分）
             panelAnimationSpeed = builder.comment("Common panel expand speed (px per tick). Higher = faster. Applies when per-panel override is 0")
-                    .translation("kenergyengineering.configuration.panelAnimation.speed")
+                    .translation(key("panelAnimation.speed"))
                     .defineInRange("speed", 6, 1, 100);
             upgradePanelAnimationSpeed = builder.comment("Upgrade panel expand speed override (px per tick). 0 = use common speed")
-                    .translation("kenergyengineering.configuration.panelAnimation.upgradeSpeed")
+                    .translation(key("panelAnimation.upgradeSpeed"))
                     .defineInRange("upgradeSpeed", 0, 0, 100);
 
             builder.pop();
@@ -276,17 +316,20 @@ public final class TENConfig {
         public final ModConfigSpec.ConfigValue<List<? extends String>> providerPriority;
 
         CompatConfig(ModConfigSpec.Builder builder) {
-            builder.push("compat").comment("Neighbour-mod compat recipe toggles");
+            builder.push("compat").comment("Neighbour-mod compat recipe toggles")
+                    .translation(key("compat"));
             disabledSources = builder
                     .comment("Compat sources to switch off, e.g. [\"enderio_evolution\"]. Empty = all on.",
                             "A switched-off source loses its compat recipes and stops owning shared",
                             "materials, so the ore chain falls through to the next provider.")
+                    .translation(key("compat.disabledSources"))
                     .defineListAllowEmpty("disabledSources", List.of(), s -> s instanceof String);
             providerPriority = builder
                     .comment("Which mod owns an item when several mods ship the same material,",
                             "best first. Only consulted where the data ships one variant per provider,",
                             "i.e. the pulverizer ore chain. Candidates missing from this list keep",
                             "their order from the data and lose to anything listed.")
+                    .translation(key("compat.providerPriority"))
                     .defineList("providerPriority", DEFAULT_PROVIDER_PRIORITY, s -> s instanceof String);
             builder.pop();
         }

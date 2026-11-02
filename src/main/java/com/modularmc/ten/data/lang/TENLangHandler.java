@@ -455,29 +455,50 @@ public final class TENLangHandler {
      */
     private static void verifyTranslationKeys() {
         List<String> missing = new ArrayList<>();
-        collectMissingKeys(TENConfig.COMMON_SPEC.getSpec().valueMap(), "", missing);
-        collectMissingKeys(TENConfig.CLIENT_SPEC.getSpec().valueMap(), "", missing);
+        collectMissingKeys(TENConfig.COMMON_SPEC, missing);
+        collectMissingKeys(TENConfig.CLIENT_SPEC, missing);
         for (String key : new String[] {TEN.KEY_CATEGORY, TEN.KEY_TOGGLE_CHARGE}) {
             if (!ZH_ENTRIES.containsKey(key)) missing.add(key);
         }
         if (!missing.isEmpty()) {
             throw new IllegalStateException("界面键缺少本地化 " + missing.size() + " 条，游戏里会显示原始键名：\n  "
                     + String.join("\n  ", missing)
-                    + "\n在 TENLangHandler 对应 addXxx() 里补齐后再跑 datagen。");
+                    + "\n在 TENConfig 补 .translation()、在 TENLangHandler 对应 addXxx() 补条目后再跑 datagen。");
         }
     }
 
-    private static void collectMissingKeys(Map<?, ?> specTree, String prefix, List<String> missing) {
+    /**
+     * 遍历 spec 树，检查界面**实际会查**的翻译键，而不是按路径猜键名。
+     * <p>
+     * 分组走 {@link ModConfigSpec#getLevelTranslationKey(List)}，配置项走
+     * {@link ModConfigSpec.ValueSpec#getTranslationKey()}。两者为 null 说明 {@code push}/{@code define}
+     * 没接 {@code .translation()}，NeoForge 会退回不带分组前缀的裸键名——嵌套在 {@code compat} 里的
+     * {@code disabledSources} 于是去找 {@code ...configuration.disabledSources}，界面显示原文。
+     */
+    private static void collectMissingKeys(ModConfigSpec spec, List<String> missing) {
+        collectMissingKeys(spec, spec.getSpec().valueMap(), List.of(), missing);
+    }
+
+    private static void collectMissingKeys(ModConfigSpec spec, Map<?, ?> specTree, List<String> path, List<String> missing) {
         for (Map.Entry<?, ?> entry : specTree.entrySet()) {
-            String path = prefix.isEmpty() ? String.valueOf(entry.getKey()) : prefix + "." + entry.getKey();
-            String key = TEN.MOD_ID + ".configuration." + path;
-            if (!ZH_ENTRIES.containsKey(key)) missing.add(key);
-            // 分组与叶子都要求 tooltip：配置界面两者都会读，缺了同样显示原文。
-            if (!ZH_ENTRIES.containsKey(key + ".tooltip")) missing.add(key + ".tooltip");
-            if (entry.getValue() instanceof Map<?, ?> child) {
-                collectMissingKeys(child, path, missing);
+            List<String> child = new ArrayList<>(path);
+            child.add(String.valueOf(entry.getKey()));
+            if (entry.getValue() instanceof Map<?, ?> sub) {
+                checkKey(spec.getLevelTranslationKey(child), String.join(".", child), "分组", missing);
+                collectMissingKeys(spec, sub, child, missing);
+            } else if (entry.getValue() instanceof ModConfigSpec.ValueSpec valueSpec) {
+                checkKey(valueSpec.getTranslationKey(), String.join(".", child), "配置项", missing);
             }
         }
+    }
+
+    private static void checkKey(String translationKey, String path, String kind, List<String> missing) {
+        if (translationKey == null) {
+            missing.add(kind + " " + path + " 未设 .translation()");
+            return;
+        }
+        if (!ZH_ENTRIES.containsKey(translationKey)) missing.add(translationKey);
+        if (!ZH_ENTRIES.containsKey(translationKey + ".tooltip")) missing.add(translationKey + ".tooltip");
     }
 
     /** 机器开关：中英文都跟着方块术语走，避免界面里出现第二套机器名称。 */
