@@ -11,8 +11,11 @@ import com.modularmc.ten.data.lang.TENTagLangGen;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.common.data.DatapackBuiltinEntriesProvider;
 import net.neoforged.neoforge.common.data.LanguageProvider;
 import net.neoforged.neoforge.data.event.GatherDataEvent;
+
+import java.util.Set;
 
 @EventBusSubscriber(modid = TEN.MOD_ID, value = Dist.CLIENT)
 public class DataGenerators {
@@ -83,5 +86,7 @@ public class DataGenerators {
         generator.addProvider(event.includeServer(), new TENCompatGen(output));
         // Vanilla pack/split recipes
         generator.addProvider(event.includeServer(), new TENVanillaPackGen(output));
+        // 主世界锡与镍的矿石生成（configured/placed feature 与 biome modifier）
+        generator.addProvider(event.includeServer(), new DatapackBuiltinEntriesProvider(output, event.getLookupProvider(), TENWorldGenGen.BUILDER, Set.of(TEN.MOD_ID)));
     }
 }
