@@ -35,7 +35,8 @@ public class FormsCombinedRecipeSerializer<T extends FormsCombinedRecipe> implem
             Codec.INT.optionalFieldOf("rolls", 1).forGetter(IngredientData::rolls))
             .apply(instance, IngredientData::new));
 
-    private static final Codec<FormsCombinedIngredient> INGREDIENT_CODEC = INGREDIENT_DATA_CODEC.xmap(
+    /** 单个材料条目的编解码器，KubeJS 集成复用同一份（见 {@code FormsIngredientComponent}）。 */
+    public static final Codec<FormsCombinedIngredient> INGREDIENT_CODEC = INGREDIENT_DATA_CODEC.xmap(
             data -> FormsCombinedIngredient.create(
                     "fluid".equals(data.form()) ? data.amount() : data.count(),
                     data.form(),
