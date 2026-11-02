@@ -40,6 +40,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 import net.neoforged.neoforge.capabilities.Capabilities;
 
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReferenceArray;
 
 public class CableBased extends HorizontalMachineBlock implements SimpleWaterloggedBlock {
 
@@ -59,10 +60,25 @@ public class CableBased extends HorizontalMachineBlock implements SimpleWaterlog
     private static final VoxelShape[] PART_SHAPES = new VoxelShape[6];
     // Type 2 (connect) — 6×6×4 inner + 8×8×2 flange at block edge
     private static final VoxelShape[] CONNECT_SHAPES = new VoxelShape[6];
+    /** 固定遍历顺序，下标与 PART_SHAPES / CONNECT_SHAPES 一致（{@code Direction.values()} 每次调用都会克隆数组）。 */
+    private static final Direction[] DIRECTION_ORDER = Direction.values();
+    /** 按方向下标缓存的连接属性，省掉 {@link #CONNECTION} 这个 Map 的查找。 */
+    private static final IntegerProperty[] CONNECTION_ORDER = new IntegerProperty[6];
+    /**
+     * 连接位组合到合并形状的惰性缓存：6 个方向各取 0/1/2，共 3^6 = 729 种。
+     * <p>
+     * 形状只取决于连接状态，与具体是哪种线缆无关，7 个 {@link CableBased} 实例共用这张表。
+     * 不缓存时每个 BlockState 在 {@code initCache} 里各算一次（约 8 万次合并，主线程启动期），
+     * 且运行期 {@code BlockCollisions} 走三参数 {@code getCollisionShape} 绕开原版 Cache，
+     * 实体每 tick 移动都会重建一次。
+     * <p>
+     * 用 {@link AtomicReferenceArray} 而不是普通数组：渲染线程与服务端线程会并发查同一张表，
+     * 普通数组的惰性写入没有安全发布保证，另一线程可能看到未初始化完的 {@code VoxelShape}。
+     */
+    private static final AtomicReferenceArray<VoxelShape> SHAPE_CACHE = new AtomicReferenceArray<>(729);
     static {
-        Direction[] dirs = Direction.values();
         for (int i = 0; i < 6; i++) {
-            Direction d = dirs[i];
+            Direction d = DIRECTION_ORDER[i];
             VoxelShape part, connect;
             switch (d) {
                 case NORTH -> {
@@ -95,6 +111,7 @@ public class CableBased extends HorizontalMachineBlock implements SimpleWaterlog
             }
             PART_SHAPES[i] = part;
             CONNECT_SHAPES[i] = connect;
+            CONNECTION_ORDER[i] = CONNECTION.get(d);
         }
     }
 
@@ -154,10 +171,23 @@ public class CableBased extends HorizontalMachineBlock implements SimpleWaterlog
     }
 
     private static VoxelShape buildShape(BlockState state) {
-        VoxelShape shape = CORE_SHAPE;
-        Direction[] dirs = Direction.values();
+        int idx = 0;
         for (int i = 0; i < 6; i++) {
-            int conn = state.getValue(CONNECTION.get(dirs[i]));
+            idx = idx * 3 + state.getValue(CONNECTION_ORDER[i]);
+        }
+        VoxelShape cached = SHAPE_CACHE.get(idx);
+        if (cached == null) {
+            cached = computeShape(state);
+            SHAPE_CACHE.set(idx, cached);
+        }
+        return cached;
+    }
+
+    /** 缓存未命中时的实际合并；同一连接组合只会走到这里一次。 */
+    private static VoxelShape computeShape(BlockState state) {
+        VoxelShape shape = CORE_SHAPE;
+        for (int i = 0; i < 6; i++) {
+            int conn = state.getValue(CONNECTION_ORDER[i]);
             if (conn == 1) {
                 shape = Shapes.or(shape, PART_SHAPES[i]);
             } else if (conn == 2) {
