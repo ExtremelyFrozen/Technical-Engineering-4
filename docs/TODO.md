@@ -149,6 +149,26 @@
 
 ## 二、未开始
 
+### 锭/粉输入收敛后的实机抽验 — P2 🧪
+- `c:mats/X` 现在只有感应炉读；粉碎机与压缩机一律 `c:ingots/X`（26 条邻居齿轮行的份数也回到 4 锭）。
+- 需复验：铅粉之类**不再**能进压缩机催化成型；铅锭照常出 2 线；感应炉仍接受铜粉与铜锭混配青铜。
+- 需复验：JEI 里压缩机/粉碎机页面的输入图标回到锭，不再显示「锭或粉」标签。
+
+### IE 单独在场时缺 7 条板与 2 条杆 — P3 ⬜
+- ATO 与沉浸工程的 metalpress 是同一机器类型，`convert.js` 的 `seen` 按源顺序让 ATO 先占同输入，赢家只写一条。
+- 其中 9 条（aluminum/constantan/electrum/lead/silver/steel/uranium 的板，aluminum/steel 的杆）在只装 IE 的包里
+  本可由 IE 自己提供产物，现在因赢家行的 `mod_loaded` 是「ATO + IE」的与语义而整条不加载。
+- 机制已有：改走 `kenergyengineering:provider_priority` 的互斥变体（同输入每家各一条，加载期按 `compat.providerPriority`
+  选唯一赢家，`RecipeSignature` 与 `tools/compat/check.js` 都已豁免变体组）。要做的是让压入侧也产出变体组。
+
+### 冲压与水晶兼容行实机抽检 — P2 🧪
+- 23 条冲压行（`compat/{alltheores,immersiveengineering}/compressor/`）与 8 条 AE2 家族水晶行只有静态与产物证据：
+  `tools/compat/check.js` 冲突 0 / 引用 0，`runData written` 稳定，物品 id 与 modid 从 dump 核过。
+- `ae2cs`／`extendedae`／`extendedae_plus`／`data_energistics` 不在开发依赖里，这 8 条从未在游戏内加载过一次。
+- 需抽验：`wire_lead` 用铅锭与铅粉各压一次（输入是 `c:mats/lead`，粉也该吃）；`certus_quartz_crystal` 进粉碎机出 AE2 粉；
+  装 AE2 不装 Mekanism 时 `energized_crystal_dust` 应照常出现（门控已放宽）。
+
+
 ### 机器 enable* 开关没有消费点 — P2 ⬜
 - `TENConfig.MachineConfig` 的 12 个 `enableX`（熔炼机/粉碎机/压缩机/精炼机/感应炉/灵能处理器/
   信标/生物啃噬器/采矿场/祛魔机/物质结晶器/农场管理器）只被 `ConfigHolder.enableMachine()` 读取，

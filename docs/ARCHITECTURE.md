@@ -9,7 +9,7 @@
 
 三条工程约束：
 
-- **生成资源不手改**：`src/generated/resources/` 由 DataGen 产出。模型、blockstate、语言、配方要改生成器。
+- **生成资源不手改**：`src/generated/resources/` 由 DataGen 产出。模型、blockstate、语言、配方、矿石生成数据要改生成器。
 - **客户端边界**：客户端类放 `src/client/java`；`src/main` 里的 `client` 子包必须带 `Dist.CLIENT` 防护。
   可选集成的类型名不得漏进总是加载的类。
 - **同步在主线程**：`CmBlockEntity` 关闭了 LDLib2 的异步 sync 线程，改为主线程 tick 末尾 `passivelySync()`。
@@ -58,7 +58,7 @@
 | `component` | 1 | `EnergyUnitData` 数据组件 |
 | `config` | 2 | `TENConfig` / `ConfigHolder`，NeoForge `ModConfigSpec` |
 | `core/mixin` | 2 | Mixin，含开发环境专用项 |
-| `data` | 4 | DataGen 编排、配方生成、原版打包/拆分配方 |
+| `data` | 7 | DataGen 编排、配方与标签生成、原版打包/拆分配方、矿石世界生成 |
 | `data/lang` | 2 | 中英文语言入口与标签本地化 |
 | `integration/emi` | 4 | EMI 集成（main 源集） |
 | `integration/xei` | 1 | JEI/EMI 共享绘制组件 |
@@ -268,12 +268,13 @@ TENBlocks → TENFluids → TENBlockEntities → TENRecipeTypes → TENItems
 
 | 入口 | 位置 | 职责 |
 |---|---|---|
-| `DataGenerators.gatherData` | `data/DataGenerators.java` | `zh_cn` 语言 Provider、材料变体配方、材料聚合标签、邻居兼容配方、原版打包/拆分配方 |
+| `DataGenerators.gatherData` | `data/DataGenerators.java` | `zh_cn` 语言 Provider、材料变体配方、材料聚合标签、邻居兼容配方、原版打包/拆分配方、动态注册表补丁（矿石生成） |
 | `TENDataGen.init` | `data/TENDataGen.java` | 给 Registrate 挂语言 Provider（`TENLangHandler`、`TENTagLangGen`） |
 | `TENRecipeGen` | `data/TENRecipeGen.java` | 材料变体配方 |
 | `TENMaterialTagGen` | `data/TENMaterialTagGen.java` | `c:mats/<材料>` 聚合标签（锭或粉）；含 `NEIGHBOUR_MATS` 的邻居材料与合金 |
 | `TENCompatGen` | `data/TENCompatGen.java` | 邻居模组兼容配方（EIO 系，`mod_loaded` 条件门控） |
 | `TENVanillaPackGen` | `data/TENVanillaPackGen.java` | 原版打包/拆分配方 |
+| `TENWorldGenGen` | `data/TENWorldGenGen.java` | 主世界锡/镍的 configured·placed feature 与 `neoforge:add_features`，经 `DatapackBuiltinEntriesProvider` 产出到 `worldgen/` 与 `neoforge/biome_modifier/` |
 
 跨模组的「材料族」标签一律放 `c:` 命名空间、由 DataGen 生成，成员写成
 `{"id": "#c:ingots/x", "required": false}`：材料缺席时条目自动落空、引用它的配方因输入标签为空
@@ -342,7 +343,8 @@ NeoForge 1.21.1 只有客户端的 `RecipesUpdatedEvent`，没有加载后增删
 实际标签由 `TENRecipeGen#matInput` 决定——该材料有 `c:mats/X` 聚合标签就自动升级成粉或锭皆可入，
 聚合标签由 `TENMaterialTagGen` 生成，成员是对 `#c:ingots/X` / `#c:dusts/X` 的可选引用，
 所以「谁提供这种金属」完全交给数据，不在代码里点名物品；`NEIGHBOUR_MATS` 那批邻居材料与五种合金
-因此也自动进池。输出侧仍必须是具体物品，按候选模组写互斥变体（`provider_priority`）。
+因此也自动进池。**这套标签只服务感应炉**：合金只看元素种类，粉与锭等价；粉碎机与压缩机按工序只认锭，
+否则会出现「1 粉压出 2 板」这类与原生不对等的产出。输出侧仍必须是具体物品，按候选模组写互斥变体（`provider_priority`）。
 
 **兼容层每源可关**：`TENCompatGen` 每条配方除 `neoforge:mod_loaded` 外还带
 `kenergyengineering:compat_enabled`（`source` = 该行首个门控模组），`compat.disabledSources` 列出的来源
@@ -362,9 +364,11 @@ NeoForge 自带这套配置界面，FML 的 Mods 面板与 Mod Menu 读的都是
 
 **配方输出一律是具体物品**：标准语义里输出是一个确定的 ItemStack，写成标签按标准处理会得到空产物，
 而且症状是「产物少了一件」而不是报错（输入侧走实时 `contains()`，照常匹配）。需要标签匹配时，
-在编写期按「期望兼容 mod 优先级」（本模组 → EVO → EIO → Mekanism → 沉浸工程 → NeoForge 原版包装）
+在编写期按「期望兼容 mod 优先级」（本模组 → NEO ECO AE → EVO → EIO → Mekanism → 沉浸工程 → ATO → Allthemodium → 原版）
 取该标签的第一个可用成员落成具体物品，解析不到就不导入，邻居增减后重跑转换器对齐。
 配方行的 `neoforge:mod_loaded` 门控按输出物品所属命名空间自动推导，可叠加多个模组。
+**冲压承接按源顺序取赢家**：`neighbourRecipes.compressor` 同时列 ATO 与沉浸工程的 metalpress 目录，两者是同一个机器类型（ATO 的冲压配方就写成 `immersiveengineering:metal_press`），模具换成本模组的对应模具（`mold_plate`/`mold_gear`/`mold_rod`/`mold_wire` → `mould_plate`/`mould_gear`/`mould_rod`/`mould_string`），`mold_bullet_casing` 与 `mold_unpacking` 无对应模具（各 1 条配方）所以跳过。同一「材料 + 模具 + 份数」只留一个赢家：`convert.js` 的 `seen` 按源顺序先到先得，后面的来源报「同输入已由前一个来源提供」；同来源内出现相同签名不静默丢弃，会照样写出让生成期断言报出来。赢家落在前一来源的目录与 `compat_enabled` 开关上，所以只装沉浸工程的包拿不到与 ATO 同材料的那批板与杆（9 条本可回收，缺口记在 `docs/TODO.md`）。对方的杆与线把产物写成 basePredicate 包 tag 再加 count 的形状，读结果时也要先摊平，否则整批 `c:rods/*`、`c:wires/*` 会被当成「输出无人提供」静默丢掉（这个坑以前只在 `inputOf` 侧防住了）。
+
 **模具只用一个通用标签**：压缩机 `valid(slot, stack)` 只读 `c:moulds` 决定模具能否进催化槽，
 不再有 `c:moulds/shape` 那类功能子标签（成员直接列在 `c:moulds` 里，`TENTagLangGen` 也不再为子标签出语言键）；
 具体用哪种模具由配方自己写明 `kenergyengineering:mould_*` 的静态输入（`chance: 0` = 催化位，不消耗、不随批量倍增），
@@ -375,13 +379,15 @@ NeoForge 自带这套配置界面，FML 的 Mods 面板与 Mod Menu 读的都是
 跨模组内容集中在 `TENCompatGen`：一条表 = 一份配方，输出到 `recipe/compat/<modid>/<机器类型>/`
 （必须分子目录——EIO 的 `alloy_smelting` 与 `sag_milling` 存在同名文件，平铺会互相覆盖），
 每条带 `neoforge:mod_loaded` 条件，未装邻居时整体消失，所以生成结果与本机是否安装邻居无关，
-CI 与本地产出一致。合金表与研磨表都从对方数据机械导入：时间按对方每次总能耗折算到本模组的
+CI 与本地产出一致。机械导入的合金表与研磨表都来自对方数据（AE2 家族的水晶行例外，见下）：时间按对方每次总能耗折算到本模组的
 15 FE/t 换算已废弃——IE 一次 51200 FE 会顶到旧的 1200 tick 上限，与原生差一个数量级；
 现在按机器尺规给时长：感应炉 50 tick × 输入物料份数、粉碎机一次操作 120（粗矿块类 9 份输入 200）、
 压缩机恒 100（规则写在 `tools/compat/config.json` 的 `timeRule`，与 `TENRecipeGen#furnaceTime` 同一套）；
-金属输入写 `c:ingots/X`，该材料存在 `c:mats/X` 时自动升级为「锭或粉皆可入」；
+金属输入写 `c:ingots/X`，只有感应炉会在该材料存在 `c:mats/X` 时升级成「锭或粉皆可入」，粉碎机与压缩机不收粉；
 输入签名与本模组已有配方相同的条目不导入，本模组语义优先；两张表在同一次 DataGen 里互相 `claim`，
 漏网的重复会在生成期直接失败，而不是等到实机里发现某条配方永远匹配不上。
+
+**AE2 家族的水晶承接是手写行**，不走转换器：对方用的是 `ae2:inscriber`／`mekanism:crushing` 这类外部机器类型，导入它们等于替邻居重述配方。写法是一条表行对应一个 `c:gems/<水晶>` 输入标签（`ae2` 的 certus 与 fluix、`extendedae` 的 entro、`extendedae_plus` 的 lattra、`data_energistics` 的 data_crystal、`ae2cs` 的 resonating，以及只由 `ae2cs` 填充的 `c:gems/sky_stone_crystal`），输出恒为同一模组自己的粉，所以 `neoforge:mod_loaded` 按输出所属命名空间门控就能保证产物存在，输入侧靠 `not(tag_empty)` 在标签无人填充时整条消失。这些行不参与 `providerPriority` 归属竞选：同一条输入标签只有一个赢家（那位水晶的主人），没有多家争同一材料的情形。`neoecoae` 的两条水晶行原先连着 `mekanism` 门控（数据取自对方的 `crushing`），而对方另有不依赖通用机械的 `inscriber` 路线，故已放宽为只门控 `neoecoae`。
 
 ---
 

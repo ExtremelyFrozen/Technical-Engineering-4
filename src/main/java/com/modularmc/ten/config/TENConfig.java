@@ -258,7 +258,8 @@ public final class TENConfig {
      * 邻居兼容层开关。按来源模组关闭：列出的来源其 compat 配方在加载期整体消失，
      * JEI 也不再显示——1.21.1 没有加载后摘除配方的钩子，只能靠条件过滤。
      * 取值见 {@code TENCompatGen} 的来源表（enderio / enderio_evolution / mekanism /
-     * immersiveengineering / alltheores / allthemodium）。
+     * immersiveengineering / alltheores / allthemodium / neoecoae / ae2 / ae2cs / extendedae /
+     * extendedae_plus / data_energistics）。
      * <p>
      * {@code providerPriority} 是同一材料被多个模组提供时的归属顺序，由
      * {@code kenergyengineering:provider_priority} 条件在加载期求值：数据为每个候选模组

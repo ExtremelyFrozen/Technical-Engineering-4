@@ -12,7 +12,7 @@
       "type": "neoforge:not",
       "value": {
         "type": "neoforge:tag_empty",
-        "tag": "c:mats/enderium"
+        "tag": "c:ingots/enderium"
       }
     },
     {
@@ -24,8 +24,9 @@
   "inputs": [
     {
       "type": "tag",
+      "count": 4,
       "form": "item",
-      "key": "c:mats/enderium"
+      "key": "c:ingots/enderium"
     },
     {
       "type": "static",

@@ -19,7 +19,8 @@ import java.util.concurrent.CompletableFuture;
  * 邻居模组（Ender IO 系）的兼容配方：本模组的机器能吃对方的内容，但不由本模组注册任何物品。
  * <p>
  * 两张表都是机械导入的（EIO/EVO 的 {@code alloy_smelting} 与 {@code sag_milling} 数据 → 表行），
- * 邻居更新后重跑转换器即可对齐，不靠手抄。导入规则：
+ * 邻居更新后重跑转换器即可对齐，不靠手抄。AE2 家族的水晶行是手写的（{@link #GRIND_MANUAL}），转换器碰不到。
+ * 导入规则：
  * <ol>
  * <li>每条都带 {@code neoforge:mod_loaded} 条件，邻居缺席时整条在加载期消失；生成结果与本机
  *     是否安装邻居无关，CI 与本地产出一致。</li>
@@ -27,7 +28,8 @@ import java.util.concurrent.CompletableFuture;
  *     感应炉 50 tick × 输入物料份数、粉碎机一次操作 120（粗矿块这类 9 份输入 200）、
  *     压缩机恒 100 不看份数。原来的「对方总 FE ÷ 15 FE/t」在 IE 的 51200 FE 前会顶到 1200 tick 上限，
  *     与原生配方差一个数量级。</li>
- * <li>金属输入写 {@code c:ingots/X}，该材料存在 {@code c:mats/X} 时自动升级为「锭或粉皆可」。</li>
+ * <li>金属输入写 {@code c:ingots/X}；只有感应炉走 {@link #matIngot} 才升级成 {@code c:mats/X}（锭或粉皆可入），
+     * 粉碎机与压缩机不收粉——{@code c:mats/X} 只服务感应炉。</li>
  * <li>对方的 compound 输入（如 soul_sand｜soul_soil）展开成多条——本模组格式没有 any_of 输入。</li>
  * <li>输入签名与本模组已有配方相同的条目一律不导入：同一台机器不允许两条可匹配配方，
  *     本模组的语义优先（矿石三段式已覆盖 {@code c:ores/*}，不再导入对方的 ore 研磨）。
@@ -41,7 +43,8 @@ import java.util.concurrent.CompletableFuture;
  *     门控，材料缺席时整条在加载期消失——与邻居自己的写法一致，JEI 不会留下跑不起来的配方。</li>
  * <li>对方配方自带的第三方 {@code neoforge:mod_loaded} 门控（例如 EVO 只在装了
  *     Industrial Foregoing 时才有的合金行）会一并带过来，作为本行的额外门控；漏掉它等于
- *     造出一条只在别的模组包里成立的配方。</li>
+ *     造出一条只在别的模组包里成立的配方。例外：对方另有<b>不带该第三方门控</b>的等价路线时按等价路线放宽——
+ *     {@code neoecoae} 的两条水晶行就是如此，对方的 {@code inscriber} 路线不需要通用机械。</li>
  * </ol>
  */
 public class TENCompatGen implements DataProvider {
@@ -68,12 +71,12 @@ public class TENCompatGen implements DataProvider {
         alloy("enderio", "clear_glass_e_from_base_alt", "enderio:clear_glass_e", 1, 100, item("enderio:clear_glass"), item("minecraft:glowstone")),
         alloy("enderio", "clear_glass_e_from_main", "enderio:clear_glass_e", 1, 250, tag("c:glass_blocks/colorless"), tagN("c:dusts/glowstone", 4)),
         alloy("enderio", "clear_glass_e_from_main_alt", "enderio:clear_glass_e", 1, 100, tag("c:glass_blocks/colorless"), item("minecraft:glowstone")),
-        alloy("enderio", "conductive_alloy_ingot", "enderio:conductive_alloy_ingot", 2, 100, ingot("iron"), ingot("copper")),
-        alloy("enderio", "dark_steel_ingot", "enderio:dark_steel_ingot", 2, 150, ingot("iron"), tag("c:dusts/coal"), tag("c:obsidians")),
+        alloy("enderio", "conductive_alloy_ingot", "enderio:conductive_alloy_ingot", 2, 100, matIngot("iron"), matIngot("copper")),
+        alloy("enderio", "dark_steel_ingot", "enderio:dark_steel_ingot", 2, 150, matIngot("iron"), tag("c:dusts/coal"), tag("c:obsidians")),
         alloy("enderio", "dead_bush", "minecraft:dead_bush", 1, 50, tag("minecraft:saplings")),
         alloy("enderio", "ender_pearl", "minecraft:ender_pearl", 1, 450, tagN("c:dusts/ender_pearl", 9)),
         alloy("enderio", "end_steel_ingot", "enderio:end_steel_ingot", 2, 150, tag("c:end_stones"), tag("c:ingots/dark_steel"), tag("c:obsidians")),
-        alloy("enderio", "energetic_alloy_ingot", "enderio:energetic_alloy_ingot", 2, 150, tag("c:dusts/redstone"), tag("c:ingots/conductive_alloy"), ingot("gold")),
+        alloy("enderio", "energetic_alloy_ingot", "enderio:energetic_alloy_ingot", 2, 150, tag("c:dusts/redstone"), tag("c:ingots/conductive_alloy"), matIngot("gold")),
         alloy("enderio", "fused_quartz", "enderio:fused_quartz", 1, 200, tagN("c:gems/quartz", 4)),
         alloy("enderio", "fused_quartz_alt", "enderio:fused_quartz", 1, 50, tag("c:storage_blocks/quartz")),
         alloy("enderio", "fused_quartz_d_from_base", "enderio:fused_quartz_d", 1, 250, item("enderio:fused_quartz"), tagN("c:gems/amethyst", 4)),
@@ -92,11 +95,11 @@ public class TENCompatGen implements DataProvider {
         alloy("enderio", "green_dye_double_clippings", "minecraft:green_dye", 2, 650, itemN("enderio:plant_matter_green", 12), tag("c:slimeballs")),
         alloy("enderio", "industrial_insulation", "enderio:industrial_insulation", 1, 150, tag("c:dusts/lapis"), tag("minecraft:wool"), tag("enderio:insulation_metals")),
         alloy("enderio", "photovoltaic_plate", "enderio:photovoltaic_plate", 1, 100, itemN("enderio:photovoltaic_composite", 2)),
-        alloy("enderio", "pulsating_alloy_ingot", "enderio:pulsating_alloy_ingot", 2, 100, ingot("iron"), tag("c:ender_pearls")),
-        alloy("enderio", "redstone_alloy_ingot", "enderio:redstone_alloy_ingot", 1, 100, tag("c:dusts/redstone"), ingot("copper")),
+        alloy("enderio", "pulsating_alloy_ingot", "enderio:pulsating_alloy_ingot", 2, 100, matIngot("iron"), tag("c:ender_pearls")),
+        alloy("enderio", "redstone_alloy_ingot", "enderio:redstone_alloy_ingot", 1, 100, tag("c:dusts/redstone"), matIngot("copper")),
         alloy("enderio", "red_dye", "minecraft:red_dye", 12, 500, item("minecraft:beetroot"), itemN("minecraft:clay_ball", 3), itemN("minecraft:egg", 6)),
-        alloy("enderio", "soularium_ingot_soul_sand", "enderio:soularium_ingot", 1, 100, item("minecraft:soul_sand"), ingot("gold")),
-        alloy("enderio", "soularium_ingot_soul_soil", "enderio:soularium_ingot", 1, 100, item("minecraft:soul_soil"), ingot("gold")),
+        alloy("enderio", "soularium_ingot_soul_sand", "enderio:soularium_ingot", 1, 100, item("minecraft:soul_sand"), matIngot("gold")),
+        alloy("enderio", "soularium_ingot_soul_soil", "enderio:soularium_ingot", 1, 100, item("minecraft:soul_soil"), matIngot("gold")),
         alloy("enderio", "vibrant_alloy_ingot", "enderio:vibrant_alloy_ingot", 2, 150, tag("c:ingots/energetic_alloy"), tag("c:ender_pearls"), tag("c:dusts/glowstone")),
         alloy("enderio_evolution", "construction_alloy_ingot", "enderio_evolution:construction_alloy_ingot", 1, 150, item("minecraft:copper_ingot"), item("enderio_evolution:crude_steel_ingot"), item("minecraft:gravel")),
         alloy("enderio_evolution", "crude_steel_ingot", "enderio_evolution:crude_steel_ingot", 1, 150, item("minecraft:iron_ingot"), item("minecraft:clay_ball"), tag("c:cobblestones")),
@@ -105,10 +108,12 @@ public class TENCompatGen implements DataProvider {
         alloy("enderio_evolution,industrialforegoing", "crystalline_pink_slime_ingot", "enderio_evolution:crystalline_pink_slime_ingot", 1, 100, item("industrialforegoing:pink_slime"), item("enderio_evolution:crystalline_alloy_ingot")),
         alloy("enderio_evolution", "crystalline_pink_slime_ingot_synthetic", "enderio_evolution:crystalline_pink_slime_ingot", 1, 200, itemN("minecraft:slime_ball", 2), item("enderio_evolution:crystalline_alloy_ingot"), tag("c:dyes/pink")),
         alloy("enderio_evolution", "energetic_silver_ingot_from_iron", "enderio_evolution:energetic_silver_ingot", 1, 150, item("minecraft:redstone"), item("minecraft:iron_ingot"), item("minecraft:glowstone_dust")),
-        alloy("enderio_evolution", "energetic_silver_ingot_from_silver", "enderio_evolution:energetic_silver_ingot", 1, 150, item("minecraft:redstone"), ingot("silver"), item("minecraft:glowstone_dust")),
+        alloy("enderio_evolution", "energetic_silver_ingot_from_silver", "enderio_evolution:energetic_silver_ingot", 1, 150, item("minecraft:redstone"), matIngot("silver"), item("minecraft:glowstone_dust")),
         alloy("enderio_evolution", "melodic_alloy_ingot", "enderio_evolution:melodic_alloy_ingot", 2, 150, item("enderio_evolution:crystalline_pink_slime_ingot"), item("minecraft:popped_chorus_fruit"), item("enderio:end_steel_ingot")),
         alloy("enderio_evolution", "stellar_alloy_ingot", "enderio_evolution:stellar_alloy_ingot", 2, 300, item("minecraft:nether_star"), item("enderio_evolution:melodic_alloy_ingot"), itemN("minecraft:clay_ball", 4)),
-        alloy("enderio_evolution", "vivid_alloy_ingot", "enderio_evolution:vivid_alloy_ingot", 1, 100, item("enderio_evolution:energetic_silver_ingot"), item("minecraft:ender_pearl"))
+        alloy("enderio_evolution", "vivid_alloy_ingot", "enderio_evolution:vivid_alloy_ingot", 1, 100, item("enderio_evolution:energetic_silver_ingot"), item("minecraft:ender_pearl")),
+        alloy("immersiveengineering,alltheores", "brass", "alltheores:brass_ingot", 2, 100, matIngot("copper"), matIngot("zinc")),
+        alloy("immersiveengineering", "insulating_glass", "immersiveengineering:insulating_glass", 2, 150, tagN("c:glass_blocks", 2), tag("c:dusts/iron"))
     };
 
     /** 粉碎机 ← EIO / EVO SAG 研磨（已剔除与本模组输入撞车的条目）。 */
@@ -171,17 +176,17 @@ public class TENCompatGen implements DataProvider {
         grind("enderio_evolution,enderio", "compressed_infinity_dust_block", item("enderio_evolution:compressed_infinity_dust_block"), 120, out("enderio_evolution:infinity_dust_block", 9), out("enderio_evolution:compressed_infinity_dust_block", 1, 0.05), out("enderio:grains_of_infinity", 1, 0.1)),
         grind("enderio_evolution,enderio", "double_compressed_infinity_dust_block", item("enderio_evolution:double_compressed_infinity_dust_block"), 120, out("enderio_evolution:compressed_infinity_dust_block", 9), out("enderio_evolution:double_compressed_infinity_dust_block", 1, 0.05), out("enderio:grains_of_infinity", 1, 0.1)),
         grind("enderio_evolution,enderio", "infinity_dust_block", item("enderio_evolution:infinity_dust_block"), 120, out("enderio:grains_of_infinity", 9), out("enderio_evolution:infinity_dust_block", 1, 0.05), out("enderio:grains_of_infinity", 1, 0.1)),
-        grind("alltheores,enderio", "brass_ingot", ingot("brass"), 120, out("alltheores:brass_dust", 1)),
-        grind("alltheores,enderio,mekanism", "bronze_ingot", ingot("bronze"), 120, out("alltheores:bronze_dust", 1)),
+        grind("alltheores,enderio", "brass_ingot", tag("c:ingots/brass"), 120, out("alltheores:brass_dust", 1)),
+        grind("alltheores,enderio,mekanism", "bronze_ingot", tag("c:ingots/bronze"), 120, out("alltheores:bronze_dust", 1)),
         grind("alltheores,enderio", "cinnabar_gem", tag("c:gems/cinnabar"), 120, out("alltheores:cinnabar_dust", 1)),
         grind("alltheores,enderio", "cinnabar_ore", tag("c:ores/cinnabar"), 120, out("alltheores:cinnabar", 6), out("minecraft:cobblestone", 1, 0.15)),
-        grind("alltheores,enderio,immersiveengineering", "constantan_ingot", ingot("constantan"), 120, out("alltheores:constantan_dust", 1)),
-        grind("alltheores,enderio,immersiveengineering", "electrum_ingot", ingot("electrum"), 120, out("alltheores:electrum_dust", 1)),
-        grind("alltheores,enderio", "enderium_ingot", ingot("enderium"), 120, out("alltheores:enderium_dust", 1)),
+        grind("alltheores,enderio,immersiveengineering", "constantan_ingot", tag("c:ingots/constantan"), 120, out("alltheores:constantan_dust", 1)),
+        grind("alltheores,enderio,immersiveengineering", "electrum_ingot", tag("c:ingots/electrum"), 120, out("alltheores:electrum_dust", 1)),
+        grind("alltheores,enderio", "enderium_ingot", tag("c:ingots/enderium"), 120, out("alltheores:enderium_dust", 1)),
         grind("alltheores,enderio,mekanism", "fluorite_gem", tag("c:gems/fluorite"), 120, out("alltheores:fluorite_dust", 1)),
         grind("alltheores,enderio,mekanism", "fluorite_ore", tag("c:ores/fluorite"), 120, out("alltheores:fluorite", 6), out("minecraft:cobblestone", 1, 0.15)),
-        grind("alltheores,enderio", "invar_ingot", ingot("invar"), 120, out("alltheores:invar_dust", 1)),
-        grind("alltheores,enderio", "lumium_ingot", ingot("lumium"), 120, out("alltheores:lumium_dust", 1)),
+        grind("alltheores,enderio", "invar_ingot", tag("c:ingots/invar"), 120, out("alltheores:invar_dust", 1)),
+        grind("alltheores,enderio", "lumium_ingot", tag("c:ingots/lumium"), 120, out("alltheores:lumium_dust", 1)),
         grind("alltheores,enderio", "peridot_gem", tag("c:gems/peridot"), 120, out("alltheores:peridot_dust", 1)),
         grind("alltheores,enderio", "peridot_ore", tag("c:ores/peridot"), 120, out("alltheores:peridot", 6), out("minecraft:cobblestone", 1, 0.15)),
         grind("alltheores,enderio", "ruby_gem", tag("c:gems/ruby"), 120, out("alltheores:ruby_dust", 1)),
@@ -189,13 +194,57 @@ public class TENCompatGen implements DataProvider {
         grind("alltheores,enderio", "salt_ore", tag("c:ores/salt"), 120, out("alltheores:salt", 6)),
         grind("alltheores,enderio", "sapphire_gem", tag("c:gems/sapphire"), 120, out("alltheores:sapphire_dust", 1)),
         grind("alltheores,enderio", "sapphire_ore", tag("c:ores/sapphire"), 120, out("alltheores:sapphire", 6), out("minecraft:cobblestone", 1, 0.15)),
-        grind("alltheores,enderio", "signalum_ingot", ingot("signalum"), 120, out("alltheores:signalum_dust", 1)),
-        grind("alltheores,enderio,mekanism", "steel_ingot", ingot("steel"), 120, out("alltheores:steel_dust", 1)),
+        grind("alltheores,enderio", "signalum_ingot", tag("c:ingots/signalum"), 120, out("alltheores:signalum_dust", 1)),
+        grind("alltheores,enderio,mekanism", "steel_ingot", tag("c:ingots/steel"), 120, out("alltheores:steel_dust", 1)),
         grind("alltheores,enderio", "sulfur_ore", tag("c:ores/sulfur"), 120, out("alltheores:sulfur", 6)),
-        grind("neoecoae,mekanism", "aluminum_alloy_dust", ingot("aluminum_alloy"), 120, out("neoecoae:aluminum_alloy_dust", 1)),
-        grind("neoecoae,mekanism", "black_tungsten_alloy_dust", ingot("black_tungsten_alloy"), 120, out("neoecoae:black_tungsten_alloy_dust", 1)),
-        grind("neoecoae,mekanism", "energized_crystal_dust", tag("c:gems/energized_crystal"), 120, out("neoecoae:energized_crystal_dust", 1)),
-        grind("neoecoae,mekanism", "energized_flux_crystal_dust", tag("c:gems/energized_fluix_crystal"), 120, out("neoecoae:energized_fluix_crystal_dust", 1))
+        grind("neoecoae,mekanism", "aluminum_alloy_dust", tag("c:ingots/aluminum_alloy"), 120, out("neoecoae:aluminum_alloy_dust", 1)),
+        grind("neoecoae,mekanism", "black_tungsten_alloy_dust", tag("c:ingots/black_tungsten_alloy"), 120, out("neoecoae:black_tungsten_alloy_dust", 1)),
+        grind("immersiveengineering", "amethyst", item("minecraft:amethyst_block"), 120, out("minecraft:amethyst_shard", 4)),
+        grind("immersiveengineering", "black_dye", item("minecraft:charcoal"), 120, out("minecraft:black_dye", 1), out("minecraft:gray_dye", 1, 0.2)),
+        grind("immersiveengineering", "clay", tag("c:storage_blocks/clay"), 120, out("minecraft:clay_ball", 4)),
+        grind("immersiveengineering,enderio", "coal", item("minecraft:coal"), 120, out("enderio:powdered_coal", 1)),
+        grind("immersiveengineering,enderio", "coal_block", item("minecraft:coal_block"), 120, out("enderio:powdered_coal", 9)),
+        grind("immersiveengineering", "coarse_dirt", item("minecraft:coarse_dirt"), 120, out("minecraft:dirt", 1)),
+        grind("immersiveengineering", "coke", tag("c:coal_coke"), 120, out("immersiveengineering:dust_coke", 1)),
+        grind("immersiveengineering", "coke_block", tag("c:storage_blocks/coal_coke"), 120, out("immersiveengineering:dust_coke", 9)),
+        grind("immersiveengineering", "dark_prismarine", item("minecraft:dark_prismarine"), 120, out("minecraft:prismarine_shard", 8)),
+        grind("immersiveengineering", "graphite_ingot", tag("c:ingots/hop_graphite"), 120, out("immersiveengineering:dust_hop_graphite", 1)),
+        grind("immersiveengineering", "graphite_plate", tag("c:plates/hop_graphite"), 120, out("immersiveengineering:dust_hop_graphite", 1)),
+        grind("immersiveengineering", "nether_gold", item("minecraft:nether_gold_ore"), 120, out("kenergyengineering:gold_dust", 2)),
+        grind("immersiveengineering", "nether_wart", item("minecraft:nether_wart_block"), 120, out("minecraft:nether_wart", 9)),
+        grind("immersiveengineering", "prismarine", item("minecraft:prismarine"), 120, out("minecraft:prismarine_shard", 4)),
+        grind("immersiveengineering", "prismarine_brick", item("minecraft:prismarine_bricks"), 120, out("minecraft:prismarine_shard", 9)),
+        grind("immersiveengineering", "quartz", item("minecraft:quartz_block"), 120, out("minecraft:quartz", 4)),
+        grind("immersiveengineering", "red_sandstone", tag("c:sandstone/red_blocks"), 120, out("minecraft:red_sand", 2), out("immersiveengineering:dust_saltpeter", 1, 0.5)),
+        grind("immersiveengineering", "sandstone", tag("c:sandstone/uncolored_blocks"), 120, out("minecraft:sand", 2), out("immersiveengineering:dust_saltpeter", 1, 0.5)),
+        grind("immersiveengineering", "slag", tag("c:slag"), 120, out("immersiveengineering:slag_gravel", 1)),
+        grind("immersiveengineering", "slag_brick", item("immersiveengineering:slag_brick"), 120, out("immersiveengineering:slag_gravel", 1)),
+        grind("immersiveengineering", "stone", item("minecraft:stone"), 120, out("minecraft:cobblestone", 1)),
+        grind("immersiveengineering", "white_dye", item("minecraft:bone_meal"), 120, out("minecraft:white_dye", 2), out("minecraft:light_gray_dye", 1, 0.1))
+    };
+
+    /**
+     * 粉碎机 ← AE2 家族水晶。手写表：{@code inject.js} 只替换 ALLOYS/GRIND/PRESS 的数组体，动不到这里。
+     * <p>
+     * 一条行 = 一个 {@code c:gems/<水晶>} 输入标签，输出恒为同一模组自己的粉：所以 {@code mod_loaded} 按
+     * <b>输出所属命名空间</b>门控就能保证产物存在，输入侧由 {@code not(tag_empty)} 在标签无人填充时整条消失。
+     * 对方走 {@code ae2:inscriber} 这类外部机器类型，导入等于替邻居重述配方，因此这条线不进转换器。
+     * {@code c:gems/charged_certus_quartz}（data_energistics 的别名标签）与 {@code c:gems/resonance_crystal} 不写：
+     * 前者成员已被 certus 行覆盖，后者没有对应的粉产物。
+     * 新增行要同时把文件名登记进 {@code tools/compat/config.json} 的 {@code manualRows}，
+     * 否则下次跑转换器会把同输入的机械导入塞回来，撞 {@link RecipeSignature#claim} 让生成失败。
+     */
+    private static final Recipe[] GRIND_MANUAL = {
+        grind("ae2", "certus_quartz_crystal", tag("c:gems/certus_quartz"), 120, out("ae2:certus_quartz_dust", 1)),
+        grind("ae2", "fluix_crystal", tag("c:gems/fluix"), 120, out("ae2:fluix_dust", 1)),
+        grind("ae2", "sky_stone_crystal", tag("c:gems/sky_stone_crystal"), 120, out("ae2:sky_dust", 1)),
+        grind("ae2", "ender_quartz", tag("c:gems/ender_quartz"), 120, out("ae2:ender_dust", 1)),
+        grind("ae2cs", "resonating_crystal", tag("c:gems/resonating"), 120, out("ae2cs:resonating_crystal_dust", 1)),
+        grind("data_energistics", "data_crystal", tag("c:gems/data_crystal"), 120, out("data_energistics:data_dust", 1)),
+        grind("extendedae", "entro_crystal", tag("c:gems/entro"), 120, out("extendedae:entro_dust", 1)),
+        grind("extendedae_plus", "lattra_crystal", tag("c:gems/lattra"), 120, out("extendedae_plus:lattra_dust", 1)),
+        grind("neoecoae", "energized_crystal_dust", tag("c:gems/energized_crystal"), 120, out("neoecoae:energized_crystal_dust", 1)),
+        grind("neoecoae", "energized_flux_crystal_dust", tag("c:gems/energized_fluix_crystal"), 120, out("neoecoae:energized_fluix_crystal_dust", 1))
     };
 
     /** 压缩机承接 EVO 的 infinity 粉尘压缩（对方只有工作台形状合成，这是增量）。
@@ -209,40 +258,63 @@ public class TENCompatGen implements DataProvider {
     /** 压缩机承接邻居冲压机的板/齿轮/杆/线（模具换成本模组的对应模具，chance 0 = 催化位）。
      *  行内容由 tools/compat/convert.js 从对方数据机械导入，inject.js 只替换本数组体。 */
     private static final Recipe[] PRESS = {
-        pressed("alltheores,immersiveengineering", "aluminum_gear", ingot("aluminum"), "kenergyengineering:mould_gear", "alltheores:aluminum_gear", 1, 100),
-        pressed("alltheores,immersiveengineering", "aluminum_plate", ingot("aluminum"), "kenergyengineering:mould_plate", "alltheores:aluminum_plate", 1, 100),
-        pressed("alltheores,immersiveengineering", "brass_gear", ingot("brass"), "kenergyengineering:mould_gear", "alltheores:brass_gear", 1, 100),
-        pressed("alltheores,immersiveengineering", "brass_plate", ingot("brass"), "kenergyengineering:mould_plate", "alltheores:brass_plate", 1, 100),
-        pressed("alltheores,immersiveengineering", "bronze_gear", ingot("bronze"), "kenergyengineering:mould_gear", "alltheores:bronze_gear", 1, 100),
-        pressed("alltheores,immersiveengineering", "bronze_plate", ingot("bronze"), "kenergyengineering:mould_plate", "alltheores:bronze_plate", 1, 100),
-        pressed("alltheores,immersiveengineering", "constantan_gear", ingot("constantan"), "kenergyengineering:mould_gear", "alltheores:constantan_gear", 1, 100),
-        pressed("alltheores,immersiveengineering", "constantan_plate", ingot("constantan"), "kenergyengineering:mould_plate", "alltheores:constantan_plate", 1, 100),
-        pressed("alltheores,immersiveengineering", "electrum_gear", ingot("electrum"), "kenergyengineering:mould_gear", "alltheores:electrum_gear", 1, 100),
-        pressed("alltheores,immersiveengineering", "electrum_plate", ingot("electrum"), "kenergyengineering:mould_plate", "alltheores:electrum_plate", 1, 100),
-        pressed("alltheores,immersiveengineering", "enderium_gear", ingot("enderium"), "kenergyengineering:mould_gear", "alltheores:enderium_gear", 1, 100),
-        pressed("alltheores,immersiveengineering", "enderium_plate", ingot("enderium"), "kenergyengineering:mould_plate", "alltheores:enderium_plate", 1, 100),
-        pressed("alltheores,immersiveengineering", "invar_gear", ingot("invar"), "kenergyengineering:mould_gear", "alltheores:invar_gear", 1, 100),
-        pressed("alltheores,immersiveengineering", "invar_plate", ingot("invar"), "kenergyengineering:mould_plate", "alltheores:invar_plate", 1, 100),
-        pressed("alltheores,immersiveengineering", "iridium_gear", ingot("iridium"), "kenergyengineering:mould_gear", "alltheores:iridium_gear", 1, 100),
-        pressed("alltheores,immersiveengineering", "iridium_plate", ingot("iridium"), "kenergyengineering:mould_plate", "alltheores:iridium_plate", 1, 100),
-        pressed("alltheores,immersiveengineering", "lead_gear", ingot("lead"), "kenergyengineering:mould_gear", "alltheores:lead_gear", 1, 100),
-        pressed("alltheores,immersiveengineering", "lead_plate", ingot("lead"), "kenergyengineering:mould_plate", "alltheores:lead_plate", 1, 100),
-        pressed("alltheores,immersiveengineering", "lumium_gear", ingot("lumium"), "kenergyengineering:mould_gear", "alltheores:lumium_gear", 1, 100),
-        pressed("alltheores,immersiveengineering", "lumium_plate", ingot("lumium"), "kenergyengineering:mould_plate", "alltheores:lumium_plate", 1, 100),
-        pressed("alltheores,immersiveengineering", "osmium_gear", ingot("osmium"), "kenergyengineering:mould_gear", "alltheores:osmium_gear", 1, 100),
-        pressed("alltheores,immersiveengineering", "osmium_plate", ingot("osmium"), "kenergyengineering:mould_plate", "alltheores:osmium_plate", 1, 100),
-        pressed("alltheores,immersiveengineering", "platinum_gear", ingot("platinum"), "kenergyengineering:mould_gear", "alltheores:platinum_gear", 1, 100),
-        pressed("alltheores,immersiveengineering", "platinum_plate", ingot("platinum"), "kenergyengineering:mould_plate", "alltheores:platinum_plate", 1, 100),
-        pressed("alltheores,immersiveengineering", "signalum_gear", ingot("signalum"), "kenergyengineering:mould_gear", "alltheores:signalum_gear", 1, 100),
-        pressed("alltheores,immersiveengineering", "signalum_plate", ingot("signalum"), "kenergyengineering:mould_plate", "alltheores:signalum_plate", 1, 100),
-        pressed("alltheores,immersiveengineering", "silver_gear", ingot("silver"), "kenergyengineering:mould_gear", "alltheores:silver_gear", 1, 100),
-        pressed("alltheores,immersiveengineering", "silver_plate", ingot("silver"), "kenergyengineering:mould_plate", "alltheores:silver_plate", 1, 100),
-        pressed("alltheores,immersiveengineering", "steel_gear", ingot("steel"), "kenergyengineering:mould_gear", "alltheores:steel_gear", 1, 100),
-        pressed("alltheores,immersiveengineering", "steel_plate", ingot("steel"), "kenergyengineering:mould_plate", "alltheores:steel_plate", 1, 100),
-        pressed("alltheores,immersiveengineering", "uranium_gear", ingot("uranium"), "kenergyengineering:mould_gear", "alltheores:uranium_gear", 1, 100),
-        pressed("alltheores,immersiveengineering", "uranium_plate", ingot("uranium"), "kenergyengineering:mould_plate", "alltheores:uranium_plate", 1, 100),
-        pressed("alltheores,immersiveengineering", "zinc_gear", ingot("zinc"), "kenergyengineering:mould_gear", "alltheores:zinc_gear", 1, 100),
-        pressed("alltheores,immersiveengineering", "zinc_plate", ingot("zinc"), "kenergyengineering:mould_plate", "alltheores:zinc_plate", 1, 100)
+        pressed("alltheores,immersiveengineering", "aluminum_gear", tagN("c:ingots/aluminum", 4), "kenergyengineering:mould_gear", "alltheores:aluminum_gear", 1, 100),
+        pressed("alltheores,immersiveengineering", "aluminum_plate", tag("c:ingots/aluminum"), "kenergyengineering:mould_plate", "alltheores:aluminum_plate", 1, 100),
+        pressed("alltheores,immersiveengineering", "aluminum_rod", tag("c:ingots/aluminum"), "kenergyengineering:mould_rod", "alltheores:aluminum_rod", 2, 100),
+        pressed("alltheores,immersiveengineering", "brass_gear", tagN("c:ingots/brass", 4), "kenergyengineering:mould_gear", "alltheores:brass_gear", 1, 100),
+        pressed("alltheores,immersiveengineering", "brass_plate", tag("c:ingots/brass"), "kenergyengineering:mould_plate", "alltheores:brass_plate", 1, 100),
+        pressed("alltheores,immersiveengineering", "brass_rod", tag("c:ingots/brass"), "kenergyengineering:mould_rod", "alltheores:brass_rod", 2, 100),
+        pressed("alltheores,immersiveengineering", "bronze_gear", tagN("c:ingots/bronze", 4), "kenergyengineering:mould_gear", "alltheores:bronze_gear", 1, 100),
+        pressed("alltheores,immersiveengineering", "bronze_plate", tag("c:ingots/bronze"), "kenergyengineering:mould_plate", "alltheores:bronze_plate", 1, 100),
+        pressed("alltheores,immersiveengineering", "bronze_rod", tag("c:ingots/bronze"), "kenergyengineering:mould_rod", "alltheores:bronze_rod", 2, 100),
+        pressed("alltheores,immersiveengineering", "constantan_gear", tagN("c:ingots/constantan", 4), "kenergyengineering:mould_gear", "alltheores:constantan_gear", 1, 100),
+        pressed("alltheores,immersiveengineering", "constantan_plate", tag("c:ingots/constantan"), "kenergyengineering:mould_plate", "alltheores:constantan_plate", 1, 100),
+        pressed("alltheores,immersiveengineering", "constantan_rod", tag("c:ingots/constantan"), "kenergyengineering:mould_rod", "alltheores:constantan_rod", 2, 100),
+        pressed("alltheores,immersiveengineering", "diamond_rod", tag("c:gems/diamond"), "kenergyengineering:mould_rod", "alltheores:diamond_rod", 2, 100),
+        pressed("alltheores,immersiveengineering", "electrum_gear", tagN("c:ingots/electrum", 4), "kenergyengineering:mould_gear", "alltheores:electrum_gear", 1, 100),
+        pressed("alltheores,immersiveengineering", "electrum_plate", tag("c:ingots/electrum"), "kenergyengineering:mould_plate", "alltheores:electrum_plate", 1, 100),
+        pressed("alltheores,immersiveengineering", "electrum_rod", tag("c:ingots/electrum"), "kenergyengineering:mould_rod", "alltheores:electrum_rod", 2, 100),
+        pressed("alltheores,immersiveengineering", "enderium_gear", tagN("c:ingots/enderium", 4), "kenergyengineering:mould_gear", "alltheores:enderium_gear", 1, 100),
+        pressed("alltheores,immersiveengineering", "enderium_plate", tag("c:ingots/enderium"), "kenergyengineering:mould_plate", "alltheores:enderium_plate", 1, 100),
+        pressed("alltheores,immersiveengineering", "enderium_rod", tag("c:ingots/enderium"), "kenergyengineering:mould_rod", "alltheores:enderium_rod", 2, 100),
+        pressed("alltheores,immersiveengineering", "invar_gear", tagN("c:ingots/invar", 4), "kenergyengineering:mould_gear", "alltheores:invar_gear", 1, 100),
+        pressed("alltheores,immersiveengineering", "invar_plate", tag("c:ingots/invar"), "kenergyengineering:mould_plate", "alltheores:invar_plate", 1, 100),
+        pressed("alltheores,immersiveengineering", "invar_rod", tag("c:ingots/invar"), "kenergyengineering:mould_rod", "alltheores:invar_rod", 2, 100),
+        pressed("alltheores,immersiveengineering", "iridium_gear", tagN("c:ingots/iridium", 4), "kenergyengineering:mould_gear", "alltheores:iridium_gear", 1, 100),
+        pressed("alltheores,immersiveengineering", "iridium_plate", tag("c:ingots/iridium"), "kenergyengineering:mould_plate", "alltheores:iridium_plate", 1, 100),
+        pressed("alltheores,immersiveengineering", "iridium_rod", tag("c:ingots/iridium"), "kenergyengineering:mould_rod", "alltheores:iridium_rod", 2, 100),
+        pressed("alltheores,immersiveengineering", "lead_gear", tagN("c:ingots/lead", 4), "kenergyengineering:mould_gear", "alltheores:lead_gear", 1, 100),
+        pressed("alltheores,immersiveengineering", "lead_plate", tag("c:ingots/lead"), "kenergyengineering:mould_plate", "alltheores:lead_plate", 1, 100),
+        pressed("alltheores,immersiveengineering", "lead_rod", tag("c:ingots/lead"), "kenergyengineering:mould_rod", "alltheores:lead_rod", 2, 100),
+        pressed("alltheores,immersiveengineering", "lumium_gear", tagN("c:ingots/lumium", 4), "kenergyengineering:mould_gear", "alltheores:lumium_gear", 1, 100),
+        pressed("alltheores,immersiveengineering", "lumium_plate", tag("c:ingots/lumium"), "kenergyengineering:mould_plate", "alltheores:lumium_plate", 1, 100),
+        pressed("alltheores,immersiveengineering", "lumium_rod", tag("c:ingots/lumium"), "kenergyengineering:mould_rod", "alltheores:lumium_rod", 2, 100),
+        pressed("alltheores,immersiveengineering", "osmium_gear", tagN("c:ingots/osmium", 4), "kenergyengineering:mould_gear", "alltheores:osmium_gear", 1, 100),
+        pressed("alltheores,immersiveengineering", "osmium_plate", tag("c:ingots/osmium"), "kenergyengineering:mould_plate", "alltheores:osmium_plate", 1, 100),
+        pressed("alltheores,immersiveengineering", "osmium_rod", tag("c:ingots/osmium"), "kenergyengineering:mould_rod", "alltheores:osmium_rod", 2, 100),
+        pressed("alltheores,immersiveengineering", "platinum_gear", tagN("c:ingots/platinum", 4), "kenergyengineering:mould_gear", "alltheores:platinum_gear", 1, 100),
+        pressed("alltheores,immersiveengineering", "platinum_plate", tag("c:ingots/platinum"), "kenergyengineering:mould_plate", "alltheores:platinum_plate", 1, 100),
+        pressed("alltheores,immersiveengineering", "platinum_rod", tag("c:ingots/platinum"), "kenergyengineering:mould_rod", "alltheores:platinum_rod", 2, 100),
+        pressed("alltheores,immersiveengineering", "signalum_gear", tagN("c:ingots/signalum", 4), "kenergyengineering:mould_gear", "alltheores:signalum_gear", 1, 100),
+        pressed("alltheores,immersiveengineering", "signalum_plate", tag("c:ingots/signalum"), "kenergyengineering:mould_plate", "alltheores:signalum_plate", 1, 100),
+        pressed("alltheores,immersiveengineering", "signalum_rod", tag("c:ingots/signalum"), "kenergyengineering:mould_rod", "alltheores:signalum_rod", 2, 100),
+        pressed("alltheores,immersiveengineering", "silver_gear", tagN("c:ingots/silver", 4), "kenergyengineering:mould_gear", "alltheores:silver_gear", 1, 100),
+        pressed("alltheores,immersiveengineering", "silver_plate", tag("c:ingots/silver"), "kenergyengineering:mould_plate", "alltheores:silver_plate", 1, 100),
+        pressed("alltheores,immersiveengineering", "silver_rod", tag("c:ingots/silver"), "kenergyengineering:mould_rod", "alltheores:silver_rod", 2, 100),
+        pressed("alltheores,immersiveengineering", "steel_gear", tagN("c:ingots/steel", 4), "kenergyengineering:mould_gear", "alltheores:steel_gear", 1, 100),
+        pressed("alltheores,immersiveengineering", "steel_plate", tag("c:ingots/steel"), "kenergyengineering:mould_plate", "alltheores:steel_plate", 1, 100),
+        pressed("alltheores,immersiveengineering", "steel_rod", tag("c:ingots/steel"), "kenergyengineering:mould_rod", "alltheores:steel_rod", 2, 100),
+        pressed("alltheores,immersiveengineering", "uranium_gear", tagN("c:ingots/uranium", 4), "kenergyengineering:mould_gear", "alltheores:uranium_gear", 1, 100),
+        pressed("alltheores,immersiveengineering", "uranium_plate", tag("c:ingots/uranium"), "kenergyengineering:mould_plate", "alltheores:uranium_plate", 1, 100),
+        pressed("alltheores,immersiveengineering", "uranium_rod", tag("c:ingots/uranium"), "kenergyengineering:mould_rod", "alltheores:uranium_rod", 2, 100),
+        pressed("alltheores,immersiveengineering", "zinc_gear", tagN("c:ingots/zinc", 4), "kenergyengineering:mould_gear", "alltheores:zinc_gear", 1, 100),
+        pressed("alltheores,immersiveengineering", "zinc_plate", tag("c:ingots/zinc"), "kenergyengineering:mould_plate", "alltheores:zinc_plate", 1, 100),
+        pressed("alltheores,immersiveengineering", "zinc_rod", tag("c:ingots/zinc"), "kenergyengineering:mould_rod", "alltheores:zinc_rod", 2, 100),
+        pressed("immersiveengineering", "blaze_rod", itemN("minecraft:blaze_powder", 5), "kenergyengineering:mould_rod", "minecraft:blaze_rod", 1, 100),
+        pressed("immersiveengineering", "wire_aluminum", tag("c:ingots/aluminum"), "kenergyengineering:mould_string", "immersiveengineering:wire_aluminum", 2, 100),
+        pressed("immersiveengineering", "wire_electrum", tag("c:ingots/electrum"), "kenergyengineering:mould_string", "immersiveengineering:wire_electrum", 2, 100),
+        pressed("immersiveengineering", "wire_lead", tag("c:ingots/lead"), "kenergyengineering:mould_string", "immersiveengineering:wire_lead", 2, 100),
+        pressed("immersiveengineering", "wire_steel", tag("c:ingots/steel"), "kenergyengineering:mould_string", "immersiveengineering:wire_steel", 2, 100)
     };
 
     private final PackOutput output;
@@ -256,6 +328,7 @@ public class TENCompatGen implements DataProvider {
         List<CompletableFuture<?>> futures = new ArrayList<>();
         for (var r : ALLOYS) emit(futures, cache, base, r);
         for (var r : GRIND) emit(futures, cache, base, r);
+        for (var r : GRIND_MANUAL) emit(futures, cache, base, r);
         for (var r : INFINITY) emit(futures, cache, base, r);
         for (var r : PRESS) emit(futures, cache, base, r);
         return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
@@ -286,8 +359,13 @@ public class TENCompatGen implements DataProvider {
         return new Input(key, n, false);
     }
 
-    /** 金属输入：该材料有 {@code c:mats/X} 聚合标签时自动升级成锭或粉皆可。 */
+    /** 金属输入：只认锭。粉碎机与压缩机的工序是把锭磨/压成形，粉进来会得到不对等的产出。 */
     private static Input ingot(String material) {
+        return new Input("c:ingots/" + material, null, true);
+    }
+
+    /** 感应炉专用：该材料有 {@code c:mats/X} 聚合标签时锭或粉皆可入（合金只看元素种类）。 */
+    private static Input matIngot(String material) {
         return new Input(TENMaterialTagGen.hasMatTag(material) ? "c:mats/" + material : "c:ingots/" + material, null, true);
     }
 

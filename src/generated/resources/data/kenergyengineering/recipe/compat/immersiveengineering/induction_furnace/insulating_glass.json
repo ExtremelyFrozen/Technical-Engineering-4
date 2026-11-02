@@ -1,0 +1,49 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "immersiveengineering"
+    },
+    {
+      "type": "neoforge:not",
+      "value": {
+        "type": "neoforge:tag_empty",
+        "tag": "c:glass_blocks"
+      }
+    },
+    {
+      "type": "neoforge:not",
+      "value": {
+        "type": "neoforge:tag_empty",
+        "tag": "c:dusts/iron"
+      }
+    },
+    {
+      "type": "kenergyengineering:compat_enabled",
+      "source": "immersiveengineering"
+    }
+  ],
+  "type": "kenergyengineering:induction_furnace",
+  "inputs": [
+    {
+      "type": "tag",
+      "count": 2,
+      "form": "item",
+      "key": "c:glass_blocks"
+    },
+    {
+      "type": "tag",
+      "form": "item",
+      "key": "c:dusts/iron"
+    }
+  ],
+  "outputs": [
+    {
+      "type": "static",
+      "count": 2,
+      "form": "item",
+      "key": "immersiveengineering:insulating_glass"
+    }
+  ],
+  "time": 150
+}

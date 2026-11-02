@@ -12,7 +12,7 @@
       "type": "neoforge:not",
       "value": {
         "type": "neoforge:tag_empty",
-        "tag": "c:mats/lumium"
+        "tag": "c:ingots/lumium"
       }
     },
     {
@@ -25,7 +25,7 @@
     {
       "type": "tag",
       "form": "item",
-      "key": "c:mats/lumium"
+      "key": "c:ingots/lumium"
     }
   ],
   "outputs": [
