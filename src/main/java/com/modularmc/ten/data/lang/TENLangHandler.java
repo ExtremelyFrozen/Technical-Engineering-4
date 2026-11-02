@@ -125,7 +125,7 @@ public final class TENLangHandler {
         add(provider, "blast_levelup.1", "Enables Blast Furnace smelting (exclusive with Smoke)", "启用高炉冶炼（与烟熏互斥）");
         add(provider, "smoke_levelup.0", "In smelter:", "在熔炼机中：");
         add(provider, "smoke_levelup.1", "Enables Smoker smelting (exclusive with Blast)", "启用烟熏冶炼（与高炉互斥）");
-        add(provider, "potion_levelup.0", "In beacon simulator:", "在模拟信标中：");
+        add(provider, "potion_levelup.0", "In beacon simulator:", "在信标模拟机中：");
         add(provider, "ice_levelup.0", "In quarry:", "在采矿场中：");
         add(provider, "ice_levelup.1", "Output mode: Ice", "产出模式修改为冰块");
         add(provider, "magma_levelup.0", "In quarry:", "在采矿场中：");
@@ -363,8 +363,9 @@ public final class TENLangHandler {
                 "客户端显示选项，不影响服务端行为。");
         addRaw(provider, "kenergyengineering.configuration.client.showMachineHUD", "Show machine HUD", "显示机器 HUD");
         addRaw(provider, "kenergyengineering.configuration.client.showMachineHUD.tooltip", "Show the machine information overlay on HUD.", "在 HUD 上显示机器信息栏。");
-        addRaw(provider, "kenergyengineering.configuration.client.showCableHUD", "Show cable HUD", "显示管道 HUD");
-        addRaw(provider, "kenergyengineering.configuration.client.showCableHUD.tooltip", "Show the cable network statistics overlay on HUD.", "在 HUD 上显示管道的能量传输统计。");
+        // 术语对齐方块名：cable 一律作「线缆」，pipe 才作「管道」（这个开关控的是线缆网络）
+        addRaw(provider, "kenergyengineering.configuration.client.showCableHUD", "Show cable HUD", "显示线缆 HUD");
+        addRaw(provider, "kenergyengineering.configuration.client.showCableHUD.tooltip", "Show the cable network statistics overlay on HUD.", "在 HUD 上显示线缆的能量传输统计。");
 
         addRaw(provider, "kenergyengineering.configuration.machine", "Machines", "机器");
         addRaw(provider, "kenergyengineering.configuration.machine.tooltip",
@@ -382,12 +383,13 @@ public final class TENLangHandler {
         addMachineToggle(provider, "enableRefiner", "Refiner", "精炼机");
         addMachineToggle(provider, "enableInductionFurnace", "Induction Furnace", "感应炉");
         addMachineToggle(provider, "enablePsionicant", "Psionicant", "灵能处理器");
-        addMachineToggle(provider, "enableBeacon", "Beacon", "信标");
+        // 名称必须与方块名逐字一致，否则配置界面里出现第二个叫法
+        addMachineToggle(provider, "enableBeacon", "Beacon Simulator", "信标模拟机");
         addMachineToggle(provider, "enableMobRipper", "Mob Ripper", "生物啃噬者");
         addMachineToggle(provider, "enableQuarry", "Quarry", "采矿场");
         addMachineToggle(provider, "enableEnchantmentFlusher", "Enchantment Flusher", "祛魔机");
         addMachineToggle(provider, "enableCondenser", "Matter Condenser", "物质结晶器");
-        addMachineToggle(provider, "enableFarmManager", "Farm Manager", "农场管理器");
+        addMachineToggle(provider, "enableFarmManager", "Farm Manager", "农场管理机");
 
         addRaw(provider, "kenergyengineering.configuration.energyUnit", "Energy Unit", "能量模块");
         addRaw(provider, "kenergyengineering.configuration.energyUnit.tooltip",
@@ -409,10 +411,10 @@ public final class TENLangHandler {
         addRaw(provider, "kenergyengineering.configuration.energyUnit.chargingDefault.tooltip",
                 "Initial mode of a newly crafted Energy Unit.", "新制作的能量模块的初始模式。");
 
-        addRaw(provider, "kenergyengineering.configuration.farm", "Farm Manager", "农场管理器");
+        addRaw(provider, "kenergyengineering.configuration.farm", "Farm Manager", "农场管理机");
         addRaw(provider, "kenergyengineering.configuration.farm.tooltip",
                 "Block lists the Farm Manager harvests.",
-                "农场管理器识别的作物方块列表。");
+                "农场管理机识别的作物方块列表。");
         addRaw(provider, "kenergyengineering.configuration.farm.bushCrops", "Bush crop blocks", "灌木状作物");
         addRaw(provider, "kenergyengineering.configuration.farm.bushCrops.tooltip",
                 "Block IDs harvested as bushes (multi-tile crops) instead of by age.",
