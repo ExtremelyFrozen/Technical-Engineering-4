@@ -28,6 +28,9 @@ Kenergy Engineering Retechnicalized（KER），Minecraft 1.21.1 / NeoForge 科�
 ## 二、动手前必须知道的硬约定
 
 - **语言**：注释、`docs/` 与两份更新日志一律中文；代码标识符与游戏内英文文案除外。
+- **界面键要齐**：新增配置项必须在 `TENLangHandler.addConfig` 同时补 label 与 tooltip；
+  按键键名用 `TEN.KEY_*` 配 `addRaw`（走 `add()` 会多一层 `kenergyengineering.` 前缀）。
+  `runData` 末尾的 `verifyTranslationKeys()` 会遍历两个 spec 并列出缺失键。
 - **生成资源不手改**：`src/generated/resources/` 由 DataGen 产出。模型、blockstate、语言、配方要改生成器。
 - **客户端边界**：客户端类放 `src/client/java`；`src/main` 里的 `client` 子包必须带 `Dist.CLIENT` 防护。
   可选集成的类型名不得漏进总是加载的类，缺邻居时整包要能正常加载。

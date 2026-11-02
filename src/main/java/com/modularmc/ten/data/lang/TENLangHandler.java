@@ -3,8 +3,15 @@ package com.modularmc.ten.data.lang;
 import com.modularmc.ten.TEN;
 import com.modularmc.ten.common.data.TENBlocks;
 import com.modularmc.ten.common.data.TENItems;
+import com.modularmc.ten.config.TENConfig;
 
 import com.tterrag.registrate.providers.RegistrateLangProvider;
+
+import net.neoforged.neoforge.common.ModConfigSpec;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 public final class TENLangHandler {
 
@@ -27,6 +34,7 @@ public final class TENLangHandler {
         addJei(provider);
         addConfig(provider);
         addGuide(provider);
+        verifyTranslationKeys();
     }
 
     private static void addDirections(RegistrateLangProvider provider) {
@@ -58,8 +66,10 @@ public final class TENLangHandler {
         add(provider, "locked_slot", "This slot has not been unlocked yet.", "未解锁槽位");
         add(provider, "energy_capacity.charging_on", "Charging enabled", "全身充能已开启");
         add(provider, "energy_capacity.charging_off", "Charging disabled", "全身充能已关闭");
-        add(provider, "key.categories." + TEN.MOD_ID, "Kenergy Engineering: Retechnicalized", "科能工程:再技术化");
-        add(provider, "key." + TEN.MOD_ID + ".toggle_charge", "Toggle Energy Unit Charging", "切换能量单元充能");
+        // 按键键名由游戏直接查表，不经 MOD_ID 前缀；用 addRaw 而不是 add，否则会多出一层
+        // kenergyengineering.，界面上就显示原始键名（4.0.2 的 key.categories.kenergyengineering 即此）。
+        addRaw(provider, TEN.KEY_CATEGORY, "Kenergy Engineering: Retechnicalized", "科能工程:再技术化");
+        addRaw(provider, TEN.KEY_TOGGLE_CHARGE, "Toggle Energy Unit Charging", "切换能量单元充能");
     }
 
     private static void addChannel(RegistrateLangProvider provider) {
@@ -348,12 +358,18 @@ public final class TENLangHandler {
         addRaw(provider, "kenergyengineering.configuration.section.client", "Client", "客户端");
 
         addRaw(provider, "kenergyengineering.configuration.client", "Client", "客户端");
+        addRaw(provider, "kenergyengineering.configuration.client.tooltip",
+                "Client-side display options; never affects server behaviour.",
+                "客户端显示选项，不影响服务端行为。");
         addRaw(provider, "kenergyengineering.configuration.client.showMachineHUD", "Show machine HUD", "显示机器 HUD");
         addRaw(provider, "kenergyengineering.configuration.client.showMachineHUD.tooltip", "Show the machine information overlay on HUD.", "在 HUD 上显示机器信息栏。");
         addRaw(provider, "kenergyengineering.configuration.client.showCableHUD", "Show cable HUD", "显示管道 HUD");
         addRaw(provider, "kenergyengineering.configuration.client.showCableHUD.tooltip", "Show the cable network statistics overlay on HUD.", "在 HUD 上显示管道的能量传输统计。");
 
         addRaw(provider, "kenergyengineering.configuration.machine", "Machines", "机器");
+        addRaw(provider, "kenergyengineering.configuration.machine.tooltip",
+                "Defaults shared by every machine of the same type.",
+                "同一类机器共享的默认参数。");
         addRaw(provider, "kenergyengineering.configuration.machine.energyMultiplier", "Energy multiplier", "能量倍率");
         addRaw(provider, "kenergyengineering.configuration.machine.energyMultiplier.tooltip",
                 "Global energy multiplier applied to every machine.", "作用于所有机器的全局能量倍率。");
@@ -374,6 +390,9 @@ public final class TENLangHandler {
         addMachineToggle(provider, "enableFarmManager", "Farm Manager", "农场管理器");
 
         addRaw(provider, "kenergyengineering.configuration.energyUnit", "Energy Unit", "能量模块");
+        addRaw(provider, "kenergyengineering.configuration.energyUnit.tooltip",
+                "Charging and output behaviour of Energy Units.",
+                "能量模块的充电与输出行为。");
         addRaw(provider, "kenergyengineering.configuration.energyUnit.maxEnergy", "Maximum energy", "最大能量");
         addRaw(provider, "kenergyengineering.configuration.energyUnit.maxEnergy.tooltip",
                 "Energy stored by one Energy Unit (FE).", "单个能量模块可存储的能量上限（FE）。");
@@ -391,12 +410,18 @@ public final class TENLangHandler {
                 "Initial mode of a newly crafted Energy Unit.", "新制作的能量模块的初始模式。");
 
         addRaw(provider, "kenergyengineering.configuration.farm", "Farm Manager", "农场管理器");
+        addRaw(provider, "kenergyengineering.configuration.farm.tooltip",
+                "Block lists the Farm Manager harvests.",
+                "农场管理器识别的作物方块列表。");
         addRaw(provider, "kenergyengineering.configuration.farm.bushCrops", "Bush crop blocks", "灌木状作物");
         addRaw(provider, "kenergyengineering.configuration.farm.bushCrops.tooltip",
                 "Block IDs harvested as bushes (multi-tile crops) instead of by age.",
                 "按灌木整体收获（而非按生长阶段）的作物方块 id 列表。");
 
         addRaw(provider, "kenergyengineering.configuration.compat", "Neighbour mod compatibility", "邻居模组兼容");
+        addRaw(provider, "kenergyengineering.configuration.compat.tooltip",
+                "Which compat sources are active, and which mod provides a shared material.",
+                "哪些兼容来源生效，同种材料由哪个模组提供。");
         addRaw(provider, "kenergyengineering.configuration.compat.disabledSources", "Disabled compat sources", "关闭的兼容来源");
         addRaw(provider, "kenergyengineering.configuration.compat.disabledSources.tooltip",
                 "Sources whose compat recipes are dropped at load time and hidden in JEI, e.g. enderio_evolution.",
@@ -408,12 +433,51 @@ public final class TENLangHandler {
                 "从优到劣排列。同一种材料（矿石链、合金）由列表中最先「已加载且未被关闭」的模组提供。");
 
         addRaw(provider, "kenergyengineering.configuration.panelAnimation", "Panel Animation", "面板动画");
+        addRaw(provider, "kenergyengineering.configuration.panelAnimation.tooltip",
+                "Expand/collapse animation of the config and upgrade panels.",
+                "配置面板与升级面板的展开、收起动画。");
         addRaw(provider, "kenergyengineering.configuration.panelAnimation.enabled", "Enable panel animation", "启用面板展开动画");
         addRaw(provider, "kenergyengineering.configuration.panelAnimation.enabled.tooltip", "Animate the config & upgrade panels expanding/collapsing. Disable for instant toggle.", "配置面板与升级面板展开/收起时播放动画。关闭后立即展开/收起（无动画）。");
         addRaw(provider, "kenergyengineering.configuration.panelAnimation.speed", "Common panel speed (px/tick)", "通用面板速度（像素/刻）");
         addRaw(provider, "kenergyengineering.configuration.panelAnimation.speed.tooltip", "Expand/collapse speed shared by all panels. Higher = faster. Per-panel override takes precedence when nonzero.", "所有展开面板共用的展开/收起速度，数值越大越快。面板独立速度非 0 时优先生效。");
         addRaw(provider, "kenergyengineering.configuration.panelAnimation.upgradeSpeed", "Upgrade panel speed override (px/tick)", "升级面板独立速度（像素/刻）");
         addRaw(provider, "kenergyengineering.configuration.panelAnimation.upgradeSpeed.tooltip", "Speed override for the upgrade panel only. 0 = use common speed.", "仅升级面板使用的独立展开/收起速度，0 = 使用通用面板速度。");
+    }
+
+    /**
+     * 校验「游戏直接查表」的两类键：配置项（label + tooltip）与按键绑定（分类 + 键名）。
+     * 缺一条就让 datagen 失败，而不是等玩家在界面里看到原始键名。
+     * <p>
+     * 配置侧遍历 {@link ModConfigSpec#getSpec()} 的树：组节点只要求组名，叶子节点额外要求
+     * {@code .tooltip}。按键侧取 {@link TEN#KEY_CATEGORY} / {@link TEN#KEY_TOGGLE_CHARGE}，
+     * 与 {@code TENKeybinds} 共用同一份常量。键集合取自 {@link #ZH_ENTRIES}——{@code addRaw}
+     * 每写一条都会登记，所以校验的是这次 datagen 实际产出的键，不是另抄一份清单。
+     */
+    private static void verifyTranslationKeys() {
+        List<String> missing = new ArrayList<>();
+        collectMissingKeys(TENConfig.COMMON_SPEC.getSpec().valueMap(), "", missing);
+        collectMissingKeys(TENConfig.CLIENT_SPEC.getSpec().valueMap(), "", missing);
+        for (String key : new String[] {TEN.KEY_CATEGORY, TEN.KEY_TOGGLE_CHARGE}) {
+            if (!ZH_ENTRIES.containsKey(key)) missing.add(key);
+        }
+        if (!missing.isEmpty()) {
+            throw new IllegalStateException("界面键缺少本地化 " + missing.size() + " 条，游戏里会显示原始键名：\n  "
+                    + String.join("\n  ", missing)
+                    + "\n在 TENLangHandler 对应 addXxx() 里补齐后再跑 datagen。");
+        }
+    }
+
+    private static void collectMissingKeys(Map<?, ?> specTree, String prefix, List<String> missing) {
+        for (Map.Entry<?, ?> entry : specTree.entrySet()) {
+            String path = prefix.isEmpty() ? String.valueOf(entry.getKey()) : prefix + "." + entry.getKey();
+            String key = TEN.MOD_ID + ".configuration." + path;
+            if (!ZH_ENTRIES.containsKey(key)) missing.add(key);
+            if (entry.getValue() instanceof Map<?, ?> child) {
+                collectMissingKeys(child, path, missing);
+            } else if (!ZH_ENTRIES.containsKey(key + ".tooltip")) {
+                missing.add(key + ".tooltip");
+            }
+        }
     }
 
     /** 机器开关：中英文都跟着方块术语走，避免界面里出现第二套机器名称。 */
