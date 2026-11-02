@@ -1,8 +1,10 @@
 package com.modularmc.ten.common.data;
 
 import com.modularmc.ten.common.block.machine.CableBased;
+import com.modularmc.ten.common.block.machine.CableTier;
 import com.modularmc.ten.common.block.machine.ChannelBlock;
 import com.modularmc.ten.common.block.machine.HorizontalMachineBlock;
+import com.modularmc.ten.common.item.CableBlockItem;
 
 import net.minecraft.core.Direction;
 import net.minecraft.tags.BlockTags;
@@ -65,10 +67,10 @@ public class TENBlocks {
     public static final BlockEntry<HorizontalMachineBlock> ENGINE_SOLAR = engine("engine_solar", "Solar Engine", "光合引擎");
 
     // === Cables ===
-    public static final BlockEntry<CableBased> CABLE = cable("cable", "Glass Energy Cable", "玻璃能量线缆");
-    public static final BlockEntry<CableBased> CABLE_QUARTZ = cable("cable_quartz", "Quartz Energy Cable", "石英能量线缆");
-    public static final BlockEntry<CableBased> CABLE_AZURE = cable("cable_azure", "Azure Energy Cable", "蔚蓝能量线缆");
-    public static final BlockEntry<CableBased> CABLE_STAR = cable("cable_star", "Starlight Cable", "星辉能量线缆");
+    public static final BlockEntry<CableBased> CABLE = cable("cable", "Glass Energy Cable", "玻璃能量线缆", 1_000, 200);
+    public static final BlockEntry<CableBased> CABLE_QUARTZ = cable("cable_quartz", "Quartz Energy Cable", "石英能量线缆", 20_000, 1_000);
+    public static final BlockEntry<CableBased> CABLE_AZURE = cable("cable_azure", "Azure Energy Cable", "蔚蓝能量线缆", 50_000, 4_000);
+    public static final BlockEntry<CableBased> CABLE_STAR = cable("cable_star", "Starlight Cable", "星辉能量线缆", Integer.MAX_VALUE, 200_000);
 
     // === Pipes ===
     public static final BlockEntry<CableBased> PIPE = cable("pipe", "Item Pipe", "物品管道");
@@ -209,6 +211,15 @@ public class TENBlocks {
                 .item().model((ctx, prov) -> prov.blockItem(ctx::getEntry)).build().register();
     }
 
+    /** 线缆：登记能量规格，物品提示与方块实体共用同一份数值。 */
+    private static BlockEntry<CableBased> cable(String n, String englishName, String cn, int capacity, int transfer) {
+        BlockEntry<CableBased> entry = cable(n, englishName, cn);
+        // 静态初始化阶段方块尚未绑定注册表，只能按 key 登记
+        CableTier.register(entry.getKey(), capacity, transfer);
+        return entry;
+    }
+
+    /** 管道：复用线缆方块基类，但不登记能量规格，物品提示里不会出现能量行。 */
     private static BlockEntry<CableBased> cable(String n, String englishName, String cn) {
         ZH_NAMES.put(n, cn);
         EN_NAMES.put(n, englishName);
@@ -216,7 +227,7 @@ public class TENBlocks {
                 .lang(englishName)
                 .blockstate((ctx, prov) -> TENModels.cableMultipart(prov, ctx.getEntry(), n))
                 .tag(TENTags.MACHINES)
-                .item().model((ctx, prov) -> prov.blockItem(ctx::getEntry)).build().register();
+                .item(CableBlockItem::new).model((ctx, prov) -> prov.blockItem(ctx::getEntry)).build().register();
     }
 
     private static BlockEntry<HorizontalMachineBlock> cell(String n, String englishName, String cn) {
