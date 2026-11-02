@@ -51,10 +51,10 @@ public final class TENLangHandler {
     }
 
     private static void addCommon(RegistrateLangProvider provider) {
-        add(provider, "cable.0", "Transfer: 1 kFE", "传输能量: 1 kFE");
-        add(provider, "cable_quartz.0", "Transfer: 10 kFE", "传输能量: 10 kFE");
-        add(provider, "cable_azure.0", "Transfer: 100 kFE", "传输能量: 100 kFE");
-        add(provider, "cable_star.0", "Transfer: Infinite FE", "传输能量: 无限 FE");
+        // 线缆规格：数值来自 CableTier，由 CableBlockItem 拼进 tooltip
+        add(provider, "cable.tooltip.rate", "Transfer: %s FE/t", "传输速率：%s FE/t");
+        add(provider, "cable.tooltip.buffer", "Buffer: %s FE", "能量缓冲：%s FE");
+        add(provider, "cable.tooltip.infinite", "Infinite", "无限");
         // Removed: spanner — now auto-derived from item registration
         add(provider, "not_consumed", "Not consumed", "不消耗");
         // Removed: energy_capacity — now auto-derived from item registration

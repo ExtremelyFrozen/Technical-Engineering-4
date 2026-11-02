@@ -8,8 +8,8 @@ import com.modularmc.ten.api.transmission.TransmitterNetworkRegistry;
 import com.modularmc.ten.api.transmission.energy.EnergyNetwork;
 import com.modularmc.ten.api.transmission.energy.EnergyTransmitter;
 import com.modularmc.ten.api.transmission.energy.TransmitterEnergyStorage;
+import com.modularmc.ten.common.block.machine.CableTier;
 import com.modularmc.ten.common.gui.TENMachineBlockUIFactory;
-import com.modularmc.ten.utils.SafeOperationHelper;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -196,34 +196,16 @@ public class CableBlockEntity extends CmBlockEntity implements ITransmitterProvi
         return TENMachineBlockUIFactory.buildModularUI(root, holder.player);
     }
 
-    // ───── 分级参数（沿袭旧版平衡数值）─────
+    // ───── 分级参数：数值登记在 TENBlocks.cable(...)，与物品 tooltip 共用一份 ─────
 
     private static int capacityFor(BlockState state) {
-        String name = SafeOperationHelper.regNameOf(state.getBlock());
-        if ("cable_star".equals(name)) {
-            return Integer.MAX_VALUE;
-        }
-        if ("cable_azure".equals(name)) {
-            return 50_000;
-        }
-        if ("cable_quartz".equals(name)) {
-            return 20_000;
-        }
-        return 1_000;
+        CableTier tier = CableTier.of(state.getBlock());
+        return tier == null ? 0 : tier.capacity();
     }
 
     private static int transferFor(BlockState state) {
-        String name = SafeOperationHelper.regNameOf(state.getBlock());
-        if ("cable_star".equals(name)) {
-            return 200_000;
-        }
-        if ("cable_azure".equals(name)) {
-            return 4_000;
-        }
-        if ("cable_quartz".equals(name)) {
-            return 1_000;
-        }
-        return 200;
+        CableTier tier = CableTier.of(state.getBlock());
+        return tier == null ? 0 : tier.transfer();
     }
 
     private static Label label(int x, int y, String text) {
