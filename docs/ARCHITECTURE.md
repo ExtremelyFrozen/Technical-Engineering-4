@@ -338,6 +338,19 @@ NeoForge 1.21.1 只有客户端的 `RecipesUpdatedEvent`，没有加载后增删
 `claim` 另外登记「输出文件 → 签名」：邻居按材料分层存放配方（ATO 的 `sag_milling/aluminum/ingot.json`），
 只取文件名会让几十条写进同一个输出路径、静默互相覆盖，这条检测专门拦它。
 
+**同输入的条件分流不算撞车**：`mod_loaded(X)` 与 `not(and(mod_loaded(X), compat_enabled(X)))`
+成对出现的两条同签名配方，加载期只有一条成立，`claim` 与 `TENRecipeAudit` 因此放行——
+判据是「两条能否同时生效」，无条件配方仍与任何同签名配方冲突。兜底侧否定的是「来源可用」而不是
+「模组在场」：玩家用 `compat.disabledSources` 关掉某个来源后，兜底分支要能接上，否则那些输入一条配方都不剩。`TENCompatGen.GRIND_SPLIT` 靠这个在邻居之间二选一：
+煤按 EIO → 通用机械出粉（Mek 在时带硫粉副产），木炭与焦炭装了沉浸工程时按对方的黑染料、焦炭粉走，
+砂岩装了沉浸工程用它的（带硝石）、只有 EIO 时用 EIO 的（双倍概率），红砂岩两版都出红沙。
+手写兜底分支（`recipe/pulverizer/` 里带 `not(mod_loaded(X))` 的那几条）与兼容行成对。
+
+**素材不需要邻居的兼容行不留在兼容层**：输入输出全是原版物品或通用标签的行转正为原生配方
+（烈焰棒、骨头、深板岩、石头、石英块、紫水晶块、粗土、下界疣块、海晶系列、骨粉染白），
+不再随 `compat_enabled` 一起消失。不导入的邻居条目登记在 `tools/compat/config.json` 的 `droppedRows`
+并写明原因，重跑转换器不会塞回来。
+
 **自适应池里不只有矿石链**：`TENRecipeGen` 还按材料生成 `c:storage_blocks/raw_X → 粉 9(+9×40%)`
 与 `c:ingots/X → 粉`（后一段只补本模组没注册粉的材料，否则与 `PULV` 表撞同一输入），
 输入全部走标签，所以邻居材料自动接得上。固定比率合金（默认配比按 ATO 的
@@ -356,6 +369,11 @@ NeoForge 1.21.1 只有客户端的 `RecipesUpdatedEvent`，没有加载后增删
 邻居配方自带的第三方 `mod_loaded`（如 EVO 只在装了 Industrial Foregoing 时才有的合金行）与
 `not(tag_empty)` 材料门控都要一并带过来：少了它们，JEI 会显示一条原料或前置根本不在场、
 永远跑不起来的配方——「同步的兼容显示」靠的就是这两条。
+
+**转换器只打基底，判断留给人**：`convert.js` 做机械转译，凡是它替人做的判断（排除、同输入取代、
+与原生配方撞车而跳过、输出无人提供）都写进 `tools/compat/out/review.md`，逐条列出来。
+`inject.js` 在清单缺失或早于 `rows.json` 时拒绝写回，确需跳过用 `--force`——
+「跑完转换器就注入」会把没人看过的决定带进代码，邻居更新时最难查的就是这类静默改写。
 
 **配置界面入口**：`TENClientSetup` 里注册 `IConfigScreenFactory` → `ConfigurationScreen::new`。
 NeoForge 自带这套配置界面，FML 的 Mods 面板与 Mod Menu 读的都是同一个扩展点，

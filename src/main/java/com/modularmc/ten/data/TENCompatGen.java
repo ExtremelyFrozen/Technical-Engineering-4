@@ -44,13 +44,17 @@ import java.util.concurrent.CompletableFuture;
  * <li>对方配方自带的第三方 {@code neoforge:mod_loaded} 门控（例如 EVO 只在装了
  *     Industrial Foregoing 时才有的合金行）会一并带过来，作为本行的额外门控；漏掉它等于
  *     造出一条只在别的模组包里成立的配方。例外：对方另有<b>不带该第三方门控</b>的等价路线时按等价路线放宽——
- *     {@code neoecoae} 的两条水晶行就是如此，对方的 {@code inscriber} 路线不需要通用机械。</li>
+     *     {@code neoecoae} 的两条水晶行就是如此，对方的 {@code inscriber} 路线不需要通用机械。</li>
+ * <li>同一输入有多家邻居提供、产物或副产不同时走 {@link #GRIND_SPLIT}：条件成对互斥，加载期只有一条成立。
+ *     素材全是原版的条目不再进兼容层——转正为 {@code recipe/pulverizer/*.json} 的原生配方，
+ *     并在 {@code tools/compat/config.json} 的 {@code droppedRows} 登记，重跑转换器不会塞回来。</li>
  * </ol>
  */
 public class TENCompatGen implements DataProvider {
 
     private static final String EIO = "enderio";
     private static final String EVO = "enderio_evolution";
+    private static final String IE = "immersiveengineering";
     private static final String GRAINS = EIO + ":grains_of_infinity";
     private static final String DUST_BLOCK = EVO + ":infinity_dust_block";
     private static final String COMPRESSED = EVO + ":compressed_infinity_dust_block";
@@ -120,28 +124,19 @@ public class TENCompatGen implements DataProvider {
     private static final Recipe[] GRIND = {
         grind("enderio", "allium", item("minecraft:allium"), 120, out("minecraft:magenta_dye", 1, 0.8), out("minecraft:magenta_dye", 1, 0.6), out("minecraft:magenta_dye", 1, 0.3), out("enderio:plant_matter_green", 1, 0.1)),
         grind("enderio", "azure_bluet", item("minecraft:azure_bluet"), 120, out("minecraft:light_gray_dye", 1, 0.8), out("minecraft:light_gray_dye", 1, 0.6), out("minecraft:light_gray_dye", 1, 0.3), out("enderio:plant_matter_green", 1, 0.1)),
-        grind("enderio", "blaze_powder", tag("c:rods/blaze"), 120, out("minecraft:blaze_powder", 4)),
         grind("enderio", "blue_orchid", item("minecraft:blue_orchid"), 120, out("minecraft:light_blue_dye", 1, 0.8), out("minecraft:light_blue_dye", 1, 0.6), out("minecraft:light_blue_dye", 1, 0.3), out("enderio:plant_matter_green", 1, 0.1)),
-        grind("enderio", "bone", tag("c:bones"), 120, out("minecraft:bone_meal", 6), out("minecraft:bone_meal", 2, 0.1)),
-        grind("enderio", "bone_block", item("minecraft:bone_block"), 120, out("minecraft:bone_meal", 9)),
         grind("enderio", "cactus", item("minecraft:cactus"), 120, out("enderio:plant_matter_green", 3), out("enderio:plant_matter_green", 3, 0.75), out("enderio:plant_matter_green", 3, 0.5), out("enderio:plant_matter_brown", 3, 0.25)),
         grind("enderio", "clay", item("minecraft:clay"), 120, out("minecraft:clay_ball", 2), out("minecraft:clay_ball", 1, 0.1), out("enderio:silicon", 2, 0.8)),
-        grind("enderio,mekanism", "coal", tag("minecraft:coals"), 120, out("enderio:powdered_coal", 1), out("enderio:powdered_coal", 1, 0.1), out("mekanism:dust_sulfur", 1, 0.1)),
         grind("enderio", "coal_ore", tag("c:ores/coal"), 120, out("minecraft:coal", 3), out("enderio:powdered_coal", 1, 0.6), out("minecraft:diamond", 1, 0.005), out("minecraft:cobblestone", 1, 0.15)),
         grind("enderio", "cobbled_deepslate", tag("c:cobblestones/deepslate"), 120, out("minecraft:cobblestone", 1), out("enderio:grains_of_infinity", 1, 0.12)),
         grind("enderio", "cobblestone", tag("c:cobblestones/normal"), 120, out("minecraft:gravel", 1, 0.7), out("minecraft:gravel", 1, 0.3), out("minecraft:sand", 1, 0.1), out("minecraft:flint", 1, 0.05)),
-        grind("enderio", "cobweb", item("minecraft:cobweb"), 120, out("minecraft:string", 2), out("minecraft:string", 1, 0.6), out("minecraft:string", 1, 0.3)),
         grind("enderio", "dandelion", item("minecraft:dandelion"), 120, out("minecraft:yellow_dye", 1, 0.8), out("minecraft:yellow_dye", 1, 0.6), out("minecraft:yellow_dye", 1, 0.3), out("enderio:plant_matter_green", 1, 0.1)),
-        grind("enderio", "deepslate", item("minecraft:deepslate"), 120, out("minecraft:cobbled_deepslate", 1)),
         grind("enderio", "diamond_ore", tag("c:ores/diamond"), 120, out("minecraft:diamond", 2), out("minecraft:diamond", 1, 0.25), out("enderio:powdered_coal", 1, 0.1), out("minecraft:cobblestone", 1, 0.15)),
-        grind("enderio", "emerald_ore", tag("c:ores/emerald"), 120, out("minecraft:emerald", 2), out("minecraft:emerald", 1, 0.25), out("minecraft:cobblestone", 1, 0.15)),
         grind("enderio", "ender_crystal", tag("c:gems/ender_crystal"), 120, out("enderio:ender_crystal_powder", 1)),
         grind("enderio", "ender_pearl", tag("c:ender_pearls"), 120, out("enderio:powdered_ender_pearl", 9)),
         grind("enderio", "fern", item("minecraft:fern"), 120, out("enderio:plant_matter_green", 1, 0.6), out("enderio:plant_matter_green", 1, 0.3), out("enderio:plant_matter_green", 1, 0.1), out("enderio:plant_matter_brown", 1, 0.05)),
         grind("enderio", "flower_pot", item("minecraft:flower_pot"), 120, out("minecraft:brick", 1, 0.9), out("minecraft:brick", 1, 0.3), out("minecraft:brick", 1, 0.1), out("enderio:powdered_coal", 1, 0.05)),
-        grind("enderio", "glass", tag("c:glass_blocks"), 120, out("minecraft:sand", 1)),
         grind("enderio", "grass", item("minecraft:tall_grass"), 120, out("enderio:plant_matter_green", 1, 0.6), out("enderio:plant_matter_green", 1, 0.3), out("enderio:plant_matter_green", 1, 0.1), out("enderio:plant_matter_brown", 1, 0.05)),
-        grind("enderio", "lapis_ore", tag("c:ores/lapis"), 120, out("minecraft:lapis_lazuli", 8), out("minecraft:lapis_lazuli", 1, 0.2), out("minecraft:cobblestone", 1, 0.15)),
         grind("enderio", "large_fern", item("minecraft:large_fern"), 120, out("enderio:plant_matter_green", 2, 0.6), out("enderio:plant_matter_green", 1, 0.3), out("enderio:plant_matter_green", 2, 0.1), out("enderio:plant_matter_brown", 1, 0.15)),
         grind("enderio", "leaves", tag("minecraft:leaves"), 120, out("enderio:plant_matter_green", 1, 0.3), out("enderio:plant_matter_green", 1, 0.1), out("enderio:plant_matter_green", 1, 0.02)),
         grind("enderio", "lily_pad", item("minecraft:lily_pad"), 120, out("enderio:plant_matter_green", 3, 0.15), out("enderio:plant_matter_green", 3, 0.1)),
@@ -153,16 +148,11 @@ public class TENCompatGen implements DataProvider {
         grind("enderio", "poeny", item("minecraft:peony"), 120, out("minecraft:pink_dye", 2, 0.8), out("minecraft:pink_dye", 1, 0.6), out("minecraft:pink_dye", 2, 0.3), out("enderio:plant_matter_green", 1, 0.2)),
         grind("enderio", "poppy", item("minecraft:poppy"), 120, out("minecraft:red_dye", 1, 0.8), out("minecraft:red_dye", 1, 0.6), out("minecraft:red_dye", 1, 0.3), out("enderio:plant_matter_green", 1, 0.1)),
         grind("enderio", "precient_crystal", tag("c:gems/prescient_crystal"), 120, out("enderio:prescient_powder", 1)),
-        grind("enderio", "prismarine_shard", item("minecraft:prismarine_shard"), 120, out("minecraft:prismarine_crystals", 1), out("minecraft:prismarine_crystals", 1, 0.1)),
         grind("enderio", "pulsating_crystal", tag("c:gems/pulsating_crystal"), 120, out("enderio:pulsating_powder", 1)),
-        grind("enderio", "quartz_block", tag("c:storage_blocks/quartz"), 120, out("minecraft:quartz", 2), out("minecraft:quartz", 2, 0.25)),
         grind("enderio", "quartz_ore", tag("c:ores/quartz"), 120, out("minecraft:quartz", 2), out("enderio:powdered_quartz", 1, 0.1), out("minecraft:netherrack", 1, 0.15)),
-        grind("enderio", "quartz_slabs", item("minecraft:quartz_slab"), 120, out("minecraft:quartz", 1), out("minecraft:quartz", 1, 0.25)),
-        grind("enderio", "quartz_stairs", item("minecraft:quartz_stairs"), 120, out("minecraft:quartz", 2), out("minecraft:quartz", 2, 0.25)),
         grind("enderio", "redstone_ore", tag("c:ores/redstone"), 120, out("minecraft:redstone", 8), out("minecraft:redstone", 1, 0.2), out("enderio:silicon", 1, 0.8), out("minecraft:cobblestone", 1, 0.15)),
         grind("enderio", "red_tulip", item("minecraft:red_tulip"), 120, out("minecraft:red_dye", 1, 0.8), out("minecraft:red_dye", 1, 0.6), out("minecraft:red_dye", 1, 0.3), out("enderio:plant_matter_green", 1, 0.1)),
         grind("enderio", "rose_bush", item("minecraft:rose_bush"), 120, out("minecraft:red_dye", 2, 0.8), out("minecraft:red_dye", 1, 0.6), out("minecraft:red_dye", 2, 0.3), out("enderio:plant_matter_green", 1, 0.2)),
-        grind("enderio", "sandstone", tag("c:sandstone/blocks"), 120, out("minecraft:sand", 2), out("minecraft:sand", 2, 0.4)),
         grind("enderio", "shrub", item("minecraft:dead_bush"), 120, out("enderio:plant_matter_brown", 1, 0.8), out("enderio:plant_matter_brown", 1, 0.6), out("enderio:plant_matter_brown", 1, 0.3)),
         grind("enderio", "soularium", tag("c:ingots/soularium"), 120, out("enderio:soul_powder", 1)),
         grind("enderio", "sugar_canes", item("minecraft:sugar_cane"), 120, out("minecraft:sugar", 1), out("minecraft:sugar", 1, 0.5), out("minecraft:sugar", 2, 0.5), out("enderio:plant_matter_green", 1, 0.2)),
@@ -172,19 +162,18 @@ public class TENCompatGen implements DataProvider {
         grind("enderio", "white_tulip", item("minecraft:white_tulip"), 120, out("minecraft:white_dye", 1, 0.8), out("minecraft:white_dye", 1, 0.6), out("minecraft:white_dye", 1, 0.3), out("enderio:plant_matter_green", 1, 0.1)),
         grind("enderio", "wither_rose", item("minecraft:wither_rose"), 120, out("enderio:withering_powder", 1, 0.4)),
         grind("enderio", "wither_skull", item("minecraft:wither_skeleton_skull"), 120, out("enderio:withering_powder", 2), out("enderio:withering_powder", 1, 0.2)),
-        grind("enderio", "wool", tag("minecraft:wool"), 120, out("minecraft:string", 2), out("minecraft:string", 1, 0.1)),
         grind("enderio_evolution,enderio", "compressed_infinity_dust_block", item("enderio_evolution:compressed_infinity_dust_block"), 120, out("enderio_evolution:infinity_dust_block", 9), out("enderio_evolution:compressed_infinity_dust_block", 1, 0.05), out("enderio:grains_of_infinity", 1, 0.1)),
         grind("enderio_evolution,enderio", "double_compressed_infinity_dust_block", item("enderio_evolution:double_compressed_infinity_dust_block"), 120, out("enderio_evolution:compressed_infinity_dust_block", 9), out("enderio_evolution:double_compressed_infinity_dust_block", 1, 0.05), out("enderio:grains_of_infinity", 1, 0.1)),
         grind("enderio_evolution,enderio", "infinity_dust_block", item("enderio_evolution:infinity_dust_block"), 120, out("enderio:grains_of_infinity", 9), out("enderio_evolution:infinity_dust_block", 1, 0.05), out("enderio:grains_of_infinity", 1, 0.1)),
         grind("alltheores,enderio", "brass_ingot", tag("c:ingots/brass"), 120, out("alltheores:brass_dust", 1)),
-        grind("alltheores,enderio,mekanism", "bronze_ingot", tag("c:ingots/bronze"), 120, out("alltheores:bronze_dust", 1)),
+        grind("alltheores,enderio", "bronze_ingot", tag("c:ingots/bronze"), 120, out("alltheores:bronze_dust", 1)),
         grind("alltheores,enderio", "cinnabar_gem", tag("c:gems/cinnabar"), 120, out("alltheores:cinnabar_dust", 1)),
         grind("alltheores,enderio", "cinnabar_ore", tag("c:ores/cinnabar"), 120, out("alltheores:cinnabar", 6), out("minecraft:cobblestone", 1, 0.15)),
-        grind("alltheores,enderio,immersiveengineering", "constantan_ingot", tag("c:ingots/constantan"), 120, out("alltheores:constantan_dust", 1)),
-        grind("alltheores,enderio,immersiveengineering", "electrum_ingot", tag("c:ingots/electrum"), 120, out("alltheores:electrum_dust", 1)),
+        grind("alltheores,enderio", "constantan_ingot", tag("c:ingots/constantan"), 120, out("alltheores:constantan_dust", 1)),
+        grind("alltheores,enderio", "electrum_ingot", tag("c:ingots/electrum"), 120, out("alltheores:electrum_dust", 1)),
         grind("alltheores,enderio", "enderium_ingot", tag("c:ingots/enderium"), 120, out("alltheores:enderium_dust", 1)),
-        grind("alltheores,enderio,mekanism", "fluorite_gem", tag("c:gems/fluorite"), 120, out("alltheores:fluorite_dust", 1)),
-        grind("alltheores,enderio,mekanism", "fluorite_ore", tag("c:ores/fluorite"), 120, out("alltheores:fluorite", 6), out("minecraft:cobblestone", 1, 0.15)),
+        grind("alltheores,enderio", "fluorite_gem", tag("c:gems/fluorite"), 120, out("alltheores:fluorite_dust", 1)),
+        grind("alltheores,enderio", "fluorite_ore", tag("c:ores/fluorite"), 120, out("alltheores:fluorite", 6), out("minecraft:cobblestone", 1, 0.15)),
         grind("alltheores,enderio", "invar_ingot", tag("c:ingots/invar"), 120, out("alltheores:invar_dust", 1)),
         grind("alltheores,enderio", "lumium_ingot", tag("c:ingots/lumium"), 120, out("alltheores:lumium_dust", 1)),
         grind("alltheores,enderio", "peridot_gem", tag("c:gems/peridot"), 120, out("alltheores:peridot_dust", 1)),
@@ -195,32 +184,16 @@ public class TENCompatGen implements DataProvider {
         grind("alltheores,enderio", "sapphire_gem", tag("c:gems/sapphire"), 120, out("alltheores:sapphire_dust", 1)),
         grind("alltheores,enderio", "sapphire_ore", tag("c:ores/sapphire"), 120, out("alltheores:sapphire", 6), out("minecraft:cobblestone", 1, 0.15)),
         grind("alltheores,enderio", "signalum_ingot", tag("c:ingots/signalum"), 120, out("alltheores:signalum_dust", 1)),
-        grind("alltheores,enderio,mekanism", "steel_ingot", tag("c:ingots/steel"), 120, out("alltheores:steel_dust", 1)),
+        grind("alltheores,enderio", "steel_ingot", tag("c:ingots/steel"), 120, out("alltheores:steel_dust", 1)),
         grind("alltheores,enderio", "sulfur_ore", tag("c:ores/sulfur"), 120, out("alltheores:sulfur", 6)),
         grind("neoecoae,mekanism", "aluminum_alloy_dust", tag("c:ingots/aluminum_alloy"), 120, out("neoecoae:aluminum_alloy_dust", 1)),
         grind("neoecoae,mekanism", "black_tungsten_alloy_dust", tag("c:ingots/black_tungsten_alloy"), 120, out("neoecoae:black_tungsten_alloy_dust", 1)),
-        grind("immersiveengineering", "amethyst", item("minecraft:amethyst_block"), 120, out("minecraft:amethyst_shard", 4)),
-        grind("immersiveengineering", "black_dye", item("minecraft:charcoal"), 120, out("minecraft:black_dye", 1), out("minecraft:gray_dye", 1, 0.2)),
-        grind("immersiveengineering", "clay", tag("c:storage_blocks/clay"), 120, out("minecraft:clay_ball", 4)),
-        grind("immersiveengineering,enderio", "coal", item("minecraft:coal"), 120, out("enderio:powdered_coal", 1)),
         grind("immersiveengineering,enderio", "coal_block", item("minecraft:coal_block"), 120, out("enderio:powdered_coal", 9)),
-        grind("immersiveengineering", "coarse_dirt", item("minecraft:coarse_dirt"), 120, out("minecraft:dirt", 1)),
-        grind("immersiveengineering", "coke", tag("c:coal_coke"), 120, out("immersiveengineering:dust_coke", 1)),
         grind("immersiveengineering", "coke_block", tag("c:storage_blocks/coal_coke"), 120, out("immersiveengineering:dust_coke", 9)),
-        grind("immersiveengineering", "dark_prismarine", item("minecraft:dark_prismarine"), 120, out("minecraft:prismarine_shard", 8)),
         grind("immersiveengineering", "graphite_ingot", tag("c:ingots/hop_graphite"), 120, out("immersiveengineering:dust_hop_graphite", 1)),
         grind("immersiveengineering", "graphite_plate", tag("c:plates/hop_graphite"), 120, out("immersiveengineering:dust_hop_graphite", 1)),
-        grind("immersiveengineering", "nether_gold", item("minecraft:nether_gold_ore"), 120, out("kenergyengineering:gold_dust", 2)),
-        grind("immersiveengineering", "nether_wart", item("minecraft:nether_wart_block"), 120, out("minecraft:nether_wart", 9)),
-        grind("immersiveengineering", "prismarine", item("minecraft:prismarine"), 120, out("minecraft:prismarine_shard", 4)),
-        grind("immersiveengineering", "prismarine_brick", item("minecraft:prismarine_bricks"), 120, out("minecraft:prismarine_shard", 9)),
-        grind("immersiveengineering", "quartz", item("minecraft:quartz_block"), 120, out("minecraft:quartz", 4)),
-        grind("immersiveengineering", "red_sandstone", tag("c:sandstone/red_blocks"), 120, out("minecraft:red_sand", 2), out("immersiveengineering:dust_saltpeter", 1, 0.5)),
-        grind("immersiveengineering", "sandstone", tag("c:sandstone/uncolored_blocks"), 120, out("minecraft:sand", 2), out("immersiveengineering:dust_saltpeter", 1, 0.5)),
         grind("immersiveengineering", "slag", tag("c:slag"), 120, out("immersiveengineering:slag_gravel", 1)),
-        grind("immersiveengineering", "slag_brick", item("immersiveengineering:slag_brick"), 120, out("immersiveengineering:slag_gravel", 1)),
-        grind("immersiveengineering", "stone", item("minecraft:stone"), 120, out("minecraft:cobblestone", 1)),
-        grind("immersiveengineering", "white_dye", item("minecraft:bone_meal"), 120, out("minecraft:white_dye", 2), out("minecraft:light_gray_dye", 1, 0.1))
+        grind("immersiveengineering", "slag_brick", item("immersiveengineering:slag_brick"), 120, out("immersiveengineering:slag_gravel", 1))
     };
 
     /**
@@ -245,6 +218,57 @@ public class TENCompatGen implements DataProvider {
         grind("extendedae_plus", "lattra_crystal", tag("c:gems/lattra"), 120, out("extendedae_plus:lattra_dust", 1)),
         grind("neoecoae", "energized_crystal_dust", tag("c:gems/energized_crystal"), 120, out("neoecoae:energized_crystal_dust", 1)),
         grind("neoecoae", "energized_flux_crystal_dust", tag("c:gems/energized_fluix_crystal"), 120, out("neoecoae:energized_fluix_crystal_dust", 1))
+    };
+
+    /**
+     * 同一输入有多家邻居提供、产物或副产不同时的分流表：条件互斥，加载期只有一条成立。
+     * <p>
+     * 与 {@link #GRIND} 的区别是条件可以组合：{@code mod_loaded(X)} 与 {@code not(mod_loaded(X))}
+     * 成对出现，表达「装了 A 就走 A 的产物，否则退到 B」。{@code GRIND} 的数组体由转换器整体覆盖，
+     * 这张表手写、直接 emit，不参与 {@code inject.js}；行名都带邻居后缀，不会与导入行同名。
+     * <p>
+     * 三个分流点：
+     * <ul>
+     * <li>煤：EIO 煤粉优先（Mek 在时带 10% 硫粉副产），没有 EIO 才退到 Mek 煤粉；</li>
+     * <li>木炭、焦炭：IE 在时按 IE 语义（黑染料 / 焦炭粉），否则按 EIO/Mek 磨成煤粉。
+     *     三种碳燃料因此各自只命中一条，原来是 {@code minecraft:coals} 一条全吃、木炭会被磨成煤粉；</li>
+     * <li>砂岩：IE 在时用 IE 表（带硝石），只有 EIO 时用 EIO 表（双倍概率），红砂岩两版都出红沙——
+     *     EIO 原数据把红砂岩也算进 {@code c:sandstone/blocks}、产物是普通沙，这里纠正。</li>
+     * </ul>
+     */
+    private static final Recipe[] GRIND_SPLIT = {
+        grindSplit("enderio", "coal_enderio_mek", List.of(modQ(EIO), modQ("mekanism")),
+                item("minecraft:coal"), 120,
+                out("enderio:powdered_coal", 1), out("enderio:powdered_coal", 1, 0.1), out("mekanism:dust_sulfur", 1, 0.1)),
+        grindSplit("enderio", "coal_enderio", List.of(modQ(EIO), notQ(active("mekanism"))),
+                item("minecraft:coal"), 120,
+                out("enderio:powdered_coal", 1), out("enderio:powdered_coal", 1, 0.1)),
+        grindSplit("mekanism", "coal_mekanism", List.of(notQ(active(EIO)), modQ("mekanism")),
+                item("minecraft:coal"), 120, out("mekanism:dust_coal", 1)),
+
+        grindSplit("immersiveengineering", "charcoal_black_dye", List.of(modQ("immersiveengineering")),
+                item("minecraft:charcoal"), 120, out("minecraft:black_dye", 1), out("minecraft:gray_dye", 1, 0.2)),
+        grindSplit("enderio", "charcoal_enderio", List.of(notQ(active(IE)), modQ(EIO)),
+                item("minecraft:charcoal"), 120, out("enderio:powdered_coal", 1)),
+        grindSplit("mekanism", "charcoal_mekanism",
+                List.of(notQ(active(IE)), notQ(active(EIO)), modQ("mekanism")),
+                item("minecraft:charcoal"), 120, out("mekanism:dust_coal", 1)),
+
+        grindSplit("immersiveengineering", "coal_coke", List.of(modQ(IE)),
+                tag("c:coal_coke"), 120, out("immersiveengineering:dust_coke", 1)),
+        grindSplit("enderio", "coal_coke_enderio", List.of(notQ(active(IE)), modQ(EIO)),
+                tag("c:coal_coke"), 120, out("enderio:powdered_coal", 1)),
+
+        grindSplit("enderio", "sandstone_enderio", List.of(modQ(EIO), notQ(active(IE))),
+                tag("c:sandstone/uncolored_blocks"), 120, out("minecraft:sand", 2), out("minecraft:sand", 2, 0.4)),
+        grindSplit("enderio", "red_sandstone_enderio", List.of(modQ(EIO), notQ(active(IE))),
+                tag("c:sandstone/red_blocks"), 120, out("minecraft:red_sand", 2), out("minecraft:red_sand", 2, 0.4)),
+        grindSplit("immersiveengineering", "sandstone_immersiveengineering", List.of(modQ(IE)),
+                tag("c:sandstone/uncolored_blocks"), 120,
+                out("minecraft:sand", 2), out("immersiveengineering:dust_saltpeter", 1, 0.5)),
+        grindSplit("immersiveengineering", "red_sandstone_immersiveengineering", List.of(modQ(IE)),
+                tag("c:sandstone/red_blocks"), 120,
+                out("minecraft:red_sand", 2), out("immersiveengineering:dust_saltpeter", 1, 0.5))
     };
 
     /** 压缩机承接 EVO 的 infinity 粉尘压缩（对方只有工作台形状合成，这是增量）。
@@ -328,6 +352,7 @@ public class TENCompatGen implements DataProvider {
         List<CompletableFuture<?>> futures = new ArrayList<>();
         for (var r : ALLOYS) emit(futures, cache, base, r);
         for (var r : GRIND) emit(futures, cache, base, r);
+        for (var r : GRIND_SPLIT) emit(futures, cache, base, r);
         for (var r : GRIND_MANUAL) emit(futures, cache, base, r);
         for (var r : INFINITY) emit(futures, cache, base, r);
         for (var r : PRESS) emit(futures, cache, base, r);
@@ -422,6 +447,75 @@ public class TENCompatGen implements DataProvider {
         var outs = new JsonArray();
         outs.add(ingr(outputId, outputCount > 1 ? outputCount : null, false, null));
         return machine(mod, "compressor", name, ins, outs, time);
+    }
+
+    /** 分流行：条件由表行自己给（互斥的 {@code mod_loaded} / {@code not(mod_loaded)} 组合），source 只决定目录与来源开关。 */
+    private static Recipe grindSplit(String source, String name, List<JsonObject> conds, Input input, int time, Out... outputs) {
+        var ins = new JsonArray();
+        ins.add(ingr(input.key(), input.count(), input.isTag(), null));
+        var outs = new JsonArray();
+        for (var o : outputs) outs.add(ingr(o.key(), o.count() > 1 ? o.count() : null, false, o.chance()));
+        return machineWith(source, "pulverizer", name, conds, ins, outs, time);
+    }
+
+    /** {@code neoforge:mod_loaded}，供分流表组合使用（可被 {@link #notQ} 取反）。 */
+    private static JsonObject modQ(String modId) {
+        return modLoaded(modId);
+    }
+
+    /** {@code neoforge:not} 包装。 */
+    private static JsonObject notQ(JsonObject cond) {
+        var o = new JsonObject();
+        o.addProperty("type", "neoforge:not");
+        o.add("value", cond);
+        return o;
+    }
+
+    /**
+     * 「该来源真的生效」：模组在场且 {@code compat.disabledSources} 没关它。
+     * 分流表的兜底分支要否定这个整体，否则玩家关掉某来源的兼容配方后，兜底分支仍被
+     * {@code mod_loaded} 挡住，输入会一条配方都不剩。
+     */
+    private static JsonObject active(String source) {
+        var and = new JsonObject();
+        and.addProperty("type", "neoforge:and");
+        var values = new JsonArray();
+        values.add(modLoaded(source));
+        var toggle = new JsonObject();
+        toggle.addProperty("type", TEN.MOD_ID + ":compat_enabled");
+        toggle.addProperty("source", source);
+        values.add(toggle);
+        and.add("values", values);
+        return and;
+    }
+
+    /** 与 {@link #machine} 同构，但条件由调用方给全（不再从 mod 串推导），用于分流表。 */
+    private static Recipe machineWith(String source, String type, String name, List<JsonObject> conds,
+            JsonArray inputs, JsonArray outputs, int time) {
+        var j = new JsonObject();
+        j.addProperty("type", TEN.MOD_ID + ":" + type);
+        var all = new JsonArray();
+        for (var c : conds) all.add(c);
+        for (var e : inputs) {
+            var in = e.getAsJsonObject();
+            if (!"tag".equals(in.get("type").getAsString())) continue;
+            var absent = new JsonObject();
+            absent.addProperty("type", "neoforge:tag_empty");
+            absent.addProperty("tag", in.get("key").getAsString());
+            var guard = new JsonObject();
+            guard.addProperty("type", "neoforge:not");
+            guard.add("value", absent);
+            all.add(guard);
+        }
+        var toggle = new JsonObject();
+        toggle.addProperty("type", TEN.MOD_ID + ":compat_enabled");
+        toggle.addProperty("source", source);
+        all.add(toggle);
+        j.add("neoforge:conditions", all);
+        j.add("inputs", inputs);
+        j.add("outputs", outputs);
+        j.addProperty("time", time);
+        return new Recipe(source + "/" + type, name, j);
     }
 
     private static Recipe machine(String mod, String type, String name, JsonArray inputs, JsonArray outputs, int time) {

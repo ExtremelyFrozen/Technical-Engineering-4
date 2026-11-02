@@ -48,19 +48,24 @@ unzip -o -q build/moddev/artifacts/neoforge-21.1.243-client-extra-aka-minecraft-
 | 步骤 | 命令 | 说明 |
 |---|---|---|
 | 1 | `./gradlew runData -x compileTestJava` | 先让生成物落到当前状态，转换器的「本模组已有配方」基准读它 |
-| 2 | `node tools/compat/convert.js` | 邻居数据 → `out/rows.json`，并打印 `ORE_CHAIN` 候选建议 |
-| 3 | 手工核对建议 | 已有材料只补候选，别重复加行；新材料才加 `new ChainRow(...)` |
-| 4 | `node tools/compat/inject.js` | 只替换 `TENCompatGen` 的 `ALLOYS` / `GRIND` / `PRESS` 数组体（`GRIND_MANUAL` 的水晶手写行不在替换范围） |
-| 5 | `./gradlew runData -x compileTestJava` | 生成期断言会在这里拦住重复输入签名与同名覆盖 |
-| 6 | `node tools/compat/check.js` | 全量校验，退出码非 0 即有问题 |
+| 2 | `node tools/compat/convert.js` | 邻居数据 → `out/rows.json` 与 `out/review.md`，并打印 `ORE_CHAIN` 候选建议 |
+| 3 | 看 `out/review.md` | 排除 / 冲突 / 取代 / 跳过逐条核对；判断不对就改 `config.json` 的 `droppedRows` 或来源顺序，回步骤 2 |
+| 4 | 手工核对建议 | 已有材料只补候选，别重复加行；新材料才加 `new ChainRow(...)` |
+| 5 | `node tools/compat/inject.js` | 只替换 `TENCompatGen` 的 `ALLOYS` / `GRIND` / `PRESS` 数组体；评审清单缺失或过期会拒绝写入（`--force` 跳过） |
+| 6 | `./gradlew runData -x compileTestJava` | 生成期断言会在这里拦住重复输入签名与同名覆盖 |
+| 7 | `node tools/compat/check.js` | 全量校验，退出码非 0 即有问题 |
+
+自动生成只负责把邻居数据机械转成表行；**排除、冲突、取代这些判断都落在 `out/review.md` 里等人过目**，
+不看完不写回。转换器不作「谁更好」的裁决，只在同输入撞车时按来源顺序先到先得，并把被取代的那条列出来。
 
 第 1 步与第 5 步之间的顺序有意义：我们自己的通用段（锭→粉、粗矿块→粉）与邻居写的同输入兼容配方
 是**互斥**的，转换器靠读上一轮生成物判断「这个输入本模组是否已有配方」。
 本模组改了通用配方后要先跑一次 DataGen，再重跑转换器，否则会把已经被我们接管的那批导入进来，
 第 5 步的断言会直接报错（这是预期的报错，不是转换器坏了）。
 
-手写行（`TENCompatGen.GRIND_MANUAL` 与 `INFINITY`）的文件名要留在 `config.json` 的 `manualRows` 里：
-转换器读生成物时按这份名单让手写行参与输入签名基准，同输入的导入会被跳过，而不是塞回来撞第 5 步的断言。
+手写行（`TENCompatGen.GRIND_MANUAL`、`GRIND_SPLIT` 与 `INFINITY`）的文件名要留在 `config.json` 的 `manualRows` 里：
+转换器读生成物时按这份名单让手写行参与输入签名基准，同输入的导入会被跳过，而不是塞回来撞第 6 步的断言。
+`GRIND_SPLIT` 的分流行不参与 `inject.js`，它的条件由表行自己写。
 
 ## 导入规则
 
@@ -69,7 +74,12 @@ unzip -o -q build/moddev/artifacts/neoforge-21.1.243-client-extra-aka-minecraft-
 - 对方配方自带的第三方 `neoforge:mod_loaded` 门控要带过来（EVO 的 industrialforegoing 合金行、
   ATO 写给沉浸工程/通用机械/EIO 的兼容行都是这类）。
 - 输入按标签、输出按优先级解析成具体物品；解析不到就不导入。
+- 门控只写素材真正需要的模组：标签输入不再按「首个成员的所属模组」门控（存在性由 `not(tag_empty)` 兜住），
+  具体物品输入按其命名空间推导，输出物品的归属模组必须保留。
 - 输入签名与本模组已有配方相同的条目不导入。
+- **`config.json` 的 `droppedRows`** 记录不导入的邻居条目与原因，两类：素材全是原版/通用标签、
+  已转正为 `recipe/pulverizer/*.json` 的原生配方；同一输入有多家提供、改由
+  `TENCompatGen.GRIND_SPLIT` 按组合条件分流。邻居新增同名条目时，这条名单要一起复核。
 - **IE 的 `alloysmelter` 不在导入清单里**：青铜/黄铜/因瓦/电子/康铜由 `TENRecipeGen.ALLOY_CHAIN`
   按同一比率接管（比率照抄 IE 的原子守恒写法），邻居那份的输出是标签，我们要么写死一家、
   要么写互斥变体，后者已由通用合金链覆盖。

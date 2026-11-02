@@ -9,10 +9,6 @@
       "modid": "enderio"
     },
     {
-      "type": "neoforge:mod_loaded",
-      "modid": "immersiveengineering"
-    },
-    {
       "type": "neoforge:not",
       "value": {
         "type": "neoforge:tag_empty",

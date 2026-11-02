@@ -1,0 +1,24 @@
+{
+	"type": "kenergyengineering:pulverizer",
+	"inputs": [
+		{
+			"form": "item",
+			"type": "static",
+			"key": "minecraft:quartz_slab"
+		}
+	],
+	"outputs": [
+		{
+			"form": "item",
+			"type": "static",
+			"key": "minecraft:quartz"
+		},
+		{
+			"form": "item",
+			"type": "static",
+			"key": "minecraft:quartz",
+			"chance": 0.25
+		}
+	],
+	"time": 120
+}
