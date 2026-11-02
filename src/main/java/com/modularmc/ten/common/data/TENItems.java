@@ -15,6 +15,7 @@ import static com.modularmc.ten.common.registry.Registration.REGISTRATE;
 public class TENItems {
 
     public static final java.util.LinkedHashMap<String, String> ZH_NAMES = new java.util.LinkedHashMap<>();
+    public static final java.util.LinkedHashMap<String, String> EN_NAMES = new java.util.LinkedHashMap<>();
 
     static {
         REGISTRATE.creativeModeTab(() -> TENCreativeModeTabs.ITEM_TAB);
@@ -89,26 +90,28 @@ public class TENItems {
 
     private static ItemEntry<Item> mould(String name, String englishName, String cn, String texturePath) {
         ZH_NAMES.put(name, cn);
+        EN_NAMES.put(name, englishName);
         return REGISTRATE.item(name, Item::new)
                 .lang(englishName)
                 .model((ctx, prov) -> prov.generated(ctx::getEntry, prov.modLoc(texturePath)))
                 .register();
     }
 
-    public static final ItemEntry<Item> MOULD_GEAR = mould("mould_gear", "Gear Mould", "模具-齿轮", "item/mold/model_gear");
-    public static final ItemEntry<Item> MOULD_PLATE = mould("mould_plate", "Plate Mould", "模具-板", "item/mold/model_plate");
-    public static final ItemEntry<Item> MOULD_ROD = mould("mould_rod", "Rod Mould", "模具-杆", "item/mold/model_rod");
-    public static final ItemEntry<Item> MOULD_STRING = mould("mould_string", "String Mould", "模具-线", "item/mold/model_string");
-    public static final ItemEntry<Item> MOULD_COMPRESSED_SMALL = mould("mould_compressed_small", "Compressed-small Mould", "模具-2x2压缩", "item/mold/compressed_small");
-    public static final ItemEntry<Item> MOULD_COMPRESSED_LARGE = mould("mould_compressed_large", "Compressed-large Mould", "模具-3x3压缩", "item/mold/compressed_large");
-    public static final ItemEntry<Item> MOULD_SPLIT = mould("mould_split", "Split Mould", "模具-解压缩", "item/mold/split");
-    public static final ItemEntry<Item> MOULD_COIN = mould("mould_coin", "Coin Mould", "模具-币", "item/mold/coin");
-    public static final ItemEntry<Item> MOULD_DENSE_PLATE = mould("mould_dense_plate", "Dense Plate Mould", "模具-致密板", "item/mold/dense_plate");
+    public static final ItemEntry<Item> MOULD_GEAR = mould("mould_gear", "Gear Mould", "齿轮模具", "item/mold/model_gear");
+    public static final ItemEntry<Item> MOULD_PLATE = mould("mould_plate", "Plate Mould", "板模具", "item/mold/model_plate");
+    public static final ItemEntry<Item> MOULD_ROD = mould("mould_rod", "Rod Mould", "杆模具", "item/mold/model_rod");
+    public static final ItemEntry<Item> MOULD_STRING = mould("mould_string", "String Mould", "线模具", "item/mold/model_string");
+    public static final ItemEntry<Item> MOULD_COMPRESSED_SMALL = mould("mould_compressed_small", "Compressed-small Mould", "2x2压缩模具", "item/mold/compressed_small");
+    public static final ItemEntry<Item> MOULD_COMPRESSED_LARGE = mould("mould_compressed_large", "Compressed-large Mould", "3x3压缩模具", "item/mold/compressed_large");
+    public static final ItemEntry<Item> MOULD_SPLIT = mould("mould_split", "Split Mould", "解压缩模具", "item/mold/split");
+    public static final ItemEntry<Item> MOULD_COIN = mould("mould_coin", "Coin Mould", "币模具", "item/mold/coin");
+    public static final ItemEntry<Item> MOULD_DENSE_PLATE = mould("mould_dense_plate", "Dense Plate Mould", "致密板模具", "item/mold/dense_plate");
 
     // === Tools ===
     private static <T extends Item> ItemEntry<T> tool(String name, String englishName, String cn,
                                                       NonNullFunction<Item.Properties, T> factory, String texturePath) {
         ZH_NAMES.put(name, cn);
+        EN_NAMES.put(name, englishName);
         return REGISTRATE.item(name, factory)
                 .lang(englishName)
                 .model((ctx, prov) -> prov.generated(ctx::getEntry, prov.modLoc(texturePath)))
@@ -116,8 +119,8 @@ public class TENItems {
     }
 
     public static final ItemEntry<SpannerItem> SPANNER = tool("spanner", "Spanner", "扳手", SpannerItem::new, "item/spanner");
-    public static final ItemEntry<EnergyUnitItem> ENERGY_CAPACITY = tool("energy_capacity", "Energy Unit", "能量单元", EnergyUnitItem::new, "item/energy_capacity");
-    public static final ItemEntry<ChannelConnectorItem> CHANNEL_CONNECTOR = tool("channel_connector", "Channel Connector", "频道桥接器", ChannelConnectorItem::new, "item/channel_connector");
+    public static final ItemEntry<EnergyUnitItem> ENERGY_CAPACITY = tool("energy_capacity", "Energy Module", "能量模块", EnergyUnitItem::new, "item/energy_capacity");
+    public static final ItemEntry<ChannelConnectorItem> CHANNEL_CONNECTOR = tool("channel_connector", "Channel Connector", "频道连接器", ChannelConnectorItem::new, "item/channel_connector");
     // Upgrades
     public static final ItemEntry<? extends UpgradeItem> AUGMENTED_LEVELUP = upgrade("augmented_levelup", "Upgrade: Augmented Kit", "升级：增强组件", p -> new LevelupAug());
     public static final ItemEntry<? extends UpgradeItem> POWERED_LEVELUP = upgrade("powered_levelup", "Upgrade: Powered Kit", "升级：充能组件", p -> new LevelupPower());
@@ -135,6 +138,7 @@ public class TENItems {
 
     private static ItemEntry<Item> item(String name, String englishName, String cn) {
         ZH_NAMES.put(name, cn);
+        EN_NAMES.put(name, englishName);
         return REGISTRATE.item(name, Item::new)
                 .lang(englishName)
                 .register();
@@ -142,6 +146,7 @@ public class TENItems {
 
     private static ItemEntry<Item> texturedItem(String name, String englishName, String cn, String texturePath) {
         ZH_NAMES.put(name, cn);
+        EN_NAMES.put(name, englishName);
         return REGISTRATE.item(name, Item::new)
                 .lang(englishName)
                 .model((ctx, prov) -> prov.generated(ctx::getEntry, prov.modLoc(texturePath)))
@@ -150,6 +155,7 @@ public class TENItems {
 
     private static <T extends UpgradeItem> ItemEntry<T> upgrade(String name, String englishName, String cn, NonNullFunction<Item.Properties, T> factory) {
         ZH_NAMES.put(name, cn);
+        EN_NAMES.put(name, englishName);
         return REGISTRATE.item(name, factory)
                 .lang(englishName)
                 .model((ctx, prov) -> prov.generated(ctx::getEntry, prov.modLoc("item/upgrade/" + name)))
@@ -168,6 +174,7 @@ public class TENItems {
             String texturePath = "item/material/" + category + "/" + name;
 
             ZH_NAMES.put(name, chineseName);
+            EN_NAMES.put(name, englishName);
             REGISTRATE.item(name, factory)
                     .lang(englishName)
                     .model((ctx, prov) -> prov.generated(ctx::getEntry, prov.modLoc(texturePath)))

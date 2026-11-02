@@ -15,8 +15,13 @@ import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import net.neoforged.neoforge.items.IItemHandler;
 
+import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * 基于 FormsCombinedIngredient 的通用配方实现：输入/输出条目列表 +
+ * 加工时长；提供按槽位/罐类型重载的 matches 匹配（不依赖原版 RecipeInput）。
+ */
 public class FormsCombinedRecipe implements RandRecipe {
 
     protected ResourceLocation regName;
@@ -62,23 +67,55 @@ public class FormsCombinedRecipe implements RandRecipe {
     public boolean matches(IItemHandler inv, List<? extends IFluidHandler> tanks,
                            FormsCombinedIngredient.IngredientTypeGetter slotType,
                            FormsCombinedIngredient.IngredientTypeGetter tankType) {
-        // Strict exact matching: occupied input slot count must equal required ingredient count
+        // Strict exact matching: occupied input slot count must equal required ingredient count.
+        // ALLOW_ALL 占位（serializer 对不足槽位的 air 填充）不计入需求，否则 2 输入配方会被
+        // 迫要求放满全部机器槽位（"还需要输入一个空气"）。
         int occupiedSlots = 0;
+        List<Integer> occupiedSlotIndices = new ArrayList<>();
         for (int i = 0; i < inv.getSlots(); i++) {
             if (slotType.get(i).canIn() && !inv.getStackInSlot(i).isEmpty()) {
                 occupiedSlots++;
+                occupiedSlotIndices.add(i);
             }
         }
-        int requiredIngredients = 0;
+        List<FormsCombinedIngredient> itemIngredients = new ArrayList<>();
         for (var ing : input) {
-            if ("item".equals(ing.form)) requiredIngredients++;
+            if ("item".equals(ing.form) && !ing.isAllowAll()) itemIngredients.add(ing);
         }
-        if (occupiedSlots != requiredIngredients) return false;
+        if (occupiedSlots != itemIngredients.size()) return false;
+
+        // 一一分配：每个 item ingredient 独占一个匹配槽（含催化剂 chance=0），回溯求解。
+        // 防串配方：两个 ingredient 的匹配集有交集时（如两个 tag 均含同一物品），
+        // 不允许共用同一槽——各自必须落在独立槽位且数量充足。
+        if (!assignItemIngredients(itemIngredients, 0, occupiedSlotIndices, inv, new boolean[occupiedSlotIndices.size()])) {
+            return false;
+        }
 
         for (var i : input) {
             if (!i.check(slotType, tankType, inv, tanks)) return false;
         }
         return true;
+    }
+
+    /**
+     * Backtracking assignment of item ingredients to occupied input slots.
+     * Ingredient {@code idx} must find a distinct slot whose stack count covers
+     * {@code amountOrCount} and whose item is contained by the ingredient.
+     */
+    private static boolean assignItemIngredients(List<FormsCombinedIngredient> ingredients, int idx,
+                                                 List<Integer> slots, IItemHandler inv, boolean[] used) {
+        if (idx == ingredients.size()) return true;
+        var ing = ingredients.get(idx);
+        for (int s = 0; s < slots.size(); s++) {
+            if (used[s]) continue;
+            ItemStack stack = inv.getStackInSlot(slots.get(s));
+            if (stack.getCount() < ing.amountOrCount()) continue;
+            if (!ing.contains(stack.getItem())) continue;
+            used[s] = true;
+            if (assignItemIngredients(ingredients, idx + 1, slots, inv, used)) return true;
+            used[s] = false;
+        }
+        return false;
     }
 
     @Override
@@ -120,6 +157,17 @@ public class FormsCombinedRecipe implements RandRecipe {
 
     public ResourceLocation getId() {
         return id;
+    }
+
+    /**
+     * 回填配方 id：1.21 Codec 体系下 serializer 解码时拿不到 id（由 RecipeManager 经
+     * RecipeHolder 从文件路径提供）→ {@link FormsCombinedRecipeSerializer} 只能传 null。
+     * 所有从 RecipeManager 取出本类配方的调用侧（findRecipe/EMI 集成）须以 holder.id() 回填，
+     * 否则 {@link #getId()} 为 null → 机器配方身份变更检测失效（切配方不重置进度）、EMI id 缺失。
+     */
+    public FormsCombinedRecipe assignId(ResourceLocation holderId) {
+        this.id = holderId;
+        return this;
     }
 
     public RecipeType<?> getType() {

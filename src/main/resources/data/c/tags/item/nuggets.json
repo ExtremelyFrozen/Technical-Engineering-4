@@ -9,6 +9,10 @@
 		"#c:nuggets/copper",
 		"#c:nuggets/iron",
 		"#c:nuggets/gold",
-		"#c:nuggets/netherite"
+		"#c:nuggets/netherite",
+		"#c:nuggets/diamond",
+		"#c:nuggets/emerald",
+		"#c:nuggets/lapis",
+		"#c:nuggets/quartz"
 	]
 }

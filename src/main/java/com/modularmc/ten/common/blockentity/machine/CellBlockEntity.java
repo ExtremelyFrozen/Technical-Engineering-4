@@ -32,7 +32,15 @@ public class CellBlockEntity extends CmMachineBlockEntity {
 
     @Override
     public IngredientType slotType(int slot) {
-        return IngredientType.IGNORE;
+        // 能量单元两个槽都需要玩家放入带 FE 的电池/物品（充放电），必须可进可出（BOTH）。
+        // 修复：原 IGNORE 的 canIn()/canOut() 均为 false，导致 GUI 无法放入物品。
+        return IngredientType.BOTH;
+    }
+
+    @Override
+    protected boolean enforcesUniqueItemSlots() {
+        // 槽 0 放电、槽 1 充电，同款电池一满一空分放两槽是正常用法
+        return false;
     }
 
     @Override
@@ -51,9 +59,9 @@ public class CellBlockEntity extends CmMachineBlockEntity {
     @Override
     public ModularUI createUI(BlockUIMenuType.BlockUIHolder holder) {
         return buildMachineUI(holder, TENMachineBlockUIFactory.backgroundFor(machineType()), root -> {
-            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 0, 42, 32));
-            root.addChild(TENMachineBlockUIFactory.machineSlot(this, 1, 115, 32));
-        }, root -> root.addChild(TENMachineBlockUIFactory.energyGauge(this, 81, 18, 14, 46, 0, 0, true)));
+            root.addChild(TENMachineBlockUIFactory.machineSlotPower(this, 0, 42, 32, false));
+            root.addChild(TENMachineBlockUIFactory.machineSlotPower(this, 1, 115, 32, true));
+        }, root -> root.addChild(TENMachineBlockUIFactory.energyGaugeModular(this, 81, 18, true)));
     }
 
     @Override
@@ -74,7 +82,7 @@ public class CellBlockEntity extends CmMachineBlockEntity {
         if (stack0.getCount() == 1) {
             var energy0 = stack0.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM);
             if (energy0 != null && energy0.canExtract()) {
-                int diff = energy0.extractEnergy(Math.min(maxReceiveEnergy, maxStorageEnergy - energyStorage.getEnergyStored()), false);
+                int diff = energy0.extractEnergy(maxStorageEnergy - energyStorage.getEnergyStored(), false);
                 if (diff > 0) {
                     energyStorage.receiveEnergy(diff, false);
                 }
@@ -84,16 +92,18 @@ public class CellBlockEntity extends CmMachineBlockEntity {
         if (stack1.getCount() == 1) {
             var energy1 = stack1.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM);
             if (energy1 != null && energy1.canReceive()) {
-                int diff = energy1.receiveEnergy(Math.min(maxExtractEnergy, energyStorage.getEnergyStored()), false);
+                int diff = energy1.receiveEnergy(energyStorage.getEnergyStored(), false);
                 if (diff > 0) {
                     energyStorage.extractEnergy(diff, false);
                 }
             }
         }
+
+        // 主动能量输出已统一收口至 doBaseData → doActiveEnergyIo（防双推）
     }
 
     @Override
-    public boolean hasUpgrade() {
+    public boolean supportsUpgradeSlots() {
         return false;
     }
 }

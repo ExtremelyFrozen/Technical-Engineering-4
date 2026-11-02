@@ -1,0 +1,43 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:not",
+      "value": {
+        "type": "neoforge:tag_empty",
+        "tag": "c:raw_materials/osmium"
+      }
+    },
+    {
+      "type": "kenergyengineering:provider_priority",
+      "candidates": [
+        "mekanism",
+        "alltheores"
+      ],
+      "mod": "alltheores"
+    }
+  ],
+  "type": "kenergyengineering:pulverizer",
+  "inputs": [
+    {
+      "type": "tag",
+      "form": "item",
+      "key": "c:raw_materials/osmium"
+    }
+  ],
+  "outputs": [
+    {
+      "type": "static",
+      "count": 1,
+      "form": "item",
+      "key": "alltheores:osmium_dust"
+    },
+    {
+      "type": "static",
+      "chance": 0.8,
+      "count": 1,
+      "form": "item",
+      "key": "alltheores:osmium_dust"
+    }
+  ],
+  "time": 120
+}

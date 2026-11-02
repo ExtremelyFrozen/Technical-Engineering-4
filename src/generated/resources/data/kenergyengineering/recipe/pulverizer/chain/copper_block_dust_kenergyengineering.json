@@ -1,0 +1,47 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:not",
+      "value": {
+        "type": "neoforge:tag_empty",
+        "tag": "c:storage_blocks/raw_copper"
+      }
+    },
+    {
+      "type": "kenergyengineering:provider_priority",
+      "candidates": [
+        "kenergyengineering",
+        "enderio",
+        "mekanism",
+        "immersiveengineering",
+        "alltheores"
+      ],
+      "mod": "kenergyengineering"
+    }
+  ],
+  "type": "kenergyengineering:pulverizer",
+  "inputs": [
+    {
+      "type": "tag",
+      "form": "item",
+      "key": "c:storage_blocks/raw_copper"
+    }
+  ],
+  "outputs": [
+    {
+      "type": "static",
+      "count": 9,
+      "form": "item",
+      "key": "kenergyengineering:copper_dust"
+    },
+    {
+      "type": "static",
+      "chance": 0.4,
+      "count": 1,
+      "form": "item",
+      "key": "kenergyengineering:copper_dust",
+      "rolls": 9
+    }
+  ],
+  "time": 200
+}

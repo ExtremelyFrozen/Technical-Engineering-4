@@ -55,8 +55,9 @@ public class SolarBlockEntity extends EngineBlockEntity {
     @Override
     public ModularUI createUI(BlockUIMenuType.BlockUIHolder holder) {
         return buildMachineUI(holder, TENMachineBlockUIFactory.backgroundFor(machineType()), root -> {}, root -> {
-            root.addChild(TENMachineBlockUIFactory.energyGauge(this, 80, 12, 14, 46, 0, 0, true));
-            root.addChild(TENMachineBlockUIFactory.fuelGauge(this, 81, 64, 13, 13, 14, 52, false));
+            // 光合引擎独立燃料表（fuel_gauge_solar_bg/fill 13×13 渐显）；能量条用 modular energy_gauge（80,12）
+            root.addChild(TENMachineBlockUIFactory.energyGaugeModular(this, 80, 12, true));
+            root.addChild(TENMachineBlockUIFactory.fuelGaugeModular13(this, 81, 64, false));
         });
     }
 

@@ -1,0 +1,14 @@
+{
+	"replace": false,
+	"values": [
+		"#c:rods/iron",
+		"#c:rods/gold",
+		"#c:rods/copper",
+		"#c:rods/tin",
+		"#c:rods/nickel",
+		"#c:rods/powered_tin",
+		"#c:rods/chlorium",
+		"#c:rods/netherite",
+		"#c:rods/mushrium"
+	]
+}

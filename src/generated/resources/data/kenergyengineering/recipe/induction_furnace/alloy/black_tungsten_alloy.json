@@ -1,0 +1,66 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:not",
+      "value": {
+        "type": "neoforge:tag_empty",
+        "tag": "c:mats/tungsten"
+      }
+    },
+    {
+      "type": "neoforge:not",
+      "value": {
+        "type": "neoforge:tag_empty",
+        "tag": "c:mats/aluminum_alloy"
+      }
+    },
+    {
+      "type": "neoforge:not",
+      "value": {
+        "type": "neoforge:tag_empty",
+        "tag": "c:dusts/fluix"
+      }
+    },
+    {
+      "type": "neoforge:not",
+      "value": {
+        "type": "neoforge:tag_empty",
+        "tag": "c:ingots/black_tungsten_alloy"
+      }
+    },
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "neoecoae"
+    }
+  ],
+  "type": "kenergyengineering:induction_furnace",
+  "inputs": [
+    {
+      "type": "tag",
+      "count": 1,
+      "form": "item",
+      "key": "c:mats/tungsten"
+    },
+    {
+      "type": "tag",
+      "count": 1,
+      "form": "item",
+      "key": "c:mats/aluminum_alloy"
+    },
+    {
+      "type": "tag",
+      "count": 2,
+      "form": "item",
+      "key": "c:dusts/fluix"
+    }
+  ],
+  "outputs": [
+    {
+      "type": "static",
+      "count": 1,
+      "form": "item",
+      "key": "neoecoae:black_tungsten_alloy_ingot"
+    }
+  ],
+  "time": 200
+}

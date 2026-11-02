@@ -1,0 +1,48 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "enderio"
+    },
+    {
+      "type": "neoforge:not",
+      "value": {
+        "type": "neoforge:tag_empty",
+        "tag": "c:ores/lapis"
+      }
+    },
+    {
+      "type": "kenergyengineering:compat_enabled",
+      "source": "enderio"
+    }
+  ],
+  "type": "kenergyengineering:pulverizer",
+  "inputs": [
+    {
+      "type": "tag",
+      "form": "item",
+      "key": "c:ores/lapis"
+    }
+  ],
+  "outputs": [
+    {
+      "type": "static",
+      "count": 8,
+      "form": "item",
+      "key": "minecraft:lapis_lazuli"
+    },
+    {
+      "type": "static",
+      "chance": 0.2,
+      "form": "item",
+      "key": "minecraft:lapis_lazuli"
+    },
+    {
+      "type": "static",
+      "chance": 0.15,
+      "form": "item",
+      "key": "minecraft:cobblestone"
+    }
+  ],
+  "time": 120
+}

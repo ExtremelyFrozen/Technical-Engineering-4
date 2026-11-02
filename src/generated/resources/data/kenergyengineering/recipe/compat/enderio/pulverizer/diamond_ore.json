@@ -1,0 +1,54 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "enderio"
+    },
+    {
+      "type": "neoforge:not",
+      "value": {
+        "type": "neoforge:tag_empty",
+        "tag": "c:ores/diamond"
+      }
+    },
+    {
+      "type": "kenergyengineering:compat_enabled",
+      "source": "enderio"
+    }
+  ],
+  "type": "kenergyengineering:pulverizer",
+  "inputs": [
+    {
+      "type": "tag",
+      "form": "item",
+      "key": "c:ores/diamond"
+    }
+  ],
+  "outputs": [
+    {
+      "type": "static",
+      "count": 2,
+      "form": "item",
+      "key": "minecraft:diamond"
+    },
+    {
+      "type": "static",
+      "chance": 0.25,
+      "form": "item",
+      "key": "minecraft:diamond"
+    },
+    {
+      "type": "static",
+      "chance": 0.1,
+      "form": "item",
+      "key": "enderio:powdered_coal"
+    },
+    {
+      "type": "static",
+      "chance": 0.15,
+      "form": "item",
+      "key": "minecraft:cobblestone"
+    }
+  ],
+  "time": 120
+}

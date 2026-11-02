@@ -23,23 +23,23 @@ public class EnergyUnitItem extends TENBaseItem {
 
     // ───── Config access ─────
     public static int maxEnergy() {
-        return ConfigHolder.INSTANCE.energyUnit.maxEnergy;
+        return ConfigHolder.maxEnergy();
     }
 
     public static int inputRate() {
-        return ConfigHolder.INSTANCE.energyUnit.inputRate;
+        return ConfigHolder.inputRate();
     }
 
     public static int outputRate() {
-        return ConfigHolder.INSTANCE.energyUnit.outputRate;
+        return ConfigHolder.outputRate();
     }
 
     public static int chargeRate() {
-        return ConfigHolder.INSTANCE.energyUnit.chargeRate;
+        return ConfigHolder.chargeRate();
     }
 
     public static boolean chargingDefault() {
-        return ConfigHolder.INSTANCE.energyUnit.chargingDefault;
+        return ConfigHolder.chargingDefault();
     }
 
     // ───── Use: toggle charging mode ─────

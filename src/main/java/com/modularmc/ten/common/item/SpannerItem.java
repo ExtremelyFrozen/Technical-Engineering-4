@@ -1,19 +1,18 @@
 package com.modularmc.ten.common.item;
 
+import com.modularmc.ten.api.transmission.ITransmitterProvider;
 import com.modularmc.ten.common.data.TENTags;
+import com.modularmc.ten.common.data.WrenchDismantleService;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.entity.item.ItemEntity;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
-import net.minecraft.world.level.block.state.properties.DirectionProperty;
+import net.minecraft.world.level.block.state.properties.EnumProperty;
 
 public class SpannerItem extends TENBaseItem {
 
@@ -24,39 +23,47 @@ public class SpannerItem extends TENBaseItem {
     @Override
     public InteractionResult useOn(UseOnContext context) {
         Level level = context.getLevel();
-        Player player = context.getPlayer();
+        var player = context.getPlayer();
         if (player == null) return InteractionResult.PASS;
 
         BlockPos pos = context.getClickedPos();
         BlockState state = level.getBlockState(pos);
 
-        if (!state.is(TENTags.MACHINES)) return InteractionResult.PASS;
-        if (level.isClientSide()) return InteractionResult.SUCCESS;
-
         if (player.isShiftKeyDown()) {
-            // Shift + right-click: silk-touch break to inventory
-            Block block = state.getBlock();
-            ItemStack drop = new ItemStack(block);
-            level.destroyBlock(pos, false, player);
-            if (!player.addItem(drop)) {
-                level.addFreshEntity(new ItemEntity(level, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, drop));
+            // 潜行 + 右键：拆解（合并后直接使用 machines 标签——原 wrench_dismantleable 仅全量转发 machines）
+            if (!state.is(TENTags.MACHINES)) {
+                return InteractionResult.PASS;
             }
-            return InteractionResult.CONSUME;
+            if (level.isClientSide()) {
+                return InteractionResult.SUCCESS;
+            }
+            boolean dismantled = WrenchDismantleService.dismantle(level, pos, (ServerPlayer) player);
+            return dismantled ? InteractionResult.CONSUME : InteractionResult.PASS;
         }
 
-        // Right-click: rotate clockwise
+        // 右键管道/线缆（ITransmitterProvider）：连接模式切换由 CableBased.useItemOn（Block 侧）
+        // 处理，此处放行到 Block.useItemOn——管道/线缆亦在 MACHINES tag 内，若不提前分流会被旋转
+        if (level.getBlockEntity(pos) instanceof ITransmitterProvider) {
+            return InteractionResult.PASS;
+        }
+        // 右键：旋转机器（普通机器；管道连接模式切换已在上方分流）
+        if (!state.is(TENTags.MACHINES)) {
+            return InteractionResult.PASS;
+        }
+        if (level.isClientSide()) {
+            return InteractionResult.SUCCESS;
+        }
         rotateMachine(level, pos, state);
         return InteractionResult.CONSUME;
     }
 
     private void rotateMachine(Level level, BlockPos pos, BlockState state) {
-        DirectionProperty prop = findFacingProperty(state);
+        EnumProperty<Direction> prop = findFacingProperty(state);
         if (prop == null) return;
 
         Direction current = state.getValue(prop);
         boolean isAllDir = prop.getPossibleValues().contains(Direction.UP) && prop.getPossibleValues().contains(Direction.DOWN);
         Direction next = isAllDir ? rotate6(current) : current.getClockWise();
-
         level.setBlock(pos, state.setValue(prop, next), 3);
     }
 
@@ -71,15 +78,15 @@ public class SpannerItem extends TENBaseItem {
         };
     }
 
-    private static DirectionProperty findFacingProperty(BlockState state) {
-        if (state.hasProperty(BlockStateProperties.FACING)) {
+    private static EnumProperty<Direction> findFacingProperty(BlockState state) {
+        if (state.hasProperty(BlockStateProperties.FACING))
             return BlockStateProperties.FACING;
-        }
-        if (state.hasProperty(BlockStateProperties.HORIZONTAL_FACING)) {
+        if (state.hasProperty(BlockStateProperties.HORIZONTAL_FACING))
             return BlockStateProperties.HORIZONTAL_FACING;
-        }
         for (var prop : state.getProperties()) {
-            if (prop instanceof DirectionProperty dp && prop.getName().equals("facing")) {
+            if (prop instanceof EnumProperty<?> ep && ep.getName().equals("facing") && ep.getPossibleValues().stream().allMatch(v -> v instanceof Direction)) {
+                @SuppressWarnings("unchecked")
+                EnumProperty<Direction> dp = (EnumProperty<Direction>) ep;
                 return dp;
             }
         }

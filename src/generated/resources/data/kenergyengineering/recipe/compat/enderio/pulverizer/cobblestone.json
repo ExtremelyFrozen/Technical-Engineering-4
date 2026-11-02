@@ -1,0 +1,54 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "enderio"
+    },
+    {
+      "type": "neoforge:not",
+      "value": {
+        "type": "neoforge:tag_empty",
+        "tag": "c:cobblestones/normal"
+      }
+    },
+    {
+      "type": "kenergyengineering:compat_enabled",
+      "source": "enderio"
+    }
+  ],
+  "type": "kenergyengineering:pulverizer",
+  "inputs": [
+    {
+      "type": "tag",
+      "form": "item",
+      "key": "c:cobblestones/normal"
+    }
+  ],
+  "outputs": [
+    {
+      "type": "static",
+      "chance": 0.7,
+      "form": "item",
+      "key": "minecraft:gravel"
+    },
+    {
+      "type": "static",
+      "chance": 0.3,
+      "form": "item",
+      "key": "minecraft:gravel"
+    },
+    {
+      "type": "static",
+      "chance": 0.1,
+      "form": "item",
+      "key": "minecraft:sand"
+    },
+    {
+      "type": "static",
+      "chance": 0.05,
+      "form": "item",
+      "key": "minecraft:flint"
+    }
+  ],
+  "time": 120
+}

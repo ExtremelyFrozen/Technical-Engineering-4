@@ -1,0 +1,13 @@
+{
+  "replace": false,
+  "values": [
+    {
+      "id": "#c:ingots/enderium",
+      "required": false
+    },
+    {
+      "id": "#c:dusts/enderium",
+      "required": false
+    }
+  ]
+}

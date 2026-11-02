@@ -1,0 +1,39 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:not",
+      "value": {
+        "type": "neoforge:tag_empty",
+        "tag": "c:raw_materials/tungsten"
+      }
+    },
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "neoecoae"
+    }
+  ],
+  "type": "kenergyengineering:pulverizer",
+  "inputs": [
+    {
+      "type": "tag",
+      "form": "item",
+      "key": "c:raw_materials/tungsten"
+    }
+  ],
+  "outputs": [
+    {
+      "type": "static",
+      "count": 1,
+      "form": "item",
+      "key": "neoecoae:tungsten_dust"
+    },
+    {
+      "type": "static",
+      "chance": 0.8,
+      "count": 1,
+      "form": "item",
+      "key": "neoecoae:tungsten_dust"
+    }
+  ],
+  "time": 120
+}

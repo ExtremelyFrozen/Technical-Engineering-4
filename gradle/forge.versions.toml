@@ -1,41 +1,79 @@
 [versions]
-ldlib2 = "2.2.8"
-registrate = "MC1.21-1.3.0+67"
-configuration = "3.1.1-neoforge"
+ldlib2 = "9304898" # LDLib2 2.2.44 (CurseForge)
+taffy = "1.1.5"
+yoga = "1.0.0"
+registrate = "MC1.21.1-1.4.8"
 
-jei = "19.25.1.328"
-emi = "1.1.22+1.21.1"
+jei = "19.64.0.455"
 
+## curseforge maven ##
+# 版本号是 CurseForge 文件 id；注释里是对应的可读版本
+ae2 = "8992605" # AE2 19.2.18
+guideme = "9366366" # GuideME 21.1.22（AE2/Powah 前置 + KER 指南）
+jade = "8591319" # Jade 15.10.6
+curios = "6529130" # Curios 9.5.1+1.21.1
+emi = "8081408" # EMI 1.1.24+1.21.1
+spark = "6225208" # spark 1.10.124
+ae2jeiintegration = "7727898" # AE2-JEI Integration 1.2.1
+modernui = "8206075" # ModernUI 3.13.0.1
+ae2patterndisk = "9384288" # AE2 Pattern Disk 0.9.8
+ae2wtlib = "8450398" # AE2WTLib 19.5.1
+ftblibrary = "9350706" # FTB Library 2101.1.39
+architectury = "8492726" # Architectury 13.0.11
+neoecoae = "9374075" # NEO ECO AE Extension 21.2.13
+enderio = "8832691" # Ender IO 8.2.12-beta（内嵌 EnderCore 8.2.12-beta）
+enderioevolution = "8808232" # Ender IO: Evolution 3.1.5-NeoForge-1.21.1
+enderioconduitopt = "8877336" # Ender IO: Conduit Optimizer 1.1.6-1.21.1
+mekanism = "7904058" # Mekanism 10.7.19.85
+immersiveengineering = "6733669" # Immersive Engineering 12.4.2-194
+alltheores = "7825464" # ATO - All the Ores 3.2.0_neoforge_1.21.1（mod id alltheores，矿石统一）
+allthemodium = "9143638" # Allthemodium 3.2.1（ATM 顶级金属）
+geckolib = "8893490" # GeckoLib 4.9.3（Allthemodium 硬前置 ≥4.7.5.1）
+modmenu = "7312908" # Mod Menu (NeoForge Edition) 1.21.1-1.0.2（Raguto 移植，非 terraformers 官方）
 
 ## modrinth maven ##
-jade = "15.10.0+neoforge"
 sodium = "mc1.21.1-0.6.13-neoforge"
 iris = "1.8.8+1.21.1-neoforge"
 modernfix = "4SPHwiDB" # 5.24.3+mc1.21.1
-modernui = "3.12.0.2"
-
-## curseforge maven ##
-spark = "6225208"
 
 ## libs ##
 
-
 [libraries]
-ldlib2              = { module = "com.lowdragmc.ldlib2:ldlib2-neoforge-1.21.1", version.ref = "ldlib2" }
+ldlib2              = { module = "curse.maven:ldlib-626676", version.ref = "ldlib2" }
+taffy               = { module = "dev.vfyjxf:taffy", version.ref = "taffy" }
+yoga                = { module = "org.appliedenergistics.yoga:yoga", version.ref = "yoga" }
 registrate          = { module = "com.tterrag.registrate:Registrate", version.ref = "registrate" }
-configuration       = { module = "dev.toma.configuration:configuration-1.21.1", version.ref = "configuration" }
 
 jei-common-api      = { module = "mezz.jei:jei-1.21.1-common-api", version.ref = "jei" }
 jei-neoforge-api    = { module = "mezz.jei:jei-1.21.1-neoforge-api", version.ref = "jei" }
 jei-neoforge-impl   = { module = "mezz.jei:jei-1.21.1-neoforge", version.ref = "jei" }
-emi                 = { module = "dev.emi:emi-neoforge", version.ref = "emi" }
+emi                 = { module = "curse.maven:emi-580555", version.ref = "emi" }
 
-jade                = { module = "maven.modrinth:jade", version.ref = "jade" }
+jade                = { module = "curse.maven:jade-324717", version.ref = "jade" }
+modmenu             = { module = "curse.maven:mod-menu-neoforge-edition-1393224", version.ref = "modmenu" }
 sodium              = { module = "maven.modrinth:sodium", version.ref = "sodium" }
 iris                = { module = "maven.modrinth:iris", version.ref = "iris" }
-modernui            = { module = "maven.modrinth:modern-ui", version.ref = "modernui" }
+modernui            = { module = "curse.maven:modern-ui-352491", version.ref = "modernui" }
 modernfix           = { module = "maven.modrinth:modernfix", version.ref = "modernfix" }
+ae2                 = { module = "curse.maven:applied-energistics-2-223794", version.ref = "ae2" }
+guideme             = { module = "curse.maven:guideme-1173950", version.ref = "guideme" }
+curios              = { module = "curse.maven:curios-309927", version.ref = "curios" }
+ae2patterndisk      = { module = "curse.maven:ae2-pattern-disk-1698612", version.ref = "ae2patterndisk" }
+ae2wtlib            = { module = "curse.maven:applied-energistics-2-wireless-terminals-459929", version.ref = "ae2wtlib" }
+ftblibrary          = { module = "curse.maven:ftb-library-404465", version.ref = "ftblibrary" }
+architectury        = { module = "curse.maven:architectury-api-419699", version.ref = "architectury" }
+neoecoae            = { module = "curse.maven:neo-eco-ae-extension-1460639", version.ref = "neoecoae" }
+enderio             = { module = "curse.maven:ender-io-64578", version.ref = "enderio" }
+enderioevolution    = { module = "curse.maven:enderio-evolution-1453074", version.ref = "enderioevolution" }
+enderioconduitopt   = { module = "curse.maven:ender-io-conduit-optimizer-1575307", version.ref = "enderioconduitopt" }
+mekanism            = { module = "curse.maven:mekanism-268560", version.ref = "mekanism" }
+immersiveengineering = { module = "curse.maven:immersive-engineering-231951", version.ref = "immersiveengineering" }
+alltheores          = { module = "curse.maven:ato-405593", version.ref = "alltheores" }
+allthemodium        = { module = "curse.maven:allthemodium-364466", version.ref = "allthemodium" }
+geckolib            = { module = "curse.maven:geckolib-388172", version.ref = "geckolib" }
 
 spark               = { module = "curse.maven:spark-361579", version.ref = "spark" }
+ae2jeiintegration   = { module = "curse.maven:ae2-jei-integration-1074338", version.ref = "ae2jeiintegration" }
+
 [bundles]
 jei = ["jei-common-api", "jei-neoforge-api", "jei-neoforge-impl"]

@@ -1,0 +1,44 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:not",
+      "value": {
+        "type": "neoforge:tag_empty",
+        "tag": "c:raw_materials/nickel"
+      }
+    },
+    {
+      "type": "kenergyengineering:provider_priority",
+      "candidates": [
+        "kenergyengineering",
+        "immersiveengineering",
+        "alltheores"
+      ],
+      "mod": "kenergyengineering"
+    }
+  ],
+  "type": "kenergyengineering:pulverizer",
+  "inputs": [
+    {
+      "type": "tag",
+      "form": "item",
+      "key": "c:raw_materials/nickel"
+    }
+  ],
+  "outputs": [
+    {
+      "type": "static",
+      "count": 1,
+      "form": "item",
+      "key": "kenergyengineering:nickel_dust"
+    },
+    {
+      "type": "static",
+      "chance": 0.8,
+      "count": 1,
+      "form": "item",
+      "key": "kenergyengineering:nickel_dust"
+    }
+  ],
+  "time": 120
+}

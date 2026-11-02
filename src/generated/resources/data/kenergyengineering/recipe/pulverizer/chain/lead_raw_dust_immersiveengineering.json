@@ -1,0 +1,44 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:not",
+      "value": {
+        "type": "neoforge:tag_empty",
+        "tag": "c:raw_materials/lead"
+      }
+    },
+    {
+      "type": "kenergyengineering:provider_priority",
+      "candidates": [
+        "mekanism",
+        "immersiveengineering",
+        "alltheores"
+      ],
+      "mod": "immersiveengineering"
+    }
+  ],
+  "type": "kenergyengineering:pulverizer",
+  "inputs": [
+    {
+      "type": "tag",
+      "form": "item",
+      "key": "c:raw_materials/lead"
+    }
+  ],
+  "outputs": [
+    {
+      "type": "static",
+      "count": 1,
+      "form": "item",
+      "key": "immersiveengineering:dust_lead"
+    },
+    {
+      "type": "static",
+      "chance": 0.8,
+      "count": 1,
+      "form": "item",
+      "key": "immersiveengineering:dust_lead"
+    }
+  ],
+  "time": 120
+}

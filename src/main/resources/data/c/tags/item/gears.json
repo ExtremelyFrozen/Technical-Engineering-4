@@ -9,6 +9,12 @@
 		"#c:gears/copper",
 		"#c:gears/mushrium",
 		"#c:gears/nickel",
-		"#c:gears/netherite"
+		"#c:gears/netherite",
+		"#c:gears/diamond",
+		"#c:gears/emerald",
+		"#c:gears/lapis",
+		"#c:gears/quartz",
+		"#c:gears/amethyst",
+		"#c:gears/redstone"
 	]
 }

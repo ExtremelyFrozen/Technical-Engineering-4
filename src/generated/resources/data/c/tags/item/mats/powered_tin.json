@@ -1,0 +1,13 @@
+{
+  "replace": false,
+  "values": [
+    {
+      "id": "#c:ingots/powered_tin",
+      "required": false
+    },
+    {
+      "id": "#c:dusts/powered_tin",
+      "required": false
+    }
+  ]
+}

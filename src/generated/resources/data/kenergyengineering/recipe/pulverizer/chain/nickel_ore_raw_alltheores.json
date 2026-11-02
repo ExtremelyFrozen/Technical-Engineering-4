@@ -1,0 +1,51 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:not",
+      "value": {
+        "type": "neoforge:tag_empty",
+        "tag": "c:ores/nickel"
+      }
+    },
+    {
+      "type": "kenergyengineering:provider_priority",
+      "candidates": [
+        "kenergyengineering",
+        "immersiveengineering",
+        "alltheores"
+      ],
+      "mod": "alltheores"
+    }
+  ],
+  "type": "kenergyengineering:pulverizer",
+  "inputs": [
+    {
+      "type": "tag",
+      "form": "item",
+      "key": "c:ores/nickel"
+    }
+  ],
+  "outputs": [
+    {
+      "type": "static",
+      "count": 1,
+      "form": "item",
+      "key": "alltheores:raw_nickel"
+    },
+    {
+      "type": "static",
+      "chance": 0.33,
+      "count": 1,
+      "form": "item",
+      "key": "alltheores:raw_nickel"
+    },
+    {
+      "type": "static",
+      "chance": 0.15,
+      "count": 1,
+      "form": "item",
+      "key": "minecraft:cobblestone"
+    }
+  ],
+  "time": 120
+}

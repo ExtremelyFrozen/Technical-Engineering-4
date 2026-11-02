@@ -27,6 +27,10 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+/**
+ * TEN 定制的 Registrate 入口：为方块/物品/方块实体注册补齐机器语义
+ * （BlockEntity 类型、GUI 工厂绑定、模型/贴图约定）。
+ */
 public class TENRegistrate extends AbstractRegistrate<TENRegistrate> {
 
     private static final Map<String, TENRegistrate> EXISTING_REGISTRATES = new Object2ObjectOpenHashMap<>();

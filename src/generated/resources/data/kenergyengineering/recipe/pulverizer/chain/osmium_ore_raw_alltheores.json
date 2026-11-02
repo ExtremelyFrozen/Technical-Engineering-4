@@ -1,0 +1,50 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:not",
+      "value": {
+        "type": "neoforge:tag_empty",
+        "tag": "c:ores/osmium"
+      }
+    },
+    {
+      "type": "kenergyengineering:provider_priority",
+      "candidates": [
+        "mekanism",
+        "alltheores"
+      ],
+      "mod": "alltheores"
+    }
+  ],
+  "type": "kenergyengineering:pulverizer",
+  "inputs": [
+    {
+      "type": "tag",
+      "form": "item",
+      "key": "c:ores/osmium"
+    }
+  ],
+  "outputs": [
+    {
+      "type": "static",
+      "count": 1,
+      "form": "item",
+      "key": "alltheores:raw_osmium"
+    },
+    {
+      "type": "static",
+      "chance": 0.33,
+      "count": 1,
+      "form": "item",
+      "key": "alltheores:raw_osmium"
+    },
+    {
+      "type": "static",
+      "chance": 0.15,
+      "count": 1,
+      "form": "item",
+      "key": "minecraft:cobblestone"
+    }
+  ],
+  "time": 120
+}

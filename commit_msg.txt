@@ -1,7 +1,0 @@
-feat(gui): add machine name label to all machine UIs
-
-buildMachineUI(): adds a Label widget at (6,4) showing the localized
-block name (e.g. 'Induction Furnace' / '感应炉') at the top-left
-corner of every machine GUI.
-
-Uses holder.blockState.getBlock().getName() for localization support.

@@ -4,13 +4,13 @@
 		{
 			"form": "item",
 			"type": "tag",
-			"key": "kenergyengineering:mats/powered_tin",
+			"key": "c:mats/powered_tin",
 			"count": 2
 		},
 		{
 			"form": "item",
 			"type": "tag",
-			"key": "kenergyengineering:mats/nickel"
+			"key": "c:mats/nickel"
 		},
 		{
 			"form": "item",
@@ -27,5 +27,5 @@
 			"count": 3
 		}
 	],
-	"time": 300
+	"time": 250
 }

@@ -32,15 +32,12 @@ tasks.matching { it.name.startsWith('prepare') }.configureEach {
 var generateModMetadata = tasks.register("generateModMetadata", ProcessResources) {
     var neoVersion = libs.versions.neoForge.get()
     neoVersion = neoVersion.substring(0, neoVersion.lastIndexOf('.'))
-    var configurationVersion = forge.versions.configuration.get()
-    configurationVersion = configurationVersion.substring(0, configurationVersion.lastIndexOf('-'))
     var replaceProperties = [
             version                 : version_toml,
             mod_id                  : mod_id,
             minecraft_version       : "[1.21, 1.21.1]",
             loader_version          : libs.versions.loader.get(),
             neo_version             : neoVersion,
-            configuration_version   : configurationVersion,
             mod_license             : mod_license,
             mod_name                : mod_name,
             mod_description         : mod_description,

@@ -4,7 +4,10 @@ import com.modularmc.ten.api.blockentity.CmBlockEntity;
 import com.modularmc.ten.api.blockentity.CmMachineBlockEntity;
 import com.modularmc.ten.common.blockentity.CableBlockEntity;
 import com.modularmc.ten.common.blockentity.PipeBlockEntity;
+import com.modularmc.ten.common.data.TENTags;
 import com.modularmc.ten.common.gui.TENMachineBlockUIFactory;
+import com.modularmc.ten.common.item.upgrades.UpgradeInstallHelper;
+import com.modularmc.ten.common.item.upgrades.UpgradeItem;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -83,6 +86,12 @@ public class BaseMachineBlock extends Block implements EntityBlock, BlockUIMenuT
 
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        // 扳手守卫（用户需求）：useItemOn 对扳手返回 PASS_TO_DEFAULT_BLOCK_INTERACTION 后
+        // 1.21.1 会继续调用本方法（空手默认行为）→ GUI 被打开，与 SpannerItem 的旋转/拆解冲突。
+        // 同手判定：usedItemHand 在交互包处理时已设置，与 useItemOn 的 hand 一致。
+        if (player.getItemInHand(player.getUsedItemHand()).is(TENTags.SPANNER)) {
+            return InteractionResult.PASS;
+        }
         BlockEntity be = level.getBlockEntity(pos);
         if (be instanceof PipeBlockEntity pipe && !pipe.hasUi()) {
             return InteractionResult.PASS;
@@ -102,6 +111,37 @@ public class BaseMachineBlock extends Block implements EntityBlock, BlockUIMenuT
     @Override
     protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         BlockEntity be = level.getBlockEntity(pos);
+        // 扳手（SPANNER tag）右键：不打开机器 GUI——1.21.1 调用链 Block.useItemOn 先于 Item.useOn，
+        // 若此处 CONSUME（打开 GUI）则 SpannerItem.useOn（旋转/拆解）永不执行；
+        // 放行到 Item.useOn，由 SpannerItem 分流（管道连接模式切换在 CableBased.useItemOn 已处理）。
+        if (stack.is(TENTags.SPANNER)) {
+            return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+        }
+        // 右键快捷安装（用户决策）：手持升级插件直接安装且不开 GUI——复用扳手式提前拦截，
+        // 原「潜行+右键」门禁移除（探针证实普通右键全部落在开 GUI 分支，安装永不可达）
+        if (be instanceof CmMachineBlockEntity machine && stack.getItem() instanceof UpgradeItem && machine.supportsUpgradeSlots()) {
+            if (level.isClientSide()) {
+                return ItemInteractionResult.SUCCESS;
+            }
+            if (machine.upgradeHandler == null) {
+                return ItemInteractionResult.CONSUME;
+            }
+            if (UpgradeInstallHelper.tryInstall(machine.upgradeHandler, stack, machine::validUpgrade)) {
+                // 消耗手持 1 个（副本插入 + 原物 shrink 成对，防复制漏洞；创造不消耗对齐原版惯例）
+                if (!player.getAbilities().instabuild) {
+                    stack.shrink(1);
+                }
+                player.displayClientMessage(net.minecraft.network.chat.Component.empty()
+                        .append(stack.getHoverName())
+                        .append(net.minecraft.network.chat.Component.translatable("kenergyengineering.info.upgrade_successfully")), true);
+            } else {
+                // 无空位 → 槽满提示；兼容性拒绝（互斥/canApply/不支持） → 不支持提示；均阻止放入与开 UI
+                boolean noEmptySlot = UpgradeInstallHelper.findFirstEmptySlot(machine.upgradeHandler) < 0;
+                String key = noEmptySlot ? "kenergyengineering.info.too_much_upgrades" : "kenergyengineering.info.not_support_upgrade";
+                player.displayClientMessage(net.minecraft.network.chat.Component.translatable(key), true);
+            }
+            return ItemInteractionResult.CONSUME;
+        }
         if (be instanceof CmMachineBlockEntity machine && !player.isShiftKeyDown() && !machine.tanks.isEmpty()) {
             if (FluidUtil.interactWithFluidHandler(player, hand, machine.getFluidHandler(hit.getDirection()))) {
                 return ItemInteractionResult.sidedSuccess(level.isClientSide());

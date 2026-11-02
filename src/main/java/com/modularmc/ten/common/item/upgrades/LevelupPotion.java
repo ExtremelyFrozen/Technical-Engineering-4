@@ -1,13 +1,24 @@
 package com.modularmc.ten.common.item.upgrades;
 
+import com.modularmc.ten.api.blockentity.IUpgradableMachine;
+
 public class LevelupPotion extends UpgradeItem {
 
     public LevelupPotion() {
         super(0);
     }
 
+    public LevelupPotion(Properties properties) {
+        super(0, properties);
+    }
+
+    @Override
+    public boolean canApply(IUpgradableMachine machine) {
+        return machine.isType("BEACON");
+    }
+
     @Override
     public boolean effect(IUpgradableMachine machine) {
-        return machine.isType("BEACON");
+        return true;
     }
 }

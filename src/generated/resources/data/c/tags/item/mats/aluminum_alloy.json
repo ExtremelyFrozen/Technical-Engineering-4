@@ -1,0 +1,13 @@
+{
+  "replace": false,
+  "values": [
+    {
+      "id": "#c:ingots/aluminum_alloy",
+      "required": false
+    },
+    {
+      "id": "#c:dusts/aluminum_alloy",
+      "required": false
+    }
+  ]
+}

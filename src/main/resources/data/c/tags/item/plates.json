@@ -9,6 +9,12 @@
 		"#c:plates/copper",
 		"#c:plates/mushrium",
 		"#c:plates/nickel",
-		"#c:plates/netherite"
+		"#c:plates/netherite",
+		"#c:plates/diamond",
+		"#c:plates/emerald",
+		"#c:plates/lapis",
+		"#c:plates/quartz",
+		"#c:plates/amethyst",
+		"#c:plates/redstone"
 	]
 }

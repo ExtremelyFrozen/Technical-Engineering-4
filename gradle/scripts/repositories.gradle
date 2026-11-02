@@ -9,29 +9,46 @@ repositories {
             includeGroup("org.lwjgl")
             includeGroup("com.google.guava")
             includeGroup("io.netty")
+            includeGroup("dev.vfyjxf")
+            includeGroup("net.mezzdev")
+            includeGroup("org.jetbrains")
+            includeGroup("org.jetbrains.kotlin")
         }
     }
     maven {
         url = "https://maven.quiltmc.org/repository/release/"
     }
-    maven { // JEI
-        name = "Jared's Maven"
-        url = "https://maven.blamejared.com/"
+    exclusiveContent { // JEI
+        forRepository {
+            maven {
+                name = "Jared's Maven"
+                url = "https://maven.blamejared.com/"
+            }
+        }
+        filter {
+            includeGroup("mezz.jei")
+            includeGroup("net.mezzdev.config")
+        }
     }
-    maven { // JEI mirror, AE2
+    maven { // JEI mirror, AE2 (fallback)
         name = "ModMaven"
         url = "https://modmaven.dev"
     }
-    maven { // LDLib, Shimmer
-        name = "FirstDarkDev Maven"
-        url = "https://maven.firstdark.dev/snapshots"
+    exclusiveContent { // LDLib2
+        forRepository {
+            maven {
+                name = "FirstDarkDev Maven"
+                url = "https://maven.firstdark.dev/snapshots"
+            }
+        }
+        filter { includeGroup("com.lowdragmc.ldlib2") }
     }
-    exclusiveContent { // Configuration
-        forRepository { maven { url = "https://repo.repsy.io/mvn/toma/public" } }
-        filter { includeGroup("dev.toma.configuration")}
+    exclusiveContent { // Lombok must come from Maven Central, not NeoForge's repo
+        forRepository { mavenCentral() }
+        filter { includeGroup("org.projectlombok") }
     }
-    exclusiveContent { // tterrag - registrate
-        forRepository { maven { url = "https://mvn.devos.one/snapshots/" } }
+    exclusiveContent { // tterrag - registrate（1.21.1 线只发布在 Gegy 的 maven；旧的 devos snapshots 已无引用）
+        forRepository { maven { url = "https://maven.gegy.dev/releases/" } }
         filter { includeGroup("com.tterrag.registrate") }
     }
     exclusiveContent { // terraformers - EMI

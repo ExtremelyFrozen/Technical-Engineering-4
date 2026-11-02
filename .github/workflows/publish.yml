@@ -161,18 +161,74 @@ jobs:
         with:
           ref: ${{ inputs.tag-name }}
       - name: Bump Version
+        env:
+          VERSION: ${{ needs.build.outputs.ver }}
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git switch -C gh/release-${{ inputs.version }}
-          BUMPED=$(echo ${{ needs.build.outputs.ver }} | awk -F. '/[0-9]+\./{$NF++;print}' OFS=.)
-          sed -i "s/= ${{ needs.build.outputs.ver }}/= ${BUMPED}/" gradle.properties
+          BUMPED=$(echo "$VERSION" | awk -F. '/[0-9]+\./{$NF++;print}' OFS=.)
+          sed -i "s/= $VERSION/= ${BUMPED}/" gradle.properties
+          if git diff --quiet -- gradle.properties; then
+            echo "::error::gradle.properties did not change; check mod_version format."
+            exit 1
+          fi
           git commit -am "Bump version to ${BUMPED}"
       - name: Prepend to CHANGELOG
         if: inputs.changelog-body
+        env:
+          VERSION: ${{ needs.build.outputs.ver }}
+          CHANGELOG_BODY: ${{ inputs.changelog-body }}
+          TZ: Asia/Shanghai
         run: |
-          { head -n 2 CHANGELOG.md; echo -e "${{ inputs.changelog-body }}"; tail -n +3 CHANGELOG.md; } > temp.md && mv temp.md CHANGELOG.md
-          git commit -am "Updated CHANGELOG"
+          if [ -z "$VERSION" ]; then
+            echo "VERSION is empty; skip generated changelog."
+            exit 0
+          fi
+          python3 - <<'PY'
+          import os
+          import re
+          from datetime import date
+          from pathlib import Path
+
+          version = os.environ["VERSION"]
+          body = os.environ["CHANGELOG_BODY"].strip()
+          path = Path("CHANGELOG.md")
+          text = path.read_text(encoding="utf-8")
+
+          if f"## [{version}]" in text or f"## Version [v{version}]" in text:
+              print(f"CHANGELOG.md already contains [{version}]; skip generated notes.")
+              raise SystemExit(0)
+
+          if not body:
+              print("empty changelog body; skip generated notes.")
+              raise SystemExit(0)
+
+          if not re.search(r"^- ", body, flags=re.M):
+              print("generated body has no entries; skip generated notes.")
+              raise SystemExit(0)
+
+          today = date.today().isoformat()
+          body = re.sub(r"^## Version \[v([^\]]+)\]\([^)]*\)[ \t]*$", r"## [\1] - " + today, body, flags=re.M)
+          body = re.sub(r"^## \[([^\]]+)\](?!\s*-\s*\d{4}-\d{2}-\d{2})[ \t]*$", r"## [\1] - " + today, body, flags=re.M)
+          for en, zh in (("### Added", "### 新增"), ("### Fixed", "### 修复"), ("### Changed", "### 改进")):
+              body = body.replace(en, zh)
+          if not re.search(r"^## \[", body, flags=re.M):
+              body = f"## [{version}] - {today}\n\n" + body
+
+          marker = "<!-- CHANGELOG_INSERT -->"
+          if marker not in text:
+              raise SystemExit(f"missing marker in CHANGELOG.md: {marker}")
+
+          text = text.replace(marker, marker + "\n\n" + body, 1)
+          path.write_text(text, encoding="utf-8")
+          print(f"inserted generated notes for [{version}]")
+          PY
+          if git diff --quiet -- CHANGELOG.md; then
+            echo "CHANGELOG.md unchanged; skip commit."
+          else
+            git commit -am "Updated CHANGELOG"
+          fi
       - name: Push and PR
         env:
           GH_TOKEN: ${{ github.token }}

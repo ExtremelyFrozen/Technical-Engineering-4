@@ -1,0 +1,47 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:not",
+      "value": {
+        "type": "neoforge:tag_empty",
+        "tag": "c:raw_materials/iron"
+      }
+    },
+    {
+      "type": "kenergyengineering:provider_priority",
+      "candidates": [
+        "kenergyengineering",
+        "neoecoae",
+        "enderio",
+        "mekanism",
+        "immersiveengineering",
+        "alltheores"
+      ],
+      "mod": "enderio"
+    }
+  ],
+  "type": "kenergyengineering:pulverizer",
+  "inputs": [
+    {
+      "type": "tag",
+      "form": "item",
+      "key": "c:raw_materials/iron"
+    }
+  ],
+  "outputs": [
+    {
+      "type": "static",
+      "count": 1,
+      "form": "item",
+      "key": "enderio:powdered_iron"
+    },
+    {
+      "type": "static",
+      "chance": 0.8,
+      "count": 1,
+      "form": "item",
+      "key": "enderio:powdered_iron"
+    }
+  ],
+  "time": 120
+}

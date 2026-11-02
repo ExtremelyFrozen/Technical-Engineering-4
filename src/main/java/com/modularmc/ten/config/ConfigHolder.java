@@ -1,138 +1,97 @@
 package com.modularmc.ten.config;
 
-import com.modularmc.ten.TEN;
+import java.util.List;
 
-import dev.toma.configuration.Configuration;
-import dev.toma.configuration.config.Config;
-import dev.toma.configuration.config.Configurable;
-import dev.toma.configuration.config.format.ConfigFormats;
-import org.jetbrains.annotations.ApiStatus;
+/**
+ * Facade for {@link TENConfig} — provides typed getter access to all configuration values.
+ * <p>
+ * All values are backed by NeoForge {@link net.neoforged.neoforge.common.ModConfigSpec}
+ * with TOML persistence ({@code te4-config.toml} / {@code te4-client.toml}).
+ * <p>
+ * No mutable primitive fields — all values are loaded from the Spec at runtime.
+ */
+public final class ConfigHolder {
 
-@Config(id = TEN.MOD_ID)
-public class ConfigHolder {
-
-    public static ConfigHolder INSTANCE;
-
-    @ApiStatus.Internal
-    public static dev.toma.configuration.config.ConfigHolder<ConfigHolder> INTERNAL_INSTANCE;
+    private ConfigHolder() {
+        // static access only
+    }
 
     public static void init() {
-        if (INSTANCE == null || INTERNAL_INSTANCE == null) {
-            INTERNAL_INSTANCE = Configuration.registerConfig(ConfigHolder.class, ConfigFormats.YAML);
-            INSTANCE = INTERNAL_INSTANCE.getConfigInstance();
-        }
+        // ModConfigSpec 由 TEN 构造器 registerConfig 注册，此处无初始化动作（保留兼容入口）
     }
 
-    @Configurable
-    @Configurable.Comment("Machine-related configuration options")
-    public MachineConfigs machine = new MachineConfigs();
+    // ── Machine config ────────────────────────────────────────────────
 
-    @Configurable
-    @Configurable.Comment("Energy Unit configuration options")
-    public EnergyUnitConfigs energyUnit = new EnergyUnitConfigs();
-
-    @Configurable
-    @Configurable.Comment("Client-side configuration options")
-    public ClientConfigs client = new ClientConfigs();
-
-    public static class MachineConfigs {
-
-        @Configurable
-        @Configurable.Comment("Energy multiplier for machines (higher = more efficient)")
-        @Configurable.DecimalRange(min = 0.01, max = 100.0)
-        public double energyMultiplier = 1.0;
-
-        @Configurable
-        @Configurable.Comment("Base energy capacity for machines in FE")
-        @Configurable.Range(min = 1000, max = 1000000000)
-        public int baseEnergyCapacity = 10000;
-
-        @Configurable
-        @Configurable.Comment("Enable/disable specific machines")
-        public boolean enableSmelter = true;
-
-        @Configurable
-        public boolean enablePulverizer = true;
-
-        @Configurable
-        public boolean enableCompressor = true;
-
-        @Configurable
-        public boolean enableRefiner = true;
-
-        @Configurable
-        public boolean enableInductionFurnace = true;
-
-        @Configurable
-        public boolean enablePsionicant = true;
-
-        @Configurable
-        public boolean enableBeacon = true;
-
-        @Configurable
-        public boolean enableMobRipper = true;
-
-        @Configurable
-        public boolean enableQuarry = true;
-
-        @Configurable
-        public boolean enableEnchantmentFlusher = true;
-
-        @Configurable
-        public boolean enableCondenser = true;
-
-        @Configurable
-        public boolean enableFarmManager = true;
+    public static TENConfig.MachineConfig machine() {
+        return TENConfig.MACHINE;
     }
 
-    @Configurable
-    @Configurable.Comment("Farm Manager configuration options")
-    public FarmConfigs farm = new FarmConfigs();
+    public static double energyMultiplier() {
+        return TENConfig.MACHINE.energyMultiplier();
+    }
 
-    public static class FarmConfigs {
+    public static int baseEnergyCapacity() {
+        return TENConfig.MACHINE.baseEnergyCapacity();
+    }
 
-        @Configurable
-        @Configurable.Comment("Block IDs treated as bush-type crops (harvested without replanting)")
-        public String[] bushCrops = {
-                "minecraft:sweet_berry_bush"
+    public static boolean enableMachine(int machineType) {
+        var m = TENConfig.MACHINE;
+        return switch (machineType) {
+            case com.modularmc.ten.api.option.MachineType.FURNACE -> m.enableSmelter();
+            case com.modularmc.ten.api.option.MachineType.PULVERIZER -> m.enablePulverizer();
+            case com.modularmc.ten.api.option.MachineType.COMPRESSOR -> m.enableCompressor();
+            case com.modularmc.ten.api.option.MachineType.REFINER -> m.enableRefiner();
+            case com.modularmc.ten.api.option.MachineType.INDUCTION_FURNACE -> m.enableInductionFurnace();
+            case com.modularmc.ten.api.option.MachineType.PSIONICANT -> m.enablePsionicant();
+            case com.modularmc.ten.api.option.MachineType.BEACON -> m.enableBeacon();
+            case com.modularmc.ten.api.option.MachineType.MOB_RIPPER -> m.enableMobRipper();
+            case com.modularmc.ten.api.option.MachineType.QUARRY -> m.enableQuarry();
+            case com.modularmc.ten.api.option.MachineType.ENCHANTMENT_FLUSHER -> m.enableEnchantmentFlusher();
+            case com.modularmc.ten.api.option.MachineType.MATTER_CONDENSER -> m.enableCondenser();
+            case com.modularmc.ten.api.option.MachineType.FARM -> m.enableFarmManager();
+            default -> true;
         };
     }
 
-    public static class EnergyUnitConfigs {
+    // ── Energy Unit config ────────────────────────────────────────────
 
-        @Configurable
-        @Configurable.Comment("Maximum FE storage capacity of the Energy Unit")
-        @Configurable.Range(min = 1000, max = 100000000)
-        public int maxEnergy = 400_000;
-
-        @Configurable
-        @Configurable.Comment("FE per tick distributed to charged items when charging mode is on")
-        @Configurable.Range(min = 1, max = 100000)
-        public int chargeRate = 2_000;
-
-        @Configurable
-        @Configurable.Comment("FE per tick the Energy Unit can receive from external sources")
-        @Configurable.Range(min = 1, max = 100000)
-        public int inputRate = 2_000;
-
-        @Configurable
-        @Configurable.Comment("FE per tick the Energy Unit can output to external sources")
-        @Configurable.Range(min = 1, max = 100000)
-        public int outputRate = 2_000;
-
-        @Configurable
-        @Configurable.Comment("Whether charging mode is enabled by default when a new Energy Unit is crafted")
-        public boolean chargingDefault = false;
+    public static TENConfig.EnergyUnitConfig energyUnit() {
+        return TENConfig.ENERGY_UNIT;
     }
 
-    public static class ClientConfigs {
+    public static int maxEnergy() {
+        return TENConfig.ENERGY_UNIT.maxEnergy();
+    }
 
-        @Configurable
-        @Configurable.Comment("Show machine info in HUD")
-        public boolean showMachineHUD = true;
+    public static int chargeRate() {
+        return TENConfig.ENERGY_UNIT.chargeRate();
+    }
 
-        @Configurable
-        @Configurable.Comment("Show cable network info in HUD")
-        public boolean showCableHUD = true;
+    public static int inputRate() {
+        return TENConfig.ENERGY_UNIT.inputRate();
+    }
+
+    public static int outputRate() {
+        return TENConfig.ENERGY_UNIT.outputRate();
+    }
+
+    public static boolean chargingDefault() {
+        return TENConfig.ENERGY_UNIT.chargingDefault();
+    }
+
+    // ── Farm config ───────────────────────────────────────────────────
+
+    public static TENConfig.FarmConfig farm() {
+        return TENConfig.FARM;
+    }
+
+    public static List<String> bushCrops() {
+        return TENConfig.FARM.bushCrops();
+    }
+
+    // ── Client config ─────────────────────────────────────────────────
+
+    public static TENConfig.ClientConfig client() {
+        return TENConfig.CLIENT;
     }
 }

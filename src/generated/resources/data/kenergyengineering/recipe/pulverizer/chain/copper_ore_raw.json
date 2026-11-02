@@ -1,0 +1,42 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:not",
+      "value": {
+        "type": "neoforge:tag_empty",
+        "tag": "c:ores/copper"
+      }
+    }
+  ],
+  "type": "kenergyengineering:pulverizer",
+  "inputs": [
+    {
+      "type": "tag",
+      "form": "item",
+      "key": "c:ores/copper"
+    }
+  ],
+  "outputs": [
+    {
+      "type": "static",
+      "count": 1,
+      "form": "item",
+      "key": "minecraft:raw_copper"
+    },
+    {
+      "type": "static",
+      "chance": 0.33,
+      "count": 1,
+      "form": "item",
+      "key": "minecraft:raw_copper"
+    },
+    {
+      "type": "static",
+      "chance": 0.15,
+      "count": 1,
+      "form": "item",
+      "key": "minecraft:cobblestone"
+    }
+  ],
+  "time": 120
+}

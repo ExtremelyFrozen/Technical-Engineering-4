@@ -1,7 +1,7 @@
 package com.modularmc.ten.common.data;
 
 import com.modularmc.ten.common.block.machine.CableBased;
-import com.modularmc.ten.common.block.machine.DirectionalMachineBlock;
+import com.modularmc.ten.common.block.machine.ChannelBlock;
 import com.modularmc.ten.common.block.machine.HorizontalMachineBlock;
 
 import net.minecraft.core.Direction;
@@ -18,6 +18,7 @@ import static com.modularmc.ten.common.registry.Registration.REGISTRATE;
 public class TENBlocks {
 
     public static final java.util.LinkedHashMap<String, String> ZH_NAMES = new java.util.LinkedHashMap<>();
+    public static final java.util.LinkedHashMap<String, String> EN_NAMES = new java.util.LinkedHashMap<>();
 
     static {
         REGISTRATE.creativeModeTab(() -> TENCreativeModeTabs.BLOCK_TAB);
@@ -53,6 +54,9 @@ public class TENBlocks {
     public static final BlockEntry<HorizontalMachineBlock> MACHINE_ENCHFLU = machine("machine_enchantment_flusher", "Enchantment Flusher", "祛魔机");
     public static final BlockEntry<HorizontalMachineBlock> MACHINE_CONDENSER = machine("machine_matter_condenser", "Matter Condenser", "物质结晶器");
     public static final BlockEntry<HorizontalMachineBlock> MACHINE_FARM = machine("machine_farm_manager", "Farm Manager", "农场管理机");
+    public static final BlockEntry<HorizontalMachineBlock> MACHINE_BLOCK_BREAKER = machine("machine_block_breaker", "Block Breaker", "方块破坏器");
+    public static final BlockEntry<HorizontalMachineBlock> MACHINE_BLOCK_FORMER = machine("machine_block_former", "Block Former", "方块成型器");
+    public static final BlockEntry<HorizontalMachineBlock> MACHINE_COOLER = machine("machine_cooler", "Cooler", "冷却器");
 
     // === Engines ===
     public static final BlockEntry<HorizontalMachineBlock> ENGINE_EXTRACTION = engine("engine_extraction", "Extraction Engine", "萃取引擎");
@@ -76,20 +80,20 @@ public class TENBlocks {
     public static final BlockEntry<HorizontalMachineBlock> CREATIVE_CELL = cell("creative_energy_cell", "Creative Energy Cell", "创造能量单元");
 
     // === Channels ===
-    public static final BlockEntry<DirectionalMachineBlock> CHANNEL_ENERGY = REGISTRATE
-            .block("channel_energy", DirectionalMachineBlock::new)
+    public static final BlockEntry<ChannelBlock> CHANNEL_ENERGY = REGISTRATE
+            .block("channel_energy", ChannelBlock::new)
             .lang("Energy Channel")
             .tag(TENTags.MACHINES)
             .blockstate((ctx, prov) -> TENModels.channelBlockstate(prov, ctx.getEntry(), "channel_energy"))
             .item().model((ctx, prov) -> prov.blockItem(ctx::getEntry)).build().register();
-    public static final BlockEntry<DirectionalMachineBlock> CHANNEL_ITEM = REGISTRATE
-            .block("channel_item", DirectionalMachineBlock::new)
+    public static final BlockEntry<ChannelBlock> CHANNEL_ITEM = REGISTRATE
+            .block("channel_item", ChannelBlock::new)
             .lang("Item Channel")
             .tag(TENTags.MACHINES)
             .blockstate((ctx, prov) -> TENModels.channelBlockstate(prov, ctx.getEntry(), "channel_item"))
             .item().model((ctx, prov) -> prov.blockItem(ctx::getEntry)).build().register();
-    public static final BlockEntry<DirectionalMachineBlock> CHANNEL_FLUID = REGISTRATE
-            .block("channel_fluid", DirectionalMachineBlock::new)
+    public static final BlockEntry<ChannelBlock> CHANNEL_FLUID = REGISTRATE
+            .block("channel_fluid", ChannelBlock::new)
             .lang("Fluid Channel")
             .tag(TENTags.MACHINES)
             .blockstate((ctx, prov) -> TENModels.channelBlockstate(prov, ctx.getEntry(), "channel_fluid"))
@@ -97,14 +101,18 @@ public class TENBlocks {
 
     static {
         ZH_NAMES.put("channel_energy", "能量频道");
+        EN_NAMES.put("channel_energy", "Energy Channel");
         ZH_NAMES.put("channel_item", "物品频道");
+        EN_NAMES.put("channel_item", "Item Channel");
         ZH_NAMES.put("channel_fluid", "流体频道");
+        EN_NAMES.put("channel_fluid", "Fluid Channel");
     }
 
     // === Helpers ===
 
     private static BlockEntry<Block> ore(String n, String englishName, String cn, double h, MapColor c) {
         ZH_NAMES.put(n, cn);
+        EN_NAMES.put(n, englishName);
         return REGISTRATE.block(n, Block::new)
                 .lang(englishName)
                 .initialProperties(() -> c == MapColor.DEEPSLATE ? Blocks.DEEPSLATE : Blocks.STONE)
@@ -117,6 +125,7 @@ public class TENBlocks {
 
     private static BlockEntry<Block> storage(String n, String englishName, String cn, float h) {
         ZH_NAMES.put(n, cn);
+        EN_NAMES.put(n, englishName);
         return REGISTRATE.block(n, Block::new)
                 .lang(englishName)
                 .initialProperties(() -> Blocks.IRON_BLOCK)
@@ -128,6 +137,7 @@ public class TENBlocks {
 
     private static BlockEntry<Block> rawStorage(String n, String englishName, String cn, float h) {
         ZH_NAMES.put(n, cn);
+        EN_NAMES.put(n, englishName);
         return REGISTRATE.block(n, Block::new)
                 .lang(englishName)
                 .initialProperties(() -> Blocks.IRON_BLOCK)
@@ -139,6 +149,7 @@ public class TENBlocks {
 
     private static BlockEntry<HorizontalMachineBlock> machine(String n, String englishName, String cn) {
         ZH_NAMES.put(n, cn);
+        EN_NAMES.put(n, englishName);
         return REGISTRATE.block(n, HorizontalMachineBlock::new)
                 .lang(englishName)
                 .tag(TENTags.MACHINES)
@@ -169,6 +180,7 @@ public class TENBlocks {
 
     private static BlockEntry<HorizontalMachineBlock> engine(String n, String englishName, String cn) {
         ZH_NAMES.put(n, cn);
+        EN_NAMES.put(n, englishName);
         return REGISTRATE.block(n, HorizontalMachineBlock::new)
                 .lang(englishName)
                 .tag(TENTags.MACHINES)
@@ -199,6 +211,7 @@ public class TENBlocks {
 
     private static BlockEntry<CableBased> cable(String n, String englishName, String cn) {
         ZH_NAMES.put(n, cn);
+        EN_NAMES.put(n, englishName);
         return REGISTRATE.block(n, CableBased::new)
                 .lang(englishName)
                 .blockstate((ctx, prov) -> TENModels.cableMultipart(prov, ctx.getEntry(), n))
@@ -208,6 +221,7 @@ public class TENBlocks {
 
     private static BlockEntry<HorizontalMachineBlock> cell(String n, String englishName, String cn) {
         ZH_NAMES.put(n, cn);
+        EN_NAMES.put(n, englishName);
         return REGISTRATE.block(n, HorizontalMachineBlock::new)
                 .lang(englishName)
                 .tag(TENTags.MACHINES)

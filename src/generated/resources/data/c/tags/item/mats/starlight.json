@@ -1,0 +1,13 @@
+{
+  "replace": false,
+  "values": [
+    {
+      "id": "#c:ingots/starlight",
+      "required": false
+    },
+    {
+      "id": "#c:dusts/starlight",
+      "required": false
+    }
+  ]
+}
