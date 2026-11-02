@@ -3,6 +3,8 @@ package com.modularmc.ten.integration.kubejs;
 import com.modularmc.ten.TEN;
 
 import dev.latvian.mods.kubejs.plugin.KubeJSPlugin;
+import dev.latvian.mods.kubejs.recipe.component.RecipeComponentTypeRegistry;
+import dev.latvian.mods.kubejs.recipe.schema.RecipeSchemaRegistry;
 
 /**
  * KubeJS 集成入口，靠 jar 根的 {@code kubejs.plugins.txt} 被发现。
@@ -15,5 +17,15 @@ public class TENKubeJSPlugin implements KubeJSPlugin {
     @Override
     public void init() {
         TEN.LOGGER.info("KubeJS integration enabled");
+    }
+
+    @Override
+    public void registerRecipeComponents(RecipeComponentTypeRegistry event) {
+        event.register(FormsIngredientComponent.TYPE);
+    }
+
+    @Override
+    public void registerRecipeSchemas(RecipeSchemaRegistry event) {
+        TENRecipeSchemas.register(event);
     }
 }
