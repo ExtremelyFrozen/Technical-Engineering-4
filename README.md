@@ -3,7 +3,7 @@
 Minecraft 1.21.1 / NeoForge 科技向模组（Technical Engineering 4 的重制分支），
 基于 [LDLib2](https://github.com/Low-Drag-MC/LDLib2) 构建机器框架、GUI 与同步体系。
 
-当前版本：`4.1.0`（见 `gradle.properties`） · 许可证：[AGPL-3.0](LICENSE)
+当前版本：`4.0.2`（见 `gradle.properties`） · 许可证：[AGPL-3.0](LICENSE)
 
 ## 内容概览
 

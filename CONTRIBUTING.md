@@ -1,6 +1,6 @@
 # 贡献指南
 
-欢迎参与 **Technical-Engineering 4 (Kenergy Engineering Retechnicalized)** 的开发。  
+欢迎参与 **Kenergy Engineering Retechnicalized（简称 KER，Technical Engineering 4 的重制分支）** 的开发。  
 本文档概述了项目的结构、编码约定和贡献流程，帮助新贡献者快速上手。
 
 ---
@@ -62,7 +62,7 @@ Technical-Engineering 4 是一个 **NeoForge 1.21.1** 科技模组，继承自 T
 1. **JDK 21** — 确保 `JAVA_HOME` 指向 JDK 21。
 2. **克隆仓库**：
    ```bash
-   git clone https://github.com/ModularMCLib/Technical-Engineering-4.git
+   git clone https://github.com/ExtremelyFrozen/Technical-Engineering-4.git
    cd Technical-Engineering-4
    ```
 3. **导入 IDE** — 作为 Gradle 项目导入（IntelliJ IDEA 推荐）。
