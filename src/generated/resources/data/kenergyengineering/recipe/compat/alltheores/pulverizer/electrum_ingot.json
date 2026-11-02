@@ -16,7 +16,7 @@
       "type": "neoforge:not",
       "value": {
         "type": "neoforge:tag_empty",
-        "tag": "c:mats/electrum"
+        "tag": "c:ingots/electrum"
       }
     },
     {
@@ -29,7 +29,7 @@
     {
       "type": "tag",
       "form": "item",
-      "key": "c:mats/electrum"
+      "key": "c:ingots/electrum"
     }
   ],
   "outputs": [

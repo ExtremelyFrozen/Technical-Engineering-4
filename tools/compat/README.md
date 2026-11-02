@@ -1,7 +1,7 @@
 # tools/compat — 兼容层转换器与校验
 
-把邻居（Ender IO 系、Mekanism、沉浸工程、ATO、Allthemodium）的数据机械转成
-`TENCompatGen` 的表行，并校验成品配方。规则本身写在
+把邻居（Ender IO 系、Mekanism、沉浸工程、ATO、Allthemodium、NEO ECO AE）的数据机械转成
+`TENCompatGen` 的表行，也负责守住手写表（`GRIND_MANUAL` 的 AE2 家族水晶行）不被导入撞回来，并校验成品配方。规则本身写在
 [`docs/ARCHITECTURE.md` §3.3](../../docs/ARCHITECTURE.md)，这里只讲怎么跑。
 
 ## 准备 dumps
@@ -23,7 +23,8 @@ unzip -o -q build/moddev/artifacts/neoforge-21.1.243-client-extra-aka-minecraft-
 ```
 
 `dumps` 里还可以放只提供标签、不提供机器配方的模组（如 `ae2` 的 `c:dusts/certus_quartz`、
-`c:dusts/fluix`）——它们不参与 `providerPriority` 的归属顺序，只让 `check.js` 能证明
+`c:dusts/fluix`），以及 `ae2cs`／`extendedae`／`extendedae_plus`／`data_energistics` 的水晶标签——
+它们不参与 `providerPriority` 的归属顺序，只让 `check.js` 能证明
 「这个输入标签确实有人定义」，否则会误报成无人定义。
 
 > Info-ZIP 的 `unzip "dir/*"` 不跨目录层级：`unzip -o -q x.jar "data/*" -d out` 只会解出
@@ -49,7 +50,7 @@ unzip -o -q build/moddev/artifacts/neoforge-21.1.243-client-extra-aka-minecraft-
 | 1 | `./gradlew runData -x compileTestJava` | 先让生成物落到当前状态，转换器的「本模组已有配方」基准读它 |
 | 2 | `node tools/compat/convert.js` | 邻居数据 → `out/rows.json`，并打印 `ORE_CHAIN` 候选建议 |
 | 3 | 手工核对建议 | 已有材料只补候选，别重复加行；新材料才加 `new ChainRow(...)` |
-| 4 | `node tools/compat/inject.js` | 只替换 `TENCompatGen` 的 `ALLOYS` / `GRIND` / `PRESS` 数组体 |
+| 4 | `node tools/compat/inject.js` | 只替换 `TENCompatGen` 的 `ALLOYS` / `GRIND` / `PRESS` 数组体（`GRIND_MANUAL` 的水晶手写行不在替换范围） |
 | 5 | `./gradlew runData -x compileTestJava` | 生成期断言会在这里拦住重复输入签名与同名覆盖 |
 | 6 | `node tools/compat/check.js` | 全量校验，退出码非 0 即有问题 |
 
@@ -57,6 +58,9 @@ unzip -o -q build/moddev/artifacts/neoforge-21.1.243-client-extra-aka-minecraft-
 是**互斥**的，转换器靠读上一轮生成物判断「这个输入本模组是否已有配方」。
 本模组改了通用配方后要先跑一次 DataGen，再重跑转换器，否则会把已经被我们接管的那批导入进来，
 第 5 步的断言会直接报错（这是预期的报错，不是转换器坏了）。
+
+手写行（`TENCompatGen.GRIND_MANUAL` 与 `INFINITY`）的文件名要留在 `config.json` 的 `manualRows` 里：
+转换器读生成物时按这份名单让手写行参与输入签名基准，同输入的导入会被跳过，而不是塞回来撞第 5 步的断言。
 
 ## 导入规则
 

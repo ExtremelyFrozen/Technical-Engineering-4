@@ -33,10 +33,13 @@ function inputOf(i) {
 /** 标签键：对方已带命名空间就原样用，否则补 c: 前缀。 */
 const tagKey = t => (t.includes(":") ? t : "c:" + (t.startsWith("c:") ? t.slice(2) : t));
 
-/** 锭输入：该材料有 c:mats/X 聚合标签时升级成「锭或粉皆可」。 */
-function inExpr(inp) {
+// c:mats/X 只服务感应炉：只有它允许「锭或粉皆可」，粉碎机与压缩机一律只认锭
+const MAT_MACHINES = new Set(["induction_furnace"]);
+
+/** 锭输入：mats=true（感应炉）且该材料有 c:mats/X 聚合标签时升级成「锭或粉皆可」。 */
+function inExpr(inp, mats = false) {
   const mat = inp.isTag && inp.key.startsWith("c:ingots/") ? inp.key.slice("c:ingots/".length) : null;
-  if (mat && TAGS.has("c:mats/" + mat)) return `ingot("${mat}")`;
+  if (mats && mat && TAGS.has("c:mats/" + mat)) return `matIngot("${mat}")`;
   const n = inp.count > 1 ? inp.count : null;
   if (inp.isTag) return n ? `tagN("${inp.key}", ${n})` : `tag("${inp.key}")`;
   return n ? `itemN("${inp.key}", ${n})` : `item("${inp.key}")`;
@@ -46,9 +49,9 @@ function inExpr(inp) {
  * 输入的落地标签（与 inExpr 同一判据）：签名比较要用它，否则本模组通用配方与导入行
  * 会对同一输入写出两种拼写，去重形同无效。
  */
-const effectiveKey = inp => {
+const effectiveKey = (inp, mats = false) => {
   const mat = inp.isTag && inp.key.startsWith("c:ingots/") ? inp.key.slice("c:ingots/".length) : null;
-  return mat && TAGS.has("c:mats/" + mat) ? "c:mats/" + mat : inp.key;
+  return mats && mat && TAGS.has("c:mats/" + mat) ? "c:mats/" + mat : inp.key;
 };
 
 /** 对方输出三态：{item:"ns:path"} / {item:{id|"tag",count}} / {tag|id, count}。 */
@@ -80,12 +83,17 @@ function ownSignatures(machineType) {
   for (const root of [MAIN, GEN]) {
     for (const file of walk(path.join(root, "kenergyengineering/recipe"))) {
       // 兼容层里机械生成的条目不参与基准；手写的压缩行要参与，否则导入行会与它撞同一输入
-      const PROTECTED = new Set(["grains_to_dust_block", "dust_block_to_compressed", "compressed_to_double"]);
+      // 手写真身的行以 config.manualRows 为准：它们参与输入签名基准，机械导入撞到就跳过
+      const PROTECTED = new Set(CFG.manualRows || []);
       const short = rel(file);
       if (short.includes("/recipe/compat/") && !PROTECTED.has(path.basename(file, ".json"))) continue;
       const j = load(file);
       if (!j || j.type !== "kenergyengineering:" + machineType) continue;
-      set.set((j.inputs || []).map(i => i.key + "x" + (i.count ?? i.amount ?? 1)).sort().join("+"), path.basename(file));
+      // key 要过 effectiveKey（按机器决定是否升级成 c:mats/X）：两侧拼写不一致会让去重形同无效
+      set.set((j.inputs || []).map(i => {
+        const n = i.count ?? i.amount ?? 1;
+        return effectiveKey({ isTag: i.type === "tag", key: i.key, count: n }, MAT_MACHINES.has(machineType)) + "x" + n;
+      }).sort().join("+"), path.basename(file));
     }
   }
   return set;
@@ -109,7 +117,7 @@ function nameOf(file, dir) {
 }
 
 /** IE 的输入写法是 {basePredicate:{tag|item}, count}，先摊平回通用形状。 */
-const unwrap = i => (i && i.basePredicate ? { ...i.basePredicate, count: i.count ?? 1 } : i);
+const unwrap = i => (i && i.basePredicate ? { ...i.basePredicate, count: i.count ?? i.basePredicate.count ?? 1 } : i);
 
 const rows = { alloy: [], grind: [], press: [], chain: [] };
 const notes = [];
@@ -129,7 +137,7 @@ const notes = [];
       const raw = (Array.isArray(j.inputs) ? j.inputs : [j.input0, j.input1]).filter(Boolean).map(unwrap).map(inputOf)
         .filter(Boolean);
       if (!raw.length) continue;
-      const o = j.result || j.output || (j.outputs || [])[0];
+      const o = unwrap(j.result || j.output || (j.outputs || [])[0]);
       const outKey = outKeyOf(o);
       if (!outKey) continue;
       const resolved = resolveOutput(outKey);
@@ -149,7 +157,7 @@ const notes = [];
         const sig = ns + "|" + resolved.item + "|" + v.ins.map(i => i.key + i.count).join(",");
         if (seen.has(sig)) continue;
         seen.add(sig);
-        const ownSig = v.ins.map(i => effectiveKey(i) + "x" + (i.count || 1)).sort().join("+");
+        const ownSig = v.ins.map(i => effectiveKey(i, true) + "x" + (i.count || 1)).sort().join("+");
         if (ownAlloy.has(ownSig)) {
           notes.push(`合金 ${base}：输入 ${ownSig} 本模组已有通用配方，跳过`);
           continue;
@@ -157,7 +165,7 @@ const notes = [];
         const gates = [ns, ...extraGates(j, ns), resolved.gate].filter((g, i, a) => g && a.indexOf(g) === i);
         const time = alignTicks("induction_furnace", v.ins.reduce((a, i) => a + (i.count || 1), 0));
         rows.alloy.push(`alloy("${gates.join(",")}", "${v.name}", "${resolved.item}", ${count}, ${time}, ` +
-          v.ins.map(inExpr).join(", ") + ")");
+          v.ins.map(i => inExpr(i, MAT_MACHINES.has("induction_furnace"))).join(", ") + ")");
       }
     }
   }
@@ -181,7 +189,8 @@ const notes = [];
       const raw = ieCrusher
         ? [j.result, ...(j.secondaries || []).map(s => ({ ...s.output, chance: s.chance }))].filter(Boolean)
         : mekCrushing ? [j.output] : (j.outputs || []);
-      const outs = raw.map(o => {
+      const outs = raw.map(raw0 => {
+        const o = unwrap(raw0);
         const key = outKeyOf(o);
         if (!key) return null;
         const resolved = resolveOutput(key);
@@ -192,7 +201,8 @@ const notes = [];
         notes.push(`研磨 ${name}：输出 ${outs.find(o => !o || o.missing)?.missing || "?"} 无人提供，跳过`);
         continue;
       }
-      if (own.has(inp.key + "x" + (inp.count || 1))) {
+      // 与 ownSignatures 同一拼写（感应炉以外不做 mats 升级）
+      if (own.has(effectiveKey(inp) + "x" + (inp.count || 1))) {
         notes.push(`研磨 ${name}：输入 ${inp.key} 本模组已有配方，跳过`);
         continue;
       }
@@ -228,6 +238,9 @@ const notes = [];
 // ── 压缩机 ← IE 冲压机（模具换成本模组的对应模具）──
 {
   const own = ownSignatures("compressor");
+  // 同一「材料 + 模具」只留一个赢家：按 config 里 compressor 源的先后顺序，前面的模组优先
+  // 值记「来源/行名」，用来区分跨来源让位与同来源真重复（后者不能静默丢）
+  const seen = new Map();
   const MOULDS = { mold_plate: "mould_plate", mold_gear: "mould_gear", mold_rod: "mould_rod", mold_wire: "mould_string" };
   for (const [ns, sub] of CFG.neighbourRecipes.compressor || []) {
     const dir = path.join((CFG.dumps[ns] || [])[0] || "", sub);
@@ -242,22 +255,40 @@ const notes = [];
       }
       const inp = inputOf(unwrap(j.input));
       if (!inp || inp.anyOf) continue;
-      const outKey = outKeyOf(j.result);
-      const resolved = outKey ? resolveOutput(outKey) : null;
+      // IE 的 rod/wire 输出写成 {basePredicate:{tag},count}，先摊平才认得出标签
+      const res = unwrap(j.result);
+      const outKey = outKeyOf(res);
+      if (!outKey) {
+        notes.push(`冲压 ${name}：输出形状未识别，跳过（补 unwrap 或 inputOf 一类归一化）`);
+        continue;
+      }
+      const resolved = resolveOutput(outKey);
       if (!resolved) {
-        notes.push(`冲压 ${name}：输出 ${outKey || "?"} 无人提供，跳过`);
+        notes.push(`冲压 ${name}：输出 ${outKey} 无人提供，跳过`);
         continue;
       }
       const mouldId = "kenergyengineering:" + mould;
-      // 与 ownSignatures 同一算法：压缩机配方是「材料 + 模具」两项输入
-      const sig = [inp.key + "x" + (inp.count || 1), mouldId + "x1"].sort().join("+");
+      // 与 ownSignatures 同一算法：压缩机配方是「材料 + 模具」两项输入。
+      // 压缩机不做 c:mats 升级，两侧都用原始 c:ingots/X 拼写比较。
+      const sig = [effectiveKey(inp) + "x" + (inp.count || 1), mouldId + "x1"].sort().join("+");
       if (own.has(sig)) {
         notes.push(`冲压 ${name}：本模组已有同输入压缩配方，跳过`);
         continue;
       }
+      const winner = seen.get(sig);
+      if (winner) {
+        if (winner.startsWith(ns + "/")) {
+          notes.push(`冲压 ${name}：与同来源的 ${winner} 输入签名相同，邻居数据需人工核对（不再静默丢弃，交由生成期断言）`);
+        } else {
+          notes.push(`冲压 ${name}：同输入已由前一个来源 ${winner} 提供，跳过`);
+          continue;
+        }
+      } else {
+        seen.set(sig, ns + "/" + name);
+      }
       const gates = [ns, ...extraGates(j, ns), resolved.gate].filter((g, i, a) => g && a.indexOf(g) === i);
       rows.press.push(`pressed("${gates.join(",")}", "${name}", ${inExpr(inp)}, "${mouldId}", ` +
-        `"${resolved.item}", ${outCountOf(j.result)}, ${alignTicks("compressor", inp.count || 1)})`);
+        `"${resolved.item}", ${outCountOf(res)}, ${alignTicks("compressor", inp.count || 1)})`);
     }
   }
 }

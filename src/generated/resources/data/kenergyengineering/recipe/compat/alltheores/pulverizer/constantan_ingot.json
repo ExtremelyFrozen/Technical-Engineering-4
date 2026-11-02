@@ -16,7 +16,7 @@
       "type": "neoforge:not",
       "value": {
         "type": "neoforge:tag_empty",
-        "tag": "c:mats/constantan"
+        "tag": "c:ingots/constantan"
       }
     },
     {
@@ -29,7 +29,7 @@
     {
       "type": "tag",
       "form": "item",
-      "key": "c:mats/constantan"
+      "key": "c:ingots/constantan"
     }
   ],
   "outputs": [
