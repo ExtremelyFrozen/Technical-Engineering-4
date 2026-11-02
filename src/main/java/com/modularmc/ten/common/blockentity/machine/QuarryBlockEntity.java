@@ -15,6 +15,7 @@ import com.modularmc.ten.utils.WorkingHelper;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -83,6 +84,24 @@ public class QuarryBlockEntity extends RadiusMachineBlockEntity {
      */
     @Persisted
     public boolean scanPassMined;
+
+    /**
+     * 一轮空手到底、但过程中有方块被当前工具挡下 → 停在记录点等合规工具。
+     * 工具身份（物品或耐久）变化即清除，从 {@link #passStartY} 续扫，不必从头再来。
+     */
+    @Persisted
+    public boolean awaitTool;
+
+    /** 本轮是否有方块因工具挖不动或无掉落而被跳过，决定空手到底是挖尽还是等工具。 */
+    @Persisted
+    public boolean passBlockedByTool;
+
+    /** 本轮扫描起点层，进入 awaitTool 时游标回到这里。 */
+    @Persisted
+    public int passStartY;
+
+    /** 上一次看到的工具特征（物品 + 耐久），用于识别「换了一把合规工具」。 */
+    private String lastToolSignature = "";
 
     /**
      * 本维度可挖下界。原来固定用 {@code TENConstants.WORLD_MIN}（主世界 -64），
@@ -269,6 +288,23 @@ public class QuarryBlockEntity extends RadiusMachineBlockEntity {
         } else {
             lastMode = mode;
         }
+        // 工具特征变了（新放一把、换了更高阶、或耐久不同）→ 清除等待，从记录点续扫
+        String signature = toolSignature();
+        if (awaitTool && !signature.equals(lastToolSignature)) {
+            awaitTool = false;
+            passBlockedByTool = false;
+            scanPassMined = false;
+        }
+        lastToolSignature = signature;
+    }
+
+    /** 工具槽首个工具的特征串：物品 id + 耐久，空槽为空串。 */
+    private String toolSignature() {
+        ItemStack tool = firstAvailableTool();
+        if (tool.isEmpty()) {
+            return "";
+        }
+        return BuiltInRegistries.ITEM.getKey(tool.getItem()) + "@" + tool.getDamageValue();
     }
 
     private void updateMode() {
@@ -318,6 +354,10 @@ public class QuarryBlockEntity extends RadiusMachineBlockEntity {
      */
     @Override
     public boolean conditionStart() {
+        // 无工具与被工具挡下两种「暂无可用工具」都就地停住：不耗能、游标留在原地
+        if (awaitTool || firstAvailableTool().isEmpty()) {
+            return false;
+        }
         if (!scanCursorInitialized) {
             return true;
         }
@@ -380,7 +420,8 @@ public class QuarryBlockEntity extends RadiusMachineBlockEntity {
             initScanCursor();
         }
         if (scanY < minScanY()) {
-            return false; // 挖尽
+            finishPass(); // 轮次收尾：挖尽 / 重扫一轮 / 等合规工具
+            return false;
         }
         // 扫描区锚定：以区块中心对称的正方形（基础区块 16×16，Rg 外扩 e 格）
         int expand = Math.max(0, radius - initialRadius);
@@ -412,11 +453,13 @@ public class QuarryBlockEntity extends RadiusMachineBlockEntity {
             layerHasBlock = true;
             BlockPos pos = new BlockPos(x, scanY, z);
             if (!canBreak(state, pos)) {
+                passBlockedByTool = true; // 空手到底时据此区分「真挖完」与「工具不行」
                 advanceCursorInLayer();
                 continue;
             }
             List<ItemStack> drops = state.getDrops(WorkingHelper.getLootBuilder(level, pos, effectiveToolForDrops(tool)));
             if (drops.isEmpty()) {
+                passBlockedByTool = true;
                 advanceCursorInLayer();
                 continue;
             }
@@ -518,11 +561,37 @@ public class QuarryBlockEntity extends RadiusMachineBlockEntity {
     }
 
     /**
+     * 一轮扫到底的收尾：按 {@link QuarryScanDecision} 决定停机、重扫，还是停在记录点等工具。
+     */
+    private void finishPass() {
+        switch (QuarryScanDecision.decide(true, scanPassMined, passBlockedByTool)) {
+            case AWAIT_TOOL -> {
+                // 回到本轮起点等工具，不算挖尽，也不消耗能量
+                awaitTool = true;
+                scanPassMined = false;
+                scanY = passStartY;
+                int expand = Math.max(0, radius - initialRadius);
+                scanX = (worldPosition.getX() & ~15) - expand;
+                scanZ = (worldPosition.getZ() & ~15) - expand;
+            }
+            case RESCAN_FROM_START -> {
+                scanPassMined = false;
+                resetScanCursor();
+            }
+            default -> {
+                // CONTINUE 不会在到底时出现；EXHAUSTED_STOP 保持游标在底部，由 scanExhausted 停机
+            }
+        }
+    }
+
+    /**
      * 复位游标（模式变化/挖尽后恢复）：从区块西北角、machineY-1 层起点重新扫描。
      */
     private void resetScanCursor() {
         int expand = Math.max(0, radius - initialRadius);
         scanY = worldPosition.getY() - 1;
+        passStartY = scanY;
+        passBlockedByTool = false;
         scanX = (worldPosition.getX() & ~15) - expand;
         scanZ = (worldPosition.getZ() & ~15) - expand;
     }
@@ -540,6 +609,8 @@ public class QuarryBlockEntity extends RadiusMachineBlockEntity {
         if (scanY < minScanY() || scanY > startY) {
             scanY = startY;
         }
+        passStartY = scanY;
+        passBlockedByTool = false;
         if (scanFast) {
             int y = findNextNonAirLayer(scanY, 0); // 首次初始化：不限步扫到底
             // 哨兵（WORLD_MIN - 1）= 全空气世界 → scanY 置为哨兵值本身，scanExhausted 判定停机
@@ -568,6 +639,7 @@ public class QuarryBlockEntity extends RadiusMachineBlockEntity {
         // C→S 方向服务端执行时 sender 为 ofClient(player)：isRemote()=true
         if (sender.isRemote()) {
             scanFast = !scanFast;
+            awaitTool = false;
             if (scanCursorInitialized && scanExhausted()) {
                 resetScanCursor();
             }

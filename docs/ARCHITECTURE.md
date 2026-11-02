@@ -150,6 +150,9 @@ CmBlockEntity (implements ISyncPersistRPCBlockEntity)
 - 输入消失或配方失配：处理型/配方型机器的 `conditionStart()` 为 false，进度归零；
   效果型机器在原料消失时同样归零。
 - 部分取出：批处理锁定期间保持 `lockedB`，取出部分输入不改变本周期批量。
+- 采矿场另有「等工具」态：一轮扫到维度底却空手、且过程中有方块被当前工具挡下（`canBreak` 为 false 或无掉落），
+  判为暂无可用工具而不是挖尽——游标回到本轮起点 `passStartY`、`conditionStart()` 转 false（不耗能、位置不动），
+  工具特征（物品或耐久）一变即从该点续扫。判定表在 `QuarryScanDecision.decide()`，与方块实体解耦以便脱机单测。
 
 ### 2.5 能量模型
 
