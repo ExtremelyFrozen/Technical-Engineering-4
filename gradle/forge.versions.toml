@@ -31,6 +31,10 @@ allthemodium = "9143638" # Allthemodium 3.2.1（ATM 顶级金属）
 geckolib = "8893490" # GeckoLib 4.9.3（Allthemodium 硬前置 ≥4.7.5.1）
 modmenu = "7312908" # Mod Menu (NeoForge Edition) 1.21.1-1.0.2（Raguto 移植，非 terraformers 官方）
 
+## latvian maven（KubeJS 配方脚本，可选集成）##
+kubejs = "2101.7.2-build.381" # KubeJS 2101.7.2（1.21.1 线）
+rhino = "2101.2.8-build.91" # Rhino（KubeJS 的 JS 引擎，硬前置 ≥2101.2.7-build.81）
+
 ## modrinth maven ##
 sodium = "mc1.21.1-0.6.13-neoforge"
 iris = "1.8.8+1.21.1-neoforge"
@@ -71,6 +75,9 @@ immersiveengineering = { module = "curse.maven:immersive-engineering-231951", ve
 alltheores          = { module = "curse.maven:ato-405593", version.ref = "alltheores" }
 allthemodium        = { module = "curse.maven:allthemodium-364466", version.ref = "allthemodium" }
 geckolib            = { module = "curse.maven:geckolib-388172", version.ref = "geckolib" }
+
+kubejs              = { module = "dev.latvian.mods:kubejs-neoforge", version.ref = "kubejs" }
+rhino               = { module = "dev.latvian.mods:rhino", version.ref = "rhino" }
 
 spark               = { module = "curse.maven:spark-361579", version.ref = "spark" }
 ae2jeiintegration   = { module = "curse.maven:ae2-jei-integration-1074338", version.ref = "ae2jeiintegration" }
