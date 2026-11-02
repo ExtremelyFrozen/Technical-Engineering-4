@@ -33,3 +33,7 @@ client_run_*.txt
 
 # 兼容层转换器的中间产物（tools/compat）
 tools/compat/out/
+
+# WorkBuddy 工具数据（记忆与缓存，不进仓库）
+.workbuddy/
+.workbuddy-ai/
