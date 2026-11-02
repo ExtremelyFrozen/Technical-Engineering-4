@@ -7,6 +7,7 @@
 ### 支持
 
 - 支持**通用扳手标签**：`c:tools/wrench` 收录本模组扳手，整合包配方可直接引用
+- 支持**KubeJS 配方脚本**：粉碎机、压缩机、灵能处理器、感应炉、精炼机的配方可用 `event.recipes.kenergyengineering.*` 编写
 
 ### 改进
 
