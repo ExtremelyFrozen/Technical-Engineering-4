@@ -472,6 +472,13 @@ GUI 走「末影箱模式」：频道目录、创建、接入、退出、删除�
 | Curios | 编译期可选 | 饰品槽支持 |
 | Sodium / Iris / ModernFix | 编译期可选 | 开发期依赖，仓库暂无直接引用 |
 
+内嵌硬前置由 `jarJar` 分发，玩家无需另装：LDLib2、Registrate、taffy。
+taffy 被 7 个类直接引用（5 个核心 BE 加 2 个 GUI 类），原先只靠 LDLib2 的二次嵌套传递，
+现已自行内嵌，避免玩家自装更高版本 LDLib2 时上游改包名或去掉内嵌导致核心 BE 加载失败。
+`neoforge.mods.toml` 里 `ldlib2` 的 `required` 版本下限与 `gradle/forge.versions.toml`
+的 ldlib2 条目（CurseForge 文件 id）必须同步升级；jarJar metadata 的版本范围不参与 FML 的
+mod 版本校验，只管 Maven 坐标解析。
+
 集成红线：
 
 - 按 mod id 门禁，门禁类与带类型的桥分开写。
