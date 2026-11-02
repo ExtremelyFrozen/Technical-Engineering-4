@@ -67,6 +67,25 @@ repositories {
         forRepository { maven { url = "https://maven.architectury.dev/" } }
         filter { includeGroup("dev.architectury") }
     }
+    exclusiveContent { // KubeJS + Rhino + 其传递依赖（latvian maven）
+        forRepository {
+            maven {
+                name = "Latvian Maven"
+                url = "https://maven.latvian.dev/releases"
+            }
+        }
+        // 除 dev.latvian.mods 外还有 dev.latvian.apps:tiny-java-server 等传递依赖
+        filter { includeGroupByRegex("dev\\.latvian\\..*") }
+    }
+    exclusiveContent { // KubeJS 的 animated-gif-lib 只发布在 JitPack（版本号带前缀，非语义版本）
+        forRepository {
+            maven {
+                name = "JitPack"
+                url = "https://jitpack.io"
+            }
+        }
+        filter { includeGroup("com.github.rtyley") }
+    }
     exclusiveContent { // Cloth Config (shedaniel)
         forRepository { maven { url = "https://maven.shedaniel.me/" } }
         filter { includeGroup("me.shedaniel.cloth") }

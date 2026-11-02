@@ -28,6 +28,14 @@ dependencies {
     compileOnly(forge.bundles.jei)
     compileOnly(forge.emi)
 
+    // KubeJS —— 配方脚本接口（可选集成）。compileOnly 供插件类编译，localRuntime 供 dev 实测。
+    // 插件靠 jar 根的 kubejs.plugins.txt 被发现：KubeJS 缺席时没人读该文件，插件类不会被加载，
+    // 主包照常启动（与 JEI/Jade 的注解自动发现同一套隔离方式）。
+    compileOnly(forge.kubejs)
+    compileOnly(forge.rhino)
+    localRuntime(forge.kubejs)
+    localRuntime(forge.rhino)
+
     // WAILA-likes
     compileOnly(forge.jade)
     clientCompileOnly(forge.jade)
