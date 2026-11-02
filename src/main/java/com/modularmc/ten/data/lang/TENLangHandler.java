@@ -448,8 +448,8 @@ public final class TENLangHandler {
      * 校验「游戏直接查表」的两类键：配置项（label + tooltip）与按键绑定（分类 + 键名）。
      * 缺一条就让 datagen 失败，而不是等玩家在界面里看到原始键名。
      * <p>
-     * 配置侧遍历 {@link ModConfigSpec#getSpec()} 的树：组节点只要求组名，叶子节点额外要求
-     * {@code .tooltip}。按键侧取 {@link TEN#KEY_CATEGORY} / {@link TEN#KEY_TOGGLE_CHARGE}，
+     * 配置侧遍历 {@link ModConfigSpec#getSpec()} 的树：分组与叶子都要求 tooltip（配置界面两者都读）。
+     * 按键侧取 {@link TEN#KEY_CATEGORY} / {@link TEN#KEY_TOGGLE_CHARGE}，
      * 与 {@code TENKeybinds} 共用同一份常量。键集合取自 {@link #ZH_ENTRIES}——{@code addRaw}
      * 每写一条都会登记，所以校验的是这次 datagen 实际产出的键，不是另抄一份清单。
      */
@@ -472,10 +472,10 @@ public final class TENLangHandler {
             String path = prefix.isEmpty() ? String.valueOf(entry.getKey()) : prefix + "." + entry.getKey();
             String key = TEN.MOD_ID + ".configuration." + path;
             if (!ZH_ENTRIES.containsKey(key)) missing.add(key);
+            // 分组与叶子都要求 tooltip：配置界面两者都会读，缺了同样显示原文。
+            if (!ZH_ENTRIES.containsKey(key + ".tooltip")) missing.add(key + ".tooltip");
             if (entry.getValue() instanceof Map<?, ?> child) {
                 collectMissingKeys(child, path, missing);
-            } else if (!ZH_ENTRIES.containsKey(key + ".tooltip")) {
-                missing.add(key + ".tooltip");
             }
         }
     }
