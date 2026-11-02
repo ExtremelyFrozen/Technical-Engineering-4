@@ -2,6 +2,7 @@ package com.modularmc.ten.data;
 
 import com.modularmc.ten.TEN;
 import com.modularmc.ten.api.recipe.RecipeSignature;
+import com.modularmc.ten.config.TENConfig;
 
 import net.minecraft.data.CachedOutput;
 import net.minecraft.data.DataProvider;
@@ -489,9 +490,24 @@ public class TENCompatGen implements DataProvider {
         return and;
     }
 
+    /**
+     * 表行写的来源必须登记在 {@link TENConfig.CompatConfig#KNOWN_SOURCES}。
+     * 拼错不会报错，只会生成一条 {@code compat_enabled} 永远匹配不上的配方——玩家装再多邻居也看不到它。
+     * <p>
+     * source 支持 {@code "a,b"} 形式（一条配方同时依赖多个邻居），逐段检查。
+     */
+    private static void checkSource(String source) {
+        for (String s : source.split(",")) {
+            if (!TENConfig.CompatConfig.KNOWN_SOURCES.contains(s)) {
+                throw new IllegalStateException("兼容来源未登记到 TENConfig.CompatConfig.KNOWN_SOURCES：" + s);
+            }
+        }
+    }
+
     /** 与 {@link #machine} 同构，但条件由调用方给全（不再从 mod 串推导），用于分流表。 */
     private static Recipe machineWith(String source, String type, String name, List<JsonObject> conds,
             JsonArray inputs, JsonArray outputs, int time) {
+        checkSource(source);
         var j = new JsonObject();
         j.addProperty("type", TEN.MOD_ID + ":" + type);
         var all = new JsonArray();
@@ -519,6 +535,7 @@ public class TENCompatGen implements DataProvider {
     }
 
     private static Recipe machine(String mod, String type, String name, JsonArray inputs, JsonArray outputs, int time) {
+        checkSource(mod);
         var j = new JsonObject();
         j.addProperty("type", TEN.MOD_ID + ":" + type);
         var conds = modLoadedAll(mod);
