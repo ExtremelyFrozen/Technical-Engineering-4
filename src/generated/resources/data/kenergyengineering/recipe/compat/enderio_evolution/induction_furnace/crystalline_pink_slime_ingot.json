@@ -11,6 +11,10 @@
     {
       "type": "kenergyengineering:compat_enabled",
       "source": "enderio_evolution"
+    },
+    {
+      "type": "kenergyengineering:compat_enabled",
+      "source": "industrialforegoing"
     }
   ],
   "type": "kenergyengineering:induction_furnace",

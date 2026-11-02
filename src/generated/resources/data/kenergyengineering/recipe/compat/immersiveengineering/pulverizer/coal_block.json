@@ -11,6 +11,10 @@
     {
       "type": "kenergyengineering:compat_enabled",
       "source": "immersiveengineering"
+    },
+    {
+      "type": "kenergyengineering:compat_enabled",
+      "source": "enderio"
     }
   ],
   "type": "kenergyengineering:pulverizer",

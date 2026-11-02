@@ -523,10 +523,10 @@ public class TENCompatGen implements DataProvider {
             guard.add("value", absent);
             all.add(guard);
         }
-        var toggle = new JsonObject();
-        toggle.addProperty("type", TEN.MOD_ID + ":compat_enabled");
-        toggle.addProperty("source", source);
-        all.add(toggle);
+        // 每源开关：主来源总是加；其余来源只在配方真的用到它的物品时才加。
+        // 复合 source 也用于目录归属（pressed 的 "alltheores,immersiveengineering" 输入是通用标签、
+        // 输出归 ATO），把 IE 一并算进来会在关掉 IE 兼容时误伤 ATO 的配方。
+        addSourceToggles(all, source, inputs, outputs);
         j.add("neoforge:conditions", all);
         j.add("inputs", inputs);
         j.add("outputs", outputs);
@@ -552,11 +552,10 @@ public class TENCompatGen implements DataProvider {
             guard.add("value", absent);
             conds.add(guard);
         }
-        // 每源开关：关掉该来源即整条配方在加载期消失（JEI 同步不显示）
-        var toggle = new JsonObject();
-        toggle.addProperty("type", TEN.MOD_ID + ":compat_enabled");
-        toggle.addProperty("source", mod.split(",")[0]);
-        conds.add(toggle);
+        // 每源开关：主来源总是加；其余来源只在配方真的用到它的物品时才加。
+        // 复合 source 也用于目录归属（pressed 的 "alltheores,immersiveengineering" 输入是通用标签、
+        // 输出归 ATO），把 IE 一并算进来会在关掉 IE 兼容时误伤 ATO 的配方。
+        addSourceToggles(conds, mod, inputs, outputs);
         j.add("neoforge:conditions", conds);
         j.add("inputs", inputs);
         j.add("outputs", outputs);
@@ -564,6 +563,38 @@ public class TENCompatGen implements DataProvider {
         // 目录带机器类型：EIO 的 alloy_smelting/ender_pearl 与 sag_milling/ender_pearl 同名，
         // 平铺会互相覆盖
         return new Recipe(mod.split(",")[0] + "/" + type, name, j);
+    }
+
+    /**
+     * 给配方补 {@code compat_enabled} 条件：主来源（第一段）总是加，其余来源只在输入或输出里
+     * 出现该来源命名空间的物品时才加。
+     * <p>
+     * 复合 source 有第二种用途——目录归属：{@code pressed} 的
+     * {@code "alltheores,immersiveengineering"} 输入是通用标签、输出归 ATO，IE 只是同一材料的
+     * 另一个提供者。把 IE 也算成开关，关掉 IE 兼容会让 ATO 的配方一起消失。
+     */
+    private static void addSourceToggles(JsonArray conds, String sources, JsonArray inputs, JsonArray outputs) {
+        String primary = sources.split(",")[0].trim();
+        for (String raw : sources.split(",")) {
+            String source = raw.trim();
+            if (!source.equals(primary) && !mentionsNamespace(inputs, source) && !mentionsNamespace(outputs, source)) {
+                continue;
+            }
+            var toggle = new JsonObject();
+            toggle.addProperty("type", TEN.MOD_ID + ":compat_enabled");
+            toggle.addProperty("source", source);
+            conds.add(toggle);
+        }
+    }
+
+    /** 输入/输出里是否有属于该命名空间的物品或标签 id。 */
+    private static boolean mentionsNamespace(JsonArray items, String namespace) {
+        for (var element : items) {
+            var obj = element.getAsJsonObject();
+            if (!obj.has("key")) continue;
+            if (obj.get("key").getAsString().startsWith(namespace + ":")) return true;
+        }
+        return false;
     }
 
     /** 逗号分隔的多重门控：任一邻居缺席，整条配方在加载期消失。 */

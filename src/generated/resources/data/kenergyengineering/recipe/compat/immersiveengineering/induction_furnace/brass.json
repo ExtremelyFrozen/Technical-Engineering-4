@@ -25,6 +25,10 @@
     {
       "type": "kenergyengineering:compat_enabled",
       "source": "immersiveengineering"
+    },
+    {
+      "type": "kenergyengineering:compat_enabled",
+      "source": "alltheores"
     }
   ],
   "type": "kenergyengineering:induction_furnace",
