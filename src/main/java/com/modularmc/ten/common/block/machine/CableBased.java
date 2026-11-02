@@ -42,7 +42,15 @@ import net.neoforged.neoforge.capabilities.Capabilities;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 
-public class CableBased extends HorizontalMachineBlock implements SimpleWaterloggedBlock {
+/**
+ * 线缆/管道的公共方块基类。
+ * <p>
+ * 直接继承 {@link BaseMachineBlock} 而不是 {@code HorizontalMachineBlock}：后者多带一个 {@code FACING}，
+ * 但线缆的 blockstate 是纯 multipart（按 {@code active} + 六个方向的连接值拼模型），从不引用朝向。
+ * 保留 FACING 会让每个方块的状态数乘 4——7 种线缆合计 8 万余个 BlockState，注册表冻结时要逐个建
+ * {@code Cache}（算碰撞箱与 faceSturdy），这是启动期最大的一笔固定开销。
+ */
+public class CableBased extends BaseMachineBlock implements SimpleWaterloggedBlock {
 
     public static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
 
@@ -273,9 +281,8 @@ public class CableBased extends HorizontalMachineBlock implements SimpleWaterlog
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
         FluidState fluid = context.getLevel().getFluidState(context.getClickedPos());
-        BlockState state = defaultBlockState();
-        state = state.setValue(ACTIVE, false)
-                .setValue(FACING, context.getHorizontalDirection().getOpposite())
+        BlockState state = defaultBlockState()
+                .setValue(ACTIVE, false)
                 .setValue(WATERLOGGED, fluid.getType() == Fluids.WATER);
         for (Direction dir : Direction.values()) {
             state = state.setValue(CONNECTION.get(dir), 0);
