@@ -24,7 +24,7 @@
 | 源集 | 位置 | 说明 |
 |---|---|---|
 | `main` | `src/main/java` | 公共与服务端：方块、方块实体、注册、配方、GUI 工厂、网络 |
-| `client` | `src/client/java` | 只在客户端加载：客户端初始化、BER、JEI/Jade |
+| `client` | `src/client/java` | 只在客户端加载：客户端初始化、BER、JEI/Jade；产物要在 `gradle/scripts/jars.gradle` 里显式 `from sourceSets.client.output` 才进发布 jar，`neoForge.mods` 的 sourceSet 绑定只喂 dev run |
 | `test` | `src/test/java` | NeoForge GameTest，走 `runGameTestServer`，不是 JUnit |
 | `extra` / `clientExtra` | 构建脚本声明的运行源集 | 服务端 / 客户端运行配置分别挂这两个源集；当前没有独立源文件 |
 | `generated` | `src/generated/resources` | DataGen 输出，构建时并入 main 资源 |

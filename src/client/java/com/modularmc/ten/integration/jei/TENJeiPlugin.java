@@ -177,8 +177,6 @@ public class TENJeiPlugin implements IModPlugin {
     // ── Category Registration ────────────────────────────────────────────
     @Override
     public void registerCategories(IRecipeCategoryRegistration registration) {
-        if (!TEN.Mods.isJEILoaded()) return;
-
         IGuiHelper helper = registration.getJeiHelpers().getGuiHelper();
 
         for (var data : buildCategories()) {
@@ -197,8 +195,6 @@ public class TENJeiPlugin implements IModPlugin {
     // ── Recipe Registration ──────────────────────────────────────────────
     @Override
     public void registerRecipes(IRecipeRegistration registration) {
-        if (!TEN.Mods.isJEILoaded()) return;
-
         var ingredientManager = registration.getIngredientManager();
         if (ingredientManager == null) return;
 
@@ -251,7 +247,6 @@ public class TENJeiPlugin implements IModPlugin {
 
     @Override
     public void onRuntimeAvailable(IJeiRuntime jeiRuntime) {
-        if (!TEN.Mods.isJEILoaded()) return;
         IRecipeManager recipeManager = jeiRuntime.getRecipeManager();
 
         if (recipeManager != activeRecipeManager) {
@@ -389,8 +384,6 @@ public class TENJeiPlugin implements IModPlugin {
     // ── Catalyst Registration ────────────────────────────────────────────
     @Override
     public void registerRecipeCatalysts(IRecipeCatalystRegistration registration) {
-        if (!TEN.Mods.isJEILoaded()) return;
-
         for (var data : buildCategories()) {
             var type = new mezz.jei.api.recipe.RecipeType<FormsCombinedRecipe>(data.id, FormsCombinedRecipe.class);
             registration.addRecipeCatalyst(data.icon, type);
@@ -403,7 +396,6 @@ public class TENJeiPlugin implements IModPlugin {
 
     @Override
     public void registerGuiHandlers(IGuiHandlerRegistration registration) {
-        if (!TEN.Mods.isJEILoaded()) return;
         registration.addGuiContainerHandler(ModularUIContainerScreen.class, ModularUIJEIHandlers.GUI_CONTAINER_HANDLER);
     }
 }

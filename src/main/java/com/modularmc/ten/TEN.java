@@ -7,7 +7,6 @@ import com.modularmc.ten.network.ToggleEnergyUnitPayload;
 
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.bus.api.IEventBus;
-import net.neoforged.fml.ModList;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
 import net.neoforged.fml.javafmlmod.FMLModContainer;
@@ -57,24 +56,5 @@ public class TEN {
 
     public static ResourceLocation id(String path) {
         return ResourceLocation.fromNamespaceAndPath(MOD_ID, path);
-    }
-
-    public static class Mods {
-
-        private static boolean isModLoaded(String modId) {
-            return ModList.get().isLoaded(modId);
-        }
-
-        public static boolean isAnyRecipeViewerLoaded() {
-            return isEMILoaded() || isModLoaded("jei");
-        }
-
-        public static boolean isJEILoaded() {
-            return !isEMILoaded() && isModLoaded("jei");
-        }
-
-        public static boolean isEMILoaded() {
-            return isModLoaded("emi");
-        }
     }
 }
