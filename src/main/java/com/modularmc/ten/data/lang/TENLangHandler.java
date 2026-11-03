@@ -5,9 +5,9 @@ import com.modularmc.ten.common.data.TENBlocks;
 import com.modularmc.ten.common.data.TENItems;
 import com.modularmc.ten.config.TENConfig;
 
-import com.tterrag.registrate.providers.RegistrateLangProvider;
-
 import net.neoforged.neoforge.common.ModConfigSpec;
+
+import com.tterrag.registrate.providers.RegistrateLangProvider;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -430,8 +430,7 @@ public final class TENLangHandler {
                 "列出的来源其兼容配方在加载期整体消失，JEI 也不再显示，例如 enderio_evolution。");
         addRaw(provider, "kenergyengineering.configuration.compat.providerPriority", "Material provider priority", "材料归属优先级");
         addRaw(provider, "kenergyengineering.configuration.compat.providerPriority.tooltip",
-                "Best first. Decides which mod owns an item when several mods ship the same material"
-                        + " (ore chain, alloys). A switched-off source is skipped here too.",
+                "Best first. Decides which mod owns an item when several mods ship the same material" + " (ore chain, alloys). A switched-off source is skipped here too.",
                 "从优到劣排列。同一种材料（矿石链、合金）由列表中最先「已加载且未被关闭」的模组提供。");
 
         addRaw(provider, "kenergyengineering.configuration.panelAnimation", "Panel Animation", "面板动画");
@@ -459,13 +458,11 @@ public final class TENLangHandler {
         List<String> missing = new ArrayList<>();
         collectMissingKeys(TENConfig.COMMON_SPEC, missing);
         collectMissingKeys(TENConfig.CLIENT_SPEC, missing);
-        for (String key : new String[] {TEN.KEY_CATEGORY, TEN.KEY_TOGGLE_CHARGE}) {
+        for (String key : new String[] { TEN.KEY_CATEGORY, TEN.KEY_TOGGLE_CHARGE }) {
             if (!ZH_ENTRIES.containsKey(key)) missing.add(key);
         }
         if (!missing.isEmpty()) {
-            throw new IllegalStateException("界面键缺少本地化 " + missing.size() + " 条，游戏里会显示原始键名：\n  "
-                    + String.join("\n  ", missing)
-                    + "\n在 TENConfig 补 .translation()、在 TENLangHandler 对应 addXxx() 补条目后再跑 datagen。");
+            throw new IllegalStateException("界面键缺少本地化 " + missing.size() + " 条，游戏里会显示原始键名：\n  " + String.join("\n  ", missing) + "\n在 TENConfig 补 .translation()、在 TENLangHandler 对应 addXxx() 补条目后再跑 datagen。");
         }
     }
 

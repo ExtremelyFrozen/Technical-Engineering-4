@@ -169,6 +169,7 @@ public final class RecipeSignature {
 
     /** 条件快照：正集合、负集合与占用它的文件。 */
     private record CondEntry(Set<String> on, Set<String> off, String path) {
+
         String describe() {
             StringBuilder sb = new StringBuilder();
             for (String m : on) sb.append("+").append(m);

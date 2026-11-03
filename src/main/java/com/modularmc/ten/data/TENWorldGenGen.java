@@ -128,7 +128,7 @@ public final class TENWorldGenGen {
 
     @SafeVarargs
     private static BiomeModifiers.AddFeaturesBiomeModifier add(HolderSet<Biome> biomes, HolderGetter<PlacedFeature> placed,
-            ResourceKey<PlacedFeature>... keys) {
+                                                               ResourceKey<PlacedFeature>... keys) {
         List<Holder<PlacedFeature>> features = Arrays.stream(keys).<Holder<PlacedFeature>>map(placed::getOrThrow).toList();
         return new BiomeModifiers.AddFeaturesBiomeModifier(biomes, HolderSet.direct(features), GenerationStep.Decoration.UNDERGROUND_ORES);
     }

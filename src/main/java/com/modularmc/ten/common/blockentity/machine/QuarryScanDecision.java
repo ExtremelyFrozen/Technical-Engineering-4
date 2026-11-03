@@ -20,8 +20,8 @@ public final class QuarryScanDecision {
     private QuarryScanDecision() {}
 
     /**
-     * @param reachedFloor     游标已到本维度可挖下界
-     * @param passMined        本轮真的挖到过方块
+     * @param reachedFloor      游标已到本维度可挖下界
+     * @param passMined         本轮真的挖到过方块
      * @param passBlockedByTool 本轮有方块因当前工具挖不动或无掉落而被跳过
      */
     public static ScanOutcome decide(boolean reachedFloor, boolean passMined, boolean passBlockedByTool) {
