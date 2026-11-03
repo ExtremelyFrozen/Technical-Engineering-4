@@ -48,6 +48,24 @@ jobs:
         run: echo "version=$(./gradlew -q printVersion)" >> $GITHUB_OUTPUT
       - name: Build
         run: ./gradlew assemble
+      - name: Assert client classes packaged
+        run: |
+          JARS=$(ls build/libs/*.jar | grep -vE -- '-(sources|slim)\.jar$' || true)
+          if [ "$(printf '%s\n' "$JARS" | grep -c .)" -ne 1 ]; then
+            echo "::error::expected exactly one main jar, got:"
+            echo "$JARS"
+            exit 1
+          fi
+          JAR="$JARS"
+          echo "checking $JAR"
+          for pkg in integration/jei integration/jade client/guide client/renderer client/TENClientSetup.class; do
+            n=$(unzip -Z1 "$JAR" | grep -c "com/modularmc/ten/$pkg")
+            echo "$pkg -> $n"
+            if [ "$n" -eq 0 ]; then
+              echo "::error::$pkg is missing from the released jar"
+              exit 1
+            fi
+          done
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
