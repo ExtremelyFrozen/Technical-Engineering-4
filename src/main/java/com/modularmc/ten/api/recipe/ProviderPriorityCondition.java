@@ -1,13 +1,13 @@
 package com.modularmc.ten.api.recipe;
 
-import com.mojang.serialization.Codec;
-import com.mojang.serialization.MapCodec;
-import com.mojang.serialization.codecs.RecordCodecBuilder;
-
 import com.modularmc.ten.TEN;
 import com.modularmc.ten.config.TENConfig;
 
 import net.neoforged.neoforge.common.conditions.ICondition;
+
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
 
 import java.util.List;
 
@@ -28,8 +28,8 @@ public record ProviderPriorityCondition(String mod, List<String> candidates) imp
 
     public static final MapCodec<ProviderPriorityCondition> CODEC = RecordCodecBuilder.mapCodec(
             builder -> builder.group(
-                            Codec.STRING.fieldOf("mod").forGetter(ProviderPriorityCondition::mod),
-                            Codec.STRING.listOf().fieldOf("candidates").forGetter(ProviderPriorityCondition::candidates))
+                    Codec.STRING.fieldOf("mod").forGetter(ProviderPriorityCondition::mod),
+                    Codec.STRING.listOf().fieldOf("candidates").forGetter(ProviderPriorityCondition::candidates))
                     .apply(builder, ProviderPriorityCondition::new));
 
     @Override

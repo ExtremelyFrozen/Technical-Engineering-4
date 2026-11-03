@@ -7,7 +7,6 @@ import com.modularmc.ten.api.recipe.FormsCombinedRecipeSerializer;
 import com.google.gson.JsonElement;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.JsonOps;
-
 import dev.latvian.mods.kubejs.recipe.RecipeScriptContext;
 import dev.latvian.mods.kubejs.recipe.component.RecipeComponent;
 import dev.latvian.mods.kubejs.recipe.component.RecipeComponentType;
@@ -28,8 +27,7 @@ import dev.latvian.mods.rhino.type.TypeInfo;
  */
 public record FormsIngredientComponent(RecipeComponentType<?> typeOverride) implements RecipeComponent<FormsCombinedIngredient> {
 
-    public static final RecipeComponentType<FormsCombinedIngredient> TYPE =
-            RecipeComponentType.unit(TEN.id("forms_ingredient"), FormsIngredientComponent::new);
+    public static final RecipeComponentType<FormsCombinedIngredient> TYPE = RecipeComponentType.unit(TEN.id("forms_ingredient"), FormsIngredientComponent::new);
 
     @Override
     public RecipeComponentType<?> type() {
