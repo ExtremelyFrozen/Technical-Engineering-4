@@ -24,6 +24,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.Containers;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -45,6 +46,7 @@ import dev.vfyjxf.taffy.style.TaffyPosition;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
 /**
@@ -165,6 +167,13 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
     public int upgradeSize = 1;
     public int initialUpgradeSize = 1;
     public static final int MAX_UPGRADE_SLOTS = 6;
+
+    /**
+     * 视图态：升级槽面板处于展开态的玩家。不持久化、不 @DescSynced，
+     * 只供服务端容器的 quickMoveStack 门控使用（见 upgradePanelSlot 的 mayPlace）。
+     * 按玩家区分，避免同机多人打开 GUI 时互相覆盖；条目随 BE 卸载回收。
+     */
+    private final Set<UUID> upgradePanelOpenPlayers = ConcurrentHashMap.newKeySet();
 
     public List<MachineFluidTank> tanks = new ArrayList<>();
 
@@ -1040,6 +1049,36 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         }
     }
 
+    /**
+     * C→S：上报升级槽面板展开态（open 非 0 为展开）。quickMoveStack 在服务端执行，
+     * 读不到客户端 UIState；服务端容器据此决定升级槽是否参与快捷移动。
+     * 参数沿用项目既有 RPC 的 int 写法，避免运行期参数序列化对 boolean 的隐式依赖。
+     */
+    @RPCMethod
+    public void rpcSetUpgradePanelOpen(RPCSender sender, int open) {
+        if (!sender.isRemote() || sender.asPlayer() == null) {
+            return;
+        }
+        setUpgradePanelOpenFor(sender.asPlayer(), open != 0);
+    }
+
+    /** 记录该玩家的升级槽面板展开态。RPC 入口与回归测试共用同一处状态写入。 */
+    public void setUpgradePanelOpenFor(Player player, boolean open) {
+        if (player == null) {
+            return;
+        }
+        if (open) {
+            upgradePanelOpenPlayers.add(player.getUUID());
+        } else {
+            upgradePanelOpenPlayers.remove(player.getUUID());
+        }
+    }
+
+    /** 服务端容器判定：该玩家的升级槽面板是否展开（决定升级槽能否接收快捷移动）。 */
+    public boolean isUpgradePanelOpenFor(Player player) {
+        return player != null && upgradePanelOpenPlayers.contains(player.getUUID());
+    }
+
     /** S→C：客户端写回 upgradeHandler，使 GUI 升级槽（SlotItemHandler 绑定客户端 handler）渲染物品。 */
     @RPCMethod
     public void rpcSyncUpgradeData(RPCSender sender, ItemStack s0, ItemStack s1, ItemStack s2,
@@ -1413,10 +1452,14 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
                     layout.width(0);
                     layout.height(10);
                 }));
-        inventoryBuilder.accept(root);
+        // 升级面板先于机器槽挂进 UI 树：LDLib2 的容器槽按 UI 树遍历顺序注册，而 quickMoveStack
+        // 在服务端执行、服务端 UI 树不经样式引擎计算，SlotStyle.quickMovePriority(1000) 读不到
+        // computed 值会回退成默认 0。所有槽同级时按注册顺序取候选，故顺序才是「展开时先进升级槽」
+        // 的可靠保障；面板与按钮都带显式 zIndex(1/2)，提前挂载不改变绘制层叠。
         if (supportsUpgradeSlots()) {
-            TENMachineBlockUIFactory.addUpgradeSlotsTab(root, this, uiState);
+            TENMachineBlockUIFactory.addUpgradeSlotsTab(root, this, uiState, holder.player);
         }
+        inventoryBuilder.accept(root);
         TENMachineBlockUIFactory.addPlayerInventory(root);
         TENMachineBlockUIFactory.addCommonSidebar(root, holder, this, uiState);
         // 打开 GUI 时面配置初始同步：改为客户端请求 → 服务端 rpcToPlayer 单播（对齐升级槽/过滤槽模式）。
