@@ -459,6 +459,12 @@ GUI 走「末影箱模式」：频道目录、创建、接入、退出、删除�
 - `TransferModeButtonState`：传输模式按钮状态。
 - `RangeDisplayBER`（客户端源集）：范围机器的工作区线框。
 - 配置面板与升级槽面板由 LDLib2 的 `ModularUI` 组装；面板底图与钮槽坐标要按纹理实测，不要凭感觉改。
+- **服务端 UI 树不跑样式计算**：`StyleEngine` 只在客户端 `init()` 时把 `SlotStyle` 的声明值算进
+  `computedSlots`；服务端容器只由 `tickServer()` 驱动，读 `quickMovePriority` / `acceptQuickMove`
+  会回退到属性默认值。而 `quickMoveStack` 偏偏在服务端执行，所以跨端可靠的快捷移动优先级只能靠
+  **容器槽注册顺序**（= UI 树遍历顺序），不能只靠 `slotStyle`。升级槽面板因此先于机器槽挂进 UI 树。
+- 升级槽面板的展开态是客户端 `UIState` 视图（服务端读不到），经 `rpcSetUpgradePanelOpen` 按玩家
+  镜像到服务端；升级槽的 `mayPlace` 据此门控，收起时把升级槽从快捷移动候选里剔除。
 
 ### 6.2 同步
 

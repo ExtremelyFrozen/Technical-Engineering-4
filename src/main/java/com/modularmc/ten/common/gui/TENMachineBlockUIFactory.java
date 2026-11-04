@@ -371,8 +371,11 @@ public final class TENMachineBlockUIFactory {
      * 面板内容 2×3 六升级槽（ITEM_SLOT_SMALL 18×18，间距 2px），内容区与九宫格底图内边框间距恒等 6px
      * （面板尺寸由内容区 + 四边 border4+gap6 反推，见 UPGRADE_PANEL_WIDTH/HEIGHT）。
      * 由 buildMachineUI 在 supportsUpgradeSlots() 时挂载（替代原顶部 -28 常显条）。
+     * 面板展开态只存在于客户端 UIState，而快捷移动在服务端容器执行，故开合时由 C→S RPC
+     * 同步到服务端，升级槽据此决定能否接收 quickMove（展开时优先，收起时排除）。
      */
-    public static void addUpgradeSlotsTab(UIElement root, CmMachineBlockEntity machine, UIState uiState) {
+    public static void addUpgradeSlotsTab(UIElement root, CmMachineBlockEntity machine, UIState uiState,
+                                          Player player) {
         var upgradeButton = textureElement(CONFIG_TAB_X, UPGRADE_TAB_Y, CONFIG_TAB_SIZE, CONFIG_TAB_SIZE,
                 fullTexture(TENConstants.ICON_UPGRADE, CONFIG_TAB_SIZE, CONFIG_TAB_SIZE),
                 () -> List.of(ComponentHelper.translated("kenergyengineering.info.bar_upgrade")),
@@ -432,7 +435,7 @@ public final class TENMachineBlockUIFactory {
             int row = i / UPGRADE_COLS;
             int sx = slotBaseX + col * (UPGRADE_SLOT_SIZE + UPGRADE_SLOT_GAP);
             int sy = slotBaseY + row * (UPGRADE_SLOT_SIZE + UPGRADE_SLOT_GAP);
-            ItemSlot slot = upgradePanelSlot(machine, i, sx, sy);
+            ItemSlot slot = upgradePanelSlot(machine, player, i, sx, sy);
             upgradePanel.addChild(slot);
             upgradeContents.add(slot);
         }
@@ -451,10 +454,18 @@ public final class TENMachineBlockUIFactory {
 
         // 与配置面板同构的动画状态机：-1 收起完成；0..目标宽 展开中；目标宽 展开完成（从 tab 左上角对角生长）
         int[] panelWidth = { uiState.isUpgradeOpen() ? -1 : 0 };
+        // 展开态上报幂等哨兵：-1 未上报，0 收起，1 展开；避免 TICK 每帧发包。
+        // 首次执行随 GUI 构建上报初值（跨次打开记住的展开态也要让服务端知道）。
+        int[] reportedOpen = { -1 };
         // 升级面板展开完成时是否已请求过数据（每次打开重置）：rpcToServer 请求服务端推送全量升级数据
         boolean[] upgradeDataRequested = { false };
         Runnable syncUpgrade = () -> {
             boolean open = uiState.isUpgradeOpen();
+            int desiredOpen = open ? 1 : 0;
+            if (player.level().isClientSide() && reportedOpen[0] != desiredOpen) {
+                reportedOpen[0] = desiredOpen;
+                machine.rpcToServer("rpcSetUpgradePanelOpen", desiredOpen);
+            }
             int w = panelWidth[0];
             if (open) {
                 if (w < 0) {
@@ -483,6 +494,8 @@ public final class TENMachineBlockUIFactory {
                 // 仅靠本请求 + 服务端变化广播（rpcSyncUpgradeData）维持同步
                 if (fullyOpen && !upgradeDataRequested[0]) {
                     upgradeDataRequested[0] = true;
+                    // 面板全开时容器必已就绪，重发一次展开态，兜底 GUI 构建期的首次上报
+                    machine.rpcToServer("rpcSetUpgradePanelOpen", 1);
                     machine.rpcToServer("rpcRequestUpgradeData");
                 }
             } else {
@@ -520,9 +533,24 @@ public final class TENMachineBlockUIFactory {
                 slice(CONFIG_PANEL_BORDER, CONFIG_PANEL_BORDER, PANEL_SRC_SIZE - 2 * CONFIG_PANEL_BORDER, PANEL_SRC_SIZE - 2 * CONFIG_PANEL_BORDER, 1, 1));
     }
 
-    /** 升级面板内 18×18 槽：modular 小槽底图 + quickMovePriority(1000) + 空槽 tooltip。 */
-    private static ItemSlot upgradePanelSlot(CmMachineBlockEntity machine, int index, int x, int y) {
-        SlotItemHandler slot = new SlotItemHandler(machine.upgradeHandler, index, 0, 0);
+    /**
+     * 升级面板内 18×18 槽：modular 小槽底图 + quickMovePriority(1000) + 空槽 tooltip。
+     * mayPlace 叠加展开态门控：收起时把升级槽从快捷移动候选里剔除，物品不会被 Shift 进不可见的槽。
+     * 展开时优先由「升级槽先于机器槽注册」保证（见 buildMachineUI），priority 是客户端样式计算后的加成：
+     * 服务端 UI 树不跑 StyleEngine，slotStyle 的声明值在容器侧读不到。
+     */
+    private static ItemSlot upgradePanelSlot(CmMachineBlockEntity machine, Player player, int index, int x, int y) {
+        SlotItemHandler slot = new SlotItemHandler(machine.upgradeHandler, index, 0, 0) {
+
+            @Override
+            public boolean mayPlace(net.minecraft.world.item.ItemStack stack) {
+                // 客户端只做点击预测（隐藏槽本来就点不到），门控只作用于服务端容器的 quickMoveStack
+                if (!player.level().isClientSide() && !machine.isUpgradePanelOpenFor(player)) {
+                    return false;
+                }
+                return super.mayPlace(stack);
+            }
+        };
         // 升级槽专用底图（用户需求）：不再借用小型物品槽
         var itemSlot = itemSlot(slot, x, y, false, UPGRADE_SLOT_SIZE, fullTexture(TENConstants.UPGRADE_SLOT_BG, UPGRADE_SLOT_SIZE, UPGRADE_SLOT_SIZE));
         itemSlot.slotStyle(style -> style.quickMovePriority(1000));
