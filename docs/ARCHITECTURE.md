@@ -191,6 +191,21 @@ CmBlockEntity (implements ISyncPersistRPCBlockEntity)
   双向开放，不是双向自动传输。三类 IO（物/流/能）共用这一张表，任何一类都不例外。
   `OUT` 面额外允许外部塞入（既有策略，方便从输出面补料），是表里唯一一处主动面兼收。
 
+- **可选范围由方块标签组合决定**，面板不是六态全开。`CmMachineBlockEntity.allowsFaceMode()`
+  是唯一判定，两层门槛：
+  - `supportsFaceResource()`：该方块有没有这种资源（有槽位 / 有罐体 / 有储能）。频道方块
+    覆写成只认自己的 `channelType()`——三个频道都建了本地缓冲，照基类算会让物品频道也冒出
+    能量面这种无意义页。
+  - `allowsActiveFace()`：查 `ten:face_active_energy` / `_item` / `_fluid` 三个方块标签。
+    **主动面必须由标签授权**，不带标签的方块只剩「关闭 + 被动三态」。三个标签的组合即该方块
+    的资源 IO 限制，整合包与附属方块可按需授予/收回，不必改代码；注册入口在 `TENBlocks` 的
+    `machine()`/`engine()`/`cell()` helper，频道与线缆只打 `machines`。
+
+  GUI 循环走 `FaceOption.nextAllowed(current, allowed)` 跳过不可选模式，读档在 `initMachine()`
+  末尾 `normalizeFaceModes()` 把非法项落回 `OFF`——旧档里给频道配过主动面的会被清一次。
+  **新增机器时必须打主动标签**，否则它的面配置会静默退化成被动-only；
+  `FaceModeRangeGameTest` 守住这三条边界。
+
 - **默认面来自 `initialFaceMode*()`**：`CmMachineBlockEntity` 构造函数逐面写入。产能类机器
   （`EngineBlockEntity`、能量单元、创造单元）覆写为 `OUT`，频道方块覆写为 `OFF`，其余为 `BOTH`。
   这层覆写曾经被构造函数里硬编码的 `BOTH` 架空——`getOrDefault(..., initialFaceModeX())` 的
@@ -207,6 +222,29 @@ CmBlockEntity (implements ISyncPersistRPCBlockEntity)
   可输出罐出液，罐 0 的流体被相邻拒收时后面的罐全被堵死（两罐装不同流体时必现）。
   两条路径都按 capability 的实际返回值记账：模拟取 → 模拟收 → 实取 → 实收，实收不足的部分
   原样退回，超堆叠与多罐场景都不复制、不蒸发。
+
+- **主动拉取与推出来源同一套 capability**：`IN` 面每 tick 调 `activePullItems` /
+  `activePullFluid` / `activePullEnergy`，源是相邻方块经 `level.getCapability(...)` 暴露的
+  handler，不按方块类型特判。三条路径都按「模拟取 → 模拟收 → 实取 → 实收」记账，实收不足
+  退回源。能量侧的推仍限定产能类（`canExternalExtract()`）——普通机器可以「主动输入」供电，
+  但不会把输入电反推回网络；拉对所有带储能、且该面暴露能量能力的机器生效。
+
+- **管道不是容器，主动面贴管道不动是预期语义**：`activePull*` / `activePush*` 遇到
+  `PipeBlockEntity` 一律跳过。管道是传输网络节点，只按自己的连接类型（`PULL` / `NORMAL`）
+  从边缘抽取或投放，不是可被推入的容器。因此：
+  - 要让管道从机器取料：机器面设 `BE_OUT` / `BOTH`（允许外部抽取），管道设备边用扳手切 `PULL`；
+  - 机器 `OUT` 面直接贴管道不会工作，也不应放宽——`OUT` 的语义是机器把物品交给相邻容器，
+    管道不在其列。要改的是接法，不是语义边界；不要为「面贴管道能用」软化这条线。
+
+- **GUI 逻辑面必须经 `getFacing()` 映射**：面板上的前/后/左/右是相对机器朝向的逻辑面，
+  `logicalDirection` 必须读方块状态的 `FACING`。`facingVal` 只是持久化镜像，机器放置时没有
+  写入（`setFacing` 无调用点），直接读它会让所有机器都按北向解释，面配置看起来永远落在
+  固定世界方向。
+
+- **频道方块不参与主动 IO**：`AbstractChannelBlockEntity` 把 `doActiveItemIo` /
+  `doActiveFluidIo` / `doActiveEnergyIo` 覆写为空。频道的面是共享存储的被动接入点，接入态
+  capability 直接指向 `SharedStorage`；本地 `tanks` 只是断开后的回流缓冲，若允许主动拉取，
+  流体会被灌进本地缓冲、绕过共享存储。
 
 - `CommonProxy.registerCapabilities()` 遍历所有 `BaseMachineBlock`，按方块实体类型分发：
   - 线缆走 `CableBlockEntity.getEnergy(side)`；
@@ -601,6 +639,8 @@ mod 版本校验，只管 Maven 坐标解析。
 **加一台机器**：`TENBlocks` 注册方块 → `TENBlockEntities` 注册 BE 并 `validBlocks` →
 选择合适的 BE 基类 → `TENModels` / blockstate → 中英文语言 → `CommonProxy.registerCapabilities()` 已按
 `BaseMachineBlock` 自动覆盖，确认你的 BE 类型实现了对应 getter → （可选）JEI/Jade 分类 → GameTest。
+注册走 `machine()` / `engine()` / `cell()` helper 会自动打上 `ten:face_active_*` 三个主动面标签；
+绕过 helper 自行注册就必须补标签，否则面配置只剩被动三态（见 2.6）。
 
 **加一个升级**：`common/item/upgrades/` 新建类 → `TENItems` 注册 → `IUpgradableMachine` 的效果分支 →
 `TENLangHandler.addUpgradeTips()` 补中英文 → 掉落表或配方（如需要）。

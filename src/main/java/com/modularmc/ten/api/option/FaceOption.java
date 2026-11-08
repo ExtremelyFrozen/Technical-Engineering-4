@@ -1,5 +1,7 @@
 package com.modularmc.ten.api.option;
 
+import java.util.function.IntPredicate;
+
 /**
  * 机器面交互模式常量与判定。
  *
@@ -28,8 +30,17 @@ public class FaceOption {
     public static final int BE_OUT = 4;
     public static final int BOTH = 5;
 
+    /** 面配置类型索引：GUI 类型按钮、RPC 的 changeType 与 6 面同步数组共用这套编号。 */
+    public static final int TYPE_ENERGY = 0;
+    public static final int TYPE_ITEM = 1;
+    public static final int TYPE_FLUID = 2;
+
     public static int size() {
         return 6;
+    }
+
+    public static boolean isValid(int mode) {
+        return mode >= OFF && mode < size();
     }
 
     public static String toStr(int mode) {
@@ -68,5 +79,42 @@ public class FaceOption {
     /** 外部 capability 能否从该面取出（被输出）：被动输出 / 被动双向。 */
     public static boolean allowsExternalExtract(int mode) {
         return mode == BE_OUT || mode == BOTH;
+    }
+
+    /**
+     * 主动模式：机器自己搬运（{@link #IN} 自拉 / {@link #OUT} 自推）。
+     *
+     * <p>
+     * 主动面会让机器绕过外部调度自行搬运，因此不是所有方块都能选：必须由方块标签
+     * （{@code ten:face_active_energy} / {@code _item} / {@code _fluid}）显式授权，
+     * 共享存储型方块（频道）留在被动侧。
+     */
+    public static boolean isActive(int mode) {
+        return mode == IN || mode == OUT;
+    }
+
+    /** 被动模式：机器不动手，只等外部经 capability 读写（含双向开放）。 */
+    public static boolean isPassive(int mode) {
+        return mode == BE_IN || mode == BE_OUT || mode == BOTH;
+    }
+
+    /**
+     * 从 {@code start} 的下一项开始循环查找第一个被 {@code allowed} 接受的面模式，
+     * 最多绕一圈；全都不可用时返回 {@code start}（语义等于「这一页没有可切换的目标」）。
+     *
+     * <p>
+     * GUI 循环必须走本方法而不是自己 {@code +1}：可选范围由方块标签决定，
+     * 直接自增会落到该方块不允许的主动模式上。
+     */
+    public static int nextAllowed(int start, IntPredicate allowed) {
+        int current = isValid(start) ? start : OFF;
+        int mode = current;
+        for (int i = 0; i < size(); i++) {
+            mode = mode + 1 >= size() ? OFF : mode + 1;
+            if (allowed.test(mode)) {
+                return mode;
+            }
+        }
+        return current;
     }
 }

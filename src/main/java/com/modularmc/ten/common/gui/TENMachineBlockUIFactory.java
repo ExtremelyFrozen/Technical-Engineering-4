@@ -1071,7 +1071,10 @@ public final class TENMachineBlockUIFactory {
 
     @Nullable
     private static Direction logicalDirection(CmMachineBlockEntity machine, int logicalSide) {
-        Direction facing = Direction.from3DDataValue(machine.facingVal);
+        // 必须走 getFacing() 读方块状态的 FACING：facingVal 是持久化镜像，机器放置时
+        // BE 从未被写入（setFacing 无调用点），默认恒为 NORTH —— 直接读它会让面板的
+        // 「前/后/左/右」永远按北向解释，面配置看起来永远落在固定世界方向。
+        Direction facing = machine.getFacing();
         // [修复] 频道面板等 6 向机器（DirectionalMachineBlock）朝 UP/DOWN 时 getClockWise 抛
         // IllegalStateException（Y 轴无旋转语义）→ 炸掉 GUI 同步包致客户端断线；
         // Y 轴朝向时侧边栏四向固定为北南东西

@@ -76,7 +76,7 @@ public final class WrenchDismantleService {
                 fluidFace[idx] = machine.fluidFaceMode.getOrDefault(dir, machine.initialFaceModeFluid());
             }
             snapshot = new MachineSnapshot(state, invSnap, upgSnap, energy, tankSnap,
-                    energyFace, itemFace, fluidFace, machine.redstoneMode, machine.facingVal, machine.active, machine.upgradeSize);
+                    energyFace, itemFace, fluidFace, machine.redstoneMode, machine.getFacing().get3DDataValue(), machine.active, machine.upgradeSize);
         }
 
         // 2. fireBlockBreak（未改变任何状态）

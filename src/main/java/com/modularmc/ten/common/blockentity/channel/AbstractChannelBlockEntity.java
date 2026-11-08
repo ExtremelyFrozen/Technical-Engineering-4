@@ -304,6 +304,33 @@ public abstract class AbstractChannelBlockEntity extends CmMachineBlockEntity {
         return false;
     }
 
+    /**
+     * 频道只有自己那一种资源页：基类按「有没有 handler/罐体」判定会误判——三个频道都建了
+     * 本地缓冲（能量频道有 10000FE、物品频道有 9 槽、流体频道有 2 罐），照基类算会出现
+     * 物品频道也能配能量面这种无意义页。
+     */
+    @Override
+    protected boolean supportsFaceResource(int changeType) {
+        return switch (channelType()) {
+            case ITEM -> changeType == FaceOption.TYPE_ITEM;
+            case FLUID -> changeType == FaceOption.TYPE_FLUID;
+            case ENERGY -> changeType == FaceOption.TYPE_ENERGY;
+        };
+    }
+
+    // ───── 频道不主动搬运：面只是共享存储的被动接入点 ─────
+    // 接入态的能力由共享 handler 承担，机器自己不该在 local tanks/槽位里搬东西；
+    // 若允许主动 IO，流体面设为 IN 会把外部流体灌进断开后才用的本地缓冲，绕过共享存储。
+
+    @Override
+    protected void doActiveItemIo() {}
+
+    @Override
+    protected void doActiveFluidIo() {}
+
+    @Override
+    protected void doActiveEnergyIo() {}
+
     // ───── 物品 UI 门面（零 tick：接入后槽位直接绑定共享存储）─────
 
     public ChannelItemHandlerFacade getChannelItemFacade() {
