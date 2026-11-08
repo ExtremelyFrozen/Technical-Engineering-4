@@ -301,9 +301,20 @@ public class NetworkLogicGameTest {
         source.energyStorage.setEnergy(4000);
         target.energyStorage.setEnergy(0);
 
+        // 25 tick 是原始窗口；但 GameTestServer 起测时经常卡顿（实测 "Running 7~9 s / 150+ ticks behind"），
+        // 线缆网络在卡顿窗口内可能还没成形。25 tick 没动就再等到 60 tick 判一次，仍不动才失败，
+        // 并在断言里带上两端储能，便于区分「网络没成形」和「电真没走」。
         helper.runAtTickTime(25, () -> {
-            helper.assertTrue(target.energyStorage.getEnergyStored() > 0, "expected cable network to move energy between cells");
-            helper.succeed();
+            if (target.energyStorage.getEnergyStored() > 0) {
+                helper.succeed();
+                return;
+            }
+            helper.runAtTickTime(60, () -> {
+                var cap = target.getEnergyStorage(net.minecraft.core.Direction.WEST);
+                helper.assertTrue(target.energyStorage.getEnergyStored() > 0,
+                        "expected cable network to move energy between cells, source=" + source.energyStorage.getEnergyStored() + " target=" + target.energyStorage.getEnergyStored() + " targetFaces=" + target.energyFaceMode + " sourceFaces=" + source.energyFaceMode + " westCanReceive=" + (cap != null && cap.canReceive()));
+                helper.succeed();
+            });
         });
     }
 

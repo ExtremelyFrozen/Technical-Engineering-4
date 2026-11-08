@@ -82,22 +82,24 @@ public class TENBlocks {
     public static final BlockEntry<HorizontalMachineBlock> CREATIVE_CELL = cell("creative_energy_cell", "Creative Energy Cell", "创造能量单元");
 
     // === Channels ===
+    // 频道是共享存储的被动接入点，三个都打 no_active_face_* 去掉主动面：
+    // 面自搬会绕过 SharedStorage，把外部流体/物品灌进只在断开后才用的本地缓冲。
     public static final BlockEntry<ChannelBlock> CHANNEL_ENERGY = REGISTRATE
             .block("channel_energy", ChannelBlock::new)
             .lang("Energy Channel")
-            .tag(TENTags.MACHINES)
+            .tag(TENTags.MACHINES, TENTags.NO_ACTIVE_FACE_ENERGY)
             .blockstate((ctx, prov) -> TENModels.channelBlockstate(prov, ctx.getEntry(), "channel_energy"))
             .item().model((ctx, prov) -> prov.blockItem(ctx::getEntry)).build().register();
     public static final BlockEntry<ChannelBlock> CHANNEL_ITEM = REGISTRATE
             .block("channel_item", ChannelBlock::new)
             .lang("Item Channel")
-            .tag(TENTags.MACHINES)
+            .tag(TENTags.MACHINES, TENTags.NO_ACTIVE_FACE_ITEM)
             .blockstate((ctx, prov) -> TENModels.channelBlockstate(prov, ctx.getEntry(), "channel_item"))
             .item().model((ctx, prov) -> prov.blockItem(ctx::getEntry)).build().register();
     public static final BlockEntry<ChannelBlock> CHANNEL_FLUID = REGISTRATE
             .block("channel_fluid", ChannelBlock::new)
             .lang("Fluid Channel")
-            .tag(TENTags.MACHINES)
+            .tag(TENTags.MACHINES, TENTags.NO_ACTIVE_FACE_FLUID)
             .blockstate((ctx, prov) -> TENModels.channelBlockstate(prov, ctx.getEntry(), "channel_fluid"))
             .item().model((ctx, prov) -> prov.blockItem(ctx::getEntry)).build().register();
 
@@ -154,7 +156,7 @@ public class TENBlocks {
         EN_NAMES.put(n, englishName);
         return REGISTRATE.block(n, HorizontalMachineBlock::new)
                 .lang(englishName)
-                .tag(TENTags.MACHINES, TENTags.FACE_ACTIVE_ENERGY, TENTags.FACE_ACTIVE_ITEM, TENTags.FACE_ACTIVE_FLUID)
+                .tag(TENTags.MACHINES)
                 .blockstate((ctx, prov) -> {
                     var normal = TENModels.machine(prov, n);
                     var active = TENModels.machineActive(prov, n);
@@ -185,7 +187,7 @@ public class TENBlocks {
         EN_NAMES.put(n, englishName);
         return REGISTRATE.block(n, HorizontalMachineBlock::new)
                 .lang(englishName)
-                .tag(TENTags.MACHINES, TENTags.FACE_ACTIVE_ENERGY, TENTags.FACE_ACTIVE_ITEM, TENTags.FACE_ACTIVE_FLUID)
+                .tag(TENTags.MACHINES)
                 .blockstate((ctx, prov) -> {
                     var normal = TENModels.engine(prov, n);
                     var active = TENModels.engineActive(prov, n);
@@ -235,7 +237,7 @@ public class TENBlocks {
         EN_NAMES.put(n, englishName);
         return REGISTRATE.block(n, HorizontalMachineBlock::new)
                 .lang(englishName)
-                .tag(TENTags.MACHINES, TENTags.FACE_ACTIVE_ENERGY, TENTags.FACE_ACTIVE_ITEM, TENTags.FACE_ACTIVE_FLUID)
+                .tag(TENTags.MACHINES)
                 .properties(p -> p.noOcclusion())
                 .blockstate((ctx, prov) -> TENModels.cellBlockstate(prov, ctx.getEntry(), n))
                 .item().model((ctx, prov) -> prov.blockItem(ctx::getEntry)).build().register();

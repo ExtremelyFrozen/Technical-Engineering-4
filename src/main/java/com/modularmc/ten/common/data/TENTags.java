@@ -14,28 +14,29 @@ public class TENTags {
     public static final TagKey<Block> MACHINES = blockTag("machines");
 
     /**
-     * 面配置「主动模式」授权标签，按资源类型各一个：带标签的方块允许把该资源的某个面
-     * 配成主动输入（机器自拉）或主动输出（机器自推）。
+     * 面配置「禁止主动模式」标签，按资源类型各一个：带标签的方块不允许把该资源的某个面
+     * 配成主动输入（机器自拉）或主动输出（机器自推），只能留在「关闭 + 被动三态」。
      *
      * <p>
-     * 为什么要标签而不是代码开关：主动面会让方块绕过外部调度自搬，属于「可能破坏方块自身
-     * 存储模型」的危险配置——频道方块的共享存储就是典型反例（面只是被动接入点，机器自搬会
-     * 把外部流体灌进本地断开缓冲）。用方块标签声明，整合包与附属方块也能按需授予/收回，
-     * 不必改代码。三个标签的组合即该方块的资源 IO 限制：
-     * <ul>
-     * <li>不带任何标签 → 面板只剩「关闭 + 被动三态」，与共享存储型方块一致；</li>
-     * <li>带 {@code face_active_energy} → 能量页可选主动输入/输出；</li>
-     * <li>三者全带 → 有对应能力的资源页都能选主动模式（无该资源能力的页仍只剩关闭，
-     * 由 {@code supportsFaceResource} 判定）。</li>
-     * </ul>
+     * <b>为什么是「去除」而不是「赋予」</b>：按「赋予」写，21 台设备（15 机器 + 4 引擎 +
+     * 2 单元）要各打三条共 63 条，其中流体一条对无罐机器毫无信息量（有无罐体已由
+     * {@code supportsFaceResource} 判掉）、物品与能量两条对这 21 台全是「允许」，
+     * 真正承载的事实只有「频道方块排除在外」。按「去除」写，三个标签各一条就说完。
      *
      * <p>
-     * 标签只授予「主动」，不授予「存在」：某台机器有没有流体页仍看它自己有没有罐体，
-     * 避免给所有机器都塞流体页。
+     * 功能上也更贴合设备现实：危险面不是「机器会自搬」，而是「共享存储型方块不该自搬」——
+     * 频道的面只是 {@code SharedStorage} 的被动接入点，本地罐/槽是断开后的回流缓冲，
+     * 机器一旦自搬就绕过了共享存储。默认放开 + 显式去除，新加机器不会因为忘打标签而
+     * 静默退化成被动-only。
+     *
+     * <p>
+     * <b>三个标签极性必须一致</b>：都表示「去除可主动」，判定走同一条
+     * {@code allowsActiveFace} 分支，不许出现某个资源用白名单、另一个用黑名单的混搭。
+     * 默认允许的另一面是：新加共享存储型方块（不止频道）必须记得补标签。
      */
-    public static final TagKey<Block> FACE_ACTIVE_ENERGY = blockTag("face_active_energy");
-    public static final TagKey<Block> FACE_ACTIVE_ITEM = blockTag("face_active_item");
-    public static final TagKey<Block> FACE_ACTIVE_FLUID = blockTag("face_active_fluid");
+    public static final TagKey<Block> NO_ACTIVE_FACE_ENERGY = blockTag("no_active_face_energy");
+    public static final TagKey<Block> NO_ACTIVE_FACE_ITEM = blockTag("no_active_face_item");
+    public static final TagKey<Block> NO_ACTIVE_FACE_FLUID = blockTag("no_active_face_fluid");
 
     /**
      * 扳手类物品（旋转、拆解、管道连接模式切换的交互判定）。SpannerItem 经 datagen 注册入内。

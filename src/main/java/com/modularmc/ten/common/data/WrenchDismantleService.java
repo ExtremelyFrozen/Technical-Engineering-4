@@ -2,6 +2,7 @@ package com.modularmc.ten.common.data;
 
 import com.modularmc.ten.TEN;
 import com.modularmc.ten.api.blockentity.CmMachineBlockEntity;
+import com.modularmc.ten.api.option.FaceOption;
 import com.modularmc.ten.common.blockentity.PipeBlockEntity;
 
 import net.minecraft.core.BlockPos;
@@ -233,9 +234,11 @@ public final class WrenchDismantleService {
                 machine.tanks.get(i).setFluid(snap.tanks.get(i).copy());
             for (Direction dir : Direction.values()) {
                 int idx = dir.get3DDataValue();
-                machine.energyFaceMode.put(dir, snap.energyFaceData[idx]);
-                machine.itemFaceMode.put(dir, snap.itemFaceData[idx]);
-                machine.fluidFaceMode.put(dir, snap.fluidFaceData[idx]);
+                // 快照可能来自旧版本（组件随物品跨版本留存）或换到另一类方块上，
+                // 逐项按当前设备的可选范围收敛，别把已去除的档位原样装回去
+                machine.energyFaceMode.put(dir, clampFace(machine, FaceOption.TYPE_ENERGY, snap.energyFaceData[idx]));
+                machine.itemFaceMode.put(dir, clampFace(machine, FaceOption.TYPE_ITEM, snap.itemFaceData[idx]));
+                machine.fluidFaceMode.put(dir, clampFace(machine, FaceOption.TYPE_FLUID, snap.fluidFaceData[idx]));
             }
             machine.redstoneMode = snap.redstoneMode;
             machine.facingVal = snap.facingVal;
@@ -245,5 +248,10 @@ public final class WrenchDismantleService {
         } catch (Exception e) {
             TEN.LOGGER.error("Failed to restore machine at {} after failed dismantle", machine.getBlockPos(), e);
         }
+    }
+
+    /** 越界或当前设备不提供的面模式一律落回关闭。 */
+    private static int clampFace(CmMachineBlockEntity machine, int changeType, int mode) {
+        return machine.allowsFaceMode(changeType, mode) ? mode : FaceOption.OFF;
     }
 }

@@ -504,29 +504,96 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
     }
 
     /**
-     * 主动面（{@link FaceOption#IN} / {@link FaceOption#OUT}）授权，来自方块标签
-     * {@code ten:face_active_energy} / {@code _item} / {@code _fluid}。
+     * 主动面（{@link FaceOption#IN} / {@link FaceOption#OUT}）是否允许，默认允许；
+     * 带 {@code ten:no_active_face_energy} / {@code _item} / {@code _fluid} 的方块被去除。
      *
      * <p>
-     * 默认按注册时打的标签判定；需要更细粒度的方块可覆写。客户端也能读：原版会把方块标签
+     * 三个标签同一极性（去除）、同一条判定分支，不做「某资源白名单、另一资源黑名单」的混搭，
+     * 否则同一份配置在不同资源页上的行为就会不对称。
+     *
+     * <p>
+     * 默认按方块标签判定；需要更细粒度的方块可覆写。客户端也能读：原版会把方块标签
      * 同步给客户端，故标签判定在 GUI 侧同样成立。
      */
     protected boolean allowsActiveFace(int changeType) {
         BlockState state = getBlockState();
         return switch (changeType) {
-            case FaceOption.TYPE_ENERGY -> state.is(TENTags.FACE_ACTIVE_ENERGY);
-            case FaceOption.TYPE_ITEM -> state.is(TENTags.FACE_ACTIVE_ITEM);
-            case FaceOption.TYPE_FLUID -> state.is(TENTags.FACE_ACTIVE_FLUID);
+            case FaceOption.TYPE_ENERGY -> !state.is(TENTags.NO_ACTIVE_FACE_ENERGY);
+            case FaceOption.TYPE_ITEM -> !state.is(TENTags.NO_ACTIVE_FACE_ITEM);
+            case FaceOption.TYPE_FLUID -> !state.is(TENTags.NO_ACTIVE_FACE_FLUID);
             default -> false;
         };
     }
 
     /**
-     * 面配置可选范围的唯一判定：关闭恒可选；被动三态要求该资源存在；主动两态另需标签授权。
+     * 主动方向是否有意义——按设备功能性判定，与方块标签无关。
+     *
+     * <p>
+     * 标签回答的是「这个方块整体该不该自搬」（共享存储型方块），这里回答「这台设备的这个方向
+     * 有没有实际用途」。两层都过，该模式才进面配置轮换；方向级判定直接吃设备已有的功能事实
+     * （{@link #canExternalExtract()} / {@link #slotType} / {@link #tankType}），随实现自动变化，
+     * 不需要另立标签：
+     * <ul>
+     * <li><b>能量输出</b>：仅 {@link #canExternalExtract()} 的产能类（引擎 / 能量单元 / 创造单元）。
+     * 普通机器没有产能路径，{@code activePushEnergy} 本来就按同一条件短路，给它 OUT 只会得到
+     * 一个「不推、却仍可被外部塞电」的面，属于纯误导项。</li>
+     * <li><b>能量输入</b>：引擎除外。纯电源被灌电只会被它自己立刻推回网络，与自身的 OUT 面
+     * 形成无意义的来回搬运；能量单元要充电，保留。</li>
+     * <li><b>物品 / 流体</b>：按 {@code slotType()} / {@code tankType()} 有没有可进、可出项判定——
+     * 只有 XP 输出罐的熔炉不会冒出「流体主动输入」，只进不出的机器不会冒出「物品主动输出」。</li>
+     * </ul>
+     */
+    protected boolean supportsActiveDirection(int changeType, int mode) {
+        boolean push = FaceOption.machinePushes(mode);
+        return switch (changeType) {
+            case FaceOption.TYPE_ENERGY -> push ? canExternalExtract() : canPullEnergy();
+            case FaceOption.TYPE_ITEM -> hasItemSlot(push);
+            case FaceOption.TYPE_FLUID -> hasTank(push);
+            default -> false;
+        };
+    }
+
+    /** 能量主动输入是否有意义：普通机器取电、能量单元充电；引擎是纯电源，灌电只会来回搬运。 */
+    private boolean canPullEnergy() {
+        if (!canExternalExtract()) {
+            return true;
+        }
+        return machineType() == MachineType.CELL || machineType() == MachineType.CREATIVE_CELL;
+    }
+
+    /** 是否存在可进（{@code output=false}）/ 可出（{@code output=true}）的物品槽。 */
+    private boolean hasItemSlot(boolean output) {
+        if (itemHandler == null) {
+            return false;
+        }
+        for (int slot = 0; slot < itemHandler.getSlots(); slot++) {
+            IngredientType type = slotType(slot);
+            if (output ? type.canOut() : type.canIn()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** 是否存在可进（{@code output=false}）/ 可出（{@code output=true}）的流体罐。 */
+    private boolean hasTank(boolean output) {
+        for (int tank = 0; tank < tanks.size(); tank++) {
+            IngredientType type = tankType(tank);
+            if (output ? type.canOut() : type.canIn()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 面配置可选范围的唯一判定：关闭恒可选；被动三态要求该资源存在；主动两态要同时过
+     * 标签（{@link #allowsActiveFace}）与设备功能性（{@link #supportsActiveDirection}）两层。
      *
      * <p>
      * GUI 循环（{@link #rpcCycleFaceMode}）与读档归一化（{@link #normalizeFaceModes}）都走这里，
-     * 任何新增的「不允许组合」都应加在本方法，而不是散落到调用点。
+     * 因此轮换表天然是「按设备现算的活列表」：任何一层判定变了，下一次点击就按新集合走。
+     * 新增的「不允许组合」都应加在本方法或其下游，不要散落到调用点。
      */
     public final boolean allowsFaceMode(int changeType, int mode) {
         if (!FaceOption.isValid(mode)) {
@@ -538,16 +605,19 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         if (!supportsFaceResource(changeType)) {
             return false;
         }
-        return !FaceOption.isActive(mode) || allowsActiveFace(changeType);
+        if (!FaceOption.isActive(mode)) {
+            return true;
+        }
+        return allowsActiveFace(changeType) && supportsActiveDirection(changeType, mode);
     }
 
     /**
      * 把面配置归一到可选集合内（非法项落回 {@link FaceOption#OFF}）。
      *
      * <p>
-     * 需要归一化的场景：玩家在旧版本给频道方块配过主动面，或整合包收回了
-     * {@code face_active_*} 标签。放在 {@link #initMachine()} 末尾执行——此时
-     * 能力对象已建好，{@link #supportsFaceResource} 才能给出准确答案。
+     * 需要归一化的场景：玩家在旧版本给频道方块配过主动面，或整合包收回了某些方块的
+     * 主动面（补上 {@code no_active_face_*} 标签）。放在 {@link #initMachine()} 末尾执行——
+     * 此时能力对象已建好，{@link #supportsFaceResource} 才能给出准确答案。
      */
     protected void normalizeFaceModes() {
         normalizeFaceMap(energyFaceMode, FaceOption.TYPE_ENERGY);
