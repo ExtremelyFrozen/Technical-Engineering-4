@@ -3,7 +3,11 @@ package com.modularmc.ten.common.blockentity.channel;
 import com.modularmc.ten.TEN;
 import com.modularmc.ten.TENConstants;
 import com.modularmc.ten.api.blockentity.CmMachineBlockEntity;
+import com.modularmc.ten.api.capability.MachineEnergyStorage;
+import com.modularmc.ten.api.capability.MachineFluidTank;
 import com.modularmc.ten.api.option.FaceOption;
+import com.modularmc.ten.common.blockentity.PipeBlockEntity;
+import com.modularmc.ten.common.blockentity.TransferNetworks;
 import com.modularmc.ten.common.channel.ChannelKey;
 import com.modularmc.ten.common.channel.ChannelRegistry;
 import com.modularmc.ten.common.channel.ChannelType;
@@ -16,8 +20,13 @@ import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+import net.neoforged.neoforge.energy.IEnergyStorage;
+import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler;
+import net.neoforged.neoforge.items.IItemHandler;
 
 import com.lowdragmc.lowdraglib2.gui.factory.BlockUIMenuType;
 import com.lowdragmc.lowdraglib2.gui.texture.SpriteTexture;
@@ -281,10 +290,14 @@ public abstract class AbstractChannelBlockEntity extends CmMachineBlockEntity {
 
     @Override
     public void setRemoved() {
-        if (!chunkUnloadingLocal && level != null && !level.isClientSide() && isJoined()) {
+        boolean shouldLeave = !chunkUnloadingLocal && level != null && !level.isClientSide() && isJoined();
+        // 先置 removed 标记再 leave()：leave → setActive(false) 会尝试回写方块状态，
+        // 若在 super 之前执行，方块刚被破坏的位置会被重新写回「未接入」的频道方块，
+        // 表现为「破坏不掉落、只是解绑」。setActive 已按 isRemoved() 跳过回写。
+        super.setRemoved();
+        if (shouldLeave) {
             leave();
         }
-        super.setRemoved();
     }
 
     // ───── 面能力：未接入不暴露；接入态由子类指向共享 handler ─────
@@ -318,18 +331,295 @@ public abstract class AbstractChannelBlockEntity extends CmMachineBlockEntity {
         };
     }
 
-    // ───── 频道不主动搬运：面只是共享存储的被动接入点 ─────
-    // 接入态的能力由共享 handler 承担，机器自己不该在 local tanks/槽位里搬东西；
-    // 若允许主动 IO，流体面设为 IN 会把外部流体灌进断开后才用的本地缓冲，绕过共享存储。
+    // ───── 频道主动 IO：拉取/推送都写共享存储 ─────
+    // 面是共享存储的接入点，但频道自己也可以替玩家搬运：主动输入把相邻容器搬进共享，
+    // 主动输出把共享搬进相邻容器。两侧都直接读写 SharedStorage，不能碰本地缓冲——
+    // 接入态 UI 槽位绑定的是共享存储，写本地缓冲会出现「界面槽位不刷新」。
 
     @Override
-    protected void doActiveItemIo() {}
+    protected boolean supportsFaceDirection(int changeType, int mode) {
+        // 频道是共享存储：向内向外都真实存在，六档全部可选（资源页仍由 supportsFaceResource 限定）
+        return true;
+    }
 
     @Override
-    protected void doActiveFluidIo() {}
+    protected void doActiveItemIo() {
+        if (channelType() != ChannelType.ITEM) {
+            return;
+        }
+        SharedStorage shared = activeSharedStorage();
+        if (shared == null) {
+            return;
+        }
+        IItemHandler handler = shared.getItemHandler();
+        for (Direction direction : Direction.values()) {
+            if (!hasFaceCapabilityItem(direction)) {
+                continue;
+            }
+            int mode = itemFaceMode.getOrDefault(direction, FaceOption.OFF);
+            if (FaceOption.machinePulls(mode)) {
+                pullItems(direction, handler);
+            } else if (FaceOption.machinePushes(mode)) {
+                pushItems(direction, handler);
+            }
+        }
+    }
+
+    /**
+     * 从相邻容器拉物品进共享槽位。
+     * <p>
+     * 记账口径与机器主动拉取一致：模拟抽 → 模拟插 → 实抽 → 实插，实插不足退回源。
+     * 目标必须是共享 handler 而不是本地缓冲——接入态 UI 槽位绑定的是共享存储，
+     * 写本地缓冲会出现「界面槽位不刷新」。
+     */
+    private void pullItems(Direction direction, IItemHandler target) {
+        BlockPos sourcePos = worldPosition.relative(direction);
+        if (level.getBlockEntity(sourcePos) instanceof PipeBlockEntity) {
+            return; // 相邻为管道：由管道逐级传递处理，频道不跨管道拉
+        }
+        IItemHandler source = TransferNetworks.getItems(level, sourcePos, direction.getOpposite());
+        if (source == null) {
+            return;
+        }
+        for (int slot = 0; slot < source.getSlots(); slot++) {
+            ItemStack simulated = source.extractItem(slot, Integer.MAX_VALUE, true);
+            if (simulated.isEmpty()) {
+                continue;
+            }
+            ItemStack simLeft = TransferNetworks.insertItem(target, simulated.copy(), true);
+            int accepted = simulated.getCount() - simLeft.getCount();
+            if (accepted <= 0) {
+                continue;
+            }
+            ItemStack extracted = source.extractItem(slot, accepted, false);
+            if (extracted.isEmpty()) {
+                continue;
+            }
+            ItemStack leftover = TransferNetworks.insertItem(target, extracted.copy(), false);
+            if (!leftover.isEmpty()) {
+                // 防御竞态：实插失败的部分退回源
+                TransferNetworks.insertItem(source, leftover, false);
+            }
+        }
+    }
+
+    /** 把共享槽位搬进相邻容器（同 tick 搬空该槽，目标拒收则停止）。 */
+    private void pushItems(Direction direction, IItemHandler source) {
+        BlockPos targetPos = worldPosition.relative(direction);
+        if (level.getBlockEntity(targetPos) instanceof PipeBlockEntity) {
+            return;
+        }
+        IItemHandler sink = TransferNetworks.getItems(level, targetPos, direction.getOpposite());
+        if (sink == null) {
+            return;
+        }
+        for (int slot = 0; slot < source.getSlots(); slot++) {
+            while (true) {
+                ItemStack stack = source.getStackInSlot(slot);
+                if (stack.isEmpty()) {
+                    break;
+                }
+                int countBefore = stack.getCount();
+                ItemStack simExtract = source.extractItem(slot, countBefore, true);
+                if (simExtract.isEmpty()) {
+                    break;
+                }
+                ItemStack simLeft = TransferNetworks.insertItem(sink, simExtract.copy(), true);
+                int acceptable = simExtract.getCount() - simLeft.getCount();
+                if (acceptable <= 0) {
+                    break;
+                }
+                ItemStack extracted = source.extractItem(slot, acceptable, false);
+                if (extracted.isEmpty()) {
+                    break;
+                }
+                ItemStack leftover = TransferNetworks.insertItem(sink, extracted.copy(), false);
+                if (!leftover.isEmpty()) {
+                    TransferNetworks.insertItem(source, leftover, false);
+                    break;
+                }
+                if (source.getStackInSlot(slot).getCount() >= countBefore) {
+                    break;
+                }
+            }
+        }
+    }
 
     @Override
-    protected void doActiveEnergyIo() {}
+    protected void doActiveFluidIo() {
+        if (channelType() != ChannelType.FLUID) {
+            return;
+        }
+        SharedStorage shared = activeSharedStorage();
+        if (shared == null) {
+            return;
+        }
+        List<MachineFluidTank> tanks = shared.getTanks();
+        for (Direction direction : Direction.values()) {
+            if (!hasFaceCapabilityFluid(direction)) {
+                continue;
+            }
+            int mode = fluidFaceMode.getOrDefault(direction, FaceOption.OFF);
+            if (FaceOption.machinePulls(mode)) {
+                pullFluids(direction, tanks);
+            } else if (FaceOption.machinePushes(mode)) {
+                pushFluids(direction, tanks);
+            }
+        }
+    }
+
+    /** 从相邻容器拉流体进共享罐（模拟抽 → 模拟灌 → 实抽 → 实灌，不足退回源）。 */
+    private void pullFluids(Direction direction, List<MachineFluidTank> target) {
+        BlockPos sourcePos = worldPosition.relative(direction);
+        if (level.getBlockEntity(sourcePos) instanceof PipeBlockEntity) {
+            return;
+        }
+        IFluidHandler source = TransferNetworks.getFluids(level, sourcePos, direction.getOpposite());
+        if (source == null) {
+            return;
+        }
+        for (int tank = 0; tank < source.getTanks(); tank++) {
+            FluidStack inTank = source.getFluidInTank(tank);
+            if (inTank.isEmpty()) {
+                continue;
+            }
+            FluidStack simulated = source.drain(inTank.copy(), IFluidHandler.FluidAction.SIMULATE);
+            if (simulated.isEmpty()) {
+                continue;
+            }
+            int acceptable = fillTanks(target, simulated.copy(), IFluidHandler.FluidAction.SIMULATE);
+            if (acceptable <= 0) {
+                continue;
+            }
+            FluidStack drained = source.drain(simulated.copyWithAmount(acceptable),
+                    IFluidHandler.FluidAction.EXECUTE);
+            if (drained.isEmpty()) {
+                continue;
+            }
+            int filled = fillTanks(target, drained.copy(), IFluidHandler.FluidAction.EXECUTE);
+            if (filled < drained.getAmount()) {
+                source.fill(drained.copyWithAmount(drained.getAmount() - filled),
+                        IFluidHandler.FluidAction.EXECUTE);
+            }
+        }
+    }
+
+    /** 把共享罐搬进相邻容器（逐罐推送，目标拒收或罐空即停）。 */
+    private void pushFluids(Direction direction, List<MachineFluidTank> tanks) {
+        BlockPos targetPos = worldPosition.relative(direction);
+        if (level.getBlockEntity(targetPos) instanceof PipeBlockEntity) {
+            return;
+        }
+        IFluidHandler sink = TransferNetworks.getFluids(level, targetPos, direction.getOpposite());
+        if (sink == null) {
+            return;
+        }
+        for (MachineFluidTank tank : tanks) {
+            pushFluidTank(tank, sink);
+        }
+    }
+
+    /** 把一份流体灌进共享罐组，返回实际灌入量（不修改入参 amount 以外的内容）。 */
+    private static int fillTanks(List<MachineFluidTank> tanks, FluidStack stack, IFluidHandler.FluidAction action) {
+        int filled = 0;
+        for (MachineFluidTank tank : tanks) {
+            int remaining = stack.getAmount() - filled;
+            if (remaining <= 0) {
+                break;
+            }
+            filled += tank.fill(stack.copyWithAmount(remaining), action);
+        }
+        return filled;
+    }
+
+    @Override
+    protected void doActiveEnergyIo() {
+        if (channelType() != ChannelType.ENERGY) {
+            return;
+        }
+        SharedStorage shared = activeSharedStorage();
+        if (shared == null) {
+            return;
+        }
+        MachineEnergyStorage handler = shared.getEnergy();
+        for (Direction direction : Direction.values()) {
+            if (!hasFaceCapabilityEnergy(direction)) {
+                continue;
+            }
+            int mode = energyFaceMode.getOrDefault(direction, FaceOption.OFF);
+            if (FaceOption.machinePulls(mode)) {
+                pullEnergy(direction, handler);
+            } else if (FaceOption.machinePushes(mode)) {
+                pushEnergy(direction, handler);
+            }
+        }
+    }
+
+    /** 把共享单元的电送到相邻接收方（模拟取 → 模拟收 → 实取 → 实收，不足退回）。 */
+    private void pushEnergy(Direction direction, MachineEnergyStorage source) {
+        int available = source.getEnergyStored();
+        if (available <= 0) {
+            return;
+        }
+        IEnergyStorage sink = TransferNetworks.getEnergy(level, worldPosition.relative(direction),
+                direction.getOpposite());
+        if (sink == null || !sink.canReceive()) {
+            return;
+        }
+        int simExtract = source.extractEnergy(available, true);
+        if (simExtract <= 0) {
+            return;
+        }
+        int acceptable = sink.receiveEnergy(simExtract, true);
+        if (acceptable <= 0) {
+            return;
+        }
+        int drained = source.extractEnergy(acceptable, false);
+        if (drained <= 0) {
+            return;
+        }
+        int received = sink.receiveEnergy(drained, false);
+        if (received < drained) {
+            source.receiveEnergy(drained - received, false);
+        }
+    }
+
+    /** 从相邻能量源拉电进共享单元（模拟抽 → 模拟收 → 实抽 → 实收，不足退回源）。 */
+    private void pullEnergy(Direction direction, MachineEnergyStorage target) {
+        int space = target.getMaxEnergyStored() - target.getEnergyStored();
+        if (space <= 0) {
+            return;
+        }
+        IEnergyStorage source = TransferNetworks.getEnergy(level, worldPosition.relative(direction),
+                direction.getOpposite());
+        if (source == null || !source.canExtract()) {
+            return;
+        }
+        int available = source.extractEnergy(space, true);
+        if (available <= 0) {
+            return;
+        }
+        int acceptable = target.receiveEnergy(available, true);
+        if (acceptable <= 0) {
+            return;
+        }
+        int drained = source.extractEnergy(acceptable, false);
+        if (drained <= 0) {
+            return;
+        }
+        int received = target.receiveEnergy(drained, false);
+        if (received < drained) {
+            source.receiveEnergy(drained - received, false);
+        }
+    }
+
+    /** 接入态才允许主动搬运：未接入时面能力本身就不暴露，也没有共享存储可写。 */
+    private SharedStorage activeSharedStorage() {
+        if (level == null || level.isClientSide() || !isJoined()) {
+            return null;
+        }
+        return sharedStorage();
+    }
 
     // ───── 物品 UI 门面（零 tick：接入后槽位直接绑定共享存储）─────
 

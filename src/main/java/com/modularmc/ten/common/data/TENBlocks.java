@@ -82,24 +82,25 @@ public class TENBlocks {
     public static final BlockEntry<HorizontalMachineBlock> CREATIVE_CELL = cell("creative_energy_cell", "Creative Energy Cell", "创造能量单元");
 
     // === Channels ===
-    // 频道是共享存储的被动接入点，三个都打 no_active_face_* 去掉主动面：
-    // 面自搬会绕过 SharedStorage，把外部流体/物品灌进只在断开后才用的本地缓冲。
+    // 频道是共享存储的接入点：主动输入由 AbstractChannelBlockEntity 实现（拉进 sharedStorage），
+    // 主动输出在 supportsFaceDirection 里统一拒绝。这里不再打 no_active_face_* 标签——
+    // 基础模组不使用这些标签，全部留给整合包整体收回某类资源的主动面。
     public static final BlockEntry<ChannelBlock> CHANNEL_ENERGY = REGISTRATE
             .block("channel_energy", ChannelBlock::new)
             .lang("Energy Channel")
-            .tag(TENTags.MACHINES, TENTags.NO_ACTIVE_FACE_ENERGY)
+            .tag(TENTags.MACHINES)
             .blockstate((ctx, prov) -> TENModels.channelBlockstate(prov, ctx.getEntry(), "channel_energy"))
             .item().model((ctx, prov) -> prov.blockItem(ctx::getEntry)).build().register();
     public static final BlockEntry<ChannelBlock> CHANNEL_ITEM = REGISTRATE
             .block("channel_item", ChannelBlock::new)
             .lang("Item Channel")
-            .tag(TENTags.MACHINES, TENTags.NO_ACTIVE_FACE_ITEM)
+            .tag(TENTags.MACHINES)
             .blockstate((ctx, prov) -> TENModels.channelBlockstate(prov, ctx.getEntry(), "channel_item"))
             .item().model((ctx, prov) -> prov.blockItem(ctx::getEntry)).build().register();
     public static final BlockEntry<ChannelBlock> CHANNEL_FLUID = REGISTRATE
             .block("channel_fluid", ChannelBlock::new)
             .lang("Fluid Channel")
-            .tag(TENTags.MACHINES, TENTags.NO_ACTIVE_FACE_FLUID)
+            .tag(TENTags.MACHINES)
             .blockstate((ctx, prov) -> TENModels.channelBlockstate(prov, ctx.getEntry(), "channel_fluid"))
             .item().model((ctx, prov) -> prov.blockItem(ctx::getEntry)).build().register();
 
