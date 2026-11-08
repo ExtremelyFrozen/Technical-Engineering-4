@@ -225,7 +225,7 @@ public class TENBlocks {
         EN_NAMES.put(n, englishName);
         return REGISTRATE.block(n, CableBased::new)
                 .lang(englishName)
-                .blockstate((ctx, prov) -> TENModels.cableMultipart(prov, ctx.getEntry(), n))
+                .blockstate((ctx, prov) -> TENModels.cableDynamic(prov, ctx.getEntry(), n))
                 .tag(TENTags.MACHINES)
                 .item(CableBlockItem::new).model((ctx, prov) -> prov.blockItem(ctx::getEntry)).build().register();
     }

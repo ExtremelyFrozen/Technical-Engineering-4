@@ -41,7 +41,7 @@
 | `api/option` | 7 | 面配置、机器类型、红石模式、冷却剂 |
 | `api/recipe` | 9 | `FormsCombinedRecipe` 配方体系与序列化 |
 | `api/registry/registrate` | 1 | `TENRegistrate` |
-| `api/transmission` | 7 | 线缆/管道传输网络（另有 `energy/` 3、`item/` 3） |
+| `api/transmission` | 8 | 线缆/管道传输网络与连接渲染态（另有 `energy/` 3、`item/` 3） |
 | `client`（main 源集） | 2 | 键位与按键处理，带 `Dist.CLIENT` 防护 |
 | `common` | 1 | `CommonProxy`：注册入口与 capability 注册 |
 | `common/block` | 4 | 矿石、金属块、原矿块等基础方块 |
@@ -64,7 +64,7 @@
 | `integration/xei` | 1 | JEI/EMI 共享绘制组件 |
 | `network` | 2 | `CustomPacketPayload` 与 JEI 缓存状态机 |
 | `utils` | 9 | 通用工具 |
-| `src/client/java`（客户端源集） | 12 | 客户端初始化、BER、JEI 5 个、Jade 4 个 |
+| `src/client/java`（客户端源集） | 17 | 客户端初始化、BER、线缆动态模型 2 个、JEI 6 个、Jade 4 个 |
 | `src/test/java` | 4 | GameTest：面暴露、网络逻辑、机器 UI、测试 helper |
 
 ### 分层规矩
@@ -84,16 +84,17 @@
 Block
 └── BaseMachineBlock (implements EntityBlock, BlockUIMenuType.BlockUI)
     ├── HorizontalMachineBlock (FACING: 水平四向)
-    │   └── CableBased (WATERLOGGED + 六向 CONNECTION)
     ├── DirectionalMachineBlock (FACING: 六向)
     │   └── ChannelBlock (频道方块)
+    ├── CableBased (WATERLOGGED)
     └── 具体机器方块（熔炼机、粉碎机、压缩机…）
 ```
 
 - `BaseMachineBlock`：`ACTIVE` 状态、GUI 打开、Ticker 分发、流体交互、掉落处理、红石连接。
 - `HorizontalMachineBlock`：水平朝向，放置时按玩家朝向决定 `FACING`。
 - `DirectionalMachineBlock`：六向朝向，按点击面反向放置。
-- `CableBased`：线缆/管道；`WATERLOGGED` + 六向 `CONNECTION`；核心碰撞箱是 `CORE_SHAPE`。
+- `CableBased`：线缆/管道；只挂 `WATERLOGGED`（`ACTIVE` 来自父类，恒为 false）。
+  直接继承 `BaseMachineBlock`：连接外观与 `active` 都不进方块状态，用不到 `FACING`。
 
 ### 2.2 BlockEntity 继承
 
@@ -439,13 +440,38 @@ GUI 走「末影箱模式」：频道目录、创建、接入、退出、删除�
   蔚蓝 4 kFE/t（50 kFE）、星光 200 kFE/t（无限缓冲）。GUI 旧文案写 1/10/100/无限 kFE，以代码为准。
 - `PipeBlockEntity`：物品管道，三档（普通 / 白 / 黑）。
 - `TransferNetworks`：网络连接与传输调度。
-- `CableBased`：共用方块形态与六向连接状态。
+- `CableBased`：共用方块形态；连接外观由 `CableRenderState` 承载，不进方块状态。
 
 管道连接模式对齐 TE4-New 基准：`NONE` / `NORMAL` / `PUSH` / `PULL`。
 源边只有显式 `PULL` 面才主动从设备抽取；默认 `NORMAL` 不再自动搬运。
 **旧档已放置管道升级后需要用扳手重新设定模式**，物品不会丢失，留在原容器。
 
 传输系统当前冻结维护：只修 bug，不做结构改造。
+
+### 5.1 连接外观（渲染态）
+
+连接本质是渲染态，不进 `BlockState`。旧实现给六个方向各挂一个 `IntegerProperty(0..2)`，
+连同 `ACTIVE` 与 `WATERLOGGED` 让单方块有 3^6 × 2 × 2 = 2916 个状态、7 个方块合计 2 万余个；
+注册表冻结时要逐个建碰撞箱与 `faceSturdy` 缓存，是启动期最大的一笔固定开销。现在分四层：
+
+| 层 | 位置 | 职责 |
+|---|---|---|
+| 数据 | `api/transmission/CableRenderState` | 六向连接值（0 无 / 1 管道间 / 2 设备）+ `active` 位，打包进一个 `int` |
+| 权威 | `CableBlockEntity` / `PipeBlockEntity` 的 `renderPacked` | 服务端重算；碰撞箱在服务端也读它 |
+| 传输 | `getUpdateTag` / `getUpdatePacket` | 随区块下发与 `sendBlockUpdated` 送达客户端 |
+| 渲染 | `client/model` 的 `CableBakedModel` + `CableModelParts` | 按打包值拼 quad，按值缓存（至多 1458 项） |
+
+- 方块状态只剩 `ACTIVE` × `WATERLOGGED`，7 个方块合计 28 个；blockstate 四个 variant 都指向占位核心模型。
+- 服务端 `refreshRenderState()` 从 transmitter 位图重算，值变了才 `sendBlockUpdated(..., UPDATE_CLIENTS)`；
+  flags 不含 `UPDATE_NEIGHBORS`，不会走 `neighborChanged → refreshConnections` 递归。
+- 客户端 `applyRenderTag` 落值后要做两件事：`requestModelDataUpdate()` 只把坐标记进 `ModelDataManager`
+  的待刷新表，真正让区块重新烘焙的是 `sendBlockUpdated`。缺一个就只剩旧外观。
+- `getUpdateTag` / `getUpdatePacket` 必须覆写：原版默认返回空标签与 `null`，不覆写客户端永远收不到渲染态，
+  建 BE 时打包值恒为 0。
+- 零件模型在 `RegisterAdditional` 登记，`ModifyBakingResult` 里把 7 个方块的全部状态换成动态模型；
+  `CableModelParts` 用 `QuadTransformers` 预旋转六个方向，并同步旋转 `BakedQuad#getDirection()`——
+  面剔除按它判断，只转顶点会留下错误方向。
+- 旧档方块状态里的连接属性会被静默忽略，首 tick 重新组网后外观自动恢复。
 
 ---
 
@@ -475,6 +501,9 @@ GUI 走「末影箱模式」：频道目录、创建、接入、退出、删除�
 - 主线程 `serverTick()` 末尾统一调用 `passivelySync()`，推送脏字段。
 - 持久化字段用 `@Persisted`，客户端同步字段用 `@DescSynced`，RPC 方法用 `@RPCMethod`。
 - 面配置的 `int[]` 不走 `@DescSynced`（初始同步不可靠），改由 GUI 打开与变更时主动推送。
+- 线缆/管道的 `renderPacked` 也标了 `@DescSynced`，但重绘不靠它：触发重绘的是 `sendBlockUpdated`，
+  数据走 BE 自己的 `getUpdateTag`；两条路径都可能在客户端写 `readTileData`，所以它只认带
+  `renderPacked` 键的标签，空标签直接跳过。
 
 ### 6.3 网络
 
@@ -538,7 +567,8 @@ mod 版本校验，只管 Maven 坐标解析。
 **加一个升级**：`common/item/upgrades/` 新建类 → `TENItems` 注册 → `IUpgradableMachine` 的效果分支 →
 `TENLangHandler.addUpgradeTips()` 补中英文 → 掉落表或配方（如需要）。
 
-**加一条线缆/管道**：`TENBlocks` 用 `cable()` helper → blockstate/multipart 模型 →
+**加一条线缆/管道**：`TENBlocks` 用 `cable()` helper → `CableRenderState.VARIANTS` 加注册名 →
+blockstate 占位核心模型与 `src/main/resources` 下的零件模型（见 5.1）→
 `CableBlockEntity.capacityFor/transferFor` 或 `PipeBlockEntity` 的档位参数 → 语言 → 传输上限测试。
 
 **加一个频道类型**：`ChannelType` 增加枚举 → `ChannelKey` 已按类型隔离 → 新 BE 与 capability 门面 →
