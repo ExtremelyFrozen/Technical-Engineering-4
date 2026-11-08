@@ -1,12 +1,10 @@
 package com.modularmc.ten.common.block.machine;
 
 import com.modularmc.ten.TEN;
-import com.modularmc.ten.api.blockentity.CmMachineBlockEntity;
+import com.modularmc.ten.api.transmission.CableRenderState;
 import com.modularmc.ten.api.transmission.ConnectionType;
 import com.modularmc.ten.api.transmission.ITransmitterProvider;
 import com.modularmc.ten.api.transmission.Transmitter;
-import com.modularmc.ten.common.blockentity.CableBlockEntity;
-import com.modularmc.ten.common.blockentity.PipeBlockEntity;
 import com.modularmc.ten.common.data.TENTags;
 
 import net.minecraft.core.BlockPos;
@@ -22,12 +20,10 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SimpleWaterloggedBlock;
 import net.minecraft.world.level.block.SoundType;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
-import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.level.material.MapColor;
@@ -37,30 +33,21 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.neoforged.neoforge.capabilities.Capabilities;
 
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 
 /**
  * 线缆/管道的公共方块基类。
  * <p>
- * 直接继承 {@link BaseMachineBlock} 而不是 {@code HorizontalMachineBlock}：后者多带一个 {@code FACING}，
- * 但线缆的 blockstate 是纯 multipart（按 {@code active} + 六个方向的连接值拼模型），从不引用朝向。
- * 保留 FACING 会让每个方块的状态数乘 4——7 种线缆合计 8 万余个 BlockState，注册表冻结时要逐个建
- * {@code Cache}（算碰撞箱与 faceSturdy），这是启动期最大的一笔固定开销。
+ * 继承 {@link BaseMachineBlock} 而不是 {@code HorizontalMachineBlock}：后者多带一个用不到的 {@code FACING}。
+ * 连接外观与 active 也不再进 BlockState，改由 {@link CableRenderState} 经 {@code ModelData} 驱动——
+ * 原先六个方向各一个 0..2 属性让单个方块有 3^6 × 2 × 2 = 2916 个状态，7 个方块合计 2 万余个，
+ * 注册表冻结时逐个建 Cache、模型烘焙时逐状态匹配 multipart 条件，是启动期最大的一笔固定开销。
+ * 现在只剩 {@code ACTIVE}（父类约束，恒为 false）与 {@code WATERLOGGED}，共 4 个状态/方块。
  */
 public class CableBased extends BaseMachineBlock implements SimpleWaterloggedBlock {
 
     public static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
-
-    public static final Map<Direction, IntegerProperty> CONNECTION = Map.of(
-            Direction.NORTH, IntegerProperty.create("north", 0, 2),
-            Direction.EAST, IntegerProperty.create("east", 0, 2),
-            Direction.SOUTH, IntegerProperty.create("south", 0, 2),
-            Direction.WEST, IntegerProperty.create("west", 0, 2),
-            Direction.UP, IntegerProperty.create("up", 0, 2),
-            Direction.DOWN, IntegerProperty.create("down", 0, 2));
 
     protected static final VoxelShape CORE_SHAPE = Block.box(5, 5, 5, 11, 11, 11);
     // ── Shape helpers matching JSON model sizes ──────────────────────────
@@ -70,15 +57,12 @@ public class CableBased extends BaseMachineBlock implements SimpleWaterloggedBlo
     private static final VoxelShape[] CONNECT_SHAPES = new VoxelShape[6];
     /** 固定遍历顺序，下标与 PART_SHAPES / CONNECT_SHAPES 一致（{@code Direction.values()} 每次调用都会克隆数组）。 */
     private static final Direction[] DIRECTION_ORDER = Direction.values();
-    /** 按方向下标缓存的连接属性，省掉 {@link #CONNECTION} 这个 Map 的查找。 */
-    private static final IntegerProperty[] CONNECTION_ORDER = new IntegerProperty[6];
     /**
      * 连接位组合到合并形状的惰性缓存：6 个方向各取 0/1/2，共 3^6 = 729 种。
      * <p>
-     * 形状只取决于连接状态，与具体是哪种线缆无关，7 个 {@link CableBased} 实例共用这张表。
-     * 不缓存时每个 BlockState 在 {@code initCache} 里各算一次（约 8 万次合并，主线程启动期），
-     * 且运行期 {@code BlockCollisions} 走三参数 {@code getCollisionShape} 绕开原版 Cache，
-     * 实体每 tick 移动都会重建一次。
+     * 形状只取决于 {@link CableRenderState} 的连接位，与具体是哪种线缆无关，
+     * 7 个 {@link CableBased} 实例共用这张表；运行期 {@code BlockCollisions} 走三参数
+     * {@code getCollisionShape} 绕开原版 Cache，实体每 tick 移动都会查一次，必须缓存。
      * <p>
      * 用 {@link AtomicReferenceArray} 而不是普通数组：渲染线程与服务端线程会并发查同一张表，
      * 普通数组的惰性写入没有安全发布保证，另一线程可能看到未初始化完的 {@code VoxelShape}。
@@ -119,7 +103,6 @@ public class CableBased extends BaseMachineBlock implements SimpleWaterloggedBlo
             }
             PART_SHAPES[i] = part;
             CONNECT_SHAPES[i] = connect;
-            CONNECTION_ORDER[i] = CONNECTION.get(d);
         }
     }
 
@@ -140,17 +123,27 @@ public class CableBased extends BaseMachineBlock implements SimpleWaterloggedBlo
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
         super.createBlockStateDefinition(builder);
         builder.add(WATERLOGGED);
-        CONNECTION.values().forEach(builder::add);
     }
 
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext ctx) {
-        return buildShape(state);
+        return buildShape(renderPackedAt(level, pos));
     }
 
     @Override
     public VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext ctx) {
-        return buildShape(state);
+        return buildShape(renderPackedAt(level, pos));
+    }
+
+    /** 碰撞箱是服务端逻辑，从 BE 的权威渲染态取；BE 尚未就位时退化为纯核心形状。 */
+    private static int renderPackedAt(BlockGetter level, BlockPos pos) {
+        if (level == null || pos == null) {
+            return 0;
+        }
+        if (level.getBlockEntity(pos) instanceof ITransmitterProvider provider) {
+            return provider.getRenderPacked();
+        }
+        return 0;
     }
 
     /**
@@ -178,24 +171,25 @@ public class CableBased extends BaseMachineBlock implements SimpleWaterloggedBlo
         return null;
     }
 
-    private static VoxelShape buildShape(BlockState state) {
+    private static VoxelShape buildShape(int packed) {
+        CableRenderState render = new CableRenderState(packed);
         int idx = 0;
         for (int i = 0; i < 6; i++) {
-            idx = idx * 3 + state.getValue(CONNECTION_ORDER[i]);
+            idx = idx * 3 + render.connection(i);
         }
         VoxelShape cached = SHAPE_CACHE.get(idx);
         if (cached == null) {
-            cached = computeShape(state);
+            cached = computeShape(render);
             SHAPE_CACHE.set(idx, cached);
         }
         return cached;
     }
 
     /** 缓存未命中时的实际合并；同一连接组合只会走到这里一次。 */
-    private static VoxelShape computeShape(BlockState state) {
+    private static VoxelShape computeShape(CableRenderState render) {
         VoxelShape shape = CORE_SHAPE;
         for (int i = 0; i < 6; i++) {
-            int conn = state.getValue(CONNECTION_ORDER[i]);
+            int conn = render.connection(i);
             if (conn == 1) {
                 shape = Shapes.or(shape, PART_SHAPES[i]);
             } else if (conn == 2) {
@@ -206,88 +200,24 @@ public class CableBased extends BaseMachineBlock implements SimpleWaterloggedBlo
     }
 
     /**
-     * 连接位/模式变化后的外观同步：仅值变化时 setBlock。
-     * 直接持有 transmitter 引用，不查 BlockEntity——在 BE 注册流程（clearRemoved）中
-     * 查询自身会再次创建 BE 导致无限递归（GameTest StackOverflow 已验证）。
-     * vanilla 对相同 state 引用短路，不触发邻居链。
+     * 连接位/模式变化后只刷新 BE 的渲染态，不再 setBlock。
+     * <p>
+     * 旧实现把六个连接值写进 BlockState：每次连接变化都是一次 setBlock(flags=3)，
+     * 连带邻居更新、光照重算、区块重绘与网络同步。现在渲染态存在 BE 的 {@code renderPacked}，
+     * 由 BE 覆写的更新标签随方块更新下发，客户端落值后再请求重绘。
      */
-    public void updateConnectionState(Level level, BlockPos pos, Transmitter<?, ?, ?> transmitter) {
-        BlockState state = level.getBlockState(pos);
-        BlockState target = state;
-        for (Direction dir : Direction.values()) {
-            int conn;
-            if (Transmitter.connectionBit((byte) (transmitter.getTransmitterConnections() | transmitter.getAcceptorConnections()), dir)) {
-                conn = Transmitter.connectionBit(transmitter.getTransmitterConnections(), dir) ? 1 : 2;
-            } else {
-                conn = 0;
-            }
-            target = target.setValue(CONNECTION.get(dir), conn);
-        }
-        if (target != state) {
-            level.setBlock(pos, target, 3);
-        }
-    }
-
     public void updateConnections(Level level, BlockPos pos) {
-        BlockState state = level.getBlockState(pos);
-        for (Direction dir : Direction.values()) {
-            state = state.setValue(CONNECTION.get(dir), getConnectionType(level, pos, dir));
+        if (level.getBlockEntity(pos) instanceof ITransmitterProvider provider) {
+            provider.refreshRenderState();
         }
-        level.setBlock(pos, state, 3);
-    }
-
-    /**
-     * 连接外观取值（0=无，1=管道间 part，2=设备 connect）：
-     * BE 已接入传输网络时以 transmitter 连接位为权威源；
-     * 放置/加载瞬间 BE 尚未组网，回退到旧版能力探测保证首帧外观正确。
-     * PULL 输出面信息不经 blockstate（state 爆炸），由 BE 的 @DescSynced pullFacesMask 同步给客户端。
-     */
-    protected int getConnectionType(Level level, BlockPos pos, Direction dir) {
-        if (level.getBlockEntity(pos) instanceof ITransmitterProvider provider && provider.getTransmitter() != null && (provider.getTransmitter().getTransmitterConnections() | provider.getTransmitter().getAcceptorConnections()) != 0) {
-            Transmitter<?, ?, ?> t = provider.getTransmitter();
-            return Transmitter.connectionBit((byte) (t.getTransmitterConnections() | t.getAcceptorConnections()), dir) ? (Transmitter.connectionBit(t.getTransmitterConnections(), dir) ? 1 : 2) : 0;
-        }
-        return legacyConnectionType(level, pos, dir);
-    }
-
-    /** 旧版能力探测（BE 未组网时的回退路径）。 */
-    private int legacyConnectionType(Level level, BlockPos pos, Direction dir) {
-        BlockPos neighbor = pos.relative(dir);
-        BlockEntity be = level.getBlockEntity(pos);
-        BlockEntity neighborBe = level.getBlockEntity(neighbor);
-
-        if (be == null || neighborBe == null) return 0;
-
-        boolean isPipe = be instanceof PipeBlockEntity;
-        boolean isCable = be instanceof CableBlockEntity;
-        if (isPipe && neighborBe instanceof PipeBlockEntity) {
-            return 1;
-        }
-        if (isCable && neighborBe instanceof CableBlockEntity) {
-            return 1;
-        }
-        if (isPipe && level.getCapability(Capabilities.ItemHandler.BLOCK, neighbor, dir.getOpposite()) != null) {
-            return 2;
-        }
-        if (isCable && level.getCapability(Capabilities.EnergyStorage.BLOCK, neighbor, dir.getOpposite()) != null) {
-            return 2;
-        }
-        if (neighborBe instanceof CmMachineBlockEntity) {
-            return 2;
-        }
-        return 0;
     }
 
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
         FluidState fluid = context.getLevel().getFluidState(context.getClickedPos());
-        BlockState state = defaultBlockState()
+        return defaultBlockState()
                 .setValue(ACTIVE, false)
                 .setValue(WATERLOGGED, fluid.getType() == Fluids.WATER);
-        for (Direction dir : Direction.values()) {
-            state = state.setValue(CONNECTION.get(dir), 0);
-        }
-        return state;
     }
 
     @Override
@@ -307,7 +237,7 @@ public class CableBased extends BaseMachineBlock implements SimpleWaterloggedBlo
     public void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighborBlock, BlockPos neighborPos, boolean moved) {
         super.neighborChanged(state, level, pos, neighborBlock, neighborPos, moved);
         if (!level.isClientSide()) {
-            // 先刷新 transmitter 连接位（设备增删后位图权威更新），再同步 blockstate 外观
+            // 先刷新 transmitter 连接位（设备增删后位图权威更新），再同步渲染态
             if (level.getBlockEntity(pos) instanceof ITransmitterProvider provider) {
                 provider.getTransmitter().refreshConnections();
             }
