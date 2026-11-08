@@ -202,6 +202,12 @@ CmBlockEntity (implements ISyncPersistRPCBlockEntity)
   改写为 `OUT`——旧版靠 `BOTH` 主动放电，不迁移会让升级后的能量单元停止对外供电。
   迁移只跑一次，玩家在新版显式重配的 `BOTH` 不会被反复改写。
 
+- **主动推出按单元取源**：物品逐个 `canOut` 槽搬空，流体逐个 `canOut` 罐调用
+  `pushFluidTank`。流体不能用 `combinedFluidHandler` 当源——它的 `drain(int)` 恒定从第一个
+  可输出罐出液，罐 0 的流体被相邻拒收时后面的罐全被堵死（两罐装不同流体时必现）。
+  两条路径都按 capability 的实际返回值记账：模拟取 → 模拟收 → 实取 → 实收，实收不足的部分
+  原样退回，超堆叠与多罐场景都不复制、不蒸发。
+
 - `CommonProxy.registerCapabilities()` 遍历所有 `BaseMachineBlock`，按方块实体类型分发：
   - 线缆走 `CableBlockEntity.getEnergy(side)`；
   - 管道走 `PipeBlockEntity.getTransportHandler(side)`；

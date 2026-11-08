@@ -1430,17 +1430,44 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
             if (sink == null) {
                 continue;
             }
-            // 逐输出罐推送到相邻：源取裸 combinedFluidHandler，不经 getFluidHandler(side) 的面门控——
-            // 否则机器自己的主动输出面会被 canExtractFluid（只放行被动面）挡死
+            // 逐输出罐推送，源取罐本身：combinedFluidHandler 恒定从首个可输出罐出液，
+            // 罐 0 的流体被相邻拒收时后面的罐会被全部堵死（两罐装不同流体时必现）。
+            // 不经 getFluidHandler(side)：主动输出面会被 canExtractFluid（只放行被动面）挡死。
             for (int tank = 0; tank < tanks.size(); tank++) {
-                FluidStack inTank = tanks.get(tank).getFluid();
-                if (inTank.isEmpty()) {
-                    continue;
+                if (!tankType(tank).canOut()) {
+                    continue; // 仅输出罐
                 }
-                int moved = TransferNetworks.moveFluid(combinedFluidHandler, sink, inTank.getAmount(), false);
-                if (moved <= 0) {
-                    continue;
-                }
+                pushFluidTank(tanks.get(tank), sink);
+            }
+        }
+    }
+
+    /**
+     * 把单个罐搬进相邻容器：同 tick 循环到罐空或对方拒收（无速率上限，同物品口径）。
+     * <p>
+     * 全程按 capability 的实际返回值记账：先模拟拿「对方能收多少」，再按此量实抽、实灌；
+     * 灌入阶段实收小于实抽的部分倒回本罐，流体不凭空消失。
+     */
+    private static void pushFluidTank(IFluidHandler source, IFluidHandler sink) {
+        while (true) {
+            FluidStack available = source.drain(Integer.MAX_VALUE, IFluidHandler.FluidAction.SIMULATE);
+            if (available.isEmpty()) {
+                return;
+            }
+            int acceptable = sink.fill(available, IFluidHandler.FluidAction.SIMULATE);
+            if (acceptable <= 0) {
+                return; // 目标拒收或已满：留在罐里
+            }
+            FluidStack extracted = source.drain(acceptable, IFluidHandler.FluidAction.EXECUTE);
+            if (extracted.isEmpty()) {
+                return; // 防御：模拟与执行不一致时放弃本罐，不做无依据的扣减
+            }
+            int filled = sink.fill(extracted, IFluidHandler.FluidAction.EXECUTE);
+            if (filled < extracted.getAmount()) {
+                // 防御竞态：未被接收的部分倒回本罐，不凭空消失
+                source.fill(extracted.copyWithAmount(extracted.getAmount() - filled),
+                        IFluidHandler.FluidAction.EXECUTE);
+                return;
             }
         }
     }

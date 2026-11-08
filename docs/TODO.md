@@ -158,16 +158,15 @@
   `BE_OUT` 面第三方管道可抽、塞不进去；`BOTH` 面可抽可塞且机器不自推。
 - GameTest 只覆盖物品侧（`MachineActivePushGameTest` 5 条），流体/能量与旧档迁移只能实机验。
 
-## 二、未开始
+### 流体主动输出按罐取源 — P2 🧪
+- 已实施：`doActiveFluidIo()` 改为逐 `canOut` 罐调用 `pushFluidTank(tanks.get(tank), sink)`，
+  不再拿 `combinedFluidHandler` 当源。合并 handler 的 `drain(int)` 恒定从第一个可输出罐出液，
+  罐 0 的流体被相邻拒收时后面每个罐的尝试都取出罐 0 的液体、B 永远送不出去。
+- 同物品口径：模拟取 → 模拟收 → 实取 → 实收，实收不足倒回本罐；同 tick 循环到罐空或对方拒收。
+- 需实机：多罐机器（罐 0 装 A、罐 1 装 B）接一个「已装 B、拒收 A」的相邻容器，B 应照常送出。
+  模组内没有按流体过滤的接收方块，GameTest 造不出这个组合，只能实机验。
 
-### 流体主动输出卡在首个非空罐 — P2 ⬜
-- `doActiveFluidIo()` 逐罐取 `tanks.get(tank).getFluid()` 当数量依据，却统一从
-  `combinedFluidHandler` 取液（`TransferNetworks.moveFluid`）。合并 handler 的 `drain(int)`
-  恒定从**第一个非空罐**出液：若罐 0 装 A、相邻容器只收 B，每个罐的尝试都取出 A 并被拒，
-  B 永远送不出去，机器的流体输出整体卡死。
-- 修法：源改用 `tanks.get(tank)`，或用 `drain(FluidStack, ...)` 按流体精确取液，让「遍历到第几个罐」
-  与「实际取哪个罐」一致。
-- 需实机：双罐机器（一进一出）分别接只收其中一种流体的相邻容器，两种都应能送出。
+## 二、未开始
 
 ### 采矿场等工具续扫实机复验 — P2 🧪
 - 决策表 `QuarryScanDecision.decide()` 有脱机断言跑过（6 项全过）；方块实体接线部分只过了编译。
