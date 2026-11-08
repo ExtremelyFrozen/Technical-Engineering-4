@@ -85,10 +85,11 @@ public class FaceOption {
      * 主动模式：机器自己搬运（{@link #IN} 自拉 / {@link #OUT} 自推）。
      *
      * <p>
-     * 主动面会让方块绕过外部调度自行搬运，因此不是所有方块、所有方向都能选，判定分两层：
-     * 共享存储型方块（频道）用 {@code ten:no_active_face_energy} / {@code _item} / {@code _fluid}
-     * 整体去掉；其余按设备功能性决定某方向有没有意义（产能类才有能量输出、只有输出罐就没有
-     * 流体输入），见 {@code CmMachineBlockEntity.supportsActiveDirection}。
+     * 面模式不是所有方块、所有方向都能选，判定分两层：设备功能性决定某方向有没有意义
+     * （产能类才有能量输出、只有输入槽就没有物品输出、共享存储型方块两向都有），见
+     * {@code CmMachineBlockEntity.supportsFaceDirection}；{@code ten:no_active_face_energy}
+     * / {@code _item} / {@code _fluid} 是留给整合包整体收回某类资源主动面的覆盖点，基础模组
+     * 当前不打任何条目。
      */
     public static boolean isActive(int mode) {
         return mode == IN || mode == OUT;
@@ -104,8 +105,8 @@ public class FaceOption {
      * 最多绕一圈；全都不可用时返回 {@code start}（语义等于「这一页没有可切换的目标」）。
      *
      * <p>
-     * GUI 循环必须走本方法而不是自己 {@code +1}：可选范围由方块标签决定，
-     * 直接自增会落到该方块不允许的主动模式上。
+     * GUI 循环必须走本方法而不是自己 {@code +1}：可选范围由设备功能性与标签共同决定，
+     * 直接自增会落到该方块不允许的档位上。
      */
     public static int nextAllowed(int start, IntPredicate allowed) {
         int current = isValid(start) ? start : OFF;

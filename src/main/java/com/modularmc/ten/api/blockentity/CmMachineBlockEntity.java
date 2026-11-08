@@ -125,12 +125,17 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
     private boolean faceRotationApplied;
 
     /**
-     * 面语义版本键。1 = 被动面（BE_IN / BE_OUT / BOTH）不再由机器主动搬运，仅 OUT 主动推。
-     * 缺键即旧档：读档时把产能类机器（引擎/单元）的能量 BOTH 面迁移为 OUT——旧版靠 BOTH
-     * 主动放电，不迁移会让升级后的能量单元彻底停止对外供电。
+     * 面语义版本键，逐级迁移：
+     * <ul>
+     * <li>1 = 被动面（BE_IN / BE_OUT / BOTH）不再由机器主动搬运，仅 OUT 主动推。
+     * 缺键即旧档：产能类机器（引擎/单元）的能量 BOTH 面迁移为 OUT——旧版靠 BOTH 主动放电。</li>
+     * <li>2 = 能量「向外」档位只留给产能类。版本 1 的存档里普通机器能量面仍是 BOTH/OUT，
+     * 迁移为 BE_IN（保留外部可塞电），否则升级后会被归一化成关闭、整台机器断电。</li>
+     * </ul>
      */
     private static final String FACE_SEMANTICS_KEY = "faceSemantics";
     private static final int FACE_SEMANTICS_PASSIVE = 1;
+    private static final int FACE_SEMANTICS_ENERGY_DIRECTIONS = 2;
 
     // ───── 乘法模型与批处理字段 ─────
     /** 时长乘子（升级叠加；未装时长类升级时恒 1.0）。 */
@@ -462,7 +467,9 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
     }
 
     public int initialFaceModeEnergy() {
-        return FaceOption.BOTH;
+        // 普通机器是耗能方：默认「被动输入」——外部电缆/管道可塞电，但拿不走机器的工作电量。
+        // 产能类（引擎 / 单元 / 创造单元）覆写为主动输出。
+        return FaceOption.BE_IN;
     }
 
     public int initialFaceModeItem() {
@@ -526,29 +533,36 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
     }
 
     /**
-     * 主动方向是否有意义——按设备功能性判定，与方块标签无关。
+     * 该面模式在这个方向上是否有实际用途——按设备功能性判定，与方块标签无关。
      *
      * <p>
      * 标签回答的是「这个方块整体该不该自搬」（共享存储型方块），这里回答「这台设备的这个方向
      * 有没有实际用途」。两层都过，该模式才进面配置轮换；方向级判定直接吃设备已有的功能事实
      * （{@link #canExternalExtract()} / {@link #slotType} / {@link #tankType}），随实现自动变化，
-     * 不需要另立标签：
+     * 不需要另立标签。
+     *
+     * <p>
+     * 六个模式归成两种能力：<b>向内</b>（{@code IN} 机器自拉、{@code BE_IN} 外部塞入、{@code BOTH}
+     * 的收侧）要求设备有可进项；<b>向外</b>（{@code OUT} 机器自推、{@code BE_OUT} 外部抽取、
+     * {@code BOTH} 的发侧）要求设备有可出项。被动档位同样要过这层——否则只进不出的引擎会出现
+     * 「被动输出」、只有 XP 输出罐的熔炉会出现「被动输入」这种点了也不生效的档位。
      * <ul>
      * <li><b>能量输出</b>：仅 {@link #canExternalExtract()} 的产能类（引擎 / 能量单元 / 创造单元）。
-     * 普通机器没有产能路径，{@code activePushEnergy} 本来就按同一条件短路，给它 OUT 只会得到
-     * 一个「不推、却仍可被外部塞电」的面，属于纯误导项。</li>
-     * <li><b>能量输入</b>：引擎除外。纯电源被灌电只会被它自己立刻推回网络，与自身的 OUT 面
-     * 形成无意义的来回搬运；能量单元要充电，保留。</li>
-     * <li><b>物品 / 流体</b>：按 {@code slotType()} / {@code tankType()} 有没有可进、可出项判定——
-     * 只有 XP 输出罐的熔炉不会冒出「流体主动输入」，只进不出的机器不会冒出「物品主动输出」。</li>
+     * 普通机器没有产能路径，任何「向外」档位都拿不到电。</li>
+     * <li><b>能量输入</b>：引擎除外（纯电源被灌电只会被自己推回）。</li>
+     * <li><b>物品 / 流体</b>：按 {@code slotType()} / {@code tankType()} 有没有可进、可出项判定。</li>
      * </ul>
      */
-    protected boolean supportsActiveDirection(int changeType, int mode) {
-        boolean push = FaceOption.machinePushes(mode);
+    protected boolean supportsFaceDirection(int changeType, int mode) {
+        boolean needIn = mode == FaceOption.IN || mode == FaceOption.BE_IN || mode == FaceOption.BOTH;
+        boolean needOut = mode == FaceOption.OUT || mode == FaceOption.BE_OUT || mode == FaceOption.BOTH;
+        if (!needIn && !needOut) {
+            return true; // OFF 不需要任何方向能力
+        }
         return switch (changeType) {
-            case FaceOption.TYPE_ENERGY -> push ? canExternalExtract() : canPullEnergy();
-            case FaceOption.TYPE_ITEM -> hasItemSlot(push);
-            case FaceOption.TYPE_FLUID -> hasTank(push);
+            case FaceOption.TYPE_ENERGY -> (!needIn || canPullEnergy()) && (!needOut || canExternalExtract());
+            case FaceOption.TYPE_ITEM -> (!needIn || hasItemSlot(false)) && (!needOut || hasItemSlot(true));
+            case FaceOption.TYPE_FLUID -> (!needIn || hasTank(false)) && (!needOut || hasTank(true));
             default -> false;
         };
     }
@@ -587,8 +601,8 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
     }
 
     /**
-     * 面配置可选范围的唯一判定：关闭恒可选；被动三态要求该资源存在；主动两态要同时过
-     * 标签（{@link #allowsActiveFace}）与设备功能性（{@link #supportsActiveDirection}）两层。
+     * 面配置可选范围的唯一判定：关闭恒可选；其余五档要求该资源存在，且该方向在设备功能上有意义
+     * （{@link #supportsFaceDirection}）；主动两态另需标签未去除（{@link #allowsActiveFace}）。
      *
      * <p>
      * GUI 循环（{@link #rpcCycleFaceMode}）与读档归一化（{@link #normalizeFaceModes}）都走这里，
@@ -605,10 +619,10 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         if (!supportsFaceResource(changeType)) {
             return false;
         }
-        if (!FaceOption.isActive(mode)) {
-            return true;
+        if (!supportsFaceDirection(changeType, mode)) {
+            return false;
         }
-        return allowsActiveFace(changeType) && supportsActiveDirection(changeType, mode);
+        return !FaceOption.isActive(mode) || allowsActiveFace(changeType);
     }
 
     /**
@@ -832,6 +846,18 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
             case com.modularmc.ten.api.option.MachineType.GENERATOR, com.modularmc.ten.api.option.MachineType.ENGINE_SOLAR, com.modularmc.ten.api.option.MachineType.ENGINE_EXTRACTION, com.modularmc.ten.api.option.MachineType.ENGINE_METAL, com.modularmc.ten.api.option.MachineType.ENGINE_BIOMASS, com.modularmc.ten.api.option.MachineType.CELL, com.modularmc.ten.api.option.MachineType.CREATIVE_CELL -> true;
             default -> false;
         };
+    }
+
+    /**
+     * 旧档 {@code faceSemantics} 1 → 2 迁移的适用范围：只有「能量向外档位在新语义下不成立」的
+     * 方块才需要把 {@code BOTH}/{@code OUT} 改写成 {@code BE_IN}。
+     * <p>
+     * 不能只看 {@link #canExternalExtract()}：频道这类共享存储两向都真实存在（覆写了
+     * {@link #supportsFaceDirection}），改写会让旧档频道停止对外供电。按「这台设备到底有没有
+     * 能量输出档位」判定，与面可选范围共用同一份事实。
+     */
+    private boolean migratesEnergyOutputToPassiveInput() {
+        return !canExternalExtract() && !supportsFaceDirection(FaceOption.TYPE_ENERGY, FaceOption.OUT);
     }
 
     public void doBaseData() {
@@ -1364,13 +1390,24 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
                     rotateFaceModes(savedFacing, currentFacing);
                 }
             }
-            // 旧档面语义迁移（仅服务端、仅真正读档）：旧版 BOTH 兼作「机器主动推送」，新版只有 OUT 推。
-            // 产能类机器的能量面旧默认是 BOTH，不迁移则升级后电池/引擎不再放电。带版本键后只跑一次，
-            // 玩家在新版显式重配的 BOTH 不会被反复改写。
-            if (!clientSide && tag.getInt(FACE_SEMANTICS_KEY) < FACE_SEMANTICS_PASSIVE && canExternalExtract()) {
-                for (Direction direction : Direction.values()) {
-                    if (energyFaceMode.getOrDefault(direction, FaceOption.OFF) == FaceOption.BOTH) {
-                        energyFaceMode.put(direction, FaceOption.OUT);
+            // 旧档面语义迁移（仅服务端、仅真正读档）：逐级补齐，每级只跑一次。
+            // 1) 旧版 BOTH 兼作「机器主动推送」→ 产能类机器的能量 BOTH 面改写为 OUT。
+            // 2) 新版能量「向外」档位只给产能类 → 耗能机器的 BOTH/OUT 保留有效半边 BE_IN。
+            if (!clientSide) {
+                int semantics = tag.getInt(FACE_SEMANTICS_KEY);
+                if (semantics < FACE_SEMANTICS_PASSIVE && canExternalExtract()) {
+                    for (Direction direction : Direction.values()) {
+                        if (energyFaceMode.getOrDefault(direction, FaceOption.OFF) == FaceOption.BOTH) {
+                            energyFaceMode.put(direction, FaceOption.OUT);
+                        }
+                    }
+                }
+                if (semantics < FACE_SEMANTICS_ENERGY_DIRECTIONS && migratesEnergyOutputToPassiveInput()) {
+                    for (Direction direction : Direction.values()) {
+                        int mode = energyFaceMode.getOrDefault(direction, FaceOption.OFF);
+                        if (mode == FaceOption.BOTH || mode == FaceOption.OUT) {
+                            energyFaceMode.put(direction, FaceOption.BE_IN);
+                        }
                     }
                 }
             }
@@ -1399,8 +1436,8 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
             tag.putInt("direItem" + direction.get3DDataValue(), itemFaceMode.getOrDefault(direction, initialFaceModeItem()));
             tag.putInt("direFluid" + direction.get3DDataValue(), fluidFaceMode.getOrDefault(direction, initialFaceModeFluid()));
         }
-        // 写入即视为已迁移：下次读档不再触发 FACE_SEMANTICS_PASSIVE 的 BOTH→OUT 改写
-        tag.putInt(FACE_SEMANTICS_KEY, FACE_SEMANTICS_PASSIVE);
+        // 写入即视为已迁移：下次读档不再触发面语义改写
+        tag.putInt(FACE_SEMANTICS_KEY, FACE_SEMANTICS_ENERGY_DIRECTIONS);
         saveSerializedHandlers(tag, registries);
     }
 
@@ -1435,8 +1472,8 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
                 }
             }
             int current = map.getOrDefault(direction, FaceOption.OFF);
-            // 可选范围由方块标签组合决定（见 allowsFaceMode）：跳过的模式点了不生效，
-            // 不能让玩家在频道方块上配出「主动输入」这种共享存储不接受的组合。
+            // 可选范围由 allowsFaceMode 的两层判定给出（设备功能性 + no_active_face_* 标签）：
+            // 跳过的模式点了不生效，不能让玩家在频道方块上配出「主动输入」这种共享存储不接受的组合。
             int mode = FaceOption.nextAllowed(current, candidate -> allowsFaceMode(changeType, candidate));
             if (mode == current) {
                 // 该页只有当前模式可选（资源不存在 → 只剩关闭），点击视为无操作
@@ -1734,8 +1771,10 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
      * <p>
      * 全程按 capability 的实际返回值记账：先模拟拿「对方能收多少」，再按此量实抽、实灌；
      * 灌入阶段实收小于实抽的部分倒回本罐，流体不凭空消失。
+     * <p>
+     * 子类复用：频道方块的主动输出把共享罐逐个交给本方法，记账口径与机器主动输出一致。
      */
-    private static void pushFluidTank(IFluidHandler source, IFluidHandler sink) {
+    protected static void pushFluidTank(IFluidHandler source, IFluidHandler sink) {
         while (true) {
             FluidStack available = source.drain(Integer.MAX_VALUE, IFluidHandler.FluidAction.SIMULATE);
             if (available.isEmpty()) {
