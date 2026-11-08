@@ -154,7 +154,7 @@ public class TENBlocks {
         EN_NAMES.put(n, englishName);
         return REGISTRATE.block(n, HorizontalMachineBlock::new)
                 .lang(englishName)
-                .tag(TENTags.MACHINES)
+                .tag(TENTags.MACHINES, TENTags.FACE_ACTIVE_ENERGY, TENTags.FACE_ACTIVE_ITEM, TENTags.FACE_ACTIVE_FLUID)
                 .blockstate((ctx, prov) -> {
                     var normal = TENModels.machine(prov, n);
                     var active = TENModels.machineActive(prov, n);
@@ -185,7 +185,7 @@ public class TENBlocks {
         EN_NAMES.put(n, englishName);
         return REGISTRATE.block(n, HorizontalMachineBlock::new)
                 .lang(englishName)
-                .tag(TENTags.MACHINES)
+                .tag(TENTags.MACHINES, TENTags.FACE_ACTIVE_ENERGY, TENTags.FACE_ACTIVE_ITEM, TENTags.FACE_ACTIVE_FLUID)
                 .blockstate((ctx, prov) -> {
                     var normal = TENModels.engine(prov, n);
                     var active = TENModels.engineActive(prov, n);
@@ -235,7 +235,7 @@ public class TENBlocks {
         EN_NAMES.put(n, englishName);
         return REGISTRATE.block(n, HorizontalMachineBlock::new)
                 .lang(englishName)
-                .tag(TENTags.MACHINES)
+                .tag(TENTags.MACHINES, TENTags.FACE_ACTIVE_ENERGY, TENTags.FACE_ACTIVE_ITEM, TENTags.FACE_ACTIVE_FLUID)
                 .properties(p -> p.noOcclusion())
                 .blockstate((ctx, prov) -> TENModels.cellBlockstate(prov, ctx.getEntry(), n))
                 .item().model((ctx, prov) -> prov.blockItem(ctx::getEntry)).build().register();
