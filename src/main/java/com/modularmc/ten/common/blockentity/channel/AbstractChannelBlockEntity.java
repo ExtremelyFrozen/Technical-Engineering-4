@@ -343,6 +343,13 @@ public abstract class AbstractChannelBlockEntity extends CmMachineBlockEntity {
     }
 
     @Override
+    protected boolean supportsFaceOnSide(Direction direction) {
+        // 只有朝向外侧、模型突出的那一面接容器（capability 也只在这一面暴露），
+        // 其余五面配了无处可用；不收窄会让面板出现「改一个面连带改另一个面」的假象。
+        return direction == getFacing();
+    }
+
+    @Override
     protected void doActiveItemIo() {
         if (channelType() != ChannelType.ITEM) {
             return;

@@ -414,17 +414,14 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
      * <p>
      * 面配置按世界方向存储（capability 查询直接用 Direction），GUI 与拆卸重放都以
      * 「机器正面」为逻辑基准。机器被拆下换方向重放时，必须把旧朝向的逻辑面映射到新朝向，
-     * 否则「正面」会跑到世界北面去。Y 轴朝向的逻辑面前/后与上/下重叠，保持原样不旋转。
+     * 否则「正面」会跑到世界北面去。
      */
     private void rotateFaceModes(Direction from, Direction to) {
-        if (from.getAxis() == Direction.Axis.Y || to.getAxis() == Direction.Axis.Y) {
-            return;
-        }
         int[] energy = new int[6];
         int[] item = new int[6];
         int[] fluid = new int[6];
         for (Direction oldDir : Direction.values()) {
-            Direction newDir = logicalDirection(to, logicalSide(from, oldDir));
+            Direction newDir = faceForLogicalSide(to, logicalSideForFace(from, oldDir));
             if (newDir == null) {
                 continue;
             }
@@ -441,29 +438,39 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         }
     }
 
-    /** 世界方向 → 相对朝向的逻辑面编号（0 前 / 1 后 / 2 左 / 3 右 / 4 上 / 5 下）。 */
-    private static int logicalSide(Direction facing, Direction direction) {
-        if (direction == facing) return 0;
-        if (direction == facing.getOpposite()) return 1;
-        if (direction == facing.getClockWise()) return 2;
-        if (direction == facing.getCounterClockWise()) return 3;
-        if (direction == Direction.UP) return 4;
-        if (direction == Direction.DOWN) return 5;
-        return -1;
-    }
-
-    /** 相对朝向的逻辑面编号 → 世界方向；只能用于水平朝向。 */
+    /**
+     * 逻辑面编号 → 世界方向；编号为 0 前 / 1 后 / 2 左 / 3 右 / 4 上 / 5 下。
+     *
+     * <p>
+     * 任意朝向都是<b>双射</b>（六个方向互不重复），包括频道这类六向方块朝上/朝下的情形：
+     * 竖直朝向没有天然的「上」，以北方为向上参考，左右按水平叉积补齐。旧实现把上/下固定成
+     * UP/DOWN，竖直朝向下会与「前/后」落到同一方向——面板上改一个面会连带改另一个面。
+     */
     @Nullable
-    private static Direction logicalDirection(Direction facing, int logicalSide) {
+    public static Direction faceForLogicalSide(Direction facing, int logicalSide) {
+        // 朝上/朝下时没有屏幕意义上的「上」，固定取北方；水平朝向沿用世界 UP。
+        Direction up = facing.getAxis() == Direction.Axis.Y ? Direction.NORTH : Direction.UP;
+        // 左 = front × up：水平朝向等价于 facing.getClockWise()（Y 轴朝向调用它会抛异常）。
+        Direction left = facing.getAxis() == Direction.Axis.Y ? (facing == Direction.UP ? Direction.WEST : Direction.EAST) : facing.getClockWise();
         return switch (logicalSide) {
             case 0 -> facing;
             case 1 -> facing.getOpposite();
-            case 2 -> facing.getClockWise();
-            case 3 -> facing.getCounterClockWise();
-            case 4 -> Direction.UP;
-            case 5 -> Direction.DOWN;
+            case 2 -> left;
+            case 3 -> left.getOpposite();
+            case 4 -> up;
+            case 5 -> up.getOpposite();
             default -> null;
         };
+    }
+
+    /** 世界方向 → 逻辑面编号；{@link #faceForLogicalSide} 的逆映射，找不到时返回 -1。 */
+    public static int logicalSideForFace(Direction facing, Direction direction) {
+        for (int side = 0; side < 6; side++) {
+            if (faceForLogicalSide(facing, side) == direction) {
+                return side;
+            }
+        }
+        return -1;
     }
 
     public int initialFaceModeEnergy() {
@@ -601,12 +608,14 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
     }
 
     /**
-     * 面配置可选范围的唯一判定：关闭恒可选；其余五档要求该资源存在，且该方向在设备功能上有意义
+     * 面配置可选范围的类型级判定：关闭恒可选；其余五档要求该资源存在，且该方向在设备功能上有意义
      * （{@link #supportsFaceDirection}）；主动两态另需标签未去除（{@link #allowsActiveFace}）。
+     * 写入路径请用带方向的 {@link #allowsFaceMode(Direction, int, int)}——本方法不看「这一面是不是入口」。
      *
      * <p>
-     * GUI 循环（{@link #rpcCycleFaceMode}）与读档归一化（{@link #normalizeFaceModes}）都走这里，
-     * 因此轮换表天然是「按设备现算的活列表」：任何一层判定变了，下一次点击就按新集合走。
+     * GUI 循环（{@link #rpcCycleFaceMode}）与读档归一化（{@link #normalizeFaceModes}）都走带方向的
+     * {@link #allowsFaceMode(Direction, int, int)}，因此轮换表天然是「按设备现算的活列表」：
+     * 任何一层判定变了，下一次点击就按新集合走。
      * 新增的「不允许组合」都应加在本方法或其下游，不要散落到调用点。
      */
     public final boolean allowsFaceMode(int changeType, int mode) {
@@ -626,6 +635,30 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
     }
 
     /**
+     * 方向级可选范围：在类型级 {@link #allowsFaceMode(int, int)} 之外再收一层
+     * 「这一面是不是本设备的面入口」。
+     *
+     * <p>
+     * 默认六面都是入口；频道方块只有朝向外侧的那一面接容器，其余五面即使存了档位也暴露不出
+     * capability，写入路径必须落回关闭。类型级判定不带方向，GUI 循环、连接器粘贴、拆卸重放
+     * 都必须走这个带方向的版本，否则会在死面上留下「配了也不生效」的假象。
+     */
+    public final boolean allowsFaceMode(@Nullable Direction direction, int changeType, int mode) {
+        if (!FaceOption.isValid(mode)) {
+            return false;
+        }
+        if (direction != null && !supportsFaceOnSide(direction)) {
+            return mode == FaceOption.OFF;
+        }
+        return allowsFaceMode(changeType, mode);
+    }
+
+    /** 该世界方向是否是本设备的面配置入口。默认六面都可配，共享存储型方块可收窄。 */
+    protected boolean supportsFaceOnSide(Direction direction) {
+        return true;
+    }
+
+    /**
      * 把面配置归一到可选集合内（非法项落回 {@link FaceOption#OFF}）。
      *
      * <p>
@@ -642,7 +675,7 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
     private void normalizeFaceMap(Map<Direction, Integer> map, int changeType) {
         for (Direction direction : Direction.values()) {
             int mode = map.getOrDefault(direction, FaceOption.OFF);
-            if (!allowsFaceMode(changeType, mode)) {
+            if (!allowsFaceMode(direction, changeType, mode)) {
                 map.put(direction, FaceOption.OFF);
             }
         }
@@ -1472,9 +1505,9 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
                 }
             }
             int current = map.getOrDefault(direction, FaceOption.OFF);
-            // 可选范围由 allowsFaceMode 的两层判定给出（设备功能性 + no_active_face_* 标签）：
-            // 跳过的模式点了不生效，不能让玩家在频道方块上配出「主动输入」这种共享存储不接受的组合。
-            int mode = FaceOption.nextAllowed(current, candidate -> allowsFaceMode(changeType, candidate));
+            // 可选范围由方向级 + 类型级两层判定给出（该面是不是入口 → 设备功能性与标签）：
+            // 跳过的模式点了不生效；频道只有朝向面能配，其余五面点了只会落回关闭。
+            int mode = FaceOption.nextAllowed(current, candidate -> allowsFaceMode(direction, changeType, candidate));
             if (mode == current) {
                 // 该页只有当前模式可选（资源不存在 → 只剩关闭），点击视为无操作
                 return;

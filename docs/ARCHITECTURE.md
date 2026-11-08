@@ -191,8 +191,10 @@ CmBlockEntity (implements ISyncPersistRPCBlockEntity)
   双向开放，不是双向自动传输。三类 IO（物/流/能）共用这一张表，任何一类都不例外。
   `OUT` 面额外允许外部塞入（既有策略，方便从输出面补料），是表里唯一一处主动面兼收。
 
-- **面配置可选范围由两层判定决定**，面板不是六态全开。`CmMachineBlockEntity.allowsFaceMode()`
+- **面配置可选范围由三层判定决定**，面板不是六态全开。`CmMachineBlockEntity.allowsFaceMode()`
   是唯一判定，关闭恒可选，余下按顺序过滤：
+  - `supportsFaceOnSide()`：该世界方向是不是这台设备的面入口。默认六面都是；频道方块收窄成
+    只有朝向外侧、模型突出的那一面——capability 也只在这一面暴露，其余五面配了无处可用。
   - `supportsFaceResource()`：该方块有没有这种资源（有槽位 / 有罐体 / 有储能）。频道方块
     覆写成只认自己的 `channelType()`——三个频道都建了本地缓冲，照基类算会让物品频道也冒出
     能量面这种无意义页。
@@ -259,10 +261,14 @@ CmBlockEntity (implements ISyncPersistRPCBlockEntity)
   - 机器 `OUT` 面直接贴管道不会工作，也不应放宽——`OUT` 的语义是机器把物品交给相邻容器，
     管道不在其列。要改的是接法，不是语义边界；不要为「面贴管道能用」软化这条线。
 
-- **GUI 逻辑面必须经 `getFacing()` 映射**：面板上的前/后/左/右是相对机器朝向的逻辑面，
-  `logicalDirection` 必须读方块状态的 `FACING`。`facingVal` 只是持久化镜像，机器放置时没有
-  写入（`setFacing` 无调用点），直接读它会让所有机器都按北向解释，面配置看起来永远落在
-  固定世界方向。
+- **GUI 逻辑面必须经 `getFacing()` 映射，且映射必须是双射**：面板上的前/后/左/右是相对机器
+  朝向的逻辑面，`logicalDirection` 必须读方块状态的 `FACING`。`facingVal` 只是持久化镜像，
+  机器放置时没有写入（`setFacing` 无调用点），直接读它会让所有机器都按北向解释，面配置看起来
+  永远落在固定世界方向。映射表收在 `CmMachineBlockEntity.faceForLogicalSide()`，与拆卸重放的
+  存档旋转共用同一张表；**任意朝向（含六向方块朝上/朝下）都必须是双射**。竖直朝向没有屏幕
+  意义上的「上」，约定以北方为向上参考、左右按水平叉积补齐；旧实现把上/下固定成 `UP`/`DOWN`，
+  频道朝下放置时「前（正面）」与「下」都映射到 `DOWN`、「后」与「上」都映射到 `UP`，表现为
+  面板上改一个面会连带改另一个面。`FaceModeRangeGameTest` 逐朝向断言六个逻辑面互不重复。
 
 - **频道方块的移除顺序**：`AbstractChannelBlockEntity.setRemoved()` 必须先 `super.setRemoved()`
   再 `leave()`。`leave()` → `setActive(false)` 会尝试回写方块的 `ACTIVE` 状态；若在 `super`
@@ -276,7 +282,8 @@ CmBlockEntity (implements ISyncPersistRPCBlockEntity)
   **不能写本地缓冲**：接入态 UI 槽位绑定的是共享存储，写本地缓冲会出现「界面槽位不刷新」，
   而外部经 capability 塞入走的是共享包装，所以看起来只有主动侧有问题。记账同机器主动面：
   模拟取 → 模拟收 → 实取 → 实收，实收不足退回源。三个频道都只在自己朝向的那一面暴露能力
-  （`getFacing()`），搬运对象只看该面相邻方块。
+  （`getFacing()`），搬运对象只看该面相邻方块；`supportsFaceOnSide()` 也收窄到这一面，
+  另外五面在面板上只允许关闭——不这样做，玩家能在死面上配出档位，看起来像配置生效了。
 
 - `CommonProxy.registerCapabilities()` 遍历所有 `BaseMachineBlock`，按方块实体类型分发：
   - 线缆走 `CableBlockEntity.getEnergy(side)`；
@@ -676,8 +683,10 @@ mod 版本校验，只管 Maven 坐标解析。
 `BaseMachineBlock` 自动覆盖，确认你的 BE 类型实现了对应 getter → （可选）JEI/Jade 分类 → GameTest。
 注册走 `machine()` / `engine()` / `cell()` helper 不需要额外标签：面配置的六个档位由
 `supportsFaceDirection()` 按设备功能性现算（能量向外只给产能类、物品/流体按槽位与罐体方向）。
-共享存储型方块若要禁止某个方向自搬，覆写该方法或补 `ten:no_active_face_energy` / `_item` /
-`_fluid` 标签（见 2.6）；基础模组的三个频道两个方向都放行。
+六向方块（能朝上/朝下放置）若要收窄可配面，覆写 `supportsFaceOnSide()`——**不要**改
+`faceForLogicalSide()` 的映射，那张表必须对任意朝向保持双射。共享存储型方块若要禁止某个方向
+自搬，覆写 `supportsFaceDirection()` 或补 `ten:no_active_face_energy` / `_item` / `_fluid` 标签
+（见 2.6）；基础模组的三个频道两个方向都放行，但只有朝向面可配。
 
 **加一个升级**：`common/item/upgrades/` 新建类 → `TENItems` 注册 → `IUpgradableMachine` 的效果分支 →
 `TENLangHandler.addUpgradeTips()` 补中英文 → 掉落表或配方（如需要）。
@@ -710,6 +719,10 @@ blockstate 占位核心模型与 `src/main/resources` 下的零件模型（见 5
   零配置即正确。标签（`no_active_face_*`）只表达「整套资源都不该自搬」这类玩法策略，且基础
   模组默认不打条目——它是给整合包的覆盖点，不是内部配置表。不要按「资源 × 方向」把标签拆成
   6 个以上：组合爆炸、漏打标签是静默失效（面配置悄悄少一档），而且每加一个标签都要迁移旧存档语义。
+- **面配置写入必须走方向级判定**：GUI 循环、连接器粘贴、拆卸重放都用
+  `allowsFaceMode(direction, type, mode)`，不要退回不带方向的 `allowsFaceMode(type, mode)`——
+  后者不知道「这一面是不是设备的面入口」，会在频道这类单面设备上留下配了不生效的档位。
+  逻辑面映射（`faceForLogicalSide`）必须对任意朝向保持双射，`getClockWise()` 不得作用于 Y 轴朝向。
 - **批处理锁**：`lockedB` / `lockedMaxProgress` 在周期开始时锁定，完成后清理；中途改语义会破坏停滞契约。
 - **原子产出**：`RecipeMachineBlockEntity` 的快照-模拟-提交不能改成边产边写；失败必须回滚。
 - **客户端边界**：可选集成类型不进总是加载的类；客户端类不进 main 源集。
