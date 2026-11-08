@@ -14,36 +14,102 @@ import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 import net.neoforged.testframework.annotation.TestHolder;
 
 /**
- * 面配置可选范围：由方块标签组合（{@code ten:face_active_energy/_item/_fluid}）决定主动模式，
- * 由方块自身能力决定该资源页是否存在。
+ * 面配置可选范围的两层判定：
+ * <ul>
+ * <li><b>设备功能性</b>（{@code supportsActiveDirection}）：能量输出只给产能类，能量输入排除
+ * 引擎，物品/流体按槽位与罐体的可进可出方向；</li>
+ * <li><b>方块标签</b>（{@code no_active_face_energy/_item/_fluid}）：共享存储型方块（频道）
+ * 整套资源都不许自搬。</li>
+ * </ul>
  *
  * <p>
- * 这两条边界都是「配了也不生效」的静默错误来源：频道方块的共享存储不接受机器自搬，
- * 无罐机器的流体页无论怎么点都不会有流体进出。
+ * 这两层都是「配了也不生效」的静默错误来源：普通机器配了能量主动输出不会推任何电，
+ * 频道方块的共享存储不接受机器自搬，无罐机器的流体页无论怎么点都不会有流体进出。
  */
 @GameTestHolder(TEN.MOD_ID)
 public class FaceModeRangeGameTest {
 
     private static final BlockPos POS = new BlockPos(1, 1, 1);
 
-    /** 普通机器：三种资源页齐全（精炼机有槽位、有罐体、有储能），六态全可选。 */
-    @TestHolder(value = TEN.MOD_ID + ":machine_face_range_is_full", enabledByDefault = true)
+    /** 精炼机：能量只能主动输入，物品与流体双向都在（tank 0 输入、tank 1 输出）。 */
+    @TestHolder(value = TEN.MOD_ID + ":machine_face_range_follows_device_function", enabledByDefault = true)
     @GameTest(template = "empty_5x5")
     @PrefixGameTestTemplate(false)
-    public static void machineFaceRangeIsFull(GameTestHelper helper) {
+    public static void machineFaceRangeFollowsDeviceFunction(GameTestHelper helper) {
         CmMachineBlockEntity machine = place(helper, TENBlocks.MACHINE_REFINER.get());
         if (machine == null) return;
 
-        for (int type : new int[] { FaceOption.TYPE_ENERGY, FaceOption.TYPE_ITEM, FaceOption.TYPE_FLUID }) {
-            for (int mode = FaceOption.OFF; mode < FaceOption.size(); mode++) {
-                helper.assertTrue(machine.allowsFaceMode(type, mode),
-                        "tagged machine must allow every face mode, type=" + type + " mode=" + FaceOption.toStr(mode));
-            }
+        helper.assertTrue(machine.allowsFaceMode(FaceOption.TYPE_ENERGY, FaceOption.IN),
+                "a processing machine must keep active energy pull");
+        helper.assertFalse(machine.allowsFaceMode(FaceOption.TYPE_ENERGY, FaceOption.OUT),
+                "a processing machine has no generation path, active energy push must be gone");
+        helper.assertTrue(machine.allowsFaceMode(FaceOption.TYPE_ENERGY, FaceOption.BE_OUT),
+                "passive energy extraction stays: cables and pipes pull from passive faces");
+        for (int mode : new int[] { FaceOption.OFF, FaceOption.BE_IN, FaceOption.BE_OUT, FaceOption.BOTH }) {
+            helper.assertTrue(machine.allowsFaceMode(FaceOption.TYPE_ENERGY, mode),
+                    "energy mode must stay selectable: " + FaceOption.toStr(mode));
+        }
+
+        for (int mode = FaceOption.OFF; mode < FaceOption.size(); mode++) {
+            helper.assertTrue(machine.allowsFaceMode(FaceOption.TYPE_ITEM, mode),
+                    "refiner has in and out slots, item mode must be selectable: " + FaceOption.toStr(mode));
+            helper.assertTrue(machine.allowsFaceMode(FaceOption.TYPE_FLUID, mode),
+                    "refiner has an input and an output tank, fluid mode must be selectable: " + FaceOption.toStr(mode));
         }
         helper.succeed();
     }
 
-    /** 频道方块不带主动标签：六面只能配被动三态，主动输入/输出必须被挡掉。 */
+    /** 引擎：纯电源，主动输出在、主动输入不在；燃料槽只进不出，物品主动输出也不在。 */
+    @TestHolder(value = TEN.MOD_ID + ":engine_only_pushes_energy", enabledByDefault = true)
+    @GameTest(template = "empty_5x5")
+    @PrefixGameTestTemplate(false)
+    public static void engineOnlyPushesEnergy(GameTestHelper helper) {
+        CmMachineBlockEntity engine = place(helper, TENBlocks.ENGINE_EXTRACTION.get());
+        if (engine == null) return;
+
+        helper.assertTrue(engine.allowsFaceMode(FaceOption.TYPE_ENERGY, FaceOption.OUT),
+                "engines must keep active energy push");
+        helper.assertFalse(engine.allowsFaceMode(FaceOption.TYPE_ENERGY, FaceOption.IN),
+                "charging an engine only bounces energy back out, active pull must be gone");
+        helper.assertTrue(engine.allowsFaceMode(FaceOption.TYPE_ITEM, FaceOption.IN),
+                "fuel slot accepts items, item input must stay");
+        helper.assertFalse(engine.allowsFaceMode(FaceOption.TYPE_ITEM, FaceOption.OUT),
+                "engines have no output slot, item output must be gone");
+        helper.succeed();
+    }
+
+    /** 能量单元：储能设备，两个方向都有意义（充电靠主动输入，放电靠主动输出）。 */
+    @TestHolder(value = TEN.MOD_ID + ":cell_keeps_both_energy_directions", enabledByDefault = true)
+    @GameTest(template = "empty_5x5")
+    @PrefixGameTestTemplate(false)
+    public static void cellKeepsBothEnergyDirections(GameTestHelper helper) {
+        CmMachineBlockEntity cell = place(helper, TENBlocks.CELL.get());
+        if (cell == null) return;
+
+        helper.assertTrue(cell.allowsFaceMode(FaceOption.TYPE_ENERGY, FaceOption.IN),
+                "cells must be chargeable through an active input face");
+        helper.assertTrue(cell.allowsFaceMode(FaceOption.TYPE_ENERGY, FaceOption.OUT),
+                "cells must be able to push energy out");
+        helper.succeed();
+    }
+
+    /** 只有 XP 输出罐的机器：流体主动输出在，主动输入不在（罐体本身不收）。 */
+    @TestHolder(value = TEN.MOD_ID + ":output_only_tank_has_no_fluid_pull", enabledByDefault = true)
+    @GameTest(template = "empty_5x5")
+    @PrefixGameTestTemplate(false)
+    public static void outputOnlyTankHasNoFluidPull(GameTestHelper helper) {
+        CmMachineBlockEntity smelter = place(helper, TENBlocks.MACHINE_SMELTER.get());
+        if (smelter == null) return;
+
+        helper.assertFalse(smelter.tanks.isEmpty(), "smelter is expected to hold the XP tank");
+        helper.assertTrue(smelter.allowsFaceMode(FaceOption.TYPE_FLUID, FaceOption.OUT),
+                "XP tank is an output tank, fluid push must stay");
+        helper.assertFalse(smelter.allowsFaceMode(FaceOption.TYPE_FLUID, FaceOption.IN),
+                "XP tank rejects fluid, active fluid pull must be gone");
+        helper.succeed();
+    }
+
+    /** 频道方块带 no_active_face_item：六面只能配被动三态，主动输入/输出必须被挡掉。 */
     @TestHolder(value = TEN.MOD_ID + ":channel_faces_are_passive_only", enabledByDefault = true)
     @GameTest(template = "empty_5x5")
     @PrefixGameTestTemplate(false)
@@ -84,19 +150,27 @@ public class FaceModeRangeGameTest {
         helper.succeed();
     }
 
-    /** 循环跳过不可选模式：机器 OFF → IN，频道 OFF → BE_IN（不能先跳到 IN）。 */
-    @TestHolder(value = TEN.MOD_ID + ":face_cycle_skips_disallowed_modes", enabledByDefault = true)
+    /**
+     * 轮换是「按设备现算的活列表」：被去掉的方向不占轮换位。
+     * 机器能量页 IN 之后应直接跳到 BE_IN（跳过 OUT）；频道物品页 OFF 之后应直接到 BE_IN。
+     */
+    @TestHolder(value = TEN.MOD_ID + ":face_cycle_skips_denied_directions", enabledByDefault = true)
     @GameTest(template = "empty_5x5")
     @PrefixGameTestTemplate(false)
-    public static void faceCycleSkipsDisallowedModes(GameTestHelper helper) {
+    public static void faceCycleSkipsDeniedDirections(GameTestHelper helper) {
         CmMachineBlockEntity machine = place(helper, TENBlocks.MACHINE_PULVERIZER.get());
         CmMachineBlockEntity channel = place(helper, TENBlocks.CHANNEL_ITEM.get(), POS.east(2));
         if (machine == null || channel == null) return;
 
-        int machineNext = FaceOption.nextAllowed(FaceOption.OFF,
+        int afterIn = FaceOption.nextAllowed(FaceOption.IN,
+                m -> machine.allowsFaceMode(FaceOption.TYPE_ENERGY, m));
+        helper.assertTrue(afterIn == FaceOption.BE_IN,
+                "machine energy page must skip OUT and go IN -> BE_IN, got " + FaceOption.toStr(afterIn));
+
+        int machineItem = FaceOption.nextAllowed(FaceOption.OFF,
                 m -> machine.allowsFaceMode(FaceOption.TYPE_ITEM, m));
-        helper.assertTrue(machineNext == FaceOption.IN,
-                "machine item page must cycle OFF -> IN, got " + FaceOption.toStr(machineNext));
+        helper.assertTrue(machineItem == FaceOption.IN,
+                "machine item page must cycle OFF -> IN, got " + FaceOption.toStr(machineItem));
 
         int channelNext = FaceOption.nextAllowed(FaceOption.OFF,
                 m -> channel.allowsFaceMode(FaceOption.TYPE_ITEM, m));

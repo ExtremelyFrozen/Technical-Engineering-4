@@ -153,11 +153,15 @@ public class ChannelConnectorItem extends TENBaseItem {
         if (!isValidFaceList(config.energyFaces()) || !isValidFaceList(config.itemFaces()) || !isValidFaceList(config.fluidFaces())) {
             return false;
         }
+        // 目标设备已初始化才能判定「这台设备该方向能不能选」；initMachine 幂等
+        target.initMachine();
         for (Direction d : Direction.values()) {
             int idx = d.get3DDataValue();
-            int energyMode = config.energyFaces().get(idx);
-            int itemMode = config.itemFaces().get(idx);
-            int fluidMode = config.fluidFaces().get(idx);
+            // 复制来源可能是另一类方块（或旧版本存的配置），逐项按目标设备的可选范围收敛：
+            // 直接写入会让频道方块装上一个「点了也不生效」的主动面
+            int energyMode = clampToTarget(target, FaceOption.TYPE_ENERGY, config.energyFaces().get(idx));
+            int itemMode = clampToTarget(target, FaceOption.TYPE_ITEM, config.itemFaces().get(idx));
+            int fluidMode = clampToTarget(target, FaceOption.TYPE_FLUID, config.fluidFaces().get(idx));
             target.energyFaceMode.put(d, energyMode);
             target.itemFaceMode.put(d, itemMode);
             target.fluidFaceMode.put(d, fluidMode);
@@ -170,6 +174,11 @@ public class ChannelConnectorItem extends TENBaseItem {
         }
         target.setChanged();
         return true;
+    }
+
+    /** 越界或不适用于目标设备的面模式一律落回关闭，保证目标只留可选档位。 */
+    private static int clampToTarget(AbstractChannelBlockEntity target, int changeType, int mode) {
+        return target.allowsFaceMode(changeType, mode) ? mode : FaceOption.OFF;
     }
 
     /** 入口校验：面模式列表必须为固定 6 项（Direction 序）且每值在 FaceOption 合法区间。 */

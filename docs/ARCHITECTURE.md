@@ -191,20 +191,37 @@ CmBlockEntity (implements ISyncPersistRPCBlockEntity)
   双向开放，不是双向自动传输。三类 IO（物/流/能）共用这一张表，任何一类都不例外。
   `OUT` 面额外允许外部塞入（既有策略，方便从输出面补料），是表里唯一一处主动面兼收。
 
-- **可选范围由方块标签组合决定**，面板不是六态全开。`CmMachineBlockEntity.allowsFaceMode()`
-  是唯一判定，两层门槛：
+- **面配置可选范围由两层判定决定**，面板不是六态全开。`CmMachineBlockEntity.allowsFaceMode()`
+  是唯一判定，关闭恒可选，余下三层过滤：
   - `supportsFaceResource()`：该方块有没有这种资源（有槽位 / 有罐体 / 有储能）。频道方块
     覆写成只认自己的 `channelType()`——三个频道都建了本地缓冲，照基类算会让物品频道也冒出
     能量面这种无意义页。
-  - `allowsActiveFace()`：查 `ten:face_active_energy` / `_item` / `_fluid` 三个方块标签。
-    **主动面必须由标签授权**，不带标签的方块只剩「关闭 + 被动三态」。三个标签的组合即该方块
-    的资源 IO 限制，整合包与附属方块可按需授予/收回，不必改代码；注册入口在 `TENBlocks` 的
-    `machine()`/`engine()`/`cell()` helper，频道与线缆只打 `machines`。
+  - `allowsActiveFace()`：查 `ten:no_active_face_energy` / `_item` / `_fluid` 三个方块标签。
+    **标签是「去除」，不是「赋予」**：主动面默认允许，带标签的方块被去掉该资源的主动两态，
+    只剩「关闭 + 被动三态」。这一层只管「整套资源都不许自搬」的方块（共享存储型，见三个
+    `CHANNEL_*`）。
+  - `supportsActiveDirection()`：按设备功能性判定某个主动方向有没有实际用途，**不需要额外标签**，
+    直接吃设备已有的事实：
 
-  GUI 循环走 `FaceOption.nextAllowed(current, allowed)` 跳过不可选模式，读档在 `initMachine()`
-  末尾 `normalizeFaceModes()` 把非法项落回 `OFF`——旧档里给频道配过主动面的会被清一次。
-  **新增机器时必须打主动标签**，否则它的面配置会静默退化成被动-only；
-  `FaceModeRangeGameTest` 守住这三条边界。
+| 主动方向 | 判定依据 | 被去掉的典型设备 |
+|---|---|---|
+| 能量输出 | `canExternalExtract()`（产能类） | 15 台加工机器：没有产能路径，`activePushEnergy` 本就按同一条件短路 |
+| 能量输入 | 非引擎（单元保留） | 4 台引擎：纯电源被灌电只会立刻推回网络，与自身 OUT 面形成来回搬运 |
+| 物品输出 | 存在 `slotType().canOut()` 槽 | 引擎（只有燃料输入槽）、创造单元 |
+| 物品输入 | 存在 `slotType().canIn()` 槽 | 无可进槽的设备 |
+| 流体输出 | 存在 `tankType().canOut()` 罐 | 无罐 / 只有输入罐的机器 |
+| 流体输入 | 存在 `tankType().canIn()` 罐 | 熔炉 / 物质结晶器 / 祛魔机：只有 XP 输出罐 |
+
+  为什么标签反着写：按「赋予」算，21 台设备要各打三条共 63 条，其中流体一条对无罐机器毫无
+  信息量、物品与能量两条对这 21 台全是「允许」，真正承载的事实只有「频道方块排除在外」；
+  按「去除」写，每个标签一条就说完。方向级差异则全部由功能性谓词给出，新加机器自动正确。
+
+  **三个标签极性必须一致**（都是去除）、判定走同一条分支，禁止某个资源白名单、另一个黑名单的
+  混搭，否则同一份配置在不同资源页上行为不对称。反过来，新增共享存储型方块（不只是频道）
+  必须记得补标签。GUI 循环走 `FaceOption.nextAllowed(current, allowed)` 跳过不可选模式，读档在
+  `initMachine()` 末尾 `normalizeFaceModes()` 把非法项落回 `OFF`——旧档里给频道配过主动面、
+  或给普通机器配过能量主动输出的，会被清一次。轮换表因此是**按设备现算的活列表**：判定改了，
+  下一次点击就按新集合走。`FaceModeRangeGameTest` 守住这些边界。
 
 - **默认面来自 `initialFaceMode*()`**：`CmMachineBlockEntity` 构造函数逐面写入。产能类机器
   （`EngineBlockEntity`、能量单元、创造单元）覆写为 `OUT`，频道方块覆写为 `OFF`，其余为 `BOTH`。
@@ -639,8 +656,10 @@ mod 版本校验，只管 Maven 坐标解析。
 **加一台机器**：`TENBlocks` 注册方块 → `TENBlockEntities` 注册 BE 并 `validBlocks` →
 选择合适的 BE 基类 → `TENModels` / blockstate → 中英文语言 → `CommonProxy.registerCapabilities()` 已按
 `BaseMachineBlock` 自动覆盖，确认你的 BE 类型实现了对应 getter → （可选）JEI/Jade 分类 → GameTest。
-注册走 `machine()` / `engine()` / `cell()` helper 会自动打上 `ten:face_active_*` 三个主动面标签；
-绕过 helper 自行注册就必须补标签，否则面配置只剩被动三态（见 2.6）。
+注册走 `machine()` / `engine()` / `cell()` helper 不需要额外标签：面配置的主动方向由
+`supportsActiveDirection()` 按设备功能性现算（产能类才有能量输出、只有输出罐就没有流体输入）。
+只有共享存储型方块（如三个频道）要补 `ten:no_active_face_energy` / `_item` / `_fluid` 去掉
+主动面，否则玩家能配出绕过共享存储的自搬面（见 2.6）。
 
 **加一个升级**：`common/item/upgrades/` 新建类 → `TENItems` 注册 → `IUpgradableMachine` 的效果分支 →
 `TENLangHandler.addUpgradeTips()` 补中英文 → 掉落表或配方（如需要）。
@@ -668,6 +687,11 @@ blockstate 占位核心模型与 `src/main/resources` 下的零件模型（见 5
 - **生成的资源**：`src/generated/resources/` 只由 DataGen 写；手工改会在下次 `runData` 被覆盖。
 - **同步线程**：不要恢复 `useAsyncThread() = true`；所有同步走主线程 `passivelySync()`。
 - **面 capability**：观察读与抽取权限分离；不要让权限判断把读侧内容藏空。
+- **面配置的限制放在代码，不放在标签**：`supportsActiveDirection()` 吃 `slotType` / `tankType` /
+  `canExternalExtract` 这些设备自己已经声明的能力，新增机器零配置即正确；标签只表达「整套资源
+  都不该自搬」这类玩法策略（频道），不表达「这台设备有没有输出槽」。不要按「资源 × 方向」把标签
+  拆成 6 个以上：组合爆炸、漏打标签是静默失效（面配置悄悄少一档），而且每加一个标签都要迁移
+  旧存档语义。
 - **批处理锁**：`lockedB` / `lockedMaxProgress` 在周期开始时锁定，完成后清理；中途改语义会破坏停滞契约。
 - **原子产出**：`RecipeMachineBlockEntity` 的快照-模拟-提交不能改成边产边写；失败必须回滚。
 - **客户端边界**：可选集成类型不进总是加载的类；客户端类不进 main 源集。

@@ -85,9 +85,10 @@ public class FaceOption {
      * 主动模式：机器自己搬运（{@link #IN} 自拉 / {@link #OUT} 自推）。
      *
      * <p>
-     * 主动面会让机器绕过外部调度自行搬运，因此不是所有方块都能选：必须由方块标签
-     * （{@code ten:face_active_energy} / {@code _item} / {@code _fluid}）显式授权，
-     * 共享存储型方块（频道）留在被动侧。
+     * 主动面会让方块绕过外部调度自行搬运，因此不是所有方块、所有方向都能选，判定分两层：
+     * 共享存储型方块（频道）用 {@code ten:no_active_face_energy} / {@code _item} / {@code _fluid}
+     * 整体去掉；其余按设备功能性决定某方向有没有意义（产能类才有能量输出、只有输出罐就没有
+     * 流体输入），见 {@code CmMachineBlockEntity.supportsActiveDirection}。
      */
     public static boolean isActive(int mode) {
         return mode == IN || mode == OUT;
