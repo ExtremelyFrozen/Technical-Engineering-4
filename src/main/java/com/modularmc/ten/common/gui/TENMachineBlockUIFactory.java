@@ -1074,30 +1074,10 @@ public final class TENMachineBlockUIFactory {
         // 必须走 getFacing() 读方块状态的 FACING：facingVal 是持久化镜像，机器放置时
         // BE 从未被写入（setFacing 无调用点），默认恒为 NORTH —— 直接读它会让面板的
         // 「前/后/左/右」永远按北向解释，面配置看起来永远落在固定世界方向。
-        Direction facing = machine.getFacing();
-        // [修复] 频道面板等 6 向机器（DirectionalMachineBlock）朝 UP/DOWN 时 getClockWise 抛
-        // IllegalStateException（Y 轴无旋转语义）→ 炸掉 GUI 同步包致客户端断线；
-        // Y 轴朝向时侧边栏四向固定为北南东西
-        if (facing.getAxis() == Direction.Axis.Y) {
-            return switch (logicalSide) {
-                case 0 -> facing;
-                case 1 -> facing.getOpposite();
-                case 2 -> Direction.NORTH;
-                case 3 -> Direction.SOUTH;
-                case 4 -> Direction.UP;
-                case 5 -> Direction.DOWN;
-                default -> null;
-            };
-        }
-        return switch (logicalSide) {
-            case 0 -> facing;
-            case 1 -> facing.getOpposite();
-            case 2 -> facing.getClockWise();
-            case 3 -> facing.getCounterClockWise();
-            case 4 -> Direction.UP;
-            case 5 -> Direction.DOWN;
-            default -> null;
-        };
+        // 映射表收在 BE 侧（同一张表也用于拆卸重放的存档旋转）：任意朝向都是双射。
+        // 旧实现在 Y 轴朝向时把上/下固定成 UP/DOWN，频道朝上/朝下放置时「前」与「上」、
+        // 「后」与「下」落到同一方向，面板上改一个面会连带改另一个面。
+        return CmMachineBlockEntity.faceForLogicalSide(machine.getFacing(), logicalSide);
     }
 
     private static Supplier<List<Component>> fuelTooltip(CmMachineBlockEntity machine, boolean displayValue) {

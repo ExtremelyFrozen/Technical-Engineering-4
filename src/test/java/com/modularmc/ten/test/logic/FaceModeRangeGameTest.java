@@ -3,9 +3,11 @@ package com.modularmc.ten.test.logic;
 import com.modularmc.ten.TEN;
 import com.modularmc.ten.api.blockentity.CmMachineBlockEntity;
 import com.modularmc.ten.api.option.FaceOption;
+import com.modularmc.ten.common.block.machine.DirectionalMachineBlock;
 import com.modularmc.ten.common.data.TENBlocks;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.world.level.block.Block;
@@ -13,9 +15,13 @@ import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 import net.neoforged.testframework.annotation.TestHolder;
 
+import java.util.EnumSet;
+
 /**
- * 面配置可选范围的两层判定：
+ * 面配置可选范围的三层判定：
  * <ul>
+ * <li><b>面入口</b>（{@code supportsFaceOnSide}）：该世界方向是不是本设备能接容器的面。
+ * 默认六面都是；频道只有朝向外侧的那一面。</li>
  * <li><b>设备功能性</b>（{@code supportsFaceDirection}）：六个档位归成「向内 / 向外」两种能力，
  * 能量向外只给产能类、能量向内排除引擎，物品/流体按槽位与罐体的可进可出方向。被动档位同样
  * 要过这层——只进不出的引擎不能出现「被动输出」，只有 XP 输出罐的熔炉不能出现「被动输入」。</li>
@@ -25,7 +31,7 @@ import net.neoforged.testframework.annotation.TestHolder;
  *
  * <p>
  * 这些边界都是「配了也不生效」的静默错误来源：普通机器配了能量主动输出不会推任何电，
- * 无罐机器的流体页无论怎么点都不会有流体进出。
+ * 无罐机器的流体页无论怎么点都不会有流体进出，频道在非朝向面配置只会让面板看起来串面。
  */
 @GameTestHolder(TEN.MOD_ID)
 public class FaceModeRangeGameTest {
@@ -197,6 +203,85 @@ public class FaceModeRangeGameTest {
                 m -> channel.allowsFaceMode(FaceOption.TYPE_ITEM, m));
         helper.assertTrue(wrapped == FaceOption.OFF,
                 "channel item page must wrap BOTH -> OFF, got " + FaceOption.toStr(wrapped));
+        helper.succeed();
+    }
+
+    /**
+     * 逻辑面 → 世界方向必须是双射：六个按钮各自落在一个不同方向，任何朝向都不例外。
+     *
+     * <p>
+     * 回归的是「频道朝上/朝下放置时，面板上改一个面会连带改另一个面」：旧实现把上/下固定成
+     * UP/DOWN，朝下放置时「前」与「下」都映射到 DOWN、「后」与「上」都映射到 UP。
+     */
+    @TestHolder(value = TEN.MOD_ID + ":face_logical_mapping_is_bijective", enabledByDefault = true)
+    @GameTest(template = "empty_5x5")
+    @PrefixGameTestTemplate(false)
+    public static void faceLogicalMappingIsBijective(GameTestHelper helper) {
+        for (Direction facing : Direction.values()) {
+            EnumSet<Direction> seen = EnumSet.noneOf(Direction.class);
+            for (int side = 0; side < 6; side++) {
+                Direction mapped = CmMachineBlockEntity.faceForLogicalSide(facing, side);
+                helper.assertTrue(mapped != null,
+                        "logical side " + side + " must map to a direction for facing " + facing);
+                if (mapped == null) {
+                    return;
+                }
+                helper.assertTrue(seen.add(mapped),
+                        "facing " + facing + ": logical side " + side + " aliases " + mapped);
+            }
+            helper.assertTrue(seen.size() == 6,
+                    "facing " + facing + " must cover all six directions, got " + seen);
+        }
+
+        // 水平朝向沿用既有语义：前=正面、后=背面、左=顺时针、右=逆时针、上/下=世界上下
+        helper.assertTrue(CmMachineBlockEntity.faceForLogicalSide(Direction.NORTH, 0) == Direction.NORTH,
+                "north-facing front must be NORTH");
+        helper.assertTrue(CmMachineBlockEntity.faceForLogicalSide(Direction.NORTH, 2) == Direction.EAST,
+                "north-facing left must stay EAST (legacy getClockWise)");
+        helper.assertTrue(CmMachineBlockEntity.faceForLogicalSide(Direction.NORTH, 4) == Direction.UP,
+                "north-facing up must stay UP");
+        helper.succeed();
+    }
+
+    /**
+     * 频道只有朝向外侧的那一面是面入口：其余五面一律只允许关闭，旧档残留的档位在读档时归零。
+     *
+     * <p>
+     * 这一条与上一条共同保证「改一个面不会连带改另一个面」：映射不再重号，死面也不再收配置。
+     */
+    @TestHolder(value = TEN.MOD_ID + ":channel_only_configures_facing_side", enabledByDefault = true)
+    @GameTest(template = "empty_5x5")
+    @PrefixGameTestTemplate(false)
+    public static void channelOnlyConfiguresFacingSide(GameTestHelper helper) {
+        // 放在方块顶面时频道朝向 DOWN（模型突出的一侧贴住被点击的面）
+        helper.setBlock(POS, TENBlocks.CHANNEL_ITEM.get().defaultBlockState()
+                .setValue(DirectionalMachineBlock.FACING, Direction.DOWN));
+        CmMachineBlockEntity channel = helper.getBlockEntity(POS);
+        if (channel == null) {
+            helper.fail("Expected a channel block entity at " + POS);
+            return;
+        }
+        // 读档前就存在的死面配置（背面 UP）必须在 initMachine 的归一化里归零
+        channel.itemFaceMode.put(Direction.UP, FaceOption.IN);
+        channel.initMachine();
+
+        Direction facing = channel.getFacing();
+        helper.assertTrue(facing == Direction.DOWN, "channel must face DOWN, got " + facing);
+        helper.assertTrue(channel.allowsFaceMode(facing, FaceOption.TYPE_ITEM, FaceOption.IN),
+                "the facing side must keep every item mode");
+        helper.assertTrue(channel.itemFaceMode.get(Direction.UP) == FaceOption.OFF,
+                "stored mode on a non-facing side must be normalized to OFF, got " + FaceOption.toStr(channel.itemFaceMode.get(Direction.UP)));
+
+        for (Direction side : Direction.values()) {
+            if (side == facing) {
+                continue;
+            }
+            for (int mode : new int[] { FaceOption.IN, FaceOption.OUT, FaceOption.BE_IN,
+                    FaceOption.BE_OUT, FaceOption.BOTH }) {
+                helper.assertFalse(channel.allowsFaceMode(side, FaceOption.TYPE_ITEM, mode),
+                        "non-facing side " + side + " must reject " + FaceOption.toStr(mode));
+            }
+        }
         helper.succeed();
     }
 
