@@ -120,6 +120,14 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
     public int[] itemFaceData = new int[6];
     public int[] fluidFaceData = new int[6];
 
+    /**
+     * 面语义版本键。1 = 被动面（BE_IN / BE_OUT / BOTH）不再由机器主动搬运，仅 OUT 主动推。
+     * 缺键即旧档：读档时把产能类机器（引擎/单元）的能量 BOTH 面迁移为 OUT——旧版靠 BOTH
+     * 主动放电，不迁移会让升级后的能量单元彻底停止对外供电。
+     */
+    private static final String FACE_SEMANTICS_KEY = "faceSemantics";
+    private static final int FACE_SEMANTICS_PASSIVE = 1;
+
     // ───── 乘法模型与批处理字段 ─────
     /** 时长乘子（升级叠加；未装时长类升级时恒 1.0）。 */
     public double durationMultiplier = 1.0;
@@ -186,14 +194,20 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
 
     public CmMachineBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
+        // 默认面取 initialFaceMode*()：产能类（引擎/单元/创造单元）覆写为主动输出，其余默认被动双向。
+        // 构造期调用可覆写方法有风险——这里所有覆写都只返回 FaceOption 常量，不读子类字段。
+        // 之前硬编码 BOTH 会让「默认面」覆写完全失效：被动面不再主动搬运后，引擎与电池就停止供电。
+        int energyMode = initialFaceModeEnergy();
+        int itemMode = initialFaceModeItem();
+        int fluidMode = initialFaceModeFluid();
         for (Direction d : Direction.values()) {
-            energyFaceMode.put(d, FaceOption.BOTH);
-            itemFaceMode.put(d, FaceOption.BOTH);
-            fluidFaceMode.put(d, FaceOption.BOTH);
+            energyFaceMode.put(d, energyMode);
+            itemFaceMode.put(d, itemMode);
+            fluidFaceMode.put(d, fluidMode);
         }
-        Arrays.fill(energyFaceData, FaceOption.BOTH);
-        Arrays.fill(itemFaceData, FaceOption.BOTH);
-        Arrays.fill(fluidFaceData, FaceOption.BOTH);
+        Arrays.fill(energyFaceData, energyMode);
+        Arrays.fill(itemFaceData, itemMode);
+        Arrays.fill(fluidFaceData, fluidMode);
     }
 
     public abstract int inventorySize();
@@ -408,60 +422,52 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         return !tanks.isEmpty();
     }
 
+    /** 外部能否向该面写入能量：被动输入 / 被动双向（主动输出面按既有策略一并放行）。 */
     protected boolean canReceiveEnergy(@Nullable Direction side) {
         if (!hasFaceCapabilityEnergy(side)) return false;
         if (side == null) return true;
-        int mode = energyFaceMode.getOrDefault(side, FaceOption.OFF);
-        // 语义（GUI 标签）：被动输入(BE_IN)/被动双向(BOTH)可被外部塞入；
-        // [用户需求] 主动输出(OUT)面同时允许被动输入；被动输出(BE_OUT)纯输出不收
-        return mode == FaceOption.BE_IN || mode == FaceOption.BOTH || mode == FaceOption.OUT;
+        return FaceOption.allowsExternalInsert(energyFaceMode.getOrDefault(side, FaceOption.OFF));
     }
 
+    /** 外部能否从该面取出能量：被动输出 / 被动双向。主动输出面由机器自推，不开放外部取。 */
     protected boolean canExtractEnergy(@Nullable Direction side) {
         if (!hasFaceCapabilityEnergy(side)) return false;
         if (side == null) return true;
-        int mode = energyFaceMode.getOrDefault(side, FaceOption.OFF);
-        // 被动输出(BE_OUT)/被动双向(BOTH)可被外部拉取；主动输出(OUT)由机器推，不开放外部拉
-        return mode == FaceOption.BE_OUT || mode == FaceOption.BOTH;
+        return FaceOption.allowsExternalExtract(energyFaceMode.getOrDefault(side, FaceOption.OFF));
     }
 
     /**
-     * 物品面接收门控（主动/被动语义）：仅「被动输入 / 被动双向」允许被外部塞入；
-     * 「主动输入」由机器自身主动拉取（{@link #doActiveItemIo}），不开放给外部。
+     * 物品面接收门控：被动输入 / 被动双向可被外部塞入（主动输出面按既有策略一并放行）；
+     * 主动输入由机器自身拉取（{@link #doActiveItemIo}），不开放给外部。
      */
     protected boolean canReceiveItem(@Nullable Direction side) {
         if (!hasFaceCapabilityItem(side)) return false;
         if (side == null) return true;
-        int mode = itemFaceMode.getOrDefault(side, FaceOption.OFF);
-        // 语义（GUI 标签）：被动输入(BE_IN)/被动双向(BOTH)可被外部塞入；主动输出(OUT)面也可被塞
-        return mode == FaceOption.BE_IN || mode == FaceOption.BOTH || mode == FaceOption.OUT;
+        return FaceOption.allowsExternalInsert(itemFaceMode.getOrDefault(side, FaceOption.OFF));
     }
 
     /**
-     * 物品面提取门控（主动/被动语义）：仅「被动输出 / 被动双向」允许被外部抽取；
-     * 「主动输出」由机器自身主动推出（{@link #doActiveItemIo}），不开放给外部。
+     * 物品面提取门控：被动输出 / 被动双向可被外部抽取；
+     * 主动输出由机器自身推出（{@link #doActiveItemIo}），不开放给外部。
      */
     protected boolean canExtractItem(@Nullable Direction side) {
         if (!hasFaceCapabilityItem(side)) return false;
         if (side == null) return true;
-        int mode = itemFaceMode.getOrDefault(side, FaceOption.OFF);
-        return mode == FaceOption.BE_OUT || mode == FaceOption.BOTH;
+        return FaceOption.allowsExternalExtract(itemFaceMode.getOrDefault(side, FaceOption.OFF));
     }
 
+    /** 外部能否向该面写入流体：被动输入 / 被动双向（主动输出面按既有策略一并放行）。 */
     protected boolean canReceiveFluid(@Nullable Direction side) {
         if (!hasFaceCapabilityFluid(side)) return false;
         if (side == null) return true;
-        int mode = fluidFaceMode.getOrDefault(side, FaceOption.OFF);
-        // 语义（GUI 标签）：被动输入(BE_IN)/被动双向(BOTH)可被外部塞入；主动输出(OUT)面也可被塞
-        return mode == FaceOption.BE_IN || mode == FaceOption.BOTH || mode == FaceOption.OUT;
+        return FaceOption.allowsExternalInsert(fluidFaceMode.getOrDefault(side, FaceOption.OFF));
     }
 
+    /** 外部能否从该面取出流体：被动输出 / 被动双向。主动输出面由机器自推，不开放外部取。 */
     protected boolean canExtractFluid(@Nullable Direction side) {
         if (!hasFaceCapabilityFluid(side)) return false;
         if (side == null) return true;
-        int mode = fluidFaceMode.getOrDefault(side, FaceOption.OFF);
-        // 被动输出(BE_OUT)/被动双向(BOTH)可被外部拉取；主动输出(OUT)由机器推，不开放外部拉
-        return mode == FaceOption.BE_OUT || mode == FaceOption.BOTH;
+        return FaceOption.allowsExternalExtract(fluidFaceMode.getOrDefault(side, FaceOption.OFF));
     }
 
     public boolean signalAllowRun() {
@@ -664,14 +670,10 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
             energyStorage.setEnergy(maxStorageEnergy);
         }
 
-        // ── 主动物品 IO：面配置 IN=机器主动拉取 / OUT/BE_OUT=机器主动推出（无速率上限，尽力搬空）──
+        // ── 主动 IO：只有 IN 自发拉取、OUT 自发推送；被动面（BE_IN / BE_OUT / BOTH）只对
+        // capability 开放，机器不替外部搬运（无速率上限，每次尽力搬空）──
         doActiveItemIo();
-
-        // ── 主动流体 IO：面配置 OUT/BE_OUT/BOTH 时向相邻接收方推流体（无速率上限）──
         doActiveFluidIo();
-
-        // ── 主动能量 IO：面配置 OUT/BE_OUT/BOTH 时向相邻接收方推送（引擎/单元类）──
-        // [修复] 引擎类此前从不调用 → 面配置“主动输出”完全不推送能量
         doActiveEnergyIo();
 
         // ── Sync face maps to arrays for client (server-authoritative mirror) ──
@@ -1139,6 +1141,16 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
                 itemFaceMode.put(direction, tag.getInt("direItem" + direction.get3DDataValue()));
                 fluidFaceMode.put(direction, tag.getInt("direFluid" + direction.get3DDataValue()));
             }
+            // 旧档面语义迁移（仅服务端、仅真正读档）：旧版 BOTH 兼作「机器主动推送」，新版只有 OUT 推。
+            // 产能类机器的能量面旧默认是 BOTH，不迁移则升级后电池/引擎不再放电。带版本键后只跑一次，
+            // 玩家在新版显式重配的 BOTH 不会被反复改写。
+            if (!clientSide && tag.getInt(FACE_SEMANTICS_KEY) < FACE_SEMANTICS_PASSIVE && canExternalExtract()) {
+                for (Direction direction : Direction.values()) {
+                    if (energyFaceMode.getOrDefault(direction, FaceOption.OFF) == FaceOption.BOTH) {
+                        energyFaceMode.put(direction, FaceOption.OUT);
+                    }
+                }
+            }
             // 读档后立即重建 faceData 镜像，服务端状态即时正确
             rebuildFaceData();
         }
@@ -1164,6 +1176,8 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
             tag.putInt("direItem" + direction.get3DDataValue(), itemFaceMode.getOrDefault(direction, initialFaceModeItem()));
             tag.putInt("direFluid" + direction.get3DDataValue(), fluidFaceMode.getOrDefault(direction, initialFaceModeFluid()));
         }
+        // 写入即视为已迁移：下次读档不再触发 FACE_SEMANTICS_PASSIVE 的 BOTH→OUT 改写
+        tag.putInt(FACE_SEMANTICS_KEY, FACE_SEMANTICS_PASSIVE);
         saveSerializedHandlers(tag, registries);
     }
 
@@ -1261,11 +1275,14 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         }
     }
 
-    // ───── 主动 IO（面配置 IN/OUT 由机器自拉/自推；取消 64/tick 上限，每次尽力搬空）─────
+    // ───── 主动 IO（仅 IN 自拉、仅 OUT 自推；被动面一律等外部操作；无速率上限，每次尽力搬空）─────
 
     /**
-     * 机器主动物品 IO：对每个面，itemFaceMode == IN → 主动拉取；OUT/BE_OUT → 主动推出
-     * （BE_OUT 主动输出，三 IO 统一执行）。
+     * 机器主动物品 IO：仅 IN 面自拉、仅 OUT 面自推。
+     *
+     * <p>
+     * 被动面（BE_IN / BE_OUT / BOTH）机器本 tick 完全不动作：这些面只开放给外部设备经
+     * capability 读写，机器再插手就是两条搬运路径抢同一个槽。
      */
     private void doActiveItemIo() {
         if (level == null || level.isClientSide() || itemHandler == null) {
@@ -1273,9 +1290,9 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         }
         for (Direction direction : Direction.values()) {
             int mode = itemFaceMode.getOrDefault(direction, FaceOption.OFF);
-            if (mode == FaceOption.IN) {
+            if (FaceOption.machinePulls(mode)) {
                 activePullItems(direction);
-            } else if (mode == FaceOption.OUT || mode == FaceOption.BE_OUT) {
+            } else if (FaceOption.machinePushes(mode)) {
                 activePushItems(direction);
             }
         }
@@ -1316,7 +1333,13 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         }
     }
 
-    /** 主动推出：从输出槽推物品到相邻容器（非管道），尽力搬空输出槽（无速率上限）。 */
+    /**
+     * 主动推出：从输出槽推物品到相邻容器（非管道），尽力搬空输出槽（无速率上限）。
+     * <p>
+     * 记账口径：每次都以 capability 的实际返回值为准。先模拟提取拿到「本次真的能取出多少」
+     * （超堆叠槽单次提取量可能小于槽内数量），再模拟插入拿到目标能收多少，随后才执行
+     * 提取与插入；目标实收 = 机器实扣，绝不按「意欲推送量」记账——否则超堆叠槽会复制物品。
+     */
     private void activePushItems(Direction direction) {
         BlockPos targetPos = worldPosition.relative(direction);
         if (level.getBlockEntity(targetPos) instanceof PipeBlockEntity) {
@@ -1326,23 +1349,48 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         if (sink == null) {
             return;
         }
-        int remaining = Integer.MAX_VALUE; // 无速率上限：每次推到输出槽搬空/目标满为止
-        for (int slot = 0; slot < itemHandler.getSlots() && remaining > 0; slot++) {
+        for (int slot = 0; slot < itemHandler.getSlots(); slot++) {
             if (!slotType(slot).canOut()) {
                 continue; // 仅输出槽
             }
-            ItemStack stack = itemHandler.getStackInSlot(slot);
-            if (stack.isEmpty()) {
-                continue;
-            }
-            int toPush = Math.min(stack.getCount(), remaining);
-            ItemStack toInsert = stack.copy();
-            toInsert.setCount(toPush);
-            ItemStack leftover = TransferNetworks.insertItem(sink, toInsert, false);
-            int accepted = toPush - leftover.getCount();
-            if (accepted > 0) {
-                itemHandler.extractItem(slot, accepted, false);
-                remaining -= accepted;
+            // 同一 tick 内循环搬空该槽，直到槽空或目标拒收（保持"无速率上限"语义）
+            while (true) {
+                ItemStack stack = itemHandler.getStackInSlot(slot);
+                if (stack.isEmpty()) {
+                    break;
+                }
+                int countBefore = stack.getCount();
+                ItemStack simExtract = itemHandler.extractItem(slot, countBefore, true);
+                if (simExtract.isEmpty()) {
+                    break; // 该槽当前不可提取
+                }
+                ItemStack simLeft = TransferNetworks.insertItem(sink, simExtract.copy(), true);
+                int acceptable = simExtract.getCount() - simLeft.getCount();
+                if (acceptable <= 0) {
+                    break; // 目标拒收或已满：物品留在输出槽
+                }
+                ItemStack extracted = itemHandler.extractItem(slot, acceptable, false);
+                if (extracted.isEmpty()) {
+                    break; // 防御：模拟与实际不一致时放弃本槽，不做无依据的扣减
+                }
+                ItemStack leftover = TransferNetworks.insertItem(sink, extracted.copy(), false);
+                if (!leftover.isEmpty()) {
+                    // 防御竞态：真实插入失败的部分原样退回本槽（直接合并，绕过堆叠上限——
+                    // 这些物品刚从该槽取出，槽内必然容得下），不凭空消失
+                    ItemStack current = itemHandler.getStackInSlot(slot);
+                    if (current.isEmpty()) {
+                        itemHandler.setStackInSlot(slot, leftover);
+                    } else if (ItemStack.isSameItemSameComponents(current, leftover)) {
+                        current.grow(leftover.getCount());
+                        itemHandler.setStackInSlot(slot, current);
+                    } else {
+                        itemHandler.insertItem(slot, leftover, false);
+                    }
+                    break;
+                }
+                if (itemHandler.getStackInSlot(slot).getCount() >= countBefore) {
+                    break; // 防御：提取未生效（异常 capability）时终止，避免死循环
+                }
             }
         }
     }
@@ -1360,8 +1408,11 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
     }
 
     /**
-     * 机器主动流体 IO：面配置 OUT/BE_OUT/BOTH 时向相邻容器推流体（输出罐 → 相邻，无速率上限）。
-     * 相邻为管道时跳过（由管道逐级传递处理，同物品/能量口径）。
+     * 机器主动流体 IO：仅 OUT 面自推（输出罐 → 相邻，无速率上限）。
+     *
+     * <p>
+     * 被动面（BE_OUT / BOTH）机器不动作——{@code BOTH} 的含义是「既可被输入也可被输出」，
+     * 不是「双向自动传输」。相邻为管道时跳过（由管道逐级传递处理，同物品/能量口径）。
      */
     protected void doActiveFluidIo() {
         if (level == null || level.isClientSide() || tanks.isEmpty()) {
@@ -1369,7 +1420,7 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         }
         for (Direction direction : Direction.values()) {
             int mode = fluidFaceMode.getOrDefault(direction, initialFaceModeFluid());
-            if (mode != FaceOption.OUT && mode != FaceOption.BOTH) {  // 主动输出(OUT)/被动双向(BOTH)推；BE_OUT 仅外部拉
+            if (!FaceOption.machinePushes(mode)) {
                 continue;
             }
             if (level.getBlockEntity(worldPosition.relative(direction)) instanceof PipeBlockEntity) {
@@ -1379,7 +1430,8 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
             if (sink == null) {
                 continue;
             }
-            // 逐输出罐推送到相邻（经包装器 drain 门控 → canExtractFluid(side) 校验本面输出许可）
+            // 逐输出罐推送到相邻：源取裸 combinedFluidHandler，不经 getFluidHandler(side) 的面门控——
+            // 否则机器自己的主动输出面会被 canExtractFluid（只放行被动面）挡死
             for (int tank = 0; tank < tanks.size(); tank++) {
                 FluidStack inTank = tanks.get(tank).getFluid();
                 if (inTank.isEmpty()) {
@@ -1394,9 +1446,12 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
     }
 
     /**
-     * 机器主动能量 IO：面配置 OUT/BOTH/BE_OUT 时向相邻容器推送能量。
-     * 仅引擎/单元类机器（canExternalExtract=true）生效——普通机器设输出面不主动推。
-     * BE_OUT（主动输出）语义：机器主动推给相邻；OUT（被动输出）语义：外部拉取（两者都推无害）。
+     * 机器主动能量 IO：仅 OUT 面自推。
+     *
+     * <p>
+     * 仅产能类机器（{@link #canExternalExtract()} 为 true，沿用旧名：这类机器的储能本就该被取走）
+     * 生效——普通机器即使把面设成主动输出也不会往外送电，避免耗能设备把输入电倒灌回网络。
+     * 被动面（BE_OUT / BOTH）机器不动作，交给外部设备抽取。
      */
     protected void doActiveEnergyIo() {
         if (level == null || level.isClientSide() || energyStorage == null) {
@@ -1407,8 +1462,8 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         }
         for (Direction direction : Direction.values()) {
             int mode = energyFaceMode.getOrDefault(direction, initialFaceModeEnergy());
-            if (mode != FaceOption.OUT && mode != FaceOption.BOTH) {  // 主动输出(OUT)/被动双向(BOTH)推；BE_OUT 仅外部拉
-                continue; // [修复] 原：漏 BE_OUT——主动输出面完全不推送
+            if (!FaceOption.machinePushes(mode)) {
+                continue;
             }
             IEnergyStorage sink = TransferNetworks.getEnergy(level, worldPosition.relative(direction), direction.getOpposite());
             if (sink == null || !sink.canReceive()) {

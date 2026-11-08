@@ -175,6 +175,33 @@ CmBlockEntity (implements ISyncPersistRPCBlockEntity)
 ### 2.6 面配置与 capability
 
 - `FaceOption` 定义每面的能量/物品/流体模式；`CmMachineBlockEntity` 为六个方向各存一份。
+- **主动 / 被动是互斥的两类**，判定只走 `FaceOption` 的四个方法（`machinePulls` /
+  `machinePushes` / `allowsExternalInsert` / `allowsExternalExtract`），不要在调用点散写模式比较：
+
+| 模式（GUI 标签） | 机器自拉 | 机器自推 | 外部可塞 | 外部可抽 |
+|---|:--:|:--:|:--:|:--:|
+| `OFF` 禁用 | – | – | – | – |
+| `IN` 主动输入 | ✓ | – | – | – |
+| `OUT` 主动输出 | – | ✓ | ✓ | – |
+| `BE_IN` 被动输入 | – | – | ✓ | – |
+| `BE_OUT` 被动输出 | – | – | – | ✓ |
+| `BOTH` 被动双向 | – | – | ✓ | ✓ |
+
+  「被动」（中文语境里的「被」）只表示机器不拦外部，**不表示机器替外部搬运**：`BOTH` 是
+  双向开放，不是双向自动传输。三类 IO（物/流/能）共用这一张表，任何一类都不例外。
+  `OUT` 面额外允许外部塞入（既有策略，方便从输出面补料），是表里唯一一处主动面兼收。
+
+- **默认面来自 `initialFaceMode*()`**：`CmMachineBlockEntity` 构造函数逐面写入。产能类机器
+  （`EngineBlockEntity`、能量单元、创造单元）覆写为 `OUT`，频道方块覆写为 `OFF`，其余为 `BOTH`。
+  这层覆写曾经被构造函数里硬编码的 `BOTH` 架空——`getOrDefault(..., initialFaceModeX())` 的
+  fallback 永不触发，于是「引擎默认主动输出」只是摆设。改面语义时必须同步检查这里，
+  否则去掉 `BOTH` 的自动推就等于让引擎和电池停止供电。
+
+- **旧档迁移**：`writeTileData` 恒写 `faceSemantics=1`。缺此键的旧档在服务端读档时，
+  产能类机器（`canExternalExtract()` 为 true，含引擎/能量单元/创造单元）的能量 `BOTH` 面
+  改写为 `OUT`——旧版靠 `BOTH` 主动放电，不迁移会让升级后的能量单元停止对外供电。
+  迁移只跑一次，玩家在新版显式重配的 `BOTH` 不会被反复改写。
+
 - `CommonProxy.registerCapabilities()` 遍历所有 `BaseMachineBlock`，按方块实体类型分发：
   - 线缆走 `CableBlockEntity.getEnergy(side)`；
   - 管道走 `PipeBlockEntity.getTransportHandler(side)`；
@@ -236,6 +263,11 @@ JEI 的模组分页按 `RecipeType` uid 的命名空间归组，这些页面全�
 真实数量另存 int 键 `BigCount`；`SharedStorage`（频道物品存储，上限 64×成员数）与
 扩容迁移分支共用同一对 `saveStack`/`readStack`。网络侧不受此限（`OPTIONAL_STREAM_CODEC`
 写 varint），所以只有一条持久化通道需要覆盖。
+
+提取侧与堆叠侧同源：`MachineItemHandler` 覆写 `extractItem`，单次上限取槽内实际数量，
+不用 `ItemStack#getMaxStackSize()`。NeoForge 父类把单次提取封顶在物品自身堆叠上限（通常 64），
+超堆叠槽在「先插目标、再按插入量扣槽」的调用方（主动输出）会按意欲量记账而复制物品，
+在「只调一次、忽略返回值」的调用方（扳手拆卸）会留下搬不走的余量。
 
 provider 只统一了「上限从哪来」，写入侧仍要各自去问：走 `RecipeMachineBlockEntity`
 的机器由 `computeEffectiveSlotLimit` 给出 `64 × lockedB`，自带批处理数学的机器
