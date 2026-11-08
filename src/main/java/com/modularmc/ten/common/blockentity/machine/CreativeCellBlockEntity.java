@@ -27,6 +27,12 @@ public class CreativeCellBlockEntity extends CmMachineBlockEntity {
     }
 
     @Override
+    public int initialFaceModeEnergy() {
+        // 同能量单元：创造单元默认主动对外供电，被动面不搬运
+        return com.modularmc.ten.api.option.FaceOption.OUT;
+    }
+
+    @Override
     public int inventorySize() {
         return 2;
     }

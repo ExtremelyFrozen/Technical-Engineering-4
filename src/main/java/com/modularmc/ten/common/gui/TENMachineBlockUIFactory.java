@@ -712,11 +712,11 @@ public final class TENMachineBlockUIFactory {
     /** 面朝向六态图标（TENConstants.ICON_FACE_*，12x12 整图）：索引即 FaceOption 枚举值。 */
     private static final IGuiTexture[] FACE_MODE_ICONS = {
             fullTexture(TENConstants.ICON_FACE_OFF, 12, 12),    // OFF 禁用
-            fullTexture(TENConstants.ICON_FACE_IN, 12, 12),     // IN 被动输入
-            fullTexture(TENConstants.ICON_FACE_OUT, 12, 12),    // OUT 被动输出
-            fullTexture(TENConstants.ICON_FACE_BE_IN, 12, 12),  // BE_IN 主动输入
-            fullTexture(TENConstants.ICON_FACE_BE_OUT, 12, 12), // BE_OUT 主动输出
-            fullTexture(TENConstants.ICON_FACE_BOTH, 12, 12),   // BOTH 被动双向
+            fullTexture(TENConstants.ICON_FACE_IN, 12, 12),     // IN 主动输入（机器自拉）
+            fullTexture(TENConstants.ICON_FACE_OUT, 12, 12),    // OUT 主动输出（机器自推）
+            fullTexture(TENConstants.ICON_FACE_BE_IN, 12, 12),  // BE_IN 被动输入（仅可被塞入）
+            fullTexture(TENConstants.ICON_FACE_BE_OUT, 12, 12), // BE_OUT 被动输出（仅可被抽取）
+            fullTexture(TENConstants.ICON_FACE_BOTH, 12, 12),   // BOTH 被动双向（可被塞入也可被抽取）
     };
 
     private static UIElement faceModeElement(CmMachineBlockEntity machine, UIState uiState, int x, int y, int logicalSide, String tooltipKey) {

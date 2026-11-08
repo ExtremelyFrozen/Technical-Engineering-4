@@ -147,7 +147,27 @@
 - 需复验：`c:storage_blocks/raw_tungsten` 与 `c:storage_blocks/raw_aluminum` 两条粗矿块→粉
   在装了 ECO 时可用（ECO 提供 `raw_tungsten_block` / `raw_aluminum_block`）。
 
+### 面配置主动/被动语义统一实机复验 — P2 🧪
+- 已实施：面判定收进 `FaceOption` 的四个语义方法（`machinePulls` / `machinePushes` /
+  `allowsExternalInsert` / `allowsExternalExtract`）；三类 IO 统一为「仅 `IN` 自拉、仅 `OUT` 自推」，
+  `BE_IN` / `BE_OUT` / `BOTH` 机器一律不动——`BOTH` 是双向开放，不是双向自动传输。
+- 已实施：`writeTileData` 恒写 `faceSemantics=1`；缺键的旧档在服务端读档时，把产能类机器
+  （引擎/单元/创造单元）的能量 `BOTH` 面改写为 `OUT`，避免升级后电池停止放电。
+- 需复验：旧存档的能量单元升级后仍照常对外供电（迁移生效）；新放置的能量单元/创造单元默认可放电；
+  流体机器的默认 `BOTH` 面**不再**自动送液，改配主动输出后恢复；
+  `BE_OUT` 面第三方管道可抽、塞不进去；`BOTH` 面可抽可塞且机器不自推。
+- GameTest 只覆盖物品侧（`MachineActivePushGameTest` 5 条），流体/能量与旧档迁移只能实机验。
+
 ## 二、未开始
+
+### 流体主动输出卡在首个非空罐 — P2 ⬜
+- `doActiveFluidIo()` 逐罐取 `tanks.get(tank).getFluid()` 当数量依据，却统一从
+  `combinedFluidHandler` 取液（`TransferNetworks.moveFluid`）。合并 handler 的 `drain(int)`
+  恒定从**第一个非空罐**出液：若罐 0 装 A、相邻容器只收 B，每个罐的尝试都取出 A 并被拒，
+  B 永远送不出去，机器的流体输出整体卡死。
+- 修法：源改用 `tanks.get(tank)`，或用 `drain(FluidStack, ...)` 按流体精确取液，让「遍历到第几个罐」
+  与「实际取哪个罐」一致。
+- 需实机：双罐机器（一进一出）分别接只收其中一种流体的相邻容器，两种都应能送出。
 
 ### 采矿场等工具续扫实机复验 — P2 🧪
 - 决策表 `QuarryScanDecision.decide()` 有脱机断言跑过（6 项全过）；方块实体接线部分只过了编译。

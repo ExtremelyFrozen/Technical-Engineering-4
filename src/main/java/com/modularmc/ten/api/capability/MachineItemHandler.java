@@ -155,6 +155,45 @@ public class MachineItemHandler extends ItemStackHandler {
         return super.getStackLimit(slot, stack);
     }
 
+    /**
+     * 提取：以槽内实际数量为上限，不再被物品自身堆叠上限（通常 64）截断。
+     * <p>
+     * 父类实现取 {@code Math.min(amount, existing.getMaxStackSize())}，而本 handler 允许
+     * 批处理超堆叠（单槽上限 64×B）。若沿用父类，超堆叠槽一次最多只能交出 64 个，
+     * 所有「先插入目标、再按插入量扣槽」的调用方都会凭空多出物品；
+     * 反之忽略返回值、只调一次的调用方（扳手拆卸）会把剩余部分留在即将移除的 BE 里，
+     * 随后被方块移除逻辑撒到地上而不是进背包。
+     * 这里与 {@link #getSlotLimit(int)} 的超堆叠语义对齐：上限 = 槽内现有数量。
+     */
+    @Override
+    public ItemStack extractItem(int slot, int amount, boolean simulate) {
+        if (amount <= 0) return ItemStack.EMPTY;
+
+        validateSlotIndex(slot);
+
+        ItemStack existing = stacks.get(slot);
+        if (existing.isEmpty()) return ItemStack.EMPTY;
+
+        int toExtract = Math.min(amount, existing.getCount());
+        if (toExtract <= 0) return ItemStack.EMPTY;
+
+        if (simulate) {
+            return existing.copyWithCount(toExtract);
+        }
+
+        if (toExtract >= existing.getCount()) {
+            stacks.set(slot, ItemStack.EMPTY);
+            onContentsChanged(slot);
+            return existing;
+        }
+
+        // 超堆叠：不能 whole-copy，先取出副本再收缩原栈
+        ItemStack extracted = existing.copyWithCount(toExtract);
+        existing.shrink(toExtract);
+        onContentsChanged(slot);
+        return extracted;
+    }
+
     @Override
     public boolean isItemValid(int slot, ItemStack stack) {
         return validator.test(slot, stack);
