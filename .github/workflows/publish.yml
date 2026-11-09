@@ -250,6 +250,13 @@ jobs:
       - name: Push and PR
         env:
           GH_TOKEN: ${{ github.token }}
+          BRANCH: gh/release-${{ inputs.version }}
         run: |
-          git push --force --set-upstream origin gh/release-${{ inputs.version }}
-          gh pr create -B ${{ inputs.version }} -H gh/release-${{ inputs.version }} --title "RELEASE for ${{ inputs.version }} [no-snapshot]" --body "Created by GH Workflow" --label "ignore changelog"
+          git push --force --set-upstream origin "$BRANCH"
+          # 上一版发布开的收尾 PR 常常还没合并：分支被 force-push 更新后该 PR 已指向新提交，
+          # 再 create 会以 "already exists" 失败并把整条发布链标红。已有开着的就跳过。
+          if [ -n "$(gh pr list --head "$BRANCH" --state open --json number --jq '.[].number')" ]; then
+            echo "open PR for $BRANCH already exists; updated by force-push, skip create."
+            exit 0
+          fi
+          gh pr create -B ${{ inputs.version }} -H "$BRANCH" --title "RELEASE for ${{ inputs.version }} [no-snapshot]" --body "Created by GH Workflow" --label "ignore changelog"
