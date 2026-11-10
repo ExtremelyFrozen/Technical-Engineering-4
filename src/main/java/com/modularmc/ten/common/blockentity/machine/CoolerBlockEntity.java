@@ -179,8 +179,8 @@ public class CoolerBlockEntity extends EffectMachineBlockEntity {
             return;
         }
         int delta = safeMultiply(data.reductionTicks(), getLockedBatchSize());
-        targetMachine.progress = Math.min(targetMachine.maxProgress, targetMachine.progress + delta);
-        targetMachine.setChanged();
+        // 经钩子推进：多流水线机器（熔炼机）会自行把 tick 分派到各条 lane。
+        targetMachine.advanceProgress(delta);
         usesRemaining--;
         if (usesRemaining <= 0) {
             coolant.shrink(1);

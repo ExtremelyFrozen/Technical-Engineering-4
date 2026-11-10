@@ -79,7 +79,7 @@ public class CompressorBlockEntity extends RecipeMachineBlockEntity {
             // mini 装饰（静态整件 8x54）：紧贴输入槽右缘，标示上下输入槽流向（目标在上），不承载进度
             root.addChild(TENMachineBlockUIFactory.verticalProgressMini(39, 14, 18, TENConstants.PROGRESS_ARROW_MINI_COMPRESSOR_BG, true));
             // 进度箭头（modular 素材族 22x16）：进度显示由原进度条承担，与 mini 装饰水平错开
-            root.addChild(TENMachineBlockUIFactory.progressGaugeModular(this, 74, 33, false));
+            root.addChild(TENMachineBlockUIFactory.progressGaugeModular(this, 74, 33, true));
         });
     }
 

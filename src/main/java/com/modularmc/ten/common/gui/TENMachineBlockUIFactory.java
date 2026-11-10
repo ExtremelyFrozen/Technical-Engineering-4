@@ -25,6 +25,8 @@ import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
 import com.lowdragmc.lowdraglib2.gui.ui.UI;
 import com.lowdragmc.lowdraglib2.gui.ui.UIElement;
 import com.lowdragmc.lowdraglib2.gui.ui.data.FillDirection;
+import com.lowdragmc.lowdraglib2.gui.ui.data.Horizontal;
+import com.lowdragmc.lowdraglib2.gui.ui.data.Vertical;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.Button;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.FluidSlot;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.ItemSlot;
@@ -43,6 +45,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
+import java.util.function.ToDoubleFunction;
 
 public final class TENMachineBlockUIFactory {
 
@@ -157,6 +160,30 @@ public final class TENMachineBlockUIFactory {
     private static final int PANEL_UPGRADE_UNDERLAY_H = 62;
     /** 升级面板附加底图内边距：内容区原点 10 外扩 2px → (8,8)（右/下缘对称至 50，面板 58/78 内居中）。 */
     private static final int UPGRADE_PANEL_BORDER = UPGRADE_CONTENT_INSET - 2;
+
+    // ───── 范围调节 tab（右缘第三个，y=54）─────
+    /** 第三个右侧 tab 头 y：与左缘红石 tab 平齐，避开升级 (0) 与配置 (27)。 */
+    private static final int ADJUST_TAB_Y = 54;
+    /** 附加底图 64×90（6 行 × 2 个 12×12 占位格）贴 (8,8) → 面板 80×106。 */
+    private static final int ADJUST_UNDERLAY_W = 64;
+    private static final int ADJUST_UNDERLAY_H = 90;
+    private static final int ADJUST_PANEL_WIDTH = ADJUST_UNDERLAY_W + 2 * CONFIG_UNDERLAY_XY;
+    private static final int ADJUST_PANEL_HEIGHT = ADJUST_UNDERLAY_H + 2 * CONFIG_UNDERLAY_XY;
+    /** 加减按钮：底图像素实测左列 x=5、右列 x=47，6 行 y=4+14i，中间 x=17..46 是数值区。 */
+    private static final int ADJUST_BUTTON_SIZE = 12;
+    private static final int ADJUST_ROWS = 6;
+    private static final int ADJUST_PLUS_X = 5;
+    private static final int ADJUST_MINUS_X = 47;
+    private static final int ADJUST_ROW_Y = 4;
+    private static final int ADJUST_ROW_STEP = 14;
+    private static final int ADJUST_LABEL_X = 17;
+    private static final int ADJUST_LABEL_W = 30;
+    /** 中间 30px 里名称占左侧 18px、数值占右侧 12px：名称靠左，数字不参与左对齐。 */
+    private static final int ADJUST_NAME_W = 18;
+    /** 数值区本地化键：0..2 = X/Y/Z 半径，3..5 = X/Y/Z 偏移（中文见 TENLangHandler）。 */
+    private static final String[] ADJUST_LANG_KEYS = {
+            "kenergyengineering.info.adjust.range_x", "kenergyengineering.info.adjust.range_y", "kenergyengineering.info.adjust.range_z",
+            "kenergyengineering.info.adjust.offset_x", "kenergyengineering.info.adjust.offset_y", "kenergyengineering.info.adjust.offset_z" };
 
     public static void addCommonSidebar(UIElement root, BlockUIMenuType.BlockUIHolder holder, CmMachineBlockEntity machine, UIState uiState) {
         // 侧栏 tab 全部引用独立 26×26 图标（icons/*.png），不再切旧图集
@@ -343,6 +370,10 @@ public final class TENMachineBlockUIFactory {
         };
         syncSidebar.run();
         root.addEventListener(UIEvents.TICK, event -> syncSidebar.run());
+        // 第三个右侧展开面板：仅接入范围调节的机器注册（方块破坏器/成型器），和配置/升级面板三选一互斥
+        if (machine.supportsRangeAdjust()) {
+            addAdjustTab(root, machine, uiState);
+        }
     }
 
     /**
@@ -518,6 +549,146 @@ public final class TENMachineBlockUIFactory {
         };
         syncUpgrade.run();
         root.addEventListener(UIEvents.TICK, event -> syncUpgrade.run());
+    }
+
+    /**
+     * 范围调节 tab（右缘第三个，y=54）：展开 80×106 面板，6 行各一对 12×12 加减按钮，
+     * 分别调节设备的 XYZ 范围（0..64）与 XYZ 相对偏移（±64），点击经 rpcAdjustRange 发包。
+     * 与配置/升级面板三选一互斥，展开动画复用同一套九宫格与 panelHeightFor。
+     */
+    public static void addAdjustTab(UIElement root, CmMachineBlockEntity machine, UIState uiState) {
+        var adjustButton = textureElement(CONFIG_TAB_X, ADJUST_TAB_Y, CONFIG_TAB_SIZE, CONFIG_TAB_SIZE,
+                fullTexture(TENConstants.ICON_ADJUST, CONFIG_TAB_SIZE, CONFIG_TAB_SIZE),
+                () -> List.of(ComponentHelper.translated(ComponentHelper.GOLD, "kenergyengineering.info.adjust.tab")),
+                () -> uiState.setAdjustOpen(!uiState.isAdjustOpen()),
+                null, null).style(style -> style.zIndex(1));
+
+        var adjustPanel = absolute(new UIElement(), CONFIG_PANEL_LEFT_X, ADJUST_TAB_Y,
+                ADJUST_PANEL_WIDTH, ADJUST_PANEL_HEIGHT);
+        adjustPanel.setDisplay(false);
+        List<PanelSlice> adjustSlices = panelSlices(ADJUST_PANEL_WIDTH, ADJUST_PANEL_HEIGHT);
+        for (PanelSlice s : adjustSlices) {
+            adjustPanel.addChild(s.element());
+        }
+        // 附加底图贴在九宫格之上、内容之下；占位格坐标按底图像素写，1:1 不拉伸。
+        var adjustUnderlay = new UIElement().style(style -> style.backgroundTexture(
+                fullTexture(TENConstants.PANEL_ADJUST, ADJUST_UNDERLAY_W, ADJUST_UNDERLAY_H)));
+        adjustUnderlay.layout(layout -> {
+            layout.positionType(TaffyPosition.ABSOLUTE);
+            layout.left(CONFIG_UNDERLAY_XY);
+            layout.top(CONFIG_UNDERLAY_XY);
+            layout.width(ADJUST_UNDERLAY_W);
+            layout.height(ADJUST_UNDERLAY_H);
+        });
+        adjustPanel.addChild(adjustUnderlay);
+        adjustPanel.addEventListener(UIEvents.CLICK, event -> {
+            if (event.button == 0 && !isUnderlayTarget(event.target, adjustUnderlay)) {
+                uiState.setAdjustOpen(false);
+            }
+        });
+
+        int originX = CONFIG_PANEL_LEFT_X + CONFIG_UNDERLAY_XY;
+        int originY = ADJUST_TAB_Y + CONFIG_UNDERLAY_XY;
+        List<UIElement> adjustContents = new ArrayList<>();
+        adjustContents.add(adjustUnderlay);
+
+        for (int row = 0; row < ADJUST_ROWS; row++) {
+            final int index = row;
+            int y = originY + ADJUST_ROW_Y + row * ADJUST_ROW_STEP;
+            var plus = adjustValueButton(machine, index, 1, originX + ADJUST_PLUS_X, y);
+            var minus = adjustValueButton(machine, index, -1, originX + ADJUST_MINUS_X, y);
+            // 名称与数字分开排：名称上下居中且靠左，数字单独靠右，不受左对齐约束。
+            var name = new Label();
+            name.textStyle(style -> style.textColor(0xFFB5B5B5).textShadow(false).fontSize(7)
+                    .textAlignVertical(Vertical.CENTER).textAlignHorizontal(Horizontal.LEFT));
+            name.setText(ComponentHelper.translated(ADJUST_LANG_KEYS[index]));
+            absolute(name, originX + ADJUST_LABEL_X, y, ADJUST_NAME_W, ADJUST_BUTTON_SIZE)
+                    .style(style -> style.zIndex(1));
+
+            var value = new Label();
+            value.textStyle(style -> style.textColor(0xFFB5B5B5).textShadow(false).fontSize(7)
+                    .textAlignVertical(Vertical.CENTER).textAlignHorizontal(Horizontal.RIGHT));
+            Runnable refresh = () -> value.setText(Component.literal(machine.adjustDisplayValue(index)));
+            refresh.run();
+            value.addEventListener(UIEvents.TICK, event -> refresh.run());
+            absolute(value, originX + ADJUST_LABEL_X + ADJUST_NAME_W, y,
+                    ADJUST_LABEL_W - ADJUST_NAME_W, ADJUST_BUTTON_SIZE)
+                    .style(style -> style.zIndex(1));
+
+            root.addChild(plus);
+            root.addChild(minus);
+            root.addChild(name);
+            root.addChild(value);
+            adjustContents.add(plus);
+            adjustContents.add(minus);
+            adjustContents.add(name);
+            adjustContents.add(value);
+        }
+
+        var adjustClose = textureElement(CONFIG_PANEL_LEFT_X + ADJUST_PANEL_WIDTH - 14, ADJUST_TAB_Y, 10, 10,
+                IGuiTexture.EMPTY, null,
+                () -> uiState.setAdjustOpen(false), null, null).style(style -> style.zIndex(2));
+        root.addChild(adjustClose);
+        adjustContents.add(adjustClose);
+
+        root.addChild(adjustPanel);
+        root.addChild(adjustButton);
+
+        int[] panelWidth = { uiState.isAdjustOpen() ? -1 : 0 };
+        Runnable syncAdjust = () -> {
+            boolean open = uiState.isAdjustOpen();
+            int w = panelWidth[0];
+            if (open) {
+                if (w < 0) {
+                    panelWidth[0] = 0;
+                    adjustPanel.setDisplay(false);
+                    for (UIElement content : adjustContents) content.setDisplay(false);
+                    applyPanelSlices(adjustSlices, 0, 0);
+                } else if (w < ADJUST_PANEL_WIDTH) {
+                    int next = Math.min(w + TENConfig.CLIENT.panelAnimationSpeed("adjust"), ADJUST_PANEL_WIDTH);
+                    panelWidth[0] = next;
+                    adjustPanel.setDisplay(next >= CONFIG_PANEL_MIN_VISIBLE);
+                    applyPanelSlices(adjustSlices, next, panelHeightFor(next, ADJUST_PANEL_WIDTH, ADJUST_PANEL_HEIGHT));
+                } else {
+                    adjustPanel.setDisplay(true);
+                    applyPanelSlices(adjustSlices, ADJUST_PANEL_WIDTH, ADJUST_PANEL_HEIGHT);
+                }
+                boolean fullyOpen = panelWidth[0] >= ADJUST_PANEL_WIDTH;
+                for (UIElement content : adjustContents) content.setDisplay(fullyOpen);
+            } else {
+                for (UIElement content : adjustContents) content.setDisplay(false);
+                if (w > 0) {
+                    int next = Math.max(w - TENConfig.CLIENT.panelAnimationSpeed("adjust"), 0);
+                    panelWidth[0] = next;
+                    adjustPanel.setDisplay(next >= CONFIG_PANEL_MIN_VISIBLE);
+                    applyPanelSlices(adjustSlices, next, panelHeightFor(next, ADJUST_PANEL_WIDTH, ADJUST_PANEL_HEIGHT));
+                } else {
+                    panelWidth[0] = -1;
+                    adjustPanel.setDisplay(false);
+                }
+            }
+            // 配置/升级面板展开时其矩形会盖住本 tab（y=27..118 / y=0..78），一并隐藏
+            adjustButton.setDisplay(!uiState.isControlOpen() && !uiState.isUpgradeOpen() && panelWidth[0] < CONFIG_TAB_SIZE);
+        };
+        syncAdjust.run();
+        root.addEventListener(UIEvents.TICK, event -> syncAdjust.run());
+    }
+
+    /** 一行里的加/减按钮：24×24 图集取 12×12，上排默认、下排悬停；无 tooltip。 */
+    private static UIElement adjustValueButton(CmMachineBlockEntity machine, int row, int delta, int x, int y) {
+        var button = textureElement(x, y, ADJUST_BUTTON_SIZE, ADJUST_BUTTON_SIZE, IGuiTexture.EMPTY,
+                null, null, null, null).style(style -> style.zIndex(1));
+        button.addEventListener(UIEvents.MOUSE_DOWN, event -> {
+            if (event.button != 0) return;
+            // Shift 直接调到最大、Alt 直接调到最小，普通点击步进 ±1（半径 ±0.5 方块）。
+            int mode = event.isShiftDown() ? 1 : event.isAltDown() ? -1 : 0;
+            machine.rpcToServer("rpcAdjustRange", row, delta, mode);
+        });
+        syncTexture(button, () -> sprite(TENConstants.ADJUST_BUTTONS,
+                delta > 0 ? 0 : ADJUST_BUTTON_SIZE,
+                button.isHover() ? ADJUST_BUTTON_SIZE : 0,
+                ADJUST_BUTTON_SIZE, ADJUST_BUTTON_SIZE));
+        return button;
     }
 
     private static List<PanelSlice> panelSlices(int width, int height) {
@@ -771,14 +942,24 @@ public final class TENMachineBlockUIFactory {
     }
 
     public static ProgressBar progressGaugeModular(CmMachineBlockEntity machine, int x, int y, boolean showPercent) {
+        return progressGaugeModular(machine, x, y, showPercent, TENMachineBlockUIFactory::progressPercent);
+    }
+
+    /**
+     * 进度箭头绑定自定义百分比：多流水线机器（熔炼机）用这个重载把每条箭头
+     * 只接到对应 lane 的进度上，彼此不串数据。
+     */
+    public static ProgressBar progressGaugeModular(CmMachineBlockEntity machine, int x, int y, boolean showPercent,
+                                                   ToDoubleFunction<CmMachineBlockEntity> percentSupplier) {
         int type = machine.machineType();
         return horizontalProgressModular(machine, x, y, 22, 16,
-                progressArrowBg(type), progressArrowFill(type), showPercent);
+                progressArrowBg(type), progressArrowFill(type), showPercent, percentSupplier);
     }
 
     public static ProgressBar progressGaugeWide(CmMachineBlockEntity machine, int x, int y, boolean showPercent) {
         return horizontalProgressModular(machine, x, y, 80, 5,
-                com.modularmc.ten.TENConstants.PROGRESS_BAR_WIDE_BG, com.modularmc.ten.TENConstants.PROGRESS_BAR_WIDE_FILL, showPercent);
+                com.modularmc.ten.TENConstants.PROGRESS_BAR_WIDE_BG, com.modularmc.ten.TENConstants.PROGRESS_BAR_WIDE_FILL,
+                showPercent, TENMachineBlockUIFactory::progressPercent);
     }
 
     /**
@@ -859,7 +1040,8 @@ public final class TENMachineBlockUIFactory {
     private static ProgressBar horizontalProgressModular(CmMachineBlockEntity machine,
                                                          int x, int y, int width, int height,
                                                          ResourceLocation bgTexture, ResourceLocation fillTexture,
-                                                         boolean showPercent) {
+                                                         boolean showPercent,
+                                                         ToDoubleFunction<CmMachineBlockEntity> percentSupplier) {
         var filled = SpriteTexture.of(fillTexture).setSprite(0, 0, width, height);
         var progress = absolute(new RevealProgressBar(filled), x, y, width, height);
         progress.barContainer(container -> container.style(style -> style.backgroundTexture(SpriteTexture.of(bgTexture).setSprite(0, 0, width, height)))
@@ -867,10 +1049,12 @@ public final class TENMachineBlockUIFactory {
         progress.barBackground.style(style -> style.backgroundTexture(IGuiTexture.EMPTY));
         progress.label.setDisplay(false);
         progress.progressBarStyle(style -> style.fillDirection(FillDirection.LEFT_TO_RIGHT).interpolate(true).interpolateStep(0.1f));
-        progress.bindDataSource(SupplierDataSource.of(() -> (float) progressPercent(machine)));
+        progress.bindDataSource(SupplierDataSource.of(() -> (float) percentSupplier.applyAsDouble(machine)));
         if (showPercent) {
-            progress.addEventListener(UIEvents.HOVER_TOOLTIPS, event -> event.hoverTooltips = new HoverTooltips(List.of(ComponentHelper.make((int) (progressPercent(machine) * 100) + "%")), null, null, null));
+            progress.addEventListener(UIEvents.HOVER_TOOLTIPS, event -> event.hoverTooltips = new HoverTooltips(List.of(ComponentHelper.make((int) (percentSupplier.applyAsDouble(machine) * 100) + "%")), null, null, null));
         }
+        // 把机器方块物品挂到进度条上，JEI/EMI 的「显示用途」键在此处即可查到本机器配方。
+        MachineProgressShortcut.bind(progress, machine);
         return progress;
     }
 
@@ -945,7 +1129,10 @@ public final class TENMachineBlockUIFactory {
         progress.label.setDisplay(false);
         progress.progressBarStyle(style -> style.fillDirection(FillDirection.LEFT_TO_RIGHT).interpolate(true).interpolateStep(0.1f));
         progress.bindDataSource(SupplierDataSource.of(() -> (float) cooler.getCoolantPercent()));
-        progress.addEventListener(UIEvents.HOVER_TOOLTIPS, event -> event.hoverTooltips = new HoverTooltips(List.of(ComponentHelper.translated("kenergyengineering.info.coolant_progress")), null, null, null));
+        progress.addEventListener(UIEvents.HOVER_TOOLTIPS, event -> event.hoverTooltips = new HoverTooltips(List.of(
+                ComponentHelper.translated("kenergyengineering.info.coolant_progress"),
+                ComponentHelper.make((int) (cooler.getCoolantPercent() * 100) + "%")), null, null, null));
+        MachineProgressShortcut.bind(progress, cooler);
         return progress;
     }
 
@@ -1139,7 +1326,10 @@ public final class TENMachineBlockUIFactory {
             case RedstoneMode.LOW -> "kenergyengineering.info.low";
             default -> "kenergyengineering.info.off";
         };
-        return List.of(ComponentHelper.translated(ComponentHelper.GOLD, "kenergyengineering.info.bar_redstone", mode));
+        // 标题与当前红石类型分行：第一行固定标题，第二行是 OFF / HIGH / LOW 三选一的当前值。
+        return List.of(
+                ComponentHelper.translated(ComponentHelper.GOLD, "kenergyengineering.info.bar_redstone"),
+                ComponentHelper.translated(mode));
     }
 
     private static List<Component> controlTooltip() {
@@ -1166,6 +1356,7 @@ public final class TENMachineBlockUIFactory {
         private int selectedTransferMode;
         private boolean controlOpen;
         private boolean upgradeOpen;
+        private boolean adjustOpen;
         /** 视图态（不入快照）：展开面板动画是否已到全开；仅供 faceModeElement 等内部 syncDisplay 联动查询。 */
         private boolean panelFullyOpen;
         /** 视图态（不入快照）：升级槽面板动画是否已全开。 */
@@ -1177,6 +1368,7 @@ public final class TENMachineBlockUIFactory {
             this.selectedTransferMode = snapshot.selectedTransferMode;
             this.controlOpen = snapshot.controlOpen;
             this.upgradeOpen = snapshot.upgradeOpen;
+            this.adjustOpen = snapshot.adjustOpen;
             this.panelFullyOpen = false;
             this.upgradePanelFullyOpen = false;
         }
@@ -1195,6 +1387,13 @@ public final class TENMachineBlockUIFactory {
         }
 
         public void setControlOpen(boolean controlOpen) {
+            // 三选一互斥：展开配置面板时收起升级与范围调节面板（快照同步写回，跨次打开不串态）
+            if (controlOpen) {
+                this.upgradeOpen = false;
+                this.adjustOpen = false;
+                snapshot().upgradeOpen = false;
+                snapshot().adjustOpen = false;
+            }
             this.controlOpen = controlOpen;
             snapshot().controlOpen = controlOpen;
             if (!controlOpen) {
@@ -1207,11 +1406,32 @@ public final class TENMachineBlockUIFactory {
         }
 
         public void setUpgradeOpen(boolean upgradeOpen) {
+            if (upgradeOpen) {
+                this.controlOpen = false;
+                this.adjustOpen = false;
+                snapshot().controlOpen = false;
+                snapshot().adjustOpen = false;
+            }
             this.upgradeOpen = upgradeOpen;
             snapshot().upgradeOpen = upgradeOpen;
             if (!upgradeOpen) {
                 upgradePanelFullyOpen = false;
             }
+        }
+
+        public boolean isAdjustOpen() {
+            return adjustOpen;
+        }
+
+        public void setAdjustOpen(boolean adjustOpen) {
+            if (adjustOpen) {
+                this.controlOpen = false;
+                this.upgradeOpen = false;
+                snapshot().controlOpen = false;
+                snapshot().upgradeOpen = false;
+            }
+            this.adjustOpen = adjustOpen;
+            snapshot().adjustOpen = adjustOpen;
         }
 
         /** 展开面板动画是否已全开（视图态，仅当前帧有效）。 */
@@ -1242,5 +1462,6 @@ public final class TENMachineBlockUIFactory {
         private int selectedTransferMode;
         private boolean controlOpen;
         private boolean upgradeOpen;
+        private boolean adjustOpen;
     }
 }

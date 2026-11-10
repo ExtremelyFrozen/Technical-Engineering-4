@@ -76,6 +76,12 @@ public class TENConstants {
     public static final ResourceLocation ICON_FACE_BE_OUT = TEN.id("textures/gui/icons/face_be_out.png");
     /** 配置面板传输模式按钮图集（42x56，格 14x14：列=能量/物品/流体，行=四态） */
     public static final ResourceLocation CONFIG_MODE_BUTTONS = TEN.id("textures/gui/panels/config_mode_buttons.png");
+    /** 范围调节 tab 头（26x26） */
+    public static final ResourceLocation ICON_ADJUST = TEN.id("textures/gui/icons/adjust.png");
+    /** 范围调节面板附加底图（64x90）：6 行，左右各一列 12x12 加减按钮占位格 */
+    public static final ResourceLocation PANEL_ADJUST = TEN.id("textures/gui/panels/panel_adjust.png");
+    /** 范围调节按钮图集（24x24，格 12x12：列=增加/减少，行=默认/光标悬停） */
+    public static final ResourceLocation ADJUST_BUTTONS = TEN.id("textures/gui/panels/adjust_buttons.png");
     /** 配置面板附加底图（60x85）：介入九宫格底图与内容钮之间 */
     public static final ResourceLocation PANEL_CONFIG_LEGACY = TEN.id("textures/gui/panels/panel_config_legacy.png");
     /** 升级面板附加底图（42x62）：内容区 38x58 每边外扩 2px */

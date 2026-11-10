@@ -66,7 +66,7 @@ public class PsionicantBlockEntity extends RecipeMachineBlockEntity {
             root.addChild(TENMachineBlockUIFactory.machineSlotLarge(this, 2, 116, 28));
         }, root -> {
             root.addChild(TENMachineBlockUIFactory.energyGaugeModular(this, 8, 18, true));
-            root.addChild(TENMachineBlockUIFactory.progressGaugeModular(this, 82, 33, false));
+            root.addChild(TENMachineBlockUIFactory.progressGaugeModular(this, 82, 33, true));
         });
     }
 

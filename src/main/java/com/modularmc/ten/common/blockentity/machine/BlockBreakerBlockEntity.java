@@ -8,7 +8,6 @@ import com.modularmc.ten.utils.ItemNBTHelper;
 import com.modularmc.ten.utils.WorkingHelper;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -22,7 +21,9 @@ import java.util.List;
 
 /**
  * 方块破坏器（Block Breaker）。
- * 套用采矿场 GUI：槽 0 工具（镐），槽 1..12 输出。沿面向方向 B 格（深度）×宽轴 ±(radius-1)。
+ * 套用采矿场 GUI：槽 0 工具（镐），槽 1..12 输出。
+ * 工作范围由面板的 XYZ 范围与 XYZ 相对偏移决定（世界轴向三轴盒子），不再随批处理 B 变化；
+ * 范围升级只抬高可调节半径上限。
  */
 public class BlockBreakerBlockEntity extends RadiusMachineBlockEntity {
 
@@ -32,6 +33,18 @@ public class BlockBreakerBlockEntity extends RadiusMachineBlockEntity {
         setEfficiency(10);
         initialRadius = 1;
         radius = 1;
+    }
+
+    /** 本机改用面板范围：可调节半径基准从 ADJUST_BASE_CAP 起步，范围升级每件翻倍。 */
+    @Override
+    protected void resetUpgradeEffects() {
+        super.resetUpgradeEffects();
+        adjustRangeCap = ADJUST_BASE_CAP;
+    }
+
+    @Override
+    public boolean supportsRangeAdjust() {
+        return true;
     }
 
     @Override
@@ -66,46 +79,8 @@ public class BlockBreakerBlockEntity extends RadiusMachineBlockEntity {
 
     @Override
     public List<net.minecraft.world.phys.AABB> getRangeBoxes() {
-        int b = Math.max(1, getTheoreticalBatchSize());
-        int w = Math.max(1, radius);
-        Direction facing = getFacing();
-        int mx = worldPosition.getX(), my = worldPosition.getY(), mz = worldPosition.getZ();
-        int x1, y1, z1, x2, y2, z2;
-        switch (facing) {
-            case NORTH -> {
-                x1 = mx - (w - 1);
-                x2 = mx + w;
-                y1 = my;
-                y2 = my + 1;
-                z1 = mz - b;
-                z2 = mz;
-            }
-            case SOUTH -> {
-                x1 = mx - (w - 1);
-                x2 = mx + w;
-                y1 = my;
-                y2 = my + 1;
-                z1 = mz + 1;
-                z2 = mz + 1 + b;
-            }
-            case EAST -> {
-                x1 = mx + 1;
-                x2 = mx + 1 + b;
-                y1 = my;
-                y2 = my + 1;
-                z1 = mz - (w - 1);
-                z2 = mz + w;
-            }
-            default -> {
-                x1 = mx - b;
-                x2 = mx;
-                y1 = my;
-                y2 = my + 1;
-                z1 = mz - (w - 1);
-                z2 = mz + w;
-            }
-        }
-        return List.of(new net.minecraft.world.phys.AABB(x1, y1, z1, x2, y2, z2));
+        // 线框与实际遍历共用同一个工作盒：中心 = 机器位置 + XYZ 偏移，半径 = range/2 方块、每轴方块数 = range。
+        return List.of(adjustedRangeBox());
     }
 
     @Override
@@ -138,32 +113,23 @@ public class BlockBreakerBlockEntity extends RadiusMachineBlockEntity {
         if (level == null || itemHandler == null) return;
         ItemStack tool = itemHandler.getStackInSlot(0);
         if (tool.isEmpty()) return;
-        int B = getLockedBatchSize();
-        int w = Math.max(1, radius);
-        for (int i = 1; i <= B; i++) {
-            for (int j = -(w - 1); j <= (w - 1); j++) {
-                if (tool.isEmpty()) break;
-                BlockPos target = offsetTarget(i, j);
-                BlockState state = level.getBlockState(target);
-                if (state.isAir() || state.hasBlockEntity()) continue;
-                if (!tool.isCorrectToolForDrops(state)) continue;
-                List<ItemStack> drops = state.getDrops(WorkingHelper.getLootBuilder(level, target, effectiveToolForDrops(tool)));
-                if (drops.isEmpty()) continue;
-                if (!canFitAll(drops)) break;
-                fitAll(drops);
-                level.destroyBlock(target, false);
-                ItemNBTHelper.damage(tool, level, 1);
-            }
+        var bounds = adjustedBounds();
+        int scanned = 0;
+        for (BlockPos cursor : BlockPos.betweenClosed(bounds.min(), bounds.max())) {
+            // betweenClosed 复用 MutableBlockPos：写操作前取不可变拷贝，避免引用被后续迭代改写
+            BlockPos target = cursor.immutable();
+            if (++scanned > ADJUST_SCAN_LIMIT || tool.isEmpty()) break;
+            if (target.equals(worldPosition)) continue;
+            BlockState state = level.getBlockState(target);
+            if (state.isAir() || state.hasBlockEntity()) continue;
+            if (!tool.isCorrectToolForDrops(state)) continue;
+            List<ItemStack> drops = state.getDrops(WorkingHelper.getLootBuilder(level, target, effectiveToolForDrops(tool)));
+            if (drops.isEmpty()) continue;
+            if (!canFitAll(drops)) break;
+            fitAll(drops);
+            level.destroyBlock(target, false);
+            ItemNBTHelper.damage(tool, level, 1);
         }
-    }
-
-    private BlockPos offsetTarget(int i, int j) {
-        return switch (getFacing()) {
-            case NORTH -> worldPosition.offset(j, 0, -i);
-            case SOUTH -> worldPosition.offset(j, 0, i);
-            case EAST -> worldPosition.offset(i, 0, j);
-            default -> worldPosition.offset(-i, 0, j);
-        };
     }
 
     @Override
@@ -176,13 +142,15 @@ public class BlockBreakerBlockEntity extends RadiusMachineBlockEntity {
         if (level == null || itemHandler == null) return false;
         ItemStack tool = itemHandler.getStackInSlot(0);
         if (tool.isEmpty()) return false;
-        int B = getTheoreticalBatchSize();
-        int w = Math.max(1, radius);
-        for (int i = 1; i <= B; i++) {
-            for (int j = -(w - 1); j <= (w - 1); j++) {
-                BlockState state = level.getBlockState(offsetTarget(i, j));
-                if (!state.isAir() && !state.hasBlockEntity() && tool.isCorrectToolForDrops(state)) return true;
-            }
+        var bounds = adjustedBounds();
+        int scanned = 0;
+        for (BlockPos cursor : BlockPos.betweenClosed(bounds.min(), bounds.max())) {
+            // betweenClosed 复用 MutableBlockPos：写操作前取不可变拷贝，避免引用被后续迭代改写
+            BlockPos target = cursor.immutable();
+            if (++scanned > ADJUST_SCAN_LIMIT) break;
+            if (target.equals(worldPosition)) continue;
+            BlockState state = level.getBlockState(target);
+            if (!state.isAir() && !state.hasBlockEntity() && tool.isCorrectToolForDrops(state)) return true;
         }
         return false;
     }
@@ -190,13 +158,12 @@ public class BlockBreakerBlockEntity extends RadiusMachineBlockEntity {
     @Override
     public boolean cooking() {
         if (itemHandler == null) return false;
-        int B = getLockedBatchSize();
-        int units = 0;
+        // 范围不再由批处理决定：只有输出槽全满才阻塞；单格掉落放不下由 canFitAll 兜底。
         for (int i = 1; i < itemHandler.getSlots(); i++) {
             ItemStack existing = itemHandler.getStackInSlot(i);
-            units += existing.isEmpty() ? itemHandler.getSlotLimit(i) : Math.max(0, itemHandler.getSlotLimit(i) - existing.getCount());
+            if (existing.isEmpty() || existing.getCount() < itemHandler.getSlotLimit(i)) return false;
         }
-        return units < B;
+        return true;
     }
 
     // ─── 输出槽快照+模拟+提交（防丢失） ───
