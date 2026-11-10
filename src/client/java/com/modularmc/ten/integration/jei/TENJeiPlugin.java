@@ -5,6 +5,7 @@ import com.modularmc.ten.api.option.CoolantRecipe;
 import com.modularmc.ten.api.option.Coolants;
 import com.modularmc.ten.api.recipe.FormsCombinedRecipe;
 import com.modularmc.ten.client.TENClientRecipeCache;
+import com.modularmc.ten.common.gui.MachineProgressShortcut;
 import com.modularmc.ten.common.blockentity.EngineFuelRecipe;
 import com.modularmc.ten.common.blockentity.MatchFuel;
 import com.modularmc.ten.common.blockentity.machine.BiomassBlockEntity;
@@ -56,6 +57,9 @@ import java.util.function.Supplier;
 public class TENJeiPlugin implements IModPlugin {
 
     private static final ResourceLocation UID = TEN.id("jei_plugin");
+
+    /** 方法引用存成常量：JEI 重载时会重复调用 registerGuiHandlers，去重才有意义。 */
+    private static final MachineProgressShortcut.Binder PROGRESS_USES_BINDER = JeiProgressShortcutBinder::bind;
 
     // ── Smelter JEI recipe types (three independent pages) ────────────
     public static final mezz.jei.api.recipe.RecipeType<SmelterJeiCategory.Recipe> SMELTER_SMELTING =
@@ -397,5 +401,7 @@ public class TENJeiPlugin implements IModPlugin {
     @Override
     public void registerGuiHandlers(IGuiHandlerRegistration registration) {
         registration.addGuiContainerHandler(ModularUIContainerScreen.class, ModularUIJEIHandlers.GUI_CONTAINER_HANDLER);
+        // 进度条按「显示用途」键转跳到本机器配方页：把机器方块物品交给 JEI 的 ingredient 查询。
+        MachineProgressShortcut.register(PROGRESS_USES_BINDER);
     }
 }

@@ -105,6 +105,34 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
     @DescSynced
     public boolean rangeVisible = false;
 
+    // ───── 范围调节面板：设备的 XYZ 半径与 XYZ 相对偏移（服务端权威）─────
+    /**
+     * 三轴半径，以 0.5 方块为单位：1 = 0.5 半径 = 每轴 1 方块，2 = 1.0 半径 = 每轴 2 方块。
+     * 默认 1（0.5 半径）；面板第 0..2 行，每次点击 ±1，即 ±0.5 方块半径。
+     */
+    @Persisted
+    @DescSynced
+    public int rangeX = 1;
+    @Persisted
+    @DescSynced
+    public int rangeY = 1;
+    @Persisted
+    @DescSynced
+    public int rangeZ = 1;
+    /** 三轴相对偏移（整数格，-64..64）：面板第 3..5 行，每次点击 ±1 格。 */
+    @Persisted
+    @DescSynced
+    public int offsetX = 0;
+    @Persisted
+    @DescSynced
+    public int offsetY = 0;
+    @Persisted
+    @DescSynced
+    public int offsetZ = 0;
+    /** 当前可调节半径上限：范围升级按倍率抬高，硬上限 {@link #ADJUST_RANGE_MAX}；每 tick 重算。 */
+    @DescSynced
+    public int adjustRangeCap = 64;
+
     /**
      * 应用工具/武器附魔开关（采矿场/破坏器/啂噬者）：默认开启，经 rpcToggleUseEnchantments 切换。
      */
@@ -318,6 +346,14 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
      */
     public boolean supportsUpgradeSlots() {
         return true;
+    }
+
+    /**
+     * 是否注册右侧「范围调节」tab 与展开面板：目前只有方块破坏器/方块成型器接入，
+     * 其余机器即便存了 rangeX/Y/Z 也不显示该入口。
+     */
+    public boolean supportsRangeAdjust() {
+        return false;
     }
 
     public boolean hasUpgrade() {
@@ -823,6 +859,106 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         }
     }
 
+    /** 范围调节面板六行对应的同步字段名：0..2 = 范围 XYZ，3..5 = 偏移 XYZ。 */
+    public static final String[] ADJUST_FIELDS = { "rangeX", "rangeY", "rangeZ", "offsetX", "offsetY", "offsetZ" };
+    /** 半径/偏移硬上限：半径以 0.5 方块为单位（64 = 32 半径 = 每轴 64 方块），偏移为整数格 ±64。 */
+    public static final int ADJUST_RANGE_MAX = 64;
+    /**
+     * 接入范围调节的机器，其可调节半径上限的起点：1 半单位 = 0.5 半径 = 1×1×1 方块。
+     * 与 {@code rangeX/Y/Z} 默认值一致，故初始作用范围与未装升级时的上限都是 1×1×1；
+     * 旧档里按旧语义存下的较大值也会被 {@code doBaseData()} 的钳位收回 1。
+     * 每件范围升级 ×2（1→2→4→8→16→32→64 半单位），硬上限 {@link #ADJUST_RANGE_MAX}。
+     */
+    public static final int ADJUST_BASE_CAP = 1;
+    /** 单次遍历方块的硬上限：超大范围时截断扫描，避免每 tick 卡顿。 */
+    public static final int ADJUST_SCAN_LIMIT = 4096;
+
+    /** 工作盒的方块坐标闭区间（含端点）。 */
+    public record AdjustBounds(BlockPos min, BlockPos max) {}
+
+    /**
+     * 范围调节面板驱动的工作盒：中心 = 机器位置 + XYZ 相对偏移。
+     * 半径 = range/2 方块 → 每轴方块数 = 2×半径 = range，以中心向正负对称取整展开
+     * （range=1 只有中心 1 格，range=2 为 2 格，range=3 为 3 格……）。
+     * 调用方需跳过机器自身所在格，并用 {@link #ADJUST_SCAN_LIMIT} 截断遍历。
+     */
+    public AdjustBounds adjustedBounds() {
+        int cx = worldPosition.getX() + offsetX;
+        int cy = worldPosition.getY() + offsetY;
+        int cz = worldPosition.getZ() + offsetZ;
+        int rx = Math.max(1, rangeX), ry = Math.max(1, rangeY), rz = Math.max(1, rangeZ);
+        return new AdjustBounds(
+                new BlockPos(cx - (rx - 1) / 2, cy - (ry - 1) / 2, cz - (rz - 1) / 2),
+                new BlockPos(cx + rx / 2, cy + ry / 2, cz + rz / 2));
+    }
+
+    /** 工作盒的世界绝对坐标 AABB（方块边界），供范围线框预览；与实际遍历逐格一致。 */
+    public net.minecraft.world.phys.AABB adjustedRangeBox() {
+        var bounds = adjustedBounds();
+        return new net.minecraft.world.phys.AABB(
+                bounds.min().getX(), bounds.min().getY(), bounds.min().getZ(),
+                bounds.max().getX() + 1, bounds.max().getY() + 1, bounds.max().getZ() + 1);
+    }
+
+    /** 范围升级：把可调节半径上限按倍率放大，钳在硬上限内。 */
+    @Override
+    public void applyAdjustRangeCapMultiplier(int factor) {
+        if (factor <= 0) return;
+        adjustRangeCap = (int) Math.min(ADJUST_RANGE_MAX, (long) adjustRangeCap * factor);
+    }
+
+    /** GUI 读取指定行的当前值；越界行返回 0。 */
+    public int adjustValue(int row) {
+        return switch (row) {
+            case 0 -> rangeX;
+            case 1 -> rangeY;
+            case 2 -> rangeZ;
+            case 3 -> offsetX;
+            case 4 -> offsetY;
+            case 5 -> offsetZ;
+            default -> 0;
+        };
+    }
+
+    /** 面板显示值：半径行显示 0.5 步进的小数，偏移行显示整数格。 */
+    public String adjustDisplayValue(int row) {
+        int value = adjustValue(row);
+        return row < 3 ? String.valueOf(value / 2.0) : Integer.toString(value);
+    }
+
+    /**
+     * C→S：范围调节面板加/减按钮。row 对应 {@link #ADJUST_FIELDS}，delta 只允许 ±1；
+     * mode：0 步进 ±1（即半径 ±0.5）、1 按住 Shift 直接调到最大、-1 按住 Alt 直接调到最小。
+     * 半径钳 1..{@code adjustRangeCap}（范围升级抬高），偏移钳 ±{@link #ADJUST_RANGE_MAX}。
+     * 改值后显式推送对应 @DescSynced 字段。
+     */
+    @RPCMethod
+    public void rpcAdjustRange(RPCSender sender, int row, int delta, int mode) {
+        if (!sender.isRemote()) return;
+        if (row < 0 || row >= ADJUST_FIELDS.length || (delta != 1 && delta != -1)) return;
+        int current = adjustValue(row);
+        boolean isRange = row < 3;
+        int min = isRange ? 1 : -ADJUST_RANGE_MAX;
+        int max = isRange ? adjustRangeCap : ADJUST_RANGE_MAX;
+        int next = switch (mode) {
+            case 1 -> max;
+            case -1 -> min;
+            default -> Math.max(min, Math.min(max, current + delta));
+        };
+        if (next == current) return;
+        switch (row) {
+            case 0 -> rangeX = next;
+            case 1 -> rangeY = next;
+            case 2 -> rangeZ = next;
+            case 3 -> offsetX = next;
+            case 4 -> offsetY = next;
+            case 5 -> offsetZ = next;
+            default -> {}
+        }
+        setChanged();
+        markDirty(ADJUST_FIELDS[row]);
+    }
+
     /** C→S：切换是否应用工具/武器附魔（服务端执行）。 */
     @RPCMethod
     public void rpcToggleUseEnchantments(RPCSender sender) {
@@ -893,6 +1029,16 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         return !canExternalExtract() && !supportsFaceDirection(FaceOption.TYPE_ENERGY, FaceOption.OUT);
     }
 
+    /**
+     * 外部推进进度（冷却器等）：默认作用于单流水线 {@code progress}。
+     * 多流水线机器覆写此方法，把推进量分派到自己的各条流水线，避免只改到一台
+     * 机器的单进度镜像上。
+     */
+    public void advanceProgress(int ticks) {
+        progress = Math.min(maxProgress, progress + ticks);
+        setChanged();
+    }
+
     public void doBaseData() {
         initMachine();
         if (energyStorage == null) return;
@@ -946,6 +1092,17 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         doActiveItemIo();
         doActiveFluidIo();
         doActiveEnergyIo();
+
+        // 范围升级卸下后 cap 变小、或旧档半径低于 1：收回合法区间（仅越界时写，避免每 tick 推同步）
+        if (rangeX < 1 || rangeY < 1 || rangeZ < 1 || rangeX > adjustRangeCap || rangeY > adjustRangeCap || rangeZ > adjustRangeCap) {
+            rangeX = Math.max(1, Math.min(rangeX, adjustRangeCap));
+            rangeY = Math.max(1, Math.min(rangeY, adjustRangeCap));
+            rangeZ = Math.max(1, Math.min(rangeZ, adjustRangeCap));
+            markDirty("rangeX");
+            markDirty("rangeY");
+            markDirty("rangeZ");
+        }
+        markDirty("adjustRangeCap");
 
         // ── Sync face maps to arrays for client (server-authoritative mirror) ──
         // int[] 元素变更不触发 @DescSynced — 变化时全量推送 6 面 × 3 类型。
@@ -1056,6 +1213,7 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         durationMultiplier = 1.0;
         powerMultiplier = 1.0;
         batch = 0;
+        adjustRangeCap = ADJUST_RANGE_MAX;
         photosynInstalled = false;
         recipeMode = IUpgradableMachine.RECIPE_MODE_SMELTING;
         unlimitedEnergyTransfer = false;

@@ -4,6 +4,7 @@ import com.modularmc.ten.TEN;
 import com.modularmc.ten.api.recipe.FormsCombinedRecipe;
 import com.modularmc.ten.common.data.TENBlocks;
 import com.modularmc.ten.common.data.TENRecipeTypes;
+import com.modularmc.ten.common.gui.MachineProgressShortcut;
 import com.modularmc.ten.integration.xei.TENRecipeWidget;
 
 import net.minecraft.network.chat.Component;
@@ -33,6 +34,9 @@ public class TENEmiPlugin implements EmiPlugin {
                                Supplier<ItemStack> iconStack) {}
 
     private static final int RECIPE_LOG_SAMPLE_LIMIT = 5;
+
+    /** 方法引用存成常量：EMI 重载时重复 register 也不会重复挂监听器。 */
+    private static final MachineProgressShortcut.Binder PROGRESS_USES_BINDER = EmiProgressShortcutBinder::bind;
 
     private static final java.util.List<CategoryDef> CATEGORIES = java.util.List.of(
             new CategoryDef(TEN.id("pulverizer"), TENRecipeTypes.PULVERIZER_T, TENBlocks.MACHINE_PULVERIZER::asStack),
@@ -69,6 +73,8 @@ public class TENEmiPlugin implements EmiPlugin {
 
     @Override
     public void register(EmiRegistry registry) {
+        // 进度条按「显示用途」键转跳到本机器配方页：把机器方块物品交给 EMI 的 stack 查询。
+        MachineProgressShortcut.register(PROGRESS_USES_BINDER);
         registry.addExclusionArea(ModularUIContainerScreen.class, TENEmiPlugin::addModularExclusionArea);
 
         var allRecipeEntries = registry.getRecipeManager().getRecipes();

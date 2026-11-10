@@ -173,7 +173,7 @@ public final class TENLangHandler {
         add(provider, "info.energy", "Energy", "能量");
         add(provider, "info.item", "Item", "物品");
         add(provider, "info.fluid", "Fluid", "流体");
-        add(provider, "info.bar_mode", "Mode: ", "传输模式: ");
+        add(provider, "info.bar_mode", "Mode ", "传输模式 ");
         add(provider, "info.in", "Active Input", "主动输入");
         add(provider, "info.out", "Active Output", "主动输出");
         add(provider, "info.be_in", "Passive Input", "被动输入");
@@ -183,11 +183,11 @@ public final class TENLangHandler {
         add(provider, "info.off", "Off", "禁用");
         add(provider, "info.low", "Low", "低电平");
         add(provider, "info.high", "High", "高电平");
-        add(provider, "info.bar_ideas", "Information: ", "信息: ");
-        add(provider, "info.bar_redstone", "Redstone Control: ", "红石控制: ");
-        add(provider, "info.bar_control", "Transfer Control: ", "传输配置: ");
-        add(provider, "info.bar_energy", "Power: ", "功率:");
-        add(provider, "info.bar_upgrade", "Upgrades: ", "升级: ");
+        add(provider, "info.bar_ideas", "Information ", "信息 ");
+        add(provider, "info.bar_redstone", "Redstone Control ", "红石控制 ");
+        add(provider, "info.bar_control", "Transfer Control ", "传输配置 ");
+        add(provider, "info.bar_energy", "Power ", "功率");
+        add(provider, "info.bar_upgrade", "Upgrades ", "升级 ");
         add(provider, "info.bar_energy_use", "Energy Use: ", "当前能量消耗: ");
         add(provider, "info.bar_energy_use_max", "Max Energy Use: ", "最大能量消耗: ");
         // 采石场扫描模式切换（GUI 按钮文案与 tooltip，供后续功能移植）
@@ -204,6 +204,14 @@ public final class TENLangHandler {
         add(provider, "info.range_display_on_tip", "Showing the working range outline.", "正在显示工作范围线框。");
         add(provider, "info.range_display_off_tip", "Working range outline is hidden.", "工作范围线框已隐藏。");
         add(provider, "info.range_display_click", "Click to toggle range display", "点击切换范围显示");
+        // 范围调节面板：大按钮 tooltip + 六行标签（12 个小加减钮与关闭钮不带 tooltip）
+        add(provider, "info.adjust.tab", "Range Adjustment", "范围调节");
+        add(provider, "info.adjust.range_x", "X Radius", "X半径");
+        add(provider, "info.adjust.range_y", "Y Radius", "Y半径");
+        add(provider, "info.adjust.range_z", "Z Radius", "Z半径");
+        add(provider, "info.adjust.offset_x", "X Offset", "X偏移");
+        add(provider, "info.adjust.offset_y", "Y Offset", "Y偏移");
+        add(provider, "info.adjust.offset_z", "Z Offset", "Z偏移");
         // 应用工具/武器附魔切换按钮（useEnchantmentsToggleButton）
         add(provider, "info.use_enchantments", "Use Enchantments", "应用附魔");
         add(provider, "info.use_enchantments_on", "Enchants: On", "附魔: 开启");

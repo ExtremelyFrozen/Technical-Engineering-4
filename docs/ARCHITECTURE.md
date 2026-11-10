@@ -155,6 +155,18 @@ CmBlockEntity (implements ISyncPersistRPCBlockEntity)
   判为暂无可用工具而不是挖尽——游标回到本轮起点 `passStartY`、`conditionStart()` 转 false（不耗能、位置不动），
   工具特征（物品或耐久）一变即从该点续扫。判定表在 `QuarryScanDecision.decide()`，与方块实体解耦以便脱机单测。
 
+**熔炼机是三路并行，不走上面的单流水线循环**：`FurnaceBlockEntity` 覆写 `tick()` 自己逐 lane 推进，
+不调用 `ProcessingMachineBlockEntity.process()`。槽位 `0..2` 是输入、`3..5` 是输出，lane i 独占输入槽 i、
+输出槽 `i+3` 与一条进度箭头；三条 lane 上下堆叠、间隔 0px，slot 0 画在中间，因此「槽位索引顺序」同时就是
+输入优先级——快捷移动按 UI 树注册顺序、主动拉取按 `insertIntoInputSlots` 顺序、外部 capability 按索引顺序，
+都优先进中间输入槽。每条 lane 自持进度、配方身份与批处理锁（六个 `@DescSynced` 字段承载客户端镜像），
+能量与 XP 罐三路共享、按 lane 顺序扣减；缺能或输出满只让该 lane 停滞，不影响另外两条。
+`enforcesUniqueItemSlots()` 在熔炼机覆写为 false：原版单物品配方没有「占用槽数决定配方」的歧义，
+同款原料分占三条输入槽是正常用法。基类的 `progress` / `maxProgress` 降级为「第一条在跑 lane」的镜像，
+只供冷却器这类横切逻辑判定；外部推进统一走 `advanceProgress(int)` 钩子，熔炼机覆写为分派到所有在跑的
+lane，不要直接改基类字段。信息栏峰值能耗按三路放大。旧档 2 槽读入 6 槽时，旧输入落中间输入槽、
+旧输出落中间输出槽，避免产物被塞进上排输入位。
+
 ### 2.5 能量模型
 
 `maxProgress = max(1, ceil(baseTickTime() × durationMultiplier))`。
@@ -303,6 +315,12 @@ CmBlockEntity (implements ISyncPersistRPCBlockEntity)
 - 功率乘子 `powerMultiplier`：影响每 tick 扣能。
 - 批量 `batch`：Shulker +3 / Power +1，服务端每 tick 重算并同步给客户端。
 - 范围 `radius`：`LevelupRg` 累加，`RadiusMachineBlockEntity.resetUpgradeEffects()` 每轮重置回基础值。
+  例外是**方块破坏器与方块成型器**：工作范围已改由面板 XYZ 决定，`LevelupRg` 不再
+  `setCurrentRadius`，改为 `applyAdjustRangeCapMultiplier(2)` 把可调节半径上限翻倍
+  （基础 `ADJUST_BASE_CAP=1` 半单位 = 0.5 半径 = 1×1×1，即设备初始作用范围；每件 ×2 得
+  1→2→4→8→16→32→64 半单位，硬上限 64）；`resetUpgradeEffects()` 每 tick 重算该上限，
+  `doBaseData()` 把越界值（含旧档按旧语义存下的大值）钳回上限，旧档因此也归位到 1×1×1。
+  未装范围升级时上下限都是 0.5，加减按钮不改变数值。其它范围机器仍走原公式。
 - 特殊：`LevelupSyn` 光合注能、`LevelupBlast` / `LevelupSmoke` 切换熔炼配方模式。`LevelupStream` 自能量限速取消后为空效果。
 
 ### 2.8 冷却剂
@@ -609,6 +627,44 @@ GUI 走「末影箱模式」：频道目录、创建、接入、退出、删除�
   **容器槽注册顺序**（= UI 树遍历顺序），不能只靠 `slotStyle`。升级槽面板因此先于机器槽挂进 UI 树。
 - 升级槽面板的展开态是客户端 `UIState` 视图（服务端读不到），经 `rpcSetUpgradePanelOpen` 按玩家
   镜像到服务端；升级槽的 `mayPlace` 据此门控，收起时把升级槽从快捷移动候选里剔除。
+- **进度条的百分比与用途快捷键**：所有机器进度条悬停显示进度百分比，冷却剂消耗条另显示剩余百分比。
+  快捷键不自己读键位，而是走 LDLib2 的两个 XEI 事件——JEI 的 `IGuiContainerHandler` 派发
+  `clickableIngredient`、EMI 的 `addGenericStackProvider` 派发 `stackProvider`，两者都把事件交给
+  `ModularUI.getLastHoveredElement()`。`TENMachineBlockUIFactory` 把**机器方块自身的物品**绑到进度条上，
+  该物品已被登记为 JEI recipe catalyst / EMI workstation，按各自的「显示用途」键就打开本机配方页。
+  桥 `MachineProgressShortcut` 只认 `UIElement` 与 `ItemStack`，不含任何 XEI 类型；带类型的
+  `JeiProgressShortcutBinder`（client 源集）与 `EmiProgressShortcutBinder`（main 源集）在各自插件
+  初始化时注册，缺邻居时绑定表为空、`bind()` 是空操作。没有配方类别的机器按用途键只会看到该方块
+  自身的用途，这是正常边界，不要为此伪造类别。
+- **第三个右侧 tab 与范围调节面板**：只有 `supportsRangeAdjust()` 为 true 的机器注册该入口，
+  目前是方块破坏器与方块成型器（基类默认 false）；`addCommonSidebar` 按钩子调用 `addAdjustTab`，
+  tab 在 y=54（图标 `adjust.png`），展开 80×106 面板（64×90 附加底图贴 (8,8)），
+  6 行 12×12 加减按钮按底图实测坐标贴（左列 x=5 加、
+  右列 x=47 减、行 y=4+14i）。中间 30px 拆成两个文本：名称占左 18px（`Vertical.CENTER` +
+  `Horizontal.LEFT`），数值占右 12px（`Vertical.CENTER` + `Horizontal.RIGHT`）——名称相对
+  12px 按钮上下居中且靠左，数字不参与左对齐；12 个加减钮与关闭钮不带 tooltip，
+  只有 y=54 的大按钮有本地化 tooltip「范围调节」（键 `info.adjust.tab`）。
+  七个键 `info.adjust.tab`、`info.adjust.range_x/y/z`、`info.adjust.offset_x/y/z` 由 `TENLangHandler`
+  生成，中文为「范围调节」与「X半径 / Y半径 / Z半径 / X偏移 / Y偏移 / Z偏移」，改文案要改生成器再跑 `runData`。
+  数据是 `CmMachineBlockEntity` 上的 `@Persisted @DescSynced` 字段：`rangeX/Y/Z` 以 0.5 方块半径
+  为单位（默认 1 = 0.5 半径 = 每轴 1 方块，每点击 ±1 即 ±0.5 半径，钳 1..`adjustRangeCap`），
+  `offsetX/Y/Z` 是整数格（默认 0，钳 ±64）。`rpcAdjustRange(row, delta, mode)` 在服务端改写并
+  `markDirty` 推送：mode 0 步进、1 为按住 Shift 直接调到最大、-1 为按住 Alt 直接调到最小，
+  修饰键由客户端 `UIEvents.MOUSE_DOWN` 的 `event.isShiftDown()/isAltDown()` 读取。
+  `UIState` 三个 setter 在展开时互相关闭并写回快照，保证三选一互斥。
+  素材 `adjust.png` / `panel_adjust.png` / `adjust_buttons.png` 由三张副本直接改名而来，原有
+  `upgrade.png` / `panel_config_legacy.png` / `config_mode_buttons.png` 保留不动（尺寸不同，
+  覆盖会破坏现有配置面板）。
+  **目前只有方块破坏器与方块成型器接入**：`adjustedBounds()` 给出世界轴向三轴盒子
+  （中心 = 机器位置 + XYZ 偏移，半径 = range/2 方块，每轴方块数 = range，向正负对称取整展开：
+  range=1 只有中心 1 格、range=2 为 2 格……），两台机器的 `getRangeBoxes()`、
+  `applyEffect()`、`conditionStart()` 都遍历这个盒子并跳过自身格，批处理 B 不再决定深度；
+  遍历用 `ADJUST_SCAN_LIMIT` 截断防卡顿，输出满判定也不再看 B。其余机器的面板数值只保存与显示，
+  工作范围仍按原有 `radius` / `getRangeBoxes()` 语义。
+- **侧栏主按钮 tooltip**：6 个 `info.bar_*` 标题键（`bar_mode/ideas/redstone/control/energy/upgrade`）
+  文案不带冒号，只留尾空格给拼接用（如「传输模式 能量」）。红石按钮 `redstoneTooltips` 分两行：
+  第一行金色标题「红石控制」，第二行是 `info.off/low/high` 三选一的当前类型；
+  `info.bar_energy_use*` 是内容标签，保留冒号。改这些文案要改 `TENLangHandler` 再跑 `runData`。
 
 ### 6.2 同步
 

@@ -70,6 +70,17 @@ public interface IUpgradableMachine {
     }
 
     /**
+     * 范围升级（{@code LevelupRg}）：把可调节半径上限按倍率放大。
+     * 只有接入范围调节面板的机器需要实现；其它机器保持默认 no-op，
+     * 其范围仍由 {@link #setCurrentRadius(int)} 语义驱动。
+     *
+     * @param factor 正倍率（当前实现为每件 ×2）
+     */
+    default void applyAdjustRangeCapMultiplier(int factor) {
+        // Default no-op for backward compatibility.
+    }
+
+    /**
      * Mark that a Photosynthetic Suppressor (LevelupSyn) is installed.
      * Duplicate calls are silently ignored (safe idempotency).
      * <p>
