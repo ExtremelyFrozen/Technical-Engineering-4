@@ -298,6 +298,10 @@ public class NetworkLogicGameTest {
         CellBlockEntity target = helper.getBlockEntity(targetPos);
         source.initMachine();
         target.initMachine();
+        // 受端必须改被动输入：单元默认全 OUT（主动放电），不改的话线缆送来的电会被它
+        // 立刻推回线缆，tick 60 采样恒为 0——现象像「线缆不送电」，实为受端自己在放电。
+        target.energyFaceMode.put(net.minecraft.core.Direction.WEST,
+                com.modularmc.ten.api.option.FaceOption.BE_IN);
         source.energyStorage.setEnergy(4000);
         target.energyStorage.setEnergy(0);
 

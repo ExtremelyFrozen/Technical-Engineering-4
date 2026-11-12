@@ -18,15 +18,12 @@
 - 2026-09 修正了内容钮原点与内边距。需要在 1080p / 720p 与不同 GUI 缩放下复验：
   6 个面配置钮、3 个类型钮与底图钮槽对齐，不被纹理原生留白二次偏移。
 
-### 线缆缓冲偶发不向受端送电 — P2 🧪
-- 现象：`cable_moves_energy_between_cells` 间歇失败。2026-11-08 抓到一次完整诊断：tick 60 时
-  `source=3000 target=0`——源单元已推出 1000 FE（正好等于玻璃线缆缓冲 1_000），线缆满但受端恒为 0，
-  说明「设备→线缆」这一段正常、「线缆→受端」这一段没成。
-- 该条自 2026-05 起就间歇失败，同一份代码可一次通过一次不过；2026-11-08 已把断言窗口从 25 tick
-  放宽到 60 tick（起测时服务器常卡 7~9 s / 150+ tick）并保留两端储能与面配置诊断，34/34 可全过。
-- 待查方向：`EnergyNetwork` 第 171 行的受端筛选（`canReceive()` + `getEnergyStored() < getMaxEnergyStored()`）
-  与 `CmMachineBlockEntity.getEnergyStorage(side).receiveEnergy` 的 `signalAllowRun()` / 面门控，
-  在 GameTest 的 `setBlock` 时序下是否读到过瞬时状态；要区分「网络未成形」和「受端拒绝」。
+### ~~线缆缓冲偶发不向受端送电~~ — 已结案 2026-11-12
+- 根因不在线缆：`CellBlockEntity.initialFaceModeEnergy()` 返回 `OUT`（单元是产能方，默认主动放电），
+  用例里的受端单元收到线缆送来的电后会立刻又推回线缆，tick 60 采样恒为 0，
+  现象与「线缆不送电」完全一致，此前 1000 FE 缓冲已满的诊断也被这一循环解释。
+- 修法：用例把受端 WEST 面设为 `BE_IN`（被动输入），本地 43/43 GameTest 通过。
+- 原待查方向（`EnergyNetwork` 受端筛选、`signalAllowRun()`、面门控）逐项排查均正常，非缺陷。
 
 ### 正常链路启动复验（testframework） — P2 🧪
 - 2026-10-31 已用 `runClient -x compileTestJava` 启动并进入世界，随后正常关闭；AE2 Pattern Disk、FTB Library、
