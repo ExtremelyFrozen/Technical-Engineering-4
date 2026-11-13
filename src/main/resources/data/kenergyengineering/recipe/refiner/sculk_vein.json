@@ -1,0 +1,25 @@
+{
+	"type": "kenergyengineering:refiner",
+	"inputs": [
+		{
+			"form": "fluid",
+			"type": "static",
+			"key": "kenergyengineering:liquid_xp",
+			"amount": 10
+		},
+		{
+			"form": "item",
+			"type": "static",
+			"key": "minecraft:sculk"
+		}
+	],
+	"outputs": [
+		{
+			"form": "item",
+			"type": "static",
+			"key": "minecraft:sculk_vein",
+      "count": 4
+		}
+	],
+	"time": 100
+}

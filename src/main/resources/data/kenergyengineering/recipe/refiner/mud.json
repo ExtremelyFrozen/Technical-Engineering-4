@@ -1,0 +1,25 @@
+{
+	"type": "kenergyengineering:refiner",
+	"inputs": [
+		{
+			"form": "item",
+			"type": "tag",
+			"key": "minecraft:dirt"
+		},
+		{
+			"form": "fluid",
+			"type": "static",
+			"key": "minecraft:water",
+			"amount": 50
+		}
+	],
+	"outputs": [
+		{
+			"form": "item",
+			"type": "static",
+			"key": "minecraft:mud",
+			"count": 1
+		}
+	],
+	"time": 200
+}

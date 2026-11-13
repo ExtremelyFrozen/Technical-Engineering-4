@@ -5,7 +5,7 @@
 			"form": "fluid",
 			"type": "static",
 			"key": "kenergyengineering:liquid_xp",
-			"amount": 10
+			"amount": 250
 		},
 		{
 			"form": "item",

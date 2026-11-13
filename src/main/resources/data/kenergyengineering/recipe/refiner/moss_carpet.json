@@ -1,0 +1,25 @@
+{
+	"type": "kenergyengineering:refiner",
+	"inputs": [
+    {
+      "form": "fluid",
+      "type": "static",
+      "key": "minecraft:water",
+      "amount": 50
+    },
+		{
+			"form": "item",
+			"type": "static",
+			"key": "minecraft:moss_block"
+		}
+	],
+	"outputs": [
+		{
+			"form": "item",
+			"type": "static",
+			"key": "minecraft:moss_carpet",
+      "count": 4
+		}
+	],
+	"time": 100
+}

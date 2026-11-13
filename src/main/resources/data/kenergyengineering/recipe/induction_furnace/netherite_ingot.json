@@ -1,0 +1,25 @@
+{
+	"type": "kenergyengineering:induction_furnace",
+	"inputs": [
+		{
+			"form": "item",
+			"type": "static",
+			"key": "minecraft:netherite_scrap",
+      "count": 4
+		},
+		{
+			"form": "item",
+			"type": "tag",
+			"key": "c:mats/gold",
+      "count": 2
+		}
+	],
+	"outputs": [
+		{
+			"form": "item",
+			"type": "static",
+			"key": "minecraft:netherite_ingot"
+		}
+	],
+	"time": 200
+}
