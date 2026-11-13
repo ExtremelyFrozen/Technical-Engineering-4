@@ -63,7 +63,8 @@ public class MatchFuel {
         else if (TagHelper.containsItem(stack.getItem(), ItemTags.LOGS)) time = 120;
         else if (TagHelper.containsItem(stack.getItem(), ItemTags.FLOWERS)) time = 10;
         else if (TagHelper.containsItem(stack.getItem(), ItemTags.SAPLINGS)) time = 15;
-        else if (TagHelper.containsItem(stack.getItem(), TagHelper.keyItem("minecraft:saplings"))) time = 15;
+        else if (stack.is(Items.MOSS_BLOCK)) time = 30;
+        else if (stack.is(Items.SCULK)) time = 300;
         return time * 60;
     }
 
