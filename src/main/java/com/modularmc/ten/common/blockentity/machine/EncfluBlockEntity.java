@@ -132,8 +132,8 @@ public class EncfluBlockEntity extends ProcessingMachineBlockEntity {
             int xpPerGroup = enchantments.isEmpty() ? 25 : Math.max(1, enchantments.size() * 25);
             int B_byTank = 0;
             if (!tanks.isEmpty()) {
-                int availTank = tanks.get(0).getCapacity() - tanks.get(0).getFluidAmount();
-                B_byTank = xpPerGroup > 0 ? availTank / xpPerGroup : 0;
+                int availTank = tanks.getFirst().getCapacity() - tanks.getFirst().getFluidAmount();
+                B_byTank = availTank / xpPerGroup;
             }
 
             // B_byEnergy: 当前储能可持续的 tick 数
@@ -141,9 +141,7 @@ public class EncfluBlockEntity extends ProcessingMachineBlockEntity {
             int B_byEnergy = energyStorage != null ? energyStorage.getEnergyStored() / baseFe : 0;
 
             // B_byTool=1 保证实际 B=1（工具不可堆叠，无批量复制）
-            if (!validateAndLockB(B_theory, B_byTool, Integer.MAX_VALUE, Math.min(B_byOutput, B_byTank), B_byEnergy)) {
-                return false;
-            }
+            return validateAndLockB(B_theory, B_byTool, Integer.MAX_VALUE, Math.min(B_byOutput, B_byTank), B_byEnergy);
         }
 
         return true;
@@ -161,10 +159,10 @@ public class EncfluBlockEntity extends ProcessingMachineBlockEntity {
         // 检查 XP 罐至少能容纳一组
         if (!tanks.isEmpty()) {
             ItemEnchantments enchantments = EnchantmentHelper.getEnchantmentsForCrafting(tool);
-            int xpPerGroup = enchantments.isEmpty() ? 25 : Math.max(1, enchantments.size() * 25);
+            int xpPerGroup = enchantments.isEmpty() ? 500 : Math.max(1, enchantments.size() * 500);
             FluidStack xpFluid = new FluidStack((net.minecraft.world.level.material.Fluid) TENFluids.LIQUID_XP.getSource(), xpPerGroup);
-            int filled = tanks.get(0).fill(xpFluid, IFluidHandler.FluidAction.SIMULATE);
-            if (filled < xpPerGroup) return true; // 罐满 → 阻塞
+            int filled = tanks.getFirst().fill(xpFluid, IFluidHandler.FluidAction.SIMULATE);
+            return filled < xpPerGroup; // 罐满 → 阻塞
         }
 
         return false;
@@ -223,9 +221,9 @@ public class EncfluBlockEntity extends ProcessingMachineBlockEntity {
 
         // ── Phase 4: 复验 XP 罐空间（SIMULATE）──
         if (!tanks.isEmpty()) {
-            int totalXp = xpAmount * B;
+            int totalXp = xpAmount * B * 20;
             FluidStack totalXpFluid = new FluidStack((net.minecraft.world.level.material.Fluid) TENFluids.LIQUID_XP.getSource(), totalXp);
-            int filled = tanks.get(0).fill(totalXpFluid, IFluidHandler.FluidAction.SIMULATE);
+            int filled = tanks.getFirst().fill(totalXpFluid, IFluidHandler.FluidAction.SIMULATE);
             if (filled < totalXp) {
                 return;
             }
@@ -235,7 +233,7 @@ public class EncfluBlockEntity extends ProcessingMachineBlockEntity {
         ItemStack slot0Snapshot = itemHandler.getStackInSlot(0).copy();
         ItemStack slot1Snapshot = itemHandler.getStackInSlot(1).copy();
         ItemStack slot2Snapshot = itemHandler.getStackInSlot(2).copy();
-        FluidStack tankSnapshot = tanks.isEmpty() ? FluidStack.EMPTY : tanks.get(0).getFluid().copy();
+        FluidStack tankSnapshot = tanks.isEmpty() ? FluidStack.EMPTY : tanks.getFirst().getFluid().copy();
 
         try {
             // ── Phase 6: 先消耗（剥离工具附魔一次，消耗 B 目标）──
@@ -247,8 +245,8 @@ public class EncfluBlockEntity extends ProcessingMachineBlockEntity {
             itemHandler.setStackInSlot(2, batchOutput);
 
             if (!tanks.isEmpty()) {
-                FluidStack totalXpFluid = new FluidStack((net.minecraft.world.level.material.Fluid) TENFluids.LIQUID_XP.getSource(), xpAmount * B);
-                tanks.get(0).fill(totalXpFluid, IFluidHandler.FluidAction.EXECUTE);
+                FluidStack totalXpFluid = new FluidStack((net.minecraft.world.level.material.Fluid) TENFluids.LIQUID_XP.getSource(), xpAmount * B * 20);
+                tanks.getFirst().fill(totalXpFluid, IFluidHandler.FluidAction.EXECUTE);
             }
 
             clearLockedBatch();
@@ -258,9 +256,9 @@ public class EncfluBlockEntity extends ProcessingMachineBlockEntity {
             itemHandler.setStackInSlot(1, slot1Snapshot);
             itemHandler.setStackInSlot(2, slot2Snapshot);
             if (!tanks.isEmpty()) {
-                tanks.get(0).drain(Integer.MAX_VALUE, IFluidHandler.FluidAction.EXECUTE);
+                tanks.getFirst().drain(Integer.MAX_VALUE, IFluidHandler.FluidAction.EXECUTE);
                 if (!tankSnapshot.isEmpty()) {
-                    tanks.get(0).fill(tankSnapshot, IFluidHandler.FluidAction.EXECUTE);
+                    tanks.getFirst().fill(tankSnapshot, IFluidHandler.FluidAction.EXECUTE);
                 }
             }
             throw new RuntimeException("Encflu onCookFinish failed and rolled back", e);

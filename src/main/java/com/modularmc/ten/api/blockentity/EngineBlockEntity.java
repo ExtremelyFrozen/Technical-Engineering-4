@@ -28,16 +28,22 @@ public abstract class EngineBlockEntity extends CmMachineBlockEntity {
         return MachineType.GENERATOR;
     }
 
+    //防止单储罐引擎无法与桶等容器物品交互
+    @Override
+    public int initialFaceModeFluid() {
+        return FaceOption.BE_IN;
+    }
+
     @Override
     public int initialFaceModeEnergy() {
         return FaceOption.OUT;
     }
-
-    @Override
-    public boolean hasFaceCapabilityFluid(Direction side) {
-        return false;
-    }
-
+//
+//    @Override
+//    public boolean hasFaceCapabilityFluid(Direction side) {
+//        return false;
+//    }
+//
     @Override
     public boolean hasFaceCapabilityEnergy(Direction side) {
         return side == null || side == Direction.UP;
@@ -61,7 +67,10 @@ public abstract class EngineBlockEntity extends CmMachineBlockEntity {
     @Override
     public void tick() {
         doBaseData();
+        process();
+    }
 
+    public void process() {
         if (!signalAllowRun() || !energyAllowRun()) return;
 
         ItemStack fuelStack = ItemStack.EMPTY;

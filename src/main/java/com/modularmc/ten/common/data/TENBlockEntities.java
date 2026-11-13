@@ -122,6 +122,11 @@ public class TENBlockEntities {
             .validBlocks(TENBlocks.ENGINE_METAL)
             .register();
 
+    public static final BlockEntityEntry<RecyclerBlockEntity> RECYCLER = REGISTRATE
+           .blockEntity("engine_recycler", RecyclerBlockEntity::new)
+           .validBlocks(TENBlocks.ENGINE_RECYCLER)
+           .register();
+
     public static final BlockEntityEntry<CellBlockEntity> CELL = REGISTRATE
             .blockEntity("energy_cell", CellBlockEntity::new)
             .validBlocks(TENBlocks.CELL)

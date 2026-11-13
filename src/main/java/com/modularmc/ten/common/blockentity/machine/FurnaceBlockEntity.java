@@ -58,8 +58,8 @@ public class FurnaceBlockEntity extends ProcessingMachineBlockEntity {
     /** XP 流体输出罐容量（恒存在）。 */
     private static final int XP_TANK_CAPACITY = 4000;
 
-    /** XP 流体换算：每 mB 对应 tick 数（0.1 mB/tick）。 */
-    private static final int XP_FLUID_TICKS_PER_MB = 10;
+    /** XP 流体换算：每 单位 对应 mB 数。 */
+    private static final int XP_FLUID_PER_UNIT = 20;
 
     // ───── 三条 lane 的进度镜像（GUI 三条箭头分别读其中一个，必须 @DescSynced）─────
     @Persisted
@@ -223,7 +223,6 @@ public class FurnaceBlockEntity extends ProcessingMachineBlockEntity {
      * recipeMode 由 LevelupBlast/LevelupSmoke 升级决定（First-wins 语义，见 setRecipeMode）：
      * SMELTING（默认）/ BLASTING / SMOKING。
      */
-    @SuppressWarnings("unchecked")
     private Optional<RecipeHolder<AbstractCookingRecipe>> getCurrentRecipe(int lane) {
         if (level == null || itemHandler == null) return Optional.empty();
         ItemStack input = itemHandler.getStackInSlot(inputSlot(lane));
@@ -411,9 +410,9 @@ public class FurnaceBlockEntity extends ProcessingMachineBlockEntity {
             // Knowledge 门控 XP 产出：安装时 B 受 XP 罐剩余空间约束（罐三路共享）。
             int B_byXpFluid = Integer.MAX_VALUE;
             if (hasUpgrade(LevelupKnow.class)) {
-                int xpPerUnit = calculateXpFluidPerUnit(recipe.getCookingTime());
+                int xpPerUnit = calculateXpFluidPerUnit(recipe.getExperience());
                 if (xpPerUnit > 0 && !tanks.isEmpty()) {
-                    int availXp = tanks.get(0).getCapacity() - tanks.get(0).getFluidAmount();
+                    int availXp = tanks.getFirst().getCapacity() - tanks.getFirst().getFluidAmount();
                     B_byXpFluid = availXp / xpPerUnit;
                 } else if (xpPerUnit > 0) {
                     B_byXpFluid = 0;
@@ -449,11 +448,11 @@ public class FurnaceBlockEntity extends ProcessingMachineBlockEntity {
 
         // Knowledge 门控 XP 罐空间检查（仅生产路径）
         if (hasUpgrade(LevelupKnow.class)) {
-            int xpPerUnit = calculateXpFluidPerUnit(recipe.getCookingTime());
+            int xpPerUnit = calculateXpFluidPerUnit(recipe.getExperience());
             if (xpPerUnit > 0 && !tanks.isEmpty()) {
                 FluidStack xpFluid = xpFluidStack(xpPerUnit);
-                int filled = tanks.get(0).fill(xpFluid, IFluidHandler.FluidAction.SIMULATE);
-                if (filled < xpPerUnit) return true;
+                int filled = tanks.getFirst().fill(xpFluid, IFluidHandler.FluidAction.SIMULATE);
+                return filled < xpPerUnit;
             }
         }
         return false;
@@ -504,7 +503,7 @@ public class FurnaceBlockEntity extends ProcessingMachineBlockEntity {
         boolean hasKnowledge = hasUpgrade(LevelupKnow.class);
         int xpFluidTotal = 0;
         if (hasKnowledge) {
-            int xpPerUnit = calculateXpFluidPerUnit(recipe.getCookingTime());
+            int xpPerUnit = calculateXpFluidPerUnit(recipe.getExperience());
             if (xpPerUnit > 0) {
                 long totalXpLong = (long) xpPerUnit * B;
                 if (totalXpLong > Integer.MAX_VALUE) {
@@ -514,7 +513,7 @@ public class FurnaceBlockEntity extends ProcessingMachineBlockEntity {
                 xpFluidTotal = (int) totalXpLong;
                 if (!tanks.isEmpty()) {
                     FluidStack totalXpFluid = xpFluidStack(xpFluidTotal);
-                    int filled = tanks.get(0).fill(totalXpFluid, IFluidHandler.FluidAction.SIMULATE);
+                    int filled = tanks.getFirst().fill(totalXpFluid, IFluidHandler.FluidAction.SIMULATE);
                     if (filled < xpFluidTotal) {
                         return;
                     }
@@ -528,7 +527,7 @@ public class FurnaceBlockEntity extends ProcessingMachineBlockEntity {
         // ── 原子执行 + 回滚（只碰本 lane 的两个槽，XP 罐三路共享）──
         ItemStack inputSnapshot = itemHandler.getStackInSlot(inSlot).copy();
         ItemStack outputSnapshot = itemHandler.getStackInSlot(outSlot).copy();
-        FluidStack tankSnapshot = (hasKnowledge && !tanks.isEmpty()) ? tanks.get(0).getFluid().copy() : FluidStack.EMPTY;
+        FluidStack tankSnapshot = (hasKnowledge && !tanks.isEmpty()) ? tanks.getFirst().getFluid().copy() : FluidStack.EMPTY;
 
         try {
             itemHandler.extractItem(inSlot, B, false);
@@ -542,15 +541,15 @@ public class FurnaceBlockEntity extends ProcessingMachineBlockEntity {
             }
 
             if (hasKnowledge && xpFluidTotal > 0 && !tanks.isEmpty()) {
-                tanks.get(0).fill(xpFluidStack(xpFluidTotal), IFluidHandler.FluidAction.EXECUTE);
+                tanks.getFirst().fill(xpFluidStack(xpFluidTotal), IFluidHandler.FluidAction.EXECUTE);
             }
         } catch (Exception e) {
             itemHandler.setStackInSlot(inSlot, inputSnapshot);
             itemHandler.setStackInSlot(outSlot, outputSnapshot);
             if (hasKnowledge && !tanks.isEmpty()) {
-                tanks.get(0).drain(Integer.MAX_VALUE, IFluidHandler.FluidAction.EXECUTE);
+                tanks.getFirst().drain(Integer.MAX_VALUE, IFluidHandler.FluidAction.EXECUTE);
                 if (!tankSnapshot.isEmpty()) {
-                    tanks.get(0).fill(tankSnapshot, IFluidHandler.FluidAction.EXECUTE);
+                    tanks.getFirst().fill(tankSnapshot, IFluidHandler.FluidAction.EXECUTE);
                 }
             }
             throw new RuntimeException("Furnace lane " + lane + " onCookFinish failed and rolled back", e);
@@ -558,9 +557,9 @@ public class FurnaceBlockEntity extends ProcessingMachineBlockEntity {
     }
 
     /** 每单位产物产出的 XP mB：max(1, round(cookingTime / 10))。 */
-    private static int calculateXpFluidPerUnit(int cookingTime) {
-        if (cookingTime <= 0) return 0;
-        return Math.max(1, (int) Math.round((double) cookingTime / XP_FLUID_TICKS_PER_MB));
+    private static int calculateXpFluidPerUnit(float xp) {
+        if (xp <= 0) return 0;
+        return Math.max(20, (int) Math.round((double) xp * XP_FLUID_PER_UNIT));
     }
 
     private static FluidStack xpFluidStack(int amount) {

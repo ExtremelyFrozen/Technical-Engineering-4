@@ -193,7 +193,7 @@ public abstract class RecipeMachineBlockEntity extends ProcessingMachineBlockEnt
             B = Math.min(B, bForThis);
         }
 
-        return B == Integer.MAX_VALUE ? Integer.MAX_VALUE : Math.max(0, B);
+        return B == Integer.MAX_VALUE ? Integer.MAX_VALUE : B;
     }
 
     /**
@@ -305,9 +305,7 @@ public abstract class RecipeMachineBlockEntity extends ProcessingMachineBlockEnt
         }
 
         // Check output capacity: worst case for B
-        if (!canFitOutputsForBatch(B)) return true;
-
-        return false;
+        return !canFitOutputsForBatch(B);
     }
 
     /**
@@ -962,7 +960,7 @@ public abstract class RecipeMachineBlockEntity extends ProcessingMachineBlockEnt
 
         private InputConsumptionPlan(int slots, int tanks) {
             this.itemDeductions = new int[slots];
-            this.fluidDeductions = new int[tanks > 0 ? tanks : 0];
+            this.fluidDeductions = new int[Math.max(tanks, 0)];
         }
 
         /**

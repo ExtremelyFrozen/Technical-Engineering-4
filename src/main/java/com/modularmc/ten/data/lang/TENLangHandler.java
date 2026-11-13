@@ -129,7 +129,7 @@ public final class TENLangHandler {
         add(provider, "ice_levelup.0", "In quarry:", "在采矿场中：");
         add(provider, "ice_levelup.1", "Output mode: Ice", "产出模式修改为冰块");
         add(provider, "magma_levelup.0", "In quarry:", "在采矿场中：");
-        add(provider, "magma_levelup.1", "Output mode: Magma", "产出模式修改为岩浆");
+        add(provider, "magma_levelup.1", "Output mode: Magma", "产出模式修改为岩浆块");
         add(provider, "mineral_levelup.0", "In quarry:", "在采矿场中：");
         add(provider, "mineral_levelup.1", "Mining mode: Mineral", "开采模式修改为矿物");
         add(provider, "knowledge_levelup.0", "In smelter:", "在熔炼机中：");

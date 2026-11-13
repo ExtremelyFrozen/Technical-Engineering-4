@@ -1,5 +1,6 @@
 package com.modularmc.ten.data;
 
+import com.google.gson.JsonParser;
 import com.modularmc.ten.TEN;
 import com.modularmc.ten.common.data.TENBlocks;
 import com.modularmc.ten.common.data.TENCreativeModeTabs;
@@ -44,7 +45,7 @@ public class DataGenerators {
                 // 2a. Auto-generate standalone keys from item and block registrations
                 TENItems.ZH_NAMES.forEach((id, cn) -> add(TEN.MOD_ID + "." + id, cn));
                 TENBlocks.ZH_NAMES.forEach((id, cn) -> add(TEN.MOD_ID + "." + id, cn));
-                TENFluids.ZH_FLUID_KEYS.forEach((key, cn) -> add(key, cn));
+                TENFluids.ZH_FLUID_KEYS.forEach(this::add);
 
                 // 2b. Tag translations → 已迁至独立文件 TENTagLangGen（含 JEI/NeoForge 标准键 + 双语）
                 TENTagLangGen.ZH_ENTRIES.forEach(this::add);
@@ -68,8 +69,7 @@ public class DataGenerators {
                 try {
                     var file = new java.io.File("src/main/resources/assets/" + TEN.MOD_ID + "/lang/zh_cn.json");
                     if (file.exists()) {
-                        var json = new com.google.gson.JsonParser()
-                                .parse(new java.io.FileReader(file))
+                        var json = JsonParser.parseReader(new java.io.FileReader(file))
                                 .getAsJsonObject();
                         json.entrySet().forEach(entry -> add(entry.getKey(), entry.getValue().getAsString()));
                     }

@@ -35,8 +35,6 @@ public abstract class ProcessingMachineBlockEntity extends CmMachineBlockEntity 
     }
 
     public void process() {
-        // Client guard — process/injection runs only on the server logical side
-        if (level != null && level.isClientSide()) return;
 
         // Syn 光合注能在所有 condition/signal/energyAllowRun 门禁之前执行。
         // 即使 conditionStart() == false（无任务），有光向本机补能也应允许注入。

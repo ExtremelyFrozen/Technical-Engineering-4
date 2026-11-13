@@ -61,6 +61,7 @@ public class TENBlocks {
     public static final BlockEntry<HorizontalMachineBlock> MACHINE_COOLER = machine("machine_cooler", "Cooler", "冷却器");
 
     // === Engines ===
+    public static final BlockEntry<HorizontalMachineBlock> ENGINE_RECYCLER = engine("engine_recycler", "Recycler Engine", "回收引擎");
     public static final BlockEntry<HorizontalMachineBlock> ENGINE_EXTRACTION = engine("engine_extraction", "Extraction Engine", "萃取引擎");
     public static final BlockEntry<HorizontalMachineBlock> ENGINE_METAL = engine("engine_metal", "Metal Engine", "金属引擎");
     public static final BlockEntry<HorizontalMachineBlock> ENGINE_BIOMASS = engine("engine_biomass", "Biomass Engine", "生物质引擎");
