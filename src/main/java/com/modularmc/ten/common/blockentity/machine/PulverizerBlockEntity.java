@@ -68,7 +68,7 @@ public class PulverizerBlockEntity extends RecipeMachineBlockEntity {
             root.addChild(TENMachineBlockUIFactory.machineSlotModular(this, 4, 122, 43));
         }, root -> {
             root.addChild(TENMachineBlockUIFactory.energyGaugeModular(this, 8, 18, true));
-            root.addChild(TENMachineBlockUIFactory.progressGaugeModular(this, 68, 33, false));
+            root.addChild(TENMachineBlockUIFactory.progressGaugeModular(this, 68, 33, true));
         });
     }
 

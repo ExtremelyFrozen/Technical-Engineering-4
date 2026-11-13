@@ -10,6 +10,10 @@ import com.modularmc.ten.common.gui.TENMachineBlockUIFactory;
 import com.modularmc.ten.common.item.upgrades.LevelupKnow;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.AbstractCookingRecipe;
@@ -23,29 +27,78 @@ import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 
 import com.lowdragmc.lowdraglib2.gui.factory.BlockUIMenuType;
 import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
+import com.lowdragmc.lowdraglib2.syncdata.annotation.DescSynced;
+import com.lowdragmc.lowdraglib2.syncdata.annotation.Persisted;
 
 import java.util.Objects;
 import java.util.Optional;
 
+/**
+ * 熔炼机：三条互相独立的并行流水线（lane）。
+ *
+ * <p>
+ * 槽位约定：{@code 0..2} 为输入槽，{@code 3..5} 为输出槽；lane i 独占输入槽 i、输出槽
+ * {@code i + LANES} 与一条进度箭头。输入槽的索引顺序就是输入优先级：slot 0 画在中间，
+ * 因此快捷移动、主动拉取与外部 capability 的按序插入都会优先进中间输入槽。
+ * 视觉上三条 lane 上下堆叠、间隔 0px，行 y 见 {@link #LANE_SLOT_Y}。
+ *
+ * <p>
+ * 每条 lane 自持进度、配方身份与批处理锁，逐 tick 各自推进；能量与 XP 罐为三路共享，
+ * 按 lane 顺序扣减。基类 {@code progress}/{@code maxProgress} 只作单进度镜像，
+ * 供冷却器等横切逻辑读取，不再驱动本机加工。
+ */
 public class FurnaceBlockEntity extends ProcessingMachineBlockEntity {
+
+    /** 并行流水线数量：每条 lane 独占一个输入槽、一个输出槽与一条进度箭头。 */
+    public static final int LANES = 3;
+
+    /** 三条 lane 的槽位 y：lane 0 居中（沿用旧输入槽位置），1 在上、2 在下。 */
+    public static final int[] LANE_SLOT_Y = { 32, 14, 50 };
 
     /** XP 流体输出罐容量（恒存在）。 */
     private static final int XP_TANK_CAPACITY = 4000;
 
-    /**
-     * XP 流体换算：每 mB 对应 tick 数（0.1 mB/tick）。
-     * 公式：max(1, round(cookingTime / XP_FLUID_TICKS_PER_MB))
-     */
+    /** XP 流体换算：每 mB 对应 tick 数（0.1 mB/tick）。 */
     private static final int XP_FLUID_TICKS_PER_MB = 10;
 
-    /** 上一周期的配方身份（处理链锁定期间禁止漂移到其他配方）。 */
-    private ResourceLocation lastRecipeId;
+    // ───── 三条 lane 的进度镜像（GUI 三条箭头分别读其中一个，必须 @DescSynced）─────
+    @Persisted
+    @DescSynced
+    public int laneProgress0 = 0;
+    @Persisted
+    @DescSynced
+    public int laneProgress1 = 0;
+    @Persisted
+    @DescSynced
+    public int laneProgress2 = 0;
+    @Persisted
+    @DescSynced
+    public int laneMaxProgress0 = 0;
+    @Persisted
+    @DescSynced
+    public int laneMaxProgress1 = 0;
+    @Persisted
+    @DescSynced
+    public int laneMaxProgress2 = 0;
+
+    /** 各 lane 的批处理锁与配方身份：服务端权威、不持久化，读档后由 conditionStart 重建。 */
+    private final int[] laneB = new int[LANES];
+    private final int[] laneLockedMaxProgress = new int[LANES];
+    private final ResourceLocation[] lastRecipeId = new ResourceLocation[LANES];
 
     public FurnaceBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
         setCapacity(kFE(20));
         setEfficiency(15);
-        tanks.add(new MachineFluidTank(XP_TANK_CAPACITY)); // XP 输出罐（恒存在）
+        tanks.add(new MachineFluidTank(XP_TANK_CAPACITY)); // XP 输出罐（恒存在，三路共享）
+    }
+
+    public static int inputSlot(int lane) {
+        return lane;
+    }
+
+    public static int outputSlot(int lane) {
+        return lane + LANES;
     }
 
     @Override
@@ -55,16 +108,23 @@ public class FurnaceBlockEntity extends ProcessingMachineBlockEntity {
 
     @Override
     public int inventorySize() {
-        return 2;
+        return 2 * LANES;
     }
 
     @Override
     public IngredientType slotType(int slot) {
-        return switch (slot) {
-            case 0 -> IngredientType.INPUT;
-            case 1 -> IngredientType.OUTPUT;
-            default -> IngredientType.IGNORE;
-        };
+        if (slot >= 0 && slot < LANES) return IngredientType.INPUT;
+        if (slot >= LANES && slot < 2 * LANES) return IngredientType.OUTPUT;
+        return IngredientType.IGNORE;
+    }
+
+    /**
+     * 三条并行 lane 允许同款原料分占多个输入槽；熔炼机走原版单物品配方，
+     * 不存在 FormsCombinedRecipe 那种「占用槽数决定配方」的匹配歧义。
+     */
+    @Override
+    protected boolean enforcesUniqueItemSlots() {
+        return false;
     }
 
     /** XP 输出罐：可经桶/管道取出（canOut），禁注入（canIn）。 */
@@ -76,32 +136,97 @@ public class FurnaceBlockEntity extends ProcessingMachineBlockEntity {
     /** 基础周期 tick：配方 cookingTime 全值（旧版误除 2 导致处理速度快一倍，勿回退）。 */
     @Override
     public int baseTickTime() {
-        var recipe = getCurrentRecipe();
-        return recipe.map(r -> r.value().getCookingTime()).orElse(200);
+        return getCurrentRecipe(0).map(r -> r.value().getCookingTime()).orElse(200);
+    }
+
+    /** 指定 lane 的进度比例，供 GUI 的对应箭头绑定。 */
+    public double laneProgressPercent(int lane) {
+        int max = laneMaxProgress(lane);
+        return max <= 0 ? 0 : Math.min(1.0, (double) laneProgress(lane) / max);
+    }
+
+    private int laneProgress(int lane) {
+        return switch (lane) {
+            case 0 -> laneProgress0;
+            case 1 -> laneProgress1;
+            default -> laneProgress2;
+        };
+    }
+
+    private void setLaneProgress(int lane, int value) {
+        switch (lane) {
+            case 0 -> laneProgress0 = value;
+            case 1 -> laneProgress1 = value;
+            default -> laneProgress2 = value;
+        }
+    }
+
+    private int laneMaxProgress(int lane) {
+        return switch (lane) {
+            case 0 -> laneMaxProgress0;
+            case 1 -> laneMaxProgress1;
+            default -> laneMaxProgress2;
+        };
+    }
+
+    private void setLaneMaxProgress(int lane, int value) {
+        switch (lane) {
+            case 0 -> laneMaxProgress0 = value;
+            case 1 -> laneMaxProgress1 = value;
+            default -> laneMaxProgress2 = value;
+        }
+    }
+
+    private static String laneProgressField(int lane) {
+        return switch (lane) {
+            case 0 -> "laneProgress0";
+            case 1 -> "laneProgress1";
+            default -> "laneProgress2";
+        };
+    }
+
+    private static String laneMaxProgressField(int lane) {
+        return switch (lane) {
+            case 0 -> "laneMaxProgress0";
+            case 1 -> "laneMaxProgress1";
+            default -> "laneMaxProgress2";
+        };
     }
 
     @Override
     public ModularUI createUI(BlockUIMenuType.BlockUIHolder holder) {
         return buildMachineUI(holder, TENMachineBlockUIFactory.backgroundFor(machineType()), root -> {
-            root.addChild(TENMachineBlockUIFactory.machineSlotModular(this, 0, 39, 32));
-            root.addChild(TENMachineBlockUIFactory.machineSlotLarge(this, 1, 113, 28));
+            // 三输入槽：18x18 小槽上下堆叠、间隔 0px；slot 0 在中间，注册顺序即快捷移动优先级。
+            // 三输出槽：同样的小槽与输入槽逐行对齐（lane i 的输入/输出在同一行）。
+            for (int lane = 0; lane < LANES; lane++) {
+                root.addChild(TENMachineBlockUIFactory.machineSlotModular(this, inputSlot(lane), 39, LANE_SLOT_Y[lane]));
+            }
+            for (int lane = 0; lane < LANES; lane++) {
+                root.addChild(TENMachineBlockUIFactory.machineSlotModular(this, outputSlot(lane), 113, LANE_SLOT_Y[lane]));
+            }
         }, root -> {
             root.addChild(TENMachineBlockUIFactory.energyGaugeModular(this, 8, 18, true));
-            root.addChild(TENMachineBlockUIFactory.progressGaugeModular(this, 74, 33, false));
-            // 契约：createXpFluidSlot(143,17,18,50) — 输出大槽(113,28)右缘139 右侧 x=143（间隔4）、主区垂直对齐 y=17（中线42≈41.5）
+            // 三条进度箭头上下堆叠，与各自 lane 的输入槽同高（22x16 在 18px 行内上下各留 1px）。
+            // 每条只读对应 lane 的进度，不受其他两条 lane 影响。
+            for (int lane = 0; lane < LANES; lane++) {
+                final int index = lane;
+                root.addChild(TENMachineBlockUIFactory.progressGaugeModular(this, 74, LANE_SLOT_Y[lane] + 1, true,
+                        m -> ((FurnaceBlockEntity) m).laneProgressPercent(index)));
+            }
+            // XP 槽仍在最右侧：输出小槽右缘 131，XP 槽左缘 143（间隔 12），与主区垂直对齐 y=17。
             root.addChild(TENMachineBlockUIFactory.createXpFluidSlot(this, 143, 17, 18, 50));
         });
     }
 
     /**
-     * 按当前配方模式取配方：
+     * 按当前配方模式取指定 lane 输入槽的配方：
      * recipeMode 由 LevelupBlast/LevelupSmoke 升级决定（First-wins 语义，见 setRecipeMode）：
      * SMELTING（默认）/ BLASTING / SMOKING。
      */
     @SuppressWarnings("unchecked")
-    private Optional<RecipeHolder<AbstractCookingRecipe>> getCurrentRecipe() {
-        if (level == null) return Optional.empty();
-        ItemStack input = itemHandler.getStackInSlot(0);
+    private Optional<RecipeHolder<AbstractCookingRecipe>> getCurrentRecipe(int lane) {
+        if (level == null || itemHandler == null) return Optional.empty();
+        ItemStack input = itemHandler.getStackInSlot(inputSlot(lane));
         if (input.isEmpty()) return Optional.empty();
         var recipeInput = new SingleRecipeInput(input);
 
@@ -116,43 +241,164 @@ public class FurnaceBlockEntity extends ProcessingMachineBlockEntity {
     }
 
     @Override
+    public void doBaseData() {
+        super.doBaseData();
+        // 三条 lane 同时运行的峰值能耗是单路的 LANES 倍，信息栏按真实峰值显示。
+        energyUseMax = safeMultiply(energyUseMax, LANES);
+        markDirty("energyUseMax");
+    }
+
+    /** 不复用基类的单流水线 process()，改为逐 lane 独立推进。 */
+    @Override
+    public void tick() {
+        doBaseData();
+        processLanes();
+    }
+
+    // 无参钩子保留中间 lane 的语义，供仍按单流水线读取的外部代码使用。
+    @Override
     public boolean conditionStart() {
-        var recipeOpt = getCurrentRecipe();
+        return conditionStart(0);
+    }
+
+    @Override
+    public boolean cooking() {
+        return cooking(0);
+    }
+
+    @Override
+    public void onCookFinish() {
+        onCookFinish(0);
+    }
+
+    private void processLanes() {
+        if (level != null && level.isClientSide()) return;
+
+        // Syn 光合注能在所有门禁之前执行一次（补的是同一份储能，与 lane 数无关）。
+        tryInjectPhotosynEnergy();
+
+        boolean signal = signalAllowRun();
+        boolean anyRunning = false;
+        for (int lane = 0; lane < LANES; lane++) {
+            boolean start = conditionStart(lane);
+            if (!start || !signal) {
+                // 原料消失 / 配方失配：作废本 lane 的进度；缺信号属停滞，保留进度等待恢复。
+                if (!start && laneProgress(lane) > 0) {
+                    setLaneProgress(lane, 0);
+                }
+                continue;
+            }
+
+            long expected = Math.round((double) getActualEfficiency() * Math.max(1, laneB[lane]));
+            if (expected <= 0 || expected > Integer.MAX_VALUE) continue;
+            int fePerTick = (int) expected;
+
+            // 缺能、输出满：保留进度，等待恢复（与基类停滞语义一致）。
+            if (energyStorage == null || energyStorage.getEnergyStored() < fePerTick) continue;
+            if (cooking(lane)) continue;
+
+            if (laneLockedMaxProgress[lane] <= 0) {
+                int mp = Math.max(1, laneMaxProgress(lane));
+                setLaneMaxProgress(lane, mp);
+                laneLockedMaxProgress[lane] = mp;
+            }
+
+            if (energyStorage.extractEnergy(fePerTick, true) != fePerTick) continue;
+            if (energyStorage.extractEnergy(fePerTick, false) != fePerTick) {
+                throw new IllegalStateException(
+                        "Energy under-extraction on furnace lane " + lane + ": expected " + fePerTick + " FE.");
+            }
+            recordEnergyUse(fePerTick);
+
+            anyRunning = true;
+            setLaneProgress(lane, laneProgress(lane) + 1);
+            if (laneProgress(lane) >= laneMaxProgress(lane)) {
+                onCookFinish(lane);
+                setLaneProgress(lane, 0);
+                laneB[lane] = 0;
+                laneLockedMaxProgress[lane] = 0;
+            }
+        }
+        setActive(anyRunning);
+        syncLaneData();
+    }
+
+    /**
+     * 每 tick 把三条 lane 的进度写入客户端镜像，并维护基类的单进度镜像：
+     * 取第一条在跑的 lane，供冷却器的 conditionStart / maxProgress 判定使用。
+     */
+    private void syncLaneData() {
+        for (int lane = 0; lane < LANES; lane++) {
+            markDirty(laneProgressField(lane));
+            markDirty(laneMaxProgressField(lane));
+        }
+        int mirror = -1;
+        for (int lane = 0; lane < LANES; lane++) {
+            if (laneMaxProgress(lane) > 0 && laneB[lane] > 0) {
+                mirror = lane;
+                break;
+            }
+        }
+        progress = mirror < 0 ? 0 : laneProgress(mirror);
+        maxProgress = mirror < 0 ? 0 : laneMaxProgress(mirror);
+        markDirty("progress");
+        markDirty("maxProgress");
+    }
+
+    /** 外部推进进度（冷却器）：本机三路同时受益，不落在单一 lane 上。 */
+    @Override
+    public void advanceProgress(int ticks) {
+        if (ticks <= 0) return;
+        for (int lane = 0; lane < LANES; lane++) {
+            int max = laneMaxProgress(lane);
+            if (max <= 0 || laneB[lane] <= 0) continue;
+            setLaneProgress(lane, Math.min(max, laneProgress(lane) + ticks));
+        }
+        syncLaneData();
+        setChanged();
+    }
+
+    private boolean conditionStart(int lane) {
+        var recipeOpt = getCurrentRecipe(lane);
         if (recipeOpt.isEmpty()) {
-            lastRecipeId = null;
-            progress = 0;
-            clearLockedBatch();
+            lastRecipeId[lane] = null;
+            setLaneProgress(lane, 0);
+            setLaneMaxProgress(lane, 0);
+            laneB[lane] = 0;
+            laneLockedMaxProgress[lane] = 0;
             return false;
         }
 
+        AbstractCookingRecipe recipe = recipeOpt.get().value();
         ResourceLocation newId = recipeOpt.get().id();
-        boolean identityChanged = !Objects.equals(lastRecipeId, newId);
-
+        boolean identityChanged = !Objects.equals(lastRecipeId[lane], newId);
         if (identityChanged) {
-            progress = 0;
-            clearLockedBatch();
+            setLaneProgress(lane, 0);
+            laneB[lane] = 0;
+            laneLockedMaxProgress[lane] = 0;
         }
-        lastRecipeId = newId;
+        lastRecipeId[lane] = newId;
 
-        if (identityChanged || !hasLockedBatch()) {
-            maxProgress = Math.max(1, (int) Math.ceil(baseTickTime() * durationMultiplier));
-            lockMaxProgressForNewOperation(maxProgress);
+        if (identityChanged || laneB[lane] <= 0) {
+            int mp = Math.max(1, (int) Math.ceil(recipe.getCookingTime() * durationMultiplier));
+            setLaneMaxProgress(lane, mp);
+            laneLockedMaxProgress[lane] = mp;
 
             int B_theory = 1 + batch;
-            ItemStack input = itemHandler.getStackInSlot(0);
+            ItemStack input = itemHandler.getStackInSlot(inputSlot(lane));
             var registry = level.registryAccess();
-            ItemStack result = recipeOpt.get().value().getResultItem(registry);
-            int inputCount = input.getCount();
-            int B_byInput = inputCount;
+            ItemStack result = recipe.getResultItem(registry);
+            int B_byInput = input.getCount();
 
             // 输出容量按「物品上限 × 理论 B」的动态槽位上限算，不按原版 64 封顶
-            // （旧写法在非空槽上用 getMaxStackSize()，会让输出槽永远停在 64）
-            ItemStack existingOutput = itemHandler.getStackInSlot(1);
+            // （旧写法在非空槽上用 getMaxStackSize()，会让输出槽永远停在 64）。
+            int outSlot = outputSlot(lane);
+            ItemStack existingOutput = itemHandler.getStackInSlot(outSlot);
             int availOutputSpace;
             if (existingOutput.isEmpty()) {
-                availOutputSpace = itemHandler.getEffectiveSlotLimit(1, result);
+                availOutputSpace = itemHandler.getEffectiveSlotLimit(outSlot, result);
             } else if (ItemStack.isSameItem(existingOutput, result)) {
-                availOutputSpace = itemHandler.getEffectiveSlotLimit(1, existingOutput) - existingOutput.getCount();
+                availOutputSpace = itemHandler.getEffectiveSlotLimit(outSlot, existingOutput) - existingOutput.getCount();
             } else {
                 availOutputSpace = 0;
             }
@@ -162,10 +408,9 @@ public class FurnaceBlockEntity extends ProcessingMachineBlockEntity {
             int baseFe = Math.max(1, getActualEfficiency());
             int B_byEnergy = energyStorage != null ? energyStorage.getEnergyStored() / baseFe : 0;
 
-            // Knowledge 门控 XP 产出：安装时 B 受 XP 罐剩余空间约束（罐恒存在，仅生产被门控）
+            // Knowledge 门控 XP 产出：安装时 B 受 XP 罐剩余空间约束（罐三路共享）。
             int B_byXpFluid = Integer.MAX_VALUE;
             if (hasUpgrade(LevelupKnow.class)) {
-                AbstractCookingRecipe recipe = recipeOpt.get().value();
                 int xpPerUnit = calculateXpFluidPerUnit(recipe.getCookingTime());
                 if (xpPerUnit > 0 && !tanks.isEmpty()) {
                     int availXp = tanks.get(0).getCapacity() - tanks.get(0).getFluidAmount();
@@ -175,35 +420,35 @@ public class FurnaceBlockEntity extends ProcessingMachineBlockEntity {
                 }
             }
 
-            int B_byFluid = B_byXpFluid;
-
-            if (!validateAndLockB(B_theory, B_byInput, B_byFluid, B_byOutput, B_byEnergy)) {
+            int B = calculateBActual(B_theory, B_byInput, B_byXpFluid, B_byOutput, B_byEnergy);
+            if (B <= 0) {
+                laneB[lane] = 0;
                 return false;
             }
+            laneB[lane] = Math.min(B, 19);
         }
-
         return true;
     }
 
-    @Override
-    public boolean cooking() {
-        var recipeOpt = getCurrentRecipe();
+    /** 返回 true 表示本 lane 的输出侧阻塞，应保留进度停滞。 */
+    private boolean cooking(int lane) {
+        var recipeOpt = getCurrentRecipe(lane);
         if (recipeOpt.isEmpty()) return false;
-
         var registry = level != null ? level.registryAccess() : null;
         if (registry == null) return false;
 
-        int B = getLockedBatchSize();
-        ItemStack result = recipeOpt.get().value().getResultItem(registry);
-        ItemStack output = itemHandler.getStackInSlot(1);
+        int B = Math.max(1, laneB[lane]);
+        AbstractCookingRecipe recipe = recipeOpt.get().value();
+        ItemStack result = recipe.getResultItem(registry);
+        int outSlot = outputSlot(lane);
+        ItemStack output = itemHandler.getStackInSlot(outSlot);
 
         if (output.isEmpty()) return false;
         if (!ItemStack.isSameItem(output, result)) return true;
-        if (output.getCount() + result.getCount() * B > itemHandler.getEffectiveSlotLimit(1, output)) return true;
+        if ((long) output.getCount() + (long) result.getCount() * B > itemHandler.getEffectiveSlotLimit(outSlot, output)) return true;
 
         // Knowledge 门控 XP 罐空间检查（仅生产路径）
         if (hasUpgrade(LevelupKnow.class)) {
-            AbstractCookingRecipe recipe = recipeOpt.get().value();
             int xpPerUnit = calculateXpFluidPerUnit(recipe.getCookingTime());
             if (xpPerUnit > 0 && !tanks.isEmpty()) {
                 FluidStack xpFluid = xpFluidStack(xpPerUnit);
@@ -211,47 +456,46 @@ public class FurnaceBlockEntity extends ProcessingMachineBlockEntity {
                 if (filled < xpPerUnit) return true;
             }
         }
-
         return false;
     }
 
-    @Override
-    public void onCookFinish() {
-        var recipeOpt = getCurrentRecipe();
+    private void onCookFinish(int lane) {
+        var recipeOpt = getCurrentRecipe(lane);
         if (recipeOpt.isEmpty() || level == null) return;
 
-        ResourceLocation currentId = recipeOpt.get().id();
-        if (!Objects.equals(lastRecipeId, currentId)) {
-            clearLockedBatch();
+        if (!Objects.equals(lastRecipeId[lane], recipeOpt.get().id())) {
+            laneB[lane] = 0;
             return;
         }
 
-        int B = getLockedBatchSize();
+        int B = Math.max(1, laneB[lane]);
         AbstractCookingRecipe recipe = recipeOpt.get().value();
         var registry = level.registryAccess();
         ItemStack result = recipe.getResultItem(registry);
-        ItemStack input = itemHandler.getStackInSlot(0);
-        ItemStack output = itemHandler.getStackInSlot(1);
+        int inSlot = inputSlot(lane);
+        int outSlot = outputSlot(lane);
+        ItemStack input = itemHandler.getStackInSlot(inSlot);
+        ItemStack output = itemHandler.getStackInSlot(outSlot);
 
         if (input.getCount() < B) {
-            clearLockedBatch();
+            laneB[lane] = 0;
             return;
         }
 
         long totalResult = (long) result.getCount() * B;
         if (totalResult > Integer.MAX_VALUE) {
-            clearLockedBatch();
+            laneB[lane] = 0;
             return;
         }
         int resultCount = (int) totalResult;
 
         if (!output.isEmpty()) {
             if (!ItemStack.isSameItem(output, result)) {
-                clearLockedBatch();
+                laneB[lane] = 0;
                 return;
             }
-            int outputLimit = itemHandler.getEffectiveSlotLimit(1, output);
-            if (output.getCount() + resultCount > outputLimit) {
+            int outputLimit = itemHandler.getEffectiveSlotLimit(outSlot, output);
+            if ((long) output.getCount() + resultCount > outputLimit) {
                 return;
             }
         }
@@ -264,7 +508,7 @@ public class FurnaceBlockEntity extends ProcessingMachineBlockEntity {
             if (xpPerUnit > 0) {
                 long totalXpLong = (long) xpPerUnit * B;
                 if (totalXpLong > Integer.MAX_VALUE) {
-                    clearLockedBatch();
+                    laneB[lane] = 0;
                     return;
                 }
                 xpFluidTotal = (int) totalXpLong;
@@ -275,24 +519,24 @@ public class FurnaceBlockEntity extends ProcessingMachineBlockEntity {
                         return;
                     }
                 } else {
-                    clearLockedBatch();
+                    laneB[lane] = 0;
                     return;
                 }
             }
         }
 
-        // ── 原子执行 + 回滚 ──
-        ItemStack inputSnapshot = itemHandler.getStackInSlot(0).copy();
-        ItemStack outputSnapshot = itemHandler.getStackInSlot(1).copy();
+        // ── 原子执行 + 回滚（只碰本 lane 的两个槽，XP 罐三路共享）──
+        ItemStack inputSnapshot = itemHandler.getStackInSlot(inSlot).copy();
+        ItemStack outputSnapshot = itemHandler.getStackInSlot(outSlot).copy();
         FluidStack tankSnapshot = (hasKnowledge && !tanks.isEmpty()) ? tanks.get(0).getFluid().copy() : FluidStack.EMPTY;
 
         try {
-            itemHandler.extractItem(0, B, false);
+            itemHandler.extractItem(inSlot, B, false);
 
             if (output.isEmpty()) {
                 ItemStack batchResult = result.copy();
                 batchResult.setCount(resultCount);
-                itemHandler.setStackInSlot(1, batchResult);
+                itemHandler.setStackInSlot(outSlot, batchResult);
             } else {
                 output.grow(resultCount);
             }
@@ -301,18 +545,16 @@ public class FurnaceBlockEntity extends ProcessingMachineBlockEntity {
                 tanks.get(0).fill(xpFluidStack(xpFluidTotal), IFluidHandler.FluidAction.EXECUTE);
             }
         } catch (Exception e) {
-            itemHandler.setStackInSlot(0, inputSnapshot);
-            itemHandler.setStackInSlot(1, outputSnapshot);
+            itemHandler.setStackInSlot(inSlot, inputSnapshot);
+            itemHandler.setStackInSlot(outSlot, outputSnapshot);
             if (hasKnowledge && !tanks.isEmpty()) {
                 tanks.get(0).drain(Integer.MAX_VALUE, IFluidHandler.FluidAction.EXECUTE);
                 if (!tankSnapshot.isEmpty()) {
                     tanks.get(0).fill(tankSnapshot, IFluidHandler.FluidAction.EXECUTE);
                 }
             }
-            throw new RuntimeException("Furnace onCookFinish failed and rolled back", e);
+            throw new RuntimeException("Furnace lane " + lane + " onCookFinish failed and rolled back", e);
         }
-
-        clearLockedBatch();
     }
 
     /** 每单位产物产出的 XP mB：max(1, round(cookingTime / 10))。 */
@@ -326,9 +568,35 @@ public class FurnaceBlockEntity extends ProcessingMachineBlockEntity {
     }
 
     @Override
-    public boolean hasFaceCapabilityFluid(net.minecraft.core.Direction side) {
+    public boolean hasFaceCapabilityFluid(Direction side) {
         // 罐与 capability 恒存在——Knowledge 仅门控生产逻辑。
         // 保证卸下 Knowledge 后残留 XP 流体仍可取出。
         return true;
+    }
+
+    /**
+     * 旧档 2 槽 → 6 槽迁移：旧输入槽 0 落在新的中间输入槽（slot 0），
+     * 旧输出槽 1 落在新的中间输出槽（slot 3），避免旧产物被塞进上排输入槽。
+     * 其余字段沿用基类读档逻辑（进度与运行锁一并作废，下周期重建）。
+     */
+    @Override
+    protected void readTileData(CompoundTag tag, HolderLookup.Provider registries) {
+        CompoundTag patched = tag;
+        CompoundTag invTag = tag.getCompound("inventory");
+        int savedSize = invTag.contains("Size") ? invTag.getInt("Size") : 0;
+        if (!invTag.isEmpty() && savedSize == 2 && itemHandler != null && itemHandler.getSlots() == 2 * LANES) {
+            patched = tag.copy();
+            CompoundTag remapped = invTag.copy();
+            remapped.putInt("Size", 2 * LANES);
+            ListTag items = remapped.getList("Items", net.minecraft.nbt.Tag.TAG_COMPOUND);
+            for (int i = 0; i < items.size(); i++) {
+                CompoundTag item = items.getCompound(i);
+                int oldSlot = item.getInt("Slot");
+                // 无效槽写成 -1，deserializeNBT 会跳过；不改动原 tag。
+                item.putInt("Slot", oldSlot == 0 ? 0 : oldSlot == 1 ? outputSlot(0) : -1);
+            }
+            patched.put("inventory", remapped);
+        }
+        super.readTileData(patched, registries);
     }
 }

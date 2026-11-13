@@ -6,8 +6,10 @@ import com.modularmc.ten.common.data.TENRecipeTypes;
 import com.google.gson.JsonObject;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -25,6 +27,12 @@ public final class RecipeSignature {
     private static final Map<String, ChainOwner> CHAIN_GROUPS = new ConcurrentHashMap<>();
     /** 输出路径 → 首个写到该路径的签名（拦生成器的同名覆盖）。 */
     private static final Map<String, String> PATHS = new ConcurrentHashMap<>();
+    /**
+     * 同签名下的条件快照。分流表用 {@code mod_loaded(X)} 与 {@code not(mod_loaded(X))} 成对表达
+     * 「装了 A 走 A，否则走 B」，两条同签名但加载期互斥，属于设计内的重复。
+     * 判定只看顶层条件：无条件配方（正负集合都空）与任何同签名配方都能同时成立，照旧算冲突。
+     */
+    private static final Map<String, List<CondEntry>> COND_CLAIMS = new ConcurrentHashMap<>();
 
     /**
      * 运行期用：只算输入部分，机器类型由调用方分组（见 {@code TENRecipeAudit}）。
@@ -82,17 +90,92 @@ public final class RecipeSignature {
             if (owner != null) {
                 throw conflict(sig, owner.path(), path, "无条件配方与互斥变体组（" + owner.group() + "）抢同一输入");
             }
-            claimKey(CLAIMS, sig, path);
+            claimConditional(sig, json, path);
             return;
         }
-        String plain = CLAIMS.get(sig);
-        if (plain != null) throw conflict(sig, plain, path, "互斥变体组与无条件配方抢同一输入");
+        if (COND_CLAIMS.containsKey(sig)) {
+            throw conflict(sig, COND_CLAIMS.get(sig).get(0).path(), path, "互斥变体组与条件分流行抢同一输入");
+        }
         ChainOwner owner = CHAIN_GROUPS.putIfAbsent(sig, new ChainOwner(variant.group(), path));
         if (owner != null && !owner.group().equals(variant.group())) {
             throw conflict(sig, owner.path(), path,
                     "同一输入挂了两个不同的候选模组组（" + owner.group() + " / " + variant.group() + "）");
         }
         claimKey(CLAIMS, sig + "#" + variant.group() + "#" + variant.mod(), path);
+    }
+
+    /**
+     * 同签名按条件互斥登记：两条配方的 {@code mod_loaded} 集合互为否定才能共存。
+     * 无条件配方（两个集合都空）与任何同签名配方都能同时成立，仍是冲突。
+     */
+    private static void claimConditional(String sig, JsonObject json, String path) {
+        CondEntry cur = condOf(json, path);
+        List<CondEntry> list = COND_CLAIMS.computeIfAbsent(sig, k -> new ArrayList<>());
+        synchronized (list) {
+            for (var prev : list) {
+                if (canCoexist(prev, cur)) {
+                    throw conflict(sig, prev.path(), path,
+                            "机器配方输入签名重复且两条能同时生效（" + prev.describe() + " / " + cur.describe() + "）");
+                }
+            }
+            list.add(cur);
+        }
+    }
+
+    /** 顶层条件里的 mod_loaded 与 not(mod_loaded) 快照；其他条件（tag_empty、compat_enabled）不参与互斥判定。 */
+    private static CondEntry condOf(JsonObject json, String path) {
+        Set<String> on = new HashSet<>();
+        Set<String> off = new HashSet<>();
+        if (json.has("neoforge:conditions") && json.get("neoforge:conditions").isJsonArray()) {
+            for (var e : json.getAsJsonArray("neoforge:conditions")) {
+                if (!e.isJsonObject()) continue;
+                JsonObject o = e.getAsJsonObject();
+                if (!o.has("type")) continue;
+                String type = o.get("type").getAsString();
+                if (type.equals("neoforge:mod_loaded")) {
+                    collectMod(o, on);
+                } else if (type.equals("neoforge:not") && o.has("value") && o.get("value").isJsonObject()) {
+                    // 负侧可能是 mod_loaded，也可能是 and(mod_loaded, compat_enabled)——
+                    // 后者表达「该来源可用」，否定它与「该来源加载」互斥，照样记进负集合
+                    collectMod(o.getAsJsonObject("value"), off);
+                }
+            }
+        }
+        return new CondEntry(Set.copyOf(on), Set.copyOf(off), path);
+    }
+
+    /** 收集条件里的 mod_loaded 模组；{@code neoforge:and} 递归展开（只为取模组名，其他条件忽略）。 */
+    private static void collectMod(JsonObject c, Set<String> into) {
+        if (!c.has("type")) return;
+        String t = c.get("type").getAsString();
+        if (t.equals("neoforge:mod_loaded") && c.has("modid")) {
+            into.add(c.get("modid").getAsString());
+        } else if (t.equals("neoforge:and") && c.has("values") && c.get("values").isJsonArray()) {
+            for (var e : c.getAsJsonArray("values")) {
+                if (e.isJsonObject()) collectMod(e.getAsJsonObject(), into);
+            }
+        }
+    }
+
+    /** 两条能同时成立即冲突：只要没有「一条要 X、另一条要非 X」这种互斥对，加载期就会并存。 */
+    private static boolean canCoexist(CondEntry a, CondEntry b) {
+        return disjoint(a.on(), b.off()) && disjoint(b.on(), a.off());
+    }
+
+    private static boolean disjoint(Set<String> a, Set<String> b) {
+        for (String x : a) if (b.contains(x)) return false;
+        return true;
+    }
+
+    /** 条件快照：正集合、负集合与占用它的文件。 */
+    private record CondEntry(Set<String> on, Set<String> off, String path) {
+
+        String describe() {
+            StringBuilder sb = new StringBuilder();
+            for (String m : on) sb.append("+").append(m);
+            for (String m : off) sb.append("-").append(m);
+            return sb.length() == 0 ? "无条件" : sb.toString();
+        }
     }
 
     private static void claimKey(Map<String, String> claims, String key, String path) {

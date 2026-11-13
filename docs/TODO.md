@@ -18,6 +18,13 @@
 - 2026-09 修正了内容钮原点与内边距。需要在 1080p / 720p 与不同 GUI 缩放下复验：
   6 个面配置钮、3 个类型钮与底图钮槽对齐，不被纹理原生留白二次偏移。
 
+### ~~线缆缓冲偶发不向受端送电~~ — 已结案 2026-11-12
+- 根因不在线缆：`CellBlockEntity.initialFaceModeEnergy()` 返回 `OUT`（单元是产能方，默认主动放电），
+  用例里的受端单元收到线缆送来的电后会立刻又推回线缆，tick 60 采样恒为 0，
+  现象与「线缆不送电」完全一致，此前 1000 FE 缓冲已满的诊断也被这一循环解释。
+- 修法：用例把受端 WEST 面设为 `BE_IN`（被动输入），本地 43/43 GameTest 通过。
+- 原待查方向（`EnergyNetwork` 受端筛选、`signalAllowRun()`、面门控）逐项排查均正常，非缺陷。
+
 ### 正常链路启动复验（testframework） — P2 🧪
 - 2026-10-31 已用 `runClient -x compileTestJava` 启动并进入世界，随后正常关闭；AE2 Pattern Disk、FTB Library、
   AE2WTLib、Architectury 均加载。
@@ -149,13 +156,36 @@
 
 ## 二、未开始
 
+### 采矿场等工具续扫实机复验 — P2 🧪
+- 决策表 `QuarryScanDecision.decide()` 有脱机断言跑过（6 项全过）；方块实体接线部分只过了编译。
+- 需复验：低阶镐扫到到底后停机且**不耗能**；放入更高阶镐立刻从原位置续挖（不重扫已挖空的层）；
+  真的挖空整根柱子仍按原语义永久停机（不会一轮轮空扫）；GUI 切扫描模式可强制重扫。
+
+### 锭/粉输入收敛后的实机抽验 — P2 🧪
+- `c:mats/X` 现在只有感应炉读；粉碎机与压缩机一律 `c:ingots/X`（26 条邻居齿轮行的份数也回到 4 锭）。
+- 需复验：铅粉之类**不再**能进压缩机催化成型；铅锭照常出 2 线；感应炉仍接受铜粉与铜锭混配青铜。
+- 需复验：JEI 里压缩机/粉碎机页面的输入图标回到锭，不再显示「锭或粉」标签。
+
+### IE 单独在场时缺 7 条板与 2 条杆 — P3 ⬜
+- ATO 与沉浸工程的 metalpress 是同一机器类型，`convert.js` 的 `seen` 按源顺序让 ATO 先占同输入，赢家只写一条。
+- 其中 9 条（aluminum/constantan/electrum/lead/silver/steel/uranium 的板，aluminum/steel 的杆）在只装 IE 的包里
+  本可由 IE 自己提供产物，现在因赢家行的 `mod_loaded` 是「ATO + IE」的与语义而整条不加载。
+- 机制已有：改走 `kenergyengineering:provider_priority` 的互斥变体（同输入每家各一条，加载期按 `compat.providerPriority`
+  选唯一赢家，`RecipeSignature` 与 `tools/compat/check.js` 都已豁免变体组）。要做的是让压入侧也产出变体组。
+
+### 冲压与水晶兼容行实机抽检 — P2 🧪
+- 23 条冲压行（`compat/{alltheores,immersiveengineering}/compressor/`）与 8 条 AE2 家族水晶行只有静态与产物证据：
+  `tools/compat/check.js` 冲突 0 / 引用 0，`runData written` 稳定，物品 id 与 modid 从 dump 核过。
+- `ae2cs`／`extendedae`／`extendedae_plus`／`data_energistics` 不在开发依赖里，这 8 条从未在游戏内加载过一次。
+- 需抽验：`wire_lead` 用铅锭与铅粉各压一次（输入是 `c:mats/lead`，粉也该吃）；`certus_quartz_crystal` 进粉碎机出 AE2 粉；
+  装 AE2 不装 Mekanism 时 `energized_crystal_dust` 应照常出现（门控已放宽）。
+
 ### 机器 enable* 开关没有消费点 — P2 ⬜
 - `TENConfig.MachineConfig` 的 12 个 `enableX`（熔炼机/粉碎机/压缩机/精炼机/感应炉/灵能处理器/
   信标/生物啃噬器/采矿场/祛魔机/物质结晶器/农场管理器）只被 `ConfigHolder.enableMachine()` 读取，
   而后者在 `src/main` 与 `src/client` 里**没有任何调用点**——改这些开关当前不产生任何效果。
 - 需要决策：(a) 接到机器可用性（放置/工作/配方显示）上；(b) 删掉这 12 项与 `enableMachine()`；
   (c) 保留但改成别的语义。语言键已按 (a) 的前提补齐，若选 (b) 需同步删除对应 `configuration.machine.enable*`。
-
 
 ### EMI 运行时切换 — P3 ⬜
 - 当前开发运行期只挂 JEI，`dependencies.gradle` 里 EMI 的 `localRuntime` 行被注释。

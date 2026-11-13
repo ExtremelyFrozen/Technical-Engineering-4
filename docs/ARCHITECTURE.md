@@ -9,7 +9,7 @@
 
 三条工程约束：
 
-- **生成资源不手改**：`src/generated/resources/` 由 DataGen 产出。模型、blockstate、语言、配方要改生成器。
+- **生成资源不手改**：`src/generated/resources/` 由 DataGen 产出。模型、blockstate、语言、配方、矿石生成数据要改生成器。
 - **客户端边界**：客户端类放 `src/client/java`；`src/main` 里的 `client` 子包必须带 `Dist.CLIENT` 防护。
   可选集成的类型名不得漏进总是加载的类。
 - **同步在主线程**：`CmBlockEntity` 关闭了 LDLib2 的异步 sync 线程，改为主线程 tick 末尾 `passivelySync()`。
@@ -24,7 +24,7 @@
 | 源集 | 位置 | 说明 |
 |---|---|---|
 | `main` | `src/main/java` | 公共与服务端：方块、方块实体、注册、配方、GUI 工厂、网络 |
-| `client` | `src/client/java` | 只在客户端加载：客户端初始化、BER、JEI/Jade |
+| `client` | `src/client/java` | 只在客户端加载：客户端初始化、BER、JEI/Jade；产物要在 `gradle/scripts/jars.gradle` 里显式 `from sourceSets.client.output` 才进发布 jar，`neoForge.mods` 的 sourceSet 绑定只喂 dev run |
 | `test` | `src/test/java` | NeoForge GameTest，走 `runGameTestServer`，不是 JUnit |
 | `extra` / `clientExtra` | 构建脚本声明的运行源集 | 服务端 / 客户端运行配置分别挂这两个源集；当前没有独立源文件 |
 | `generated` | `src/generated/resources` | DataGen 输出，构建时并入 main 资源 |
@@ -41,7 +41,7 @@
 | `api/option` | 7 | 面配置、机器类型、红石模式、冷却剂 |
 | `api/recipe` | 9 | `FormsCombinedRecipe` 配方体系与序列化 |
 | `api/registry/registrate` | 1 | `TENRegistrate` |
-| `api/transmission` | 7 | 线缆/管道传输网络（另有 `energy/` 3、`item/` 3） |
+| `api/transmission` | 8 | 线缆/管道传输网络与连接渲染态（另有 `energy/` 3、`item/` 3） |
 | `client`（main 源集） | 2 | 键位与按键处理，带 `Dist.CLIENT` 防护 |
 | `common` | 1 | `CommonProxy`：注册入口与 capability 注册 |
 | `common/block` | 4 | 矿石、金属块、原矿块等基础方块 |
@@ -58,13 +58,13 @@
 | `component` | 1 | `EnergyUnitData` 数据组件 |
 | `config` | 2 | `TENConfig` / `ConfigHolder`，NeoForge `ModConfigSpec` |
 | `core/mixin` | 2 | Mixin，含开发环境专用项 |
-| `data` | 4 | DataGen 编排、配方生成、原版打包/拆分配方 |
+| `data` | 7 | DataGen 编排、配方与标签生成、原版打包/拆分配方、矿石世界生成 |
 | `data/lang` | 2 | 中英文语言入口与标签本地化 |
 | `integration/emi` | 4 | EMI 集成（main 源集） |
 | `integration/xei` | 1 | JEI/EMI 共享绘制组件 |
 | `network` | 2 | `CustomPacketPayload` 与 JEI 缓存状态机 |
 | `utils` | 9 | 通用工具 |
-| `src/client/java`（客户端源集） | 12 | 客户端初始化、BER、JEI 5 个、Jade 4 个 |
+| `src/client/java`（客户端源集） | 17 | 客户端初始化、BER、线缆动态模型 2 个、JEI 6 个、Jade 4 个 |
 | `src/test/java` | 4 | GameTest：面暴露、网络逻辑、机器 UI、测试 helper |
 
 ### 分层规矩
@@ -84,16 +84,17 @@
 Block
 └── BaseMachineBlock (implements EntityBlock, BlockUIMenuType.BlockUI)
     ├── HorizontalMachineBlock (FACING: 水平四向)
-    │   └── CableBased (WATERLOGGED + 六向 CONNECTION)
     ├── DirectionalMachineBlock (FACING: 六向)
     │   └── ChannelBlock (频道方块)
+    ├── CableBased (WATERLOGGED)
     └── 具体机器方块（熔炼机、粉碎机、压缩机…）
 ```
 
 - `BaseMachineBlock`：`ACTIVE` 状态、GUI 打开、Ticker 分发、流体交互、掉落处理、红石连接。
 - `HorizontalMachineBlock`：水平朝向，放置时按玩家朝向决定 `FACING`。
 - `DirectionalMachineBlock`：六向朝向，按点击面反向放置。
-- `CableBased`：线缆/管道；`WATERLOGGED` + 六向 `CONNECTION`；核心碰撞箱是 `CORE_SHAPE`。
+- `CableBased`：线缆/管道；只挂 `WATERLOGGED`（`ACTIVE` 来自父类，恒为 false）。
+  直接继承 `BaseMachineBlock`：连接外观与 `active` 都不进方块状态，用不到 `FACING`。
 
 ### 2.2 BlockEntity 继承
 
@@ -150,6 +151,21 @@ CmBlockEntity (implements ISyncPersistRPCBlockEntity)
 - 输入消失或配方失配：处理型/配方型机器的 `conditionStart()` 为 false，进度归零；
   效果型机器在原料消失时同样归零。
 - 部分取出：批处理锁定期间保持 `lockedB`，取出部分输入不改变本周期批量。
+- 采矿场另有「等工具」态：一轮扫到维度底却空手、且过程中有方块被当前工具挡下（`canBreak` 为 false 或无掉落），
+  判为暂无可用工具而不是挖尽——游标回到本轮起点 `passStartY`、`conditionStart()` 转 false（不耗能、位置不动），
+  工具特征（物品或耐久）一变即从该点续扫。判定表在 `QuarryScanDecision.decide()`，与方块实体解耦以便脱机单测。
+
+**熔炼机是三路并行，不走上面的单流水线循环**：`FurnaceBlockEntity` 覆写 `tick()` 自己逐 lane 推进，
+不调用 `ProcessingMachineBlockEntity.process()`。槽位 `0..2` 是输入、`3..5` 是输出，lane i 独占输入槽 i、
+输出槽 `i+3` 与一条进度箭头；三条 lane 上下堆叠、间隔 0px，slot 0 画在中间，因此「槽位索引顺序」同时就是
+输入优先级——快捷移动按 UI 树注册顺序、主动拉取按 `insertIntoInputSlots` 顺序、外部 capability 按索引顺序，
+都优先进中间输入槽。每条 lane 自持进度、配方身份与批处理锁（六个 `@DescSynced` 字段承载客户端镜像），
+能量与 XP 罐三路共享、按 lane 顺序扣减；缺能或输出满只让该 lane 停滞，不影响另外两条。
+`enforcesUniqueItemSlots()` 在熔炼机覆写为 false：原版单物品配方没有「占用槽数决定配方」的歧义，
+同款原料分占三条输入槽是正常用法。基类的 `progress` / `maxProgress` 降级为「第一条在跑 lane」的镜像，
+只供冷却器这类横切逻辑判定；外部推进统一走 `advanceProgress(int)` 钩子，熔炼机覆写为分派到所有在跑的
+lane，不要直接改基类字段。信息栏峰值能耗按三路放大。旧档 2 槽读入 6 槽时，旧输入落中间输入槽、
+旧输出落中间输出槽，避免产物被塞进上排输入位。
 
 ### 2.5 能量模型
 
@@ -171,6 +187,116 @@ CmBlockEntity (implements ISyncPersistRPCBlockEntity)
 ### 2.6 面配置与 capability
 
 - `FaceOption` 定义每面的能量/物品/流体模式；`CmMachineBlockEntity` 为六个方向各存一份。
+- **主动 / 被动是互斥的两类**，判定只走 `FaceOption` 的四个方法（`machinePulls` /
+  `machinePushes` / `allowsExternalInsert` / `allowsExternalExtract`），不要在调用点散写模式比较：
+
+| 模式（GUI 标签） | 机器自拉 | 机器自推 | 外部可塞 | 外部可抽 |
+|---|:--:|:--:|:--:|:--:|
+| `OFF` 禁用 | – | – | – | – |
+| `IN` 主动输入 | ✓ | – | – | – |
+| `OUT` 主动输出 | – | ✓ | ✓ | – |
+| `BE_IN` 被动输入 | – | – | ✓ | – |
+| `BE_OUT` 被动输出 | – | – | – | ✓ |
+| `BOTH` 被动双向 | – | – | ✓ | ✓ |
+
+  「被动」（中文语境里的「被」）只表示机器不拦外部，**不表示机器替外部搬运**：`BOTH` 是
+  双向开放，不是双向自动传输。三类 IO（物/流/能）共用这一张表，任何一类都不例外。
+  `OUT` 面额外允许外部塞入（既有策略，方便从输出面补料），是表里唯一一处主动面兼收。
+
+- **面配置可选范围由三层判定决定**，面板不是六态全开。`CmMachineBlockEntity.allowsFaceMode()`
+  是唯一判定，关闭恒可选，余下按顺序过滤：
+  - `supportsFaceOnSide()`：该世界方向是不是这台设备的面入口。默认六面都是；频道方块收窄成
+    只有朝向外侧、模型突出的那一面——capability 也只在这一面暴露，其余五面配了无处可用。
+  - `supportsFaceResource()`：该方块有没有这种资源（有槽位 / 有罐体 / 有储能）。频道方块
+    覆写成只认自己的 `channelType()`——三个频道都建了本地缓冲，照基类算会让物品频道也冒出
+    能量面这种无意义页。
+  - `supportsFaceDirection()`：按设备功能性判定该档位有没有实际用途，**主动与被动都过这一层**。
+    六档归成「向内 / 向外」两种能力：`IN`/`BE_IN` 需要可进项，`OUT`/`BE_OUT` 需要可出项，
+    `BOTH` 两者都要。被动档位不参与搬运，但「配了也永远没东西进出」的档位同样是误导项：
+    只进不出的引擎不该出现「被动输出」，只有 XP 输出罐的熔炉不该出现「被动输入」。
+  - `allowsActiveFace()`：查 `ten:no_active_face_energy` / `_item` / `_fluid` 三个方块标签。
+    **标签是「去除」，不是「赋予」**：主动面默认允许，带标签的方块被去掉该资源的主动两态。
+    基础模组当前不打任何条目——这是留给整合包整体收回某类资源的覆盖点，不是内部配置表。
+
+| 档位需要的能力 | 物品 | 流体 | 能量 |
+|---|---|---|---|
+| 向内（`IN` / `BE_IN` / `BOTH` 的收侧） | 存在 `slotType().canIn()` 槽 | 存在 `tankType().canIn()` 罐 | `canPullEnergy()`（引擎除外） |
+| 向外（`OUT` / `BE_OUT` / `BOTH` 的发侧） | 存在 `slotType().canOut()` 槽 | 存在 `tankType().canOut()` 罐 | `canExternalExtract()`（产能类） |
+
+  方向级判定直接吃设备已有的事实，**不需要额外标签**，新加机器自动正确。最典型的两个边界：
+  15 台加工机器失去全部能量「向外」档位（没有产能路径，`activePushEnergy` 本就短路）；
+  4 台引擎失去全部能量「向内」档位（纯电源被灌电只会立刻推回网络）。
+
+  标签极性仍必须一致（都是去除）、判定走同一条分支，禁止某个资源白名单、另一个黑名单的
+  混搭，否则同一份配置在不同资源页上行为不对称。GUI 循环走
+  `FaceOption.nextAllowed(current, allowed)` 跳过不可选模式，读档在 `initMachine()` 末尾
+  `normalizeFaceModes()` 把非法项落回 `OFF`——旧档里给普通机器配过能量输出档位的，会被清一次。
+  轮换表因此是**按设备现算的活列表**：判定改了，下一次点击就按新集合走。
+  `FaceModeRangeGameTest` 守住这些边界。
+
+- **默认面来自 `initialFaceMode*()`**：`CmMachineBlockEntity` 构造函数逐面写入。产能类机器
+  （`EngineBlockEntity`、能量单元、创造单元）覆写为 `OUT`，频道方块覆写为 `OFF`，普通机器
+  能量面为 `BE_IN`（耗能方只收不发，外部电缆可塞电），物品/流体面仍为 `BOTH`。
+  这层覆写曾经被构造函数里硬编码的 `BOTH` 架空——`getOrDefault(..., initialFaceModeX())` 的
+  fallback 永不触发，于是「引擎默认主动输出」只是摆设。改面语义时必须同步检查这里，
+  否则去掉 `BOTH` 的自动推就等于让引擎和电池停止供电。
+
+- **旧档迁移**：`writeTileData` 恒写 `faceSemantics=2`，按版本逐级补：
+  - `faceSemantics < 1`：产能类机器（`canExternalExtract()` 为 true）的能量 `BOTH` 面改写为
+    `OUT`——旧版靠 `BOTH` 主动放电，不迁移会让升级后的能量单元停止对外供电；
+  - `faceSemantics < 2`：耗能机器的能量 `BOTH` / `OUT` 面改写为 `BE_IN`——新版本不再允许这类
+    机器被外部抽电，保留它们唯一的有效半边「外部可塞电」。只出不进的 `BE_OUT` 无处可退，
+    由 `normalizeFaceModes()` 落回 `OFF`。判定走 `migratesEnergyOutputToPassiveInput()`
+    （非产能类**且**没有能量向外档位），共享存储型方块（频道）因此被排除——它们的两个方向都
+    真实存在，改写会让旧档频道停止对外供电。
+
+  两级分开是因为版本 1 的存档已经在本开发周期产生过，若合并成单级，这些存档里机器能量面
+  的 `BOTH` 会被直接归一化成关闭、整台机器断电。迁移只跑一次，玩家在新版显式重配的面
+  不会被反复改写。
+
+- **主动推出按单元取源**：物品逐个 `canOut` 槽搬空，流体逐个 `canOut` 罐调用
+  `pushFluidTank`。流体不能用 `combinedFluidHandler` 当源——它的 `drain(int)` 恒定从第一个
+  可输出罐出液，罐 0 的流体被相邻拒收时后面的罐全被堵死（两罐装不同流体时必现）。
+  两条路径都按 capability 的实际返回值记账：模拟取 → 模拟收 → 实取 → 实收，实收不足的部分
+  原样退回，超堆叠与多罐场景都不复制、不蒸发。
+
+- **主动拉取与推出来源同一套 capability**：`IN` 面每 tick 调 `activePullItems` /
+  `activePullFluid` / `activePullEnergy`，源是相邻方块经 `level.getCapability(...)` 暴露的
+  handler，不按方块类型特判。三条路径都按「模拟取 → 模拟收 → 实取 → 实收」记账，实收不足
+  退回源。能量侧的推仍限定产能类（`canExternalExtract()`）——普通机器可以「主动输入」供电，
+  但不会把输入电反推回网络；拉对所有带储能、且该面暴露能量能力的机器生效。
+
+- **管道不是容器，主动面贴管道不动是预期语义**：`activePull*` / `activePush*` 遇到
+  `PipeBlockEntity` 一律跳过。管道是传输网络节点，只按自己的连接类型（`PULL` / `NORMAL`）
+  从边缘抽取或投放，不是可被推入的容器。因此：
+  - 要让管道从机器取料：机器面设 `BE_OUT` / `BOTH`（允许外部抽取），管道设备边用扳手切 `PULL`；
+  - 机器 `OUT` 面直接贴管道不会工作，也不应放宽——`OUT` 的语义是机器把物品交给相邻容器，
+    管道不在其列。要改的是接法，不是语义边界；不要为「面贴管道能用」软化这条线。
+
+- **GUI 逻辑面必须经 `getFacing()` 映射，且映射必须是双射**：面板上的前/后/左/右是相对机器
+  朝向的逻辑面，`logicalDirection` 必须读方块状态的 `FACING`。`facingVal` 只是持久化镜像，
+  机器放置时没有写入（`setFacing` 无调用点），直接读它会让所有机器都按北向解释，面配置看起来
+  永远落在固定世界方向。映射表收在 `CmMachineBlockEntity.faceForLogicalSide()`，与拆卸重放的
+  存档旋转共用同一张表；**任意朝向（含六向方块朝上/朝下）都必须是双射**。竖直朝向没有屏幕
+  意义上的「上」，约定以北方为向上参考、左右按水平叉积补齐；旧实现把上/下固定成 `UP`/`DOWN`，
+  频道朝下放置时「前（正面）」与「下」都映射到 `DOWN`、「后」与「上」都映射到 `UP`，表现为
+  面板上改一个面会连带改另一个面。`FaceModeRangeGameTest` 逐朝向断言六个逻辑面互不重复。
+
+- **频道方块的移除顺序**：`AbstractChannelBlockEntity.setRemoved()` 必须先 `super.setRemoved()`
+  再 `leave()`。`leave()` → `setActive(false)` 会尝试回写方块的 `ACTIVE` 状态；若在 `super`
+  之前执行，方块刚被破坏的位置会被重新写回一个「未接入」的频道方块，表现为挖掘/扳手拆解
+  不掉落、只是解绑。`setActive()` 里只有 `isRemoved()` 为 true 时才跳过回写，所以顺序即契约。
+
+- **频道方块主动双向搬运，两侧都落在共享存储**：`AbstractChannelBlockEntity.supportsFaceDirection()`
+  恒返回 `true`——共享存储向内向外都真实存在，六档全可选，资源页仍由 `supportsFaceResource()`
+  收窄成自己那一种。三条 `doActive*Io()` 按 `machinePulls` / `machinePushes` 分派：`IN` 面从相邻
+  容器拉、`OUT` 面朝相邻容器推，两侧落点都是 `SharedStorage` 的 handler / tanks / energy，
+  **不能写本地缓冲**：接入态 UI 槽位绑定的是共享存储，写本地缓冲会出现「界面槽位不刷新」，
+  而外部经 capability 塞入走的是共享包装，所以看起来只有主动侧有问题。记账同机器主动面：
+  模拟取 → 模拟收 → 实取 → 实收，实收不足退回源。三个频道都只在自己朝向的那一面暴露能力
+  （`getFacing()`），搬运对象只看该面相邻方块；`supportsFaceOnSide()` 也收窄到这一面，
+  另外五面在面板上只允许关闭——不这样做，玩家能在死面上配出档位，看起来像配置生效了。
+
 - `CommonProxy.registerCapabilities()` 遍历所有 `BaseMachineBlock`，按方块实体类型分发：
   - 线缆走 `CableBlockEntity.getEnergy(side)`；
   - 管道走 `PipeBlockEntity.getTransportHandler(side)`；
@@ -189,6 +315,12 @@ CmBlockEntity (implements ISyncPersistRPCBlockEntity)
 - 功率乘子 `powerMultiplier`：影响每 tick 扣能。
 - 批量 `batch`：Shulker +3 / Power +1，服务端每 tick 重算并同步给客户端。
 - 范围 `radius`：`LevelupRg` 累加，`RadiusMachineBlockEntity.resetUpgradeEffects()` 每轮重置回基础值。
+  例外是**方块破坏器与方块成型器**：工作范围已改由面板 XYZ 决定，`LevelupRg` 不再
+  `setCurrentRadius`，改为 `applyAdjustRangeCapMultiplier(2)` 把可调节半径上限翻倍
+  （基础 `ADJUST_BASE_CAP=1` 半单位 = 0.5 半径 = 1×1×1，即设备初始作用范围；每件 ×2 得
+  1→2→4→8→16→32→64 半单位，硬上限 64）；`resetUpgradeEffects()` 每 tick 重算该上限，
+  `doBaseData()` 把越界值（含旧档按旧语义存下的大值）钳回上限，旧档因此也归位到 1×1×1。
+  未装范围升级时上下限都是 0.5，加减按钮不改变数值。其它范围机器仍走原公式。
 - 特殊：`LevelupSyn` 光合注能、`LevelupBlast` / `LevelupSmoke` 切换熔炼配方模式。`LevelupStream` 自能量限速取消后为空效果。
 
 ### 2.8 冷却剂
@@ -233,6 +365,11 @@ JEI 的模组分页按 `RecipeType` uid 的命名空间归组，这些页面全�
 扩容迁移分支共用同一对 `saveStack`/`readStack`。网络侧不受此限（`OPTIONAL_STREAM_CODEC`
 写 varint），所以只有一条持久化通道需要覆盖。
 
+提取侧与堆叠侧同源：`MachineItemHandler` 覆写 `extractItem`，单次上限取槽内实际数量，
+不用 `ItemStack#getMaxStackSize()`。NeoForge 父类把单次提取封顶在物品自身堆叠上限（通常 64），
+超堆叠槽在「先插目标、再按插入量扣槽」的调用方（主动输出）会按意欲量记账而复制物品，
+在「只调一次、忽略返回值」的调用方（扳手拆卸）会留下搬不走的余量。
+
 provider 只统一了「上限从哪来」，写入侧仍要各自去问：走 `RecipeMachineBlockEntity`
 的机器由 `computeEffectiveSlotLimit` 给出 `64 × lockedB`，自带批处理数学的机器
 （熔炼机）必须改问 `itemHandler.getEffectiveSlotLimit(slot, stack)`——直接用
@@ -268,12 +405,13 @@ TENBlocks → TENFluids → TENBlockEntities → TENRecipeTypes → TENItems
 
 | 入口 | 位置 | 职责 |
 |---|---|---|
-| `DataGenerators.gatherData` | `data/DataGenerators.java` | `zh_cn` 语言 Provider、材料变体配方、材料聚合标签、邻居兼容配方、原版打包/拆分配方 |
+| `DataGenerators.gatherData` | `data/DataGenerators.java` | `zh_cn` 语言 Provider、材料变体配方、材料聚合标签、邻居兼容配方、原版打包/拆分配方、动态注册表补丁（矿石生成） |
 | `TENDataGen.init` | `data/TENDataGen.java` | 给 Registrate 挂语言 Provider（`TENLangHandler`、`TENTagLangGen`） |
 | `TENRecipeGen` | `data/TENRecipeGen.java` | 材料变体配方 |
 | `TENMaterialTagGen` | `data/TENMaterialTagGen.java` | `c:mats/<材料>` 聚合标签（锭或粉）；含 `NEIGHBOUR_MATS` 的邻居材料与合金 |
 | `TENCompatGen` | `data/TENCompatGen.java` | 邻居模组兼容配方（EIO 系，`mod_loaded` 条件门控） |
 | `TENVanillaPackGen` | `data/TENVanillaPackGen.java` | 原版打包/拆分配方 |
+| `TENWorldGenGen` | `data/TENWorldGenGen.java` | 主世界锡/镍的 configured·placed feature 与 `neoforge:add_features`，经 `DatapackBuiltinEntriesProvider` 产出到 `worldgen/` 与 `neoforge/biome_modifier/` |
 
 跨模组的「材料族」标签一律放 `c:` 命名空间、由 DataGen 生成，成员写成
 `{"id": "#c:ingots/x", "required": false}`：材料缺席时条目自动落空、引用它的配方因输入标签为空
@@ -334,6 +472,19 @@ NeoForge 1.21.1 只有客户端的 `RecipesUpdatedEvent`，没有加载后增删
 `claim` 另外登记「输出文件 → 签名」：邻居按材料分层存放配方（ATO 的 `sag_milling/aluminum/ingot.json`），
 只取文件名会让几十条写进同一个输出路径、静默互相覆盖，这条检测专门拦它。
 
+**同输入的条件分流不算撞车**：`mod_loaded(X)` 与 `not(and(mod_loaded(X), compat_enabled(X)))`
+成对出现的两条同签名配方，加载期只有一条成立，`claim` 与 `TENRecipeAudit` 因此放行——
+判据是「两条能否同时生效」，无条件配方仍与任何同签名配方冲突。兜底侧否定的是「来源可用」而不是
+「模组在场」：玩家用 `compat.disabledSources` 关掉某个来源后，兜底分支要能接上，否则那些输入一条配方都不剩。`TENCompatGen.GRIND_SPLIT` 靠这个在邻居之间二选一：
+煤按 EIO → 通用机械出粉（Mek 在时带硫粉副产），木炭与焦炭装了沉浸工程时按对方的黑染料、焦炭粉走，
+砂岩装了沉浸工程用它的（带硝石）、只有 EIO 时用 EIO 的（双倍概率），红砂岩两版都出红沙。
+手写兜底分支（`recipe/pulverizer/` 里带 `not(mod_loaded(X))` 的那几条）与兼容行成对。
+
+**素材不需要邻居的兼容行不留在兼容层**：输入输出全是原版物品或通用标签的行转正为原生配方
+（烈焰棒、骨头、深板岩、石头、石英块、紫水晶块、粗土、下界疣块、海晶系列、骨粉染白），
+不再随 `compat_enabled` 一起消失。不导入的邻居条目登记在 `tools/compat/config.json` 的 `droppedRows`
+并写明原因，重跑转换器不会塞回来。
+
 **自适应池里不只有矿石链**：`TENRecipeGen` 还按材料生成 `c:storage_blocks/raw_X → 粉 9(+9×40%)`
 与 `c:ingots/X → 粉`（后一段只补本模组没注册粉的材料，否则与 `PULV` 表撞同一输入），
 输入全部走标签，所以邻居材料自动接得上。固定比率合金（默认配比按 ATO 的
@@ -342,7 +493,8 @@ NeoForge 1.21.1 只有客户端的 `RecipesUpdatedEvent`，没有加载后增删
 实际标签由 `TENRecipeGen#matInput` 决定——该材料有 `c:mats/X` 聚合标签就自动升级成粉或锭皆可入，
 聚合标签由 `TENMaterialTagGen` 生成，成员是对 `#c:ingots/X` / `#c:dusts/X` 的可选引用，
 所以「谁提供这种金属」完全交给数据，不在代码里点名物品；`NEIGHBOUR_MATS` 那批邻居材料与五种合金
-因此也自动进池。输出侧仍必须是具体物品，按候选模组写互斥变体（`provider_priority`）。
+因此也自动进池。**这套标签只服务感应炉**：合金只看元素种类，粉与锭等价；粉碎机与压缩机按工序只认锭，
+否则会出现「1 粉压出 2 板」这类与原生不对等的产出。输出侧仍必须是具体物品，按候选模组写互斥变体（`provider_priority`）。
 
 **兼容层每源可关**：`TENCompatGen` 每条配方除 `neoforge:mod_loaded` 外还带
 `kenergyengineering:compat_enabled`（`source` = 该行首个门控模组），`compat.disabledSources` 列出的来源
@@ -351,6 +503,11 @@ NeoForge 1.21.1 只有客户端的 `RecipesUpdatedEvent`，没有加载后增删
 邻居配方自带的第三方 `mod_loaded`（如 EVO 只在装了 Industrial Foregoing 时才有的合金行）与
 `not(tag_empty)` 材料门控都要一并带过来：少了它们，JEI 会显示一条原料或前置根本不在场、
 永远跑不起来的配方——「同步的兼容显示」靠的就是这两条。
+
+**转换器只打基底，判断留给人**：`convert.js` 做机械转译，凡是它替人做的判断（排除、同输入取代、
+与原生配方撞车而跳过、输出无人提供）都写进 `tools/compat/out/review.md`，逐条列出来。
+`inject.js` 在清单缺失或早于 `rows.json` 时拒绝写回，确需跳过用 `--force`——
+「跑完转换器就注入」会把没人看过的决定带进代码，邻居更新时最难查的就是这类静默改写。
 
 **配置界面入口**：`TENClientSetup` 里注册 `IConfigScreenFactory` → `ConfigurationScreen::new`。
 NeoForge 自带这套配置界面，FML 的 Mods 面板与 Mod Menu 读的都是同一个扩展点，
@@ -362,9 +519,11 @@ NeoForge 自带这套配置界面，FML 的 Mods 面板与 Mod Menu 读的都是
 
 **配方输出一律是具体物品**：标准语义里输出是一个确定的 ItemStack，写成标签按标准处理会得到空产物，
 而且症状是「产物少了一件」而不是报错（输入侧走实时 `contains()`，照常匹配）。需要标签匹配时，
-在编写期按「期望兼容 mod 优先级」（本模组 → EVO → EIO → Mekanism → 沉浸工程 → NeoForge 原版包装）
+在编写期按「期望兼容 mod 优先级」（本模组 → NEO ECO AE → EVO → EIO → Mekanism → 沉浸工程 → ATO → Allthemodium → 原版）
 取该标签的第一个可用成员落成具体物品，解析不到就不导入，邻居增减后重跑转换器对齐。
 配方行的 `neoforge:mod_loaded` 门控按输出物品所属命名空间自动推导，可叠加多个模组。
+**冲压承接按源顺序取赢家**：`neighbourRecipes.compressor` 同时列 ATO 与沉浸工程的 metalpress 目录，两者是同一个机器类型（ATO 的冲压配方就写成 `immersiveengineering:metal_press`），模具换成本模组的对应模具（`mold_plate`/`mold_gear`/`mold_rod`/`mold_wire` → `mould_plate`/`mould_gear`/`mould_rod`/`mould_string`），`mold_bullet_casing` 与 `mold_unpacking` 无对应模具（各 1 条配方）所以跳过。同一「材料 + 模具 + 份数」只留一个赢家：`convert.js` 的 `seen` 按源顺序先到先得，后面的来源报「同输入已由前一个来源提供」；同来源内出现相同签名不静默丢弃，会照样写出让生成期断言报出来。赢家落在前一来源的目录与 `compat_enabled` 开关上，所以只装沉浸工程的包拿不到与 ATO 同材料的那批板与杆（9 条本可回收，缺口记在 `docs/TODO.md`）。对方的杆与线把产物写成 basePredicate 包 tag 再加 count 的形状，读结果时也要先摊平，否则整批 `c:rods/*`、`c:wires/*` 会被当成「输出无人提供」静默丢掉（这个坑以前只在 `inputOf` 侧防住了）。
+
 **模具只用一个通用标签**：压缩机 `valid(slot, stack)` 只读 `c:moulds` 决定模具能否进催化槽，
 不再有 `c:moulds/shape` 那类功能子标签（成员直接列在 `c:moulds` 里，`TENTagLangGen` 也不再为子标签出语言键）；
 具体用哪种模具由配方自己写明 `kenergyengineering:mould_*` 的静态输入（`chance: 0` = 催化位，不消耗、不随批量倍增），
@@ -375,13 +534,15 @@ NeoForge 自带这套配置界面，FML 的 Mods 面板与 Mod Menu 读的都是
 跨模组内容集中在 `TENCompatGen`：一条表 = 一份配方，输出到 `recipe/compat/<modid>/<机器类型>/`
 （必须分子目录——EIO 的 `alloy_smelting` 与 `sag_milling` 存在同名文件，平铺会互相覆盖），
 每条带 `neoforge:mod_loaded` 条件，未装邻居时整体消失，所以生成结果与本机是否安装邻居无关，
-CI 与本地产出一致。合金表与研磨表都从对方数据机械导入：时间按对方每次总能耗折算到本模组的
+CI 与本地产出一致。机械导入的合金表与研磨表都来自对方数据（AE2 家族的水晶行例外，见下）：时间按对方每次总能耗折算到本模组的
 15 FE/t 换算已废弃——IE 一次 51200 FE 会顶到旧的 1200 tick 上限，与原生差一个数量级；
 现在按机器尺规给时长：感应炉 50 tick × 输入物料份数、粉碎机一次操作 120（粗矿块类 9 份输入 200）、
 压缩机恒 100（规则写在 `tools/compat/config.json` 的 `timeRule`，与 `TENRecipeGen#furnaceTime` 同一套）；
-金属输入写 `c:ingots/X`，该材料存在 `c:mats/X` 时自动升级为「锭或粉皆可入」；
+金属输入写 `c:ingots/X`，只有感应炉会在该材料存在 `c:mats/X` 时升级成「锭或粉皆可入」，粉碎机与压缩机不收粉；
 输入签名与本模组已有配方相同的条目不导入，本模组语义优先；两张表在同一次 DataGen 里互相 `claim`，
 漏网的重复会在生成期直接失败，而不是等到实机里发现某条配方永远匹配不上。
+
+**AE2 家族的水晶承接是手写行**，不走转换器：对方用的是 `ae2:inscriber`／`mekanism:crushing` 这类外部机器类型，导入它们等于替邻居重述配方。写法是一条表行对应一个 `c:gems/<水晶>` 输入标签（`ae2` 的 certus 与 fluix、`extendedae` 的 entro、`extendedae_plus` 的 lattra、`data_energistics` 的 data_crystal、`ae2cs` 的 resonating，以及只由 `ae2cs` 填充的 `c:gems/sky_stone_crystal`），输出恒为同一模组自己的粉，所以 `neoforge:mod_loaded` 按输出所属命名空间门控就能保证产物存在，输入侧靠 `not(tag_empty)` 在标签无人填充时整条消失。这些行不参与 `providerPriority` 归属竞选：同一条输入标签只有一个赢家（那位水晶的主人），没有多家争同一材料的情形。`neoecoae` 的两条水晶行原先连着 `mekanism` 门控（数据取自对方的 `crushing`），而对方另有不依赖通用机械的 `inscriber` 路线，故已放宽为只门控 `neoecoae`。
 
 ---
 
@@ -400,6 +561,9 @@ CI 与本地产出一致。合金表与研磨表都从对方数据机械导入�
 - `ChannelItemBlockEntity` / `ChannelFluidBlockEntity` / `ChannelEnergyBlockEntity`：三类频道。
 - `ChannelItemHandlerFacade` / `ChannelFluidHandlerFacade`：对外的 capability 门面。
 
+主动搬运（`IN` / `OUT` 面）与外部接入走同一份共享存储：拉进来直接落到共享槽位 / 罐 / 单元，
+推出去也从共享取源；本地缓冲只承担未接入时的面板占位与断开回流的最后一程，见 2.6。
+
 GUI 走「末影箱模式」：频道目录、创建、接入、退出、删除（仅空频道）。Jade 显示接入状态。
 
 ---
@@ -412,13 +576,38 @@ GUI 走「末影箱模式」：频道目录、创建、接入、退出、删除�
   蔚蓝 4 kFE/t（50 kFE）、星光 200 kFE/t（无限缓冲）。GUI 旧文案写 1/10/100/无限 kFE，以代码为准。
 - `PipeBlockEntity`：物品管道，三档（普通 / 白 / 黑）。
 - `TransferNetworks`：网络连接与传输调度。
-- `CableBased`：共用方块形态与六向连接状态。
+- `CableBased`：共用方块形态；连接外观由 `CableRenderState` 承载，不进方块状态。
 
 管道连接模式对齐 TE4-New 基准：`NONE` / `NORMAL` / `PUSH` / `PULL`。
 源边只有显式 `PULL` 面才主动从设备抽取；默认 `NORMAL` 不再自动搬运。
 **旧档已放置管道升级后需要用扳手重新设定模式**，物品不会丢失，留在原容器。
 
 传输系统当前冻结维护：只修 bug，不做结构改造。
+
+### 5.1 连接外观（渲染态）
+
+连接本质是渲染态，不进 `BlockState`。旧实现给六个方向各挂一个 `IntegerProperty(0..2)`，
+连同 `ACTIVE` 与 `WATERLOGGED` 让单方块有 3^6 × 2 × 2 = 2916 个状态、7 个方块合计 2 万余个；
+注册表冻结时要逐个建碰撞箱与 `faceSturdy` 缓存，是启动期最大的一笔固定开销。现在分四层：
+
+| 层 | 位置 | 职责 |
+|---|---|---|
+| 数据 | `api/transmission/CableRenderState` | 六向连接值（0 无 / 1 管道间 / 2 设备）+ `active` 位，打包进一个 `int` |
+| 权威 | `CableBlockEntity` / `PipeBlockEntity` 的 `renderPacked` | 服务端重算；碰撞箱在服务端也读它 |
+| 传输 | `getUpdateTag` / `getUpdatePacket` | 随区块下发与 `sendBlockUpdated` 送达客户端 |
+| 渲染 | `client/model` 的 `CableBakedModel` + `CableModelParts` | 按打包值拼 quad，按值缓存（至多 1458 项） |
+
+- 方块状态只剩 `ACTIVE` × `WATERLOGGED`，7 个方块合计 28 个；blockstate 四个 variant 都指向占位核心模型。
+- 服务端 `refreshRenderState()` 从 transmitter 位图重算，值变了才 `sendBlockUpdated(..., UPDATE_CLIENTS)`；
+  flags 不含 `UPDATE_NEIGHBORS`，不会走 `neighborChanged → refreshConnections` 递归。
+- 客户端 `applyRenderTag` 落值后要做两件事：`requestModelDataUpdate()` 只把坐标记进 `ModelDataManager`
+  的待刷新表，真正让区块重新烘焙的是 `sendBlockUpdated`。缺一个就只剩旧外观。
+- `getUpdateTag` / `getUpdatePacket` 必须覆写：原版默认返回空标签与 `null`，不覆写客户端永远收不到渲染态，
+  建 BE 时打包值恒为 0。
+- 零件模型在 `RegisterAdditional` 登记，`ModifyBakingResult` 里把 7 个方块的全部状态换成动态模型；
+  `CableModelParts` 用 `QuadTransformers` 预旋转六个方向，并同步旋转 `BakedQuad#getDirection()`——
+  面剔除按它判断，只转顶点会留下错误方向。
+- 旧档方块状态里的连接属性会被静默忽略，首 tick 重新组网后外观自动恢复。
 
 ---
 
@@ -432,6 +621,50 @@ GUI 走「末影箱模式」：频道目录、创建、接入、退出、删除�
 - `TransferModeButtonState`：传输模式按钮状态。
 - `RangeDisplayBER`（客户端源集）：范围机器的工作区线框。
 - 配置面板与升级槽面板由 LDLib2 的 `ModularUI` 组装；面板底图与钮槽坐标要按纹理实测，不要凭感觉改。
+- **服务端 UI 树不跑样式计算**：`StyleEngine` 只在客户端 `init()` 时把 `SlotStyle` 的声明值算进
+  `computedSlots`；服务端容器只由 `tickServer()` 驱动，读 `quickMovePriority` / `acceptQuickMove`
+  会回退到属性默认值。而 `quickMoveStack` 偏偏在服务端执行，所以跨端可靠的快捷移动优先级只能靠
+  **容器槽注册顺序**（= UI 树遍历顺序），不能只靠 `slotStyle`。升级槽面板因此先于机器槽挂进 UI 树。
+- 升级槽面板的展开态是客户端 `UIState` 视图（服务端读不到），经 `rpcSetUpgradePanelOpen` 按玩家
+  镜像到服务端；升级槽的 `mayPlace` 据此门控，收起时把升级槽从快捷移动候选里剔除。
+- **进度条的百分比与用途快捷键**：所有机器进度条悬停显示进度百分比，冷却剂消耗条另显示剩余百分比。
+  快捷键不自己读键位，而是走 LDLib2 的两个 XEI 事件——JEI 的 `IGuiContainerHandler` 派发
+  `clickableIngredient`、EMI 的 `addGenericStackProvider` 派发 `stackProvider`，两者都把事件交给
+  `ModularUI.getLastHoveredElement()`。`TENMachineBlockUIFactory` 把**机器方块自身的物品**绑到进度条上，
+  该物品已被登记为 JEI recipe catalyst / EMI workstation，按各自的「显示用途」键就打开本机配方页。
+  桥 `MachineProgressShortcut` 只认 `UIElement` 与 `ItemStack`，不含任何 XEI 类型；带类型的
+  `JeiProgressShortcutBinder`（client 源集）与 `EmiProgressShortcutBinder`（main 源集）在各自插件
+  初始化时注册，缺邻居时绑定表为空、`bind()` 是空操作。没有配方类别的机器按用途键只会看到该方块
+  自身的用途，这是正常边界，不要为此伪造类别。
+- **第三个右侧 tab 与范围调节面板**：只有 `supportsRangeAdjust()` 为 true 的机器注册该入口，
+  目前是方块破坏器与方块成型器（基类默认 false）；`addCommonSidebar` 按钩子调用 `addAdjustTab`，
+  tab 在 y=54（图标 `adjust.png`），展开 80×106 面板（64×90 附加底图贴 (8,8)），
+  6 行 12×12 加减按钮按底图实测坐标贴（左列 x=5 加、
+  右列 x=47 减、行 y=4+14i）。中间 30px 拆成两个文本：名称占左 18px（`Vertical.CENTER` +
+  `Horizontal.LEFT`），数值占右 12px（`Vertical.CENTER` + `Horizontal.RIGHT`）——名称相对
+  12px 按钮上下居中且靠左，数字不参与左对齐；12 个加减钮与关闭钮不带 tooltip，
+  只有 y=54 的大按钮有本地化 tooltip「范围调节」（键 `info.adjust.tab`）。
+  七个键 `info.adjust.tab`、`info.adjust.range_x/y/z`、`info.adjust.offset_x/y/z` 由 `TENLangHandler`
+  生成，中文为「范围调节」与「X半径 / Y半径 / Z半径 / X偏移 / Y偏移 / Z偏移」，改文案要改生成器再跑 `runData`。
+  数据是 `CmMachineBlockEntity` 上的 `@Persisted @DescSynced` 字段：`rangeX/Y/Z` 以 0.5 方块半径
+  为单位（默认 1 = 0.5 半径 = 每轴 1 方块，每点击 ±1 即 ±0.5 半径，钳 1..`adjustRangeCap`），
+  `offsetX/Y/Z` 是整数格（默认 0，钳 ±64）。`rpcAdjustRange(row, delta, mode)` 在服务端改写并
+  `markDirty` 推送：mode 0 步进、1 为按住 Shift 直接调到最大、-1 为按住 Alt 直接调到最小，
+  修饰键由客户端 `UIEvents.MOUSE_DOWN` 的 `event.isShiftDown()/isAltDown()` 读取。
+  `UIState` 三个 setter 在展开时互相关闭并写回快照，保证三选一互斥。
+  素材 `adjust.png` / `panel_adjust.png` / `adjust_buttons.png` 由三张副本直接改名而来，原有
+  `upgrade.png` / `panel_config_legacy.png` / `config_mode_buttons.png` 保留不动（尺寸不同，
+  覆盖会破坏现有配置面板）。
+  **目前只有方块破坏器与方块成型器接入**：`adjustedBounds()` 给出世界轴向三轴盒子
+  （中心 = 机器位置 + XYZ 偏移，半径 = range/2 方块，每轴方块数 = range，向正负对称取整展开：
+  range=1 只有中心 1 格、range=2 为 2 格……），两台机器的 `getRangeBoxes()`、
+  `applyEffect()`、`conditionStart()` 都遍历这个盒子并跳过自身格，批处理 B 不再决定深度；
+  遍历用 `ADJUST_SCAN_LIMIT` 截断防卡顿，输出满判定也不再看 B。其余机器的面板数值只保存与显示，
+  工作范围仍按原有 `radius` / `getRangeBoxes()` 语义。
+- **侧栏主按钮 tooltip**：6 个 `info.bar_*` 标题键（`bar_mode/ideas/redstone/control/energy/upgrade`）
+  文案不带冒号，只留尾空格给拼接用（如「传输模式 能量」）。红石按钮 `redstoneTooltips` 分两行：
+  第一行金色标题「红石控制」，第二行是 `info.off/low/high` 三选一的当前类型；
+  `info.bar_energy_use*` 是内容标签，保留冒号。改这些文案要改 `TENLangHandler` 再跑 `runData`。
 
 ### 6.2 同步
 
@@ -442,6 +675,9 @@ GUI 走「末影箱模式」：频道目录、创建、接入、退出、删除�
 - 主线程 `serverTick()` 末尾统一调用 `passivelySync()`，推送脏字段。
 - 持久化字段用 `@Persisted`，客户端同步字段用 `@DescSynced`，RPC 方法用 `@RPCMethod`。
 - 面配置的 `int[]` 不走 `@DescSynced`（初始同步不可靠），改由 GUI 打开与变更时主动推送。
+- 线缆/管道的 `renderPacked` 也标了 `@DescSynced`，但重绘不靠它：触发重绘的是 `sendBlockUpdated`，
+  数据走 BE 自己的 `getUpdateTag`；两条路径都可能在客户端写 `readTileData`，所以它只认带
+  `renderPacked` 键的标签，空标签直接跳过。
 
 ### 6.3 网络
 
@@ -462,6 +698,13 @@ GUI 走「末影箱模式」：频道目录、创建、接入、退出、删除�
 | AE2 | capability 层 + 开发期依赖 | 样板供应器阻挡模式依赖面观察读语义；不直接 import `appeng` |
 | Curios | 编译期可选 | 饰品槽支持 |
 | Sodium / Iris / ModernFix | 编译期可选 | 开发期依赖，仓库暂无直接引用 |
+
+内嵌硬前置由 `jarJar` 分发，玩家无需另装：LDLib2、Registrate、taffy。
+taffy 被 7 个类直接引用（5 个核心 BE 加 2 个 GUI 类），原先只靠 LDLib2 的二次嵌套传递，
+现已自行内嵌，避免玩家自装更高版本 LDLib2 时上游改包名或去掉内嵌导致核心 BE 加载失败。
+`neoforge.mods.toml` 里 `ldlib2` 的 `required` 版本下限与 `gradle/forge.versions.toml`
+的 ldlib2 条目（CurseForge 文件 id）必须同步升级；jarJar metadata 的版本范围不参与 FML 的
+mod 版本校验，只管 Maven 坐标解析。
 
 集成红线：
 
@@ -494,11 +737,18 @@ GUI 走「末影箱模式」：频道目录、创建、接入、退出、删除�
 **加一台机器**：`TENBlocks` 注册方块 → `TENBlockEntities` 注册 BE 并 `validBlocks` →
 选择合适的 BE 基类 → `TENModels` / blockstate → 中英文语言 → `CommonProxy.registerCapabilities()` 已按
 `BaseMachineBlock` 自动覆盖，确认你的 BE 类型实现了对应 getter → （可选）JEI/Jade 分类 → GameTest。
+注册走 `machine()` / `engine()` / `cell()` helper 不需要额外标签：面配置的六个档位由
+`supportsFaceDirection()` 按设备功能性现算（能量向外只给产能类、物品/流体按槽位与罐体方向）。
+六向方块（能朝上/朝下放置）若要收窄可配面，覆写 `supportsFaceOnSide()`——**不要**改
+`faceForLogicalSide()` 的映射，那张表必须对任意朝向保持双射。共享存储型方块若要禁止某个方向
+自搬，覆写 `supportsFaceDirection()` 或补 `ten:no_active_face_energy` / `_item` / `_fluid` 标签
+（见 2.6）；基础模组的三个频道两个方向都放行，但只有朝向面可配。
 
 **加一个升级**：`common/item/upgrades/` 新建类 → `TENItems` 注册 → `IUpgradableMachine` 的效果分支 →
 `TENLangHandler.addUpgradeTips()` 补中英文 → 掉落表或配方（如需要）。
 
-**加一条线缆/管道**：`TENBlocks` 用 `cable()` helper → blockstate/multipart 模型 →
+**加一条线缆/管道**：`TENBlocks` 用 `cable()` helper → `CableRenderState.VARIANTS` 加注册名 →
+blockstate 占位核心模型与 `src/main/resources` 下的零件模型（见 5.1）→
 `CableBlockEntity.capacityFor/transferFor` 或 `PipeBlockEntity` 的档位参数 → 语言 → 传输上限测试。
 
 **加一个频道类型**：`ChannelType` 增加枚举 → `ChannelKey` 已按类型隔离 → 新 BE 与 capability 门面 →
@@ -520,6 +770,15 @@ GUI 走「末影箱模式」：频道目录、创建、接入、退出、删除�
 - **生成的资源**：`src/generated/resources/` 只由 DataGen 写；手工改会在下次 `runData` 被覆盖。
 - **同步线程**：不要恢复 `useAsyncThread() = true`；所有同步走主线程 `passivelySync()`。
 - **面 capability**：观察读与抽取权限分离；不要让权限判断把读侧内容藏空。
+- **面配置的限制放在代码，不放在标签**：`supportsFaceDirection()` 吃 `slotType` / `tankType` /
+  `canExternalExtract` 这些设备自己已经声明的能力，主动与被动档位共用同一条判定，新增机器
+  零配置即正确。标签（`no_active_face_*`）只表达「整套资源都不该自搬」这类玩法策略，且基础
+  模组默认不打条目——它是给整合包的覆盖点，不是内部配置表。不要按「资源 × 方向」把标签拆成
+  6 个以上：组合爆炸、漏打标签是静默失效（面配置悄悄少一档），而且每加一个标签都要迁移旧存档语义。
+- **面配置写入必须走方向级判定**：GUI 循环、连接器粘贴、拆卸重放都用
+  `allowsFaceMode(direction, type, mode)`，不要退回不带方向的 `allowsFaceMode(type, mode)`——
+  后者不知道「这一面是不是设备的面入口」，会在频道这类单面设备上留下配了不生效的档位。
+  逻辑面映射（`faceForLogicalSide`）必须对任意朝向保持双射，`getClockWise()` 不得作用于 Y 轴朝向。
 - **批处理锁**：`lockedB` / `lockedMaxProgress` 在周期开始时锁定，完成后清理；中途改语义会破坏停滞契约。
 - **原子产出**：`RecipeMachineBlockEntity` 的快照-模拟-提交不能改成边产边写；失败必须回滚。
 - **客户端边界**：可选集成类型不进总是加载的类；客户端类不进 main 源集。

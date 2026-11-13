@@ -1,6 +1,8 @@
 package com.modularmc.ten.common.data;
 
 import com.modularmc.ten.TEN;
+import com.modularmc.ten.api.transmission.CableRenderState;
+import com.modularmc.ten.common.block.machine.BaseMachineBlock;
 import com.modularmc.ten.common.block.machine.CableBased;
 import com.modularmc.ten.common.block.machine.DirectionalMachineBlock;
 import com.modularmc.ten.common.block.machine.HorizontalMachineBlock;
@@ -112,49 +114,26 @@ public class TENModels {
         }
     }
 
-    public static void cableMultipart(BlockStateProvider prov, Block block, String name) {
-        boolean isCable = name.startsWith("cable");
-        String dir = name.startsWith("cable") ? "cable" : "pipe";
-
+    /**
+     * 线缆/管道的 blockstate 只登记一个占位核心模型。
+     * <p>
+     * 连接外观不再靠 26 条 multipart 条件拼——那需要六个方向各一个 0..2 属性，单方块 2916 个状态。
+     * 现在由客户端 {@code CableBakedModel} 读 {@link CableRenderState} 动态组合核心/连接部件；
+     * 这里四个 ACTIVE × WATERLOGGED 组合都指向同一个模型，保证每个状态都能解析到模型。
+     * 零件模型（core/part/connect 及 active 版）是 {@code src/main/resources} 下的手写资源，
+     * 由客户端在 {@code ModelEvent.RegisterAdditional} 里登记后烘焙。
+     */
+    public static void cableDynamic(BlockStateProvider prov, Block block, String name) {
+        String dir = CableRenderState.modelDir(name);
         var core = prov.models().getExistingFile(TEN.id("block/" + dir + "/" + name + "_core"));
-        var coreActive = isCable ? prov.models().getExistingFile(TEN.id("block/" + dir + "/" + name + "_core_active")) : core;
-        var part = prov.models().getExistingFile(TEN.id("block/" + dir + "/" + name + "_part"));
-        var partActive = isCable ? prov.models().getExistingFile(TEN.id("block/" + dir + "/" + name + "_part_active")) : part;
-        var connect = prov.models().getExistingFile(TEN.id("block/" + dir + "/" + name + "_connect"));
-        var connectActive = isCable ? prov.models().getExistingFile(TEN.id("block/" + dir + "/" + name + "_connect_active")) : connect;
-
-        var builder = prov.getMultipartBuilder(block);
-
-        builder.part().modelFile(core).addModel()
-                .condition(HorizontalMachineBlock.ACTIVE, false).end();
-        builder.part().modelFile(coreActive).addModel()
-                .condition(HorizontalMachineBlock.ACTIVE, true).end();
-
-        for (Direction direction : Direction.values()) {
-            int x = 0, y = 0;
-            switch (direction) {
-                case EAST -> y = 90;
-                case SOUTH -> y = 180;
-                case WEST -> y = 270;
-                case UP -> x = 270;
-                case DOWN -> x = 90;
+        var builder = prov.getVariantBuilder(block);
+        for (boolean active : new boolean[] { false, true }) {
+            for (boolean waterlogged : new boolean[] { false, true }) {
+                builder.partialState()
+                        .with(BaseMachineBlock.ACTIVE, active)
+                        .with(CableBased.WATERLOGGED, waterlogged)
+                        .modelForState().modelFile(core).addModel();
             }
-
-            var connProp = CableBased.CONNECTION.get(direction);
-
-            builder.part().modelFile(part).rotationX(x).rotationY(y).addModel()
-                    .condition(connProp, 1)
-                    .condition(HorizontalMachineBlock.ACTIVE, false).end();
-            builder.part().modelFile(partActive).rotationX(x).rotationY(y).addModel()
-                    .condition(connProp, 1)
-                    .condition(HorizontalMachineBlock.ACTIVE, true).end();
-
-            builder.part().modelFile(connect).rotationX(x).rotationY(y).addModel()
-                    .condition(connProp, 2)
-                    .condition(HorizontalMachineBlock.ACTIVE, false).end();
-            builder.part().modelFile(connectActive).rotationX(x).rotationY(y).addModel()
-                    .condition(connProp, 2)
-                    .condition(HorizontalMachineBlock.ACTIVE, true).end();
         }
     }
 }

@@ -31,6 +31,13 @@ public class CellBlockEntity extends CmMachineBlockEntity {
     }
 
     @Override
+    public int initialFaceModeEnergy() {
+        // 能量单元是产能方：默认主动向相邻机器/设备放电。被动面不搬运，若沿用 BOTH 默认值
+        // 单元就不会再往外送电（外部仍可抽取，但模组内没有主动抽能的能量网络）。
+        return com.modularmc.ten.api.option.FaceOption.OUT;
+    }
+
+    @Override
     public IngredientType slotType(int slot) {
         // 能量单元两个槽都需要玩家放入带 FE 的电池/物品（充放电），必须可进可出（BOTH）。
         // 修复：原 IGNORE 的 canIn()/canOut() 均为 false，导致 GUI 无法放入物品。

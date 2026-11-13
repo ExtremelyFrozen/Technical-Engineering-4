@@ -67,7 +67,7 @@ public class IndfurBlockEntity extends RecipeMachineBlockEntity {
             root.addChild(TENMachineBlockUIFactory.machineSlotLarge(this, 3, 122, 28));
         }, root -> {
             root.addChild(TENMachineBlockUIFactory.energyGaugeModular(this, 8, 18, true));
-            root.addChild(TENMachineBlockUIFactory.progressGaugeModular(this, 92, 33, false));
+            root.addChild(TENMachineBlockUIFactory.progressGaugeModular(this, 92, 33, true));
         });
     }
 

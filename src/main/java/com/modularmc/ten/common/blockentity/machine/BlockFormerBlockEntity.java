@@ -6,7 +6,6 @@ import com.modularmc.ten.api.option.MachineType;
 import com.modularmc.ten.common.gui.TENMachineBlockUIFactory;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
@@ -21,7 +20,9 @@ import java.util.List;
 
 /**
  * 方块成型器（Block Former）。
- * 槽 0 当前放置物块（输入），槽 1..12 候选栏。沿面向方向 B 格（深度）×宽轴 ±(radius-1) 放置。
+ * 槽 0 当前放置物块（输入），槽 1..12 候选栏。
+ * 工作范围由面板的 XYZ 范围与 XYZ 相对偏移决定（世界轴向三轴盒子），不再随批处理 B 变化；
+ * 范围升级只抬高可调节半径上限。
  */
 public class BlockFormerBlockEntity extends RadiusMachineBlockEntity {
 
@@ -31,6 +32,18 @@ public class BlockFormerBlockEntity extends RadiusMachineBlockEntity {
         setEfficiency(10);
         initialRadius = 1;
         radius = 1;
+    }
+
+    /** 本机改用面板范围：可调节半径基准从 ADJUST_BASE_CAP 起步，范围升级每件翻倍。 */
+    @Override
+    protected void resetUpgradeEffects() {
+        super.resetUpgradeEffects();
+        adjustRangeCap = ADJUST_BASE_CAP;
+    }
+
+    @Override
+    public boolean supportsRangeAdjust() {
+        return true;
     }
 
     @Override
@@ -65,46 +78,8 @@ public class BlockFormerBlockEntity extends RadiusMachineBlockEntity {
 
     @Override
     public List<net.minecraft.world.phys.AABB> getRangeBoxes() {
-        int b = Math.max(1, getTheoreticalBatchSize());
-        int w = Math.max(1, radius);
-        Direction facing = getFacing();
-        int mx = worldPosition.getX(), my = worldPosition.getY(), mz = worldPosition.getZ();
-        int x1, y1, z1, x2, y2, z2;
-        switch (facing) {
-            case NORTH -> {
-                x1 = mx - (w - 1);
-                x2 = mx + w;
-                y1 = my;
-                y2 = my + 1;
-                z1 = mz - b;
-                z2 = mz;
-            }
-            case SOUTH -> {
-                x1 = mx - (w - 1);
-                x2 = mx + w;
-                y1 = my;
-                y2 = my + 1;
-                z1 = mz + 1;
-                z2 = mz + 1 + b;
-            }
-            case EAST -> {
-                x1 = mx + 1;
-                x2 = mx + 1 + b;
-                y1 = my;
-                y2 = my + 1;
-                z1 = mz - (w - 1);
-                z2 = mz + w;
-            }
-            default -> {
-                x1 = mx - b;
-                x2 = mx;
-                y1 = my;
-                y2 = my + 1;
-                z1 = mz - (w - 1);
-                z2 = mz + w;
-            }
-        }
-        return List.of(new net.minecraft.world.phys.AABB(x1, y1, z1, x2, y2, z2));
+        // 线框与实际遍历共用同一个工作盒：中心 = 机器位置 + XYZ 偏移，半径 = range/2 方块、每轴方块数 = range。
+        return List.of(adjustedRangeBox());
     }
 
     @Override
@@ -134,32 +109,24 @@ public class BlockFormerBlockEntity extends RadiusMachineBlockEntity {
     @Override
     public void applyEffect() {
         if (level == null || itemHandler == null) return;
-        int B = getLockedBatchSize();
-        int w = Math.max(1, radius);
-        for (int i = 1; i <= B; i++) {
-            for (int j = -(w - 1); j <= (w - 1); j++) {
-                ItemStack stack = itemHandler.getStackInSlot(0);
-                if (!(stack.getItem() instanceof BlockItem blockItem)) break;
-                BlockPos target = offsetTarget(i, j);
-                BlockState targetState = level.getBlockState(target);
-                if (!targetState.isAir() && !targetState.canBeReplaced()) continue;
-                BlockState placeState = blockItem.getBlock().defaultBlockState();
-                if (!placeState.canSurvive(level, target)) continue;
-                level.setBlock(target, placeState, Block.UPDATE_ALL);
-                stack.shrink(1);
-                if (stack.isEmpty()) refillFromCandidates();
-                setChanged();
-            }
+        var bounds = adjustedBounds();
+        int scanned = 0;
+        for (BlockPos cursor : BlockPos.betweenClosed(bounds.min(), bounds.max())) {
+            // betweenClosed 复用 MutableBlockPos：写操作前取不可变拷贝，避免引用被后续迭代改写
+            BlockPos target = cursor.immutable();
+            if (++scanned > ADJUST_SCAN_LIMIT) break;
+            if (target.equals(worldPosition)) continue;
+            ItemStack stack = itemHandler.getStackInSlot(0);
+            if (!(stack.getItem() instanceof BlockItem blockItem)) break;
+            BlockState targetState = level.getBlockState(target);
+            if (!targetState.isAir() && !targetState.canBeReplaced()) continue;
+            BlockState placeState = blockItem.getBlock().defaultBlockState();
+            if (!placeState.canSurvive(level, target)) continue;
+            level.setBlock(target, placeState, Block.UPDATE_ALL);
+            stack.shrink(1);
+            if (stack.isEmpty()) refillFromCandidates();
+            setChanged();
         }
-    }
-
-    private BlockPos offsetTarget(int i, int j) {
-        return switch (getFacing()) {
-            case NORTH -> worldPosition.offset(j, 0, -i);
-            case SOUTH -> worldPosition.offset(j, 0, i);
-            case EAST -> worldPosition.offset(i, 0, j);
-            default -> worldPosition.offset(-i, 0, j);
-        };
     }
 
     @Override
@@ -172,14 +139,15 @@ public class BlockFormerBlockEntity extends RadiusMachineBlockEntity {
         if (level == null || itemHandler == null) return false;
         ItemStack stack = itemHandler.getStackInSlot(0);
         if (!(stack.getItem() instanceof BlockItem blockItem)) return false;
-        int B = getTheoreticalBatchSize();
-        int w = Math.max(1, radius);
-        for (int i = 1; i <= B; i++) {
-            for (int j = -(w - 1); j <= (w - 1); j++) {
-                BlockPos target = offsetTarget(i, j);
-                BlockState targetState = level.getBlockState(target);
-                if ((targetState.isAir() || targetState.canBeReplaced()) && blockItem.getBlock().defaultBlockState().canSurvive(level, target)) return true;
-            }
+        var bounds = adjustedBounds();
+        int scanned = 0;
+        for (BlockPos cursor : BlockPos.betweenClosed(bounds.min(), bounds.max())) {
+            // betweenClosed 复用 MutableBlockPos：写操作前取不可变拷贝，避免引用被后续迭代改写
+            BlockPos target = cursor.immutable();
+            if (++scanned > ADJUST_SCAN_LIMIT) break;
+            if (target.equals(worldPosition)) continue;
+            BlockState targetState = level.getBlockState(target);
+            if ((targetState.isAir() || targetState.canBeReplaced()) && blockItem.getBlock().defaultBlockState().canSurvive(level, target)) return true;
         }
         return false;
     }

@@ -1,6 +1,6 @@
 # 贡献指南
 
-欢迎参与 **Technical-Engineering 4 (Kenergy Engineering Retechnicalized)** 的开发。  
+欢迎参与 **Kenergy Engineering Retechnicalized（简称 KER，Technical Engineering 4 的重制分支）** 的开发。  
 本文档概述了项目的结构、编码约定和贡献流程，帮助新贡献者快速上手。
 
 ---
@@ -62,7 +62,7 @@ Technical-Engineering 4 是一个 **NeoForge 1.21.1** 科技模组，继承自 T
 1. **JDK 21** — 确保 `JAVA_HOME` 指向 JDK 21。
 2. **克隆仓库**：
    ```bash
-   git clone https://github.com/ModularMCLib/Technical-Engineering-4.git
+   git clone https://github.com/ExtremelyFrozen/Technical-Engineering-4.git
    cd Technical-Engineering-4
    ```
 3. **导入 IDE** — 作为 Gradle 项目导入（IntelliJ IDEA 推荐）。
@@ -311,6 +311,18 @@ REGISTRATE.addDataGenerator(ProviderType.LANG, TENLangHandler::init);
   - `addRaw(provider, fullKey, en, cn)` 用于完整键。
 - 新增中文条目时，同时提供英文原文作为第二个参数。
 - 确保中文字符串文件的编码为 **UTF-8**。
+
+**新增配置项必须同时补本地化。** `TENConfig` 里每个 `define*` 在配置界面上占一行，NeoForge 按
+`<modid>.configuration.<路径>` 查表；键不存在就直接显示键名。所以加完配置项后要在
+`TENLangHandler.addConfig` 补上组名（新建 `push` 分组时）与 `kenergyengineering.configuration.<路径>`，
+叶子项再加一条 `.tooltip`。`verifyTranslationKeys()` 会在 datagen 末尾遍历 `COMMON_SPEC` 与
+`CLIENT_SPEC`，缺键直接抛异常并列出清单——跑一次 `./gradlew runData` 就知道漏了哪条。
+
+**按键绑定用完整键，不要走 `add()`。** 游戏原样查 `KeyMapping` 里那个字符串，`add()` 会多补一层
+`kenergyengineering.`，界面上就显示原始键名（4.0.2 的 `key.categories.kenergyengineering` 即此）。
+键名常量定义在 `TEN.KEY_CATEGORY` 与 `TEN.KEY_TOGGLE_CHARGE`——放 `TEN` 而不是 `client.TENKeybinds`，
+是因为 datagen 侧的 `TENLangHandler` 在服务端也会被方法引用加载，不能引用带 `KeyMapping` 的客户端类。
+语言条目用 `addRaw` 写完整键；新增按键时把常量加进 `TEN`，`verifyTranslationKeys()` 会一并校验。
 
 ---
 

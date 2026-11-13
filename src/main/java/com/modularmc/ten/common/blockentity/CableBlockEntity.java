@@ -2,14 +2,15 @@ package com.modularmc.ten.common.blockentity;
 
 import com.modularmc.ten.TENConstants;
 import com.modularmc.ten.api.blockentity.CmBlockEntity;
+import com.modularmc.ten.api.transmission.CableRenderState;
 import com.modularmc.ten.api.transmission.ConnectionType;
 import com.modularmc.ten.api.transmission.ITransmitterProvider;
 import com.modularmc.ten.api.transmission.TransmitterNetworkRegistry;
 import com.modularmc.ten.api.transmission.energy.EnergyNetwork;
 import com.modularmc.ten.api.transmission.energy.EnergyTransmitter;
 import com.modularmc.ten.api.transmission.energy.TransmitterEnergyStorage;
+import com.modularmc.ten.common.block.machine.CableTier;
 import com.modularmc.ten.common.gui.TENMachineBlockUIFactory;
-import com.modularmc.ten.utils.SafeOperationHelper;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -17,8 +18,13 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.protocol.game.ClientGamePacketListener;
+import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+import net.neoforged.neoforge.client.model.data.ModelData;
 import net.neoforged.neoforge.energy.IEnergyStorage;
 
 import com.lowdragmc.lowdraglib2.gui.factory.BlockUIMenuType;
@@ -49,6 +55,16 @@ public class CableBlockEntity extends CmBlockEntity implements ITransmitterProvi
     @Persisted
     @DescSynced
     public byte pullFacesMask;
+
+    /**
+     * 打包后的连接外观 + active 渲染态：服务端权威，取代原先写进 BlockState 的六个连接属性。
+     * 随方块实体数据包下发（{@link #getUpdateTag} → {@code writeTileData}），客户端在
+     * {@link #applyRenderTag} 里写入并请求重绘；{@code @DescSynced} 另走 LDLib2 的字段同步，
+     * 供 GUI 等场景读取。
+     */
+    @Persisted
+    @DescSynced
+    public int renderPacked;
 
     public CableBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
@@ -125,14 +141,66 @@ public class CableBlockEntity extends CmBlockEntity implements ITransmitterProvi
     @Override
     public void notifyChanges() {
         // 不走 markDirty/sendBlockUpdated：那会触发邻居 neighborChanged → refreshConnections 递归。
-        // 直接传 transmitter 引用刷新外观（查自身 BE 会在注册流程中再创建 BE，见 updateConnectionState 注释）。
+        // 连接外观改由渲染态字段承载，无需 setBlock。
         setChanged();
         if (level != null && !level.isClientSide()) {
-            if (getBlockState().getBlock() instanceof com.modularmc.ten.common.block.machine.CableBased cable) {
-                cable.updateConnectionState(level, worldPosition, transmitter);
-            }
+            refreshRenderState();
             refreshPullFacesMask();
         }
+    }
+
+    @Override
+    public int getRenderPacked() {
+        return renderPacked;
+    }
+
+    @Override
+    public void refreshRenderState() {
+        if (level == null || level.isClientSide()) {
+            return;
+        }
+        boolean active = new CableRenderState(renderPacked).active();
+        int next = CableRenderState.pack(transmitter, active);
+        if (renderPacked != next) {
+            renderPacked = next;
+            markRenderDirty();
+        }
+    }
+
+    /**
+     * 服务端唯一的重绘请求入口：{@code sendBlockUpdated} 既让客户端区块重新烘焙，
+     * 又经 {@code ChunkHolder#broadcastBlockEntity} 把 {@link #getUpdateTag} 里的渲染态一并送到
+     * （AE2 {@code AEBaseBlockEntity#markForClientUpdate} 同款）。flags=2 不含 UPDATE_NEIGHBORS，
+     * 不会走 neighborChanged → refreshConnections 递归。
+     */
+    private void markRenderDirty() {
+        if (level != null && !level.isClientSide()) {
+            BlockState state = getBlockState();
+            level.sendBlockUpdated(worldPosition, state, state, Block.UPDATE_CLIENTS);
+        }
+    }
+
+    /**
+     * 渲染态必须随方块实体数据包下发（AE2 的 {@code #upd} 同款）。
+     * <p>
+     * 原版 {@code BlockEntity#getUpdateTag} 默认返回空标签、{@link #getUpdatePacket()} 默认返回 null，
+     * 不覆写就既不会在区块下发时带上渲染态，也不会响应 {@code sendBlockUpdated}——
+     * 客户端建 BE 时 {@code renderPacked} 恒为 0，外观只能等某次偶然重绘才正确。
+     */
+    @Override
+    public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
+        return saveWithoutMetadata(registries);
+    }
+
+    @Override
+    public Packet<ClientGamePacketListener> getUpdatePacket() {
+        return ClientboundBlockEntityDataPacket.create(this);
+    }
+
+    /** 渲染态经 ModelData 交给客户端的动态 BakedModel；每次调用都现算，不缓存旧值。 */
+    @Override
+    public ModelData getModelData() {
+        return ModelData.of(CableRenderState.PROPERTY, new CableRenderState(renderPacked));
     }
 
     /** 重算输出面位图镜像（服务端；@DescSynced 变化时自动推客户端）。 */
@@ -157,11 +225,36 @@ public class CableBlockEntity extends CmBlockEntity implements ITransmitterProvi
             // 旧版数据迁移：原单 BE storage 能量读入本地缓冲，首次 join 由 absorbBuffer 上缴网络
             transmitter.setBuffer(tag.getInt("energy"));
         }
+        applyRenderTag(tag);
+    }
+
+    /**
+     * 渲染态写入 + 客户端重绘。缺一不可：
+     * {@code requestModelDataUpdate()} 只把坐标记进 ModelDataManager 的 needModelDataRefresh，
+     * 下次取数时刷新缓存；真正让区块重新烘焙的是客户端
+     * {@code ClientLevel#sendBlockUpdated → LevelRenderer#blockChanged → setBlockDirty}。
+     * <p>
+     * 没有 renderPacked 键时直接跳过：LDLib2 的 GUI 同步会用空 tag 反复触发 readTileData，
+     * 不能让它把渲染态清掉、也不能白刷一遍区块。
+     */
+    private void applyRenderTag(CompoundTag tag) {
+        if (!tag.contains("renderPacked")) {
+            return;
+        }
+        renderPacked = tag.getInt("renderPacked");
+        if (level != null && level.isClientSide()) {
+            requestModelDataUpdate();
+            BlockState state = getBlockState();
+            level.sendBlockUpdated(worldPosition, state, state, 0);
+        }
     }
 
     @Override
     protected void writeTileData(CompoundTag tag, HolderLookup.Provider registries) {
         transmitter.write(registries, tag);
+        // 渲染态随存档与 BE 数据包（getUpdateTag → saveWithoutMetadata）一起走，
+        // 客户端建 BE 时就能拿到正确的连接外观，不必等下一次方块更新。
+        tag.putInt("renderPacked", renderPacked);
         EnergyNetwork net = transmitter.getNetwork();
         long share;
         if (net != null && net.size() > 0) {
@@ -196,34 +289,16 @@ public class CableBlockEntity extends CmBlockEntity implements ITransmitterProvi
         return TENMachineBlockUIFactory.buildModularUI(root, holder.player);
     }
 
-    // ───── 分级参数（沿袭旧版平衡数值）─────
+    // ───── 分级参数：数值登记在 TENBlocks.cable(...)，与物品 tooltip 共用一份 ─────
 
     private static int capacityFor(BlockState state) {
-        String name = SafeOperationHelper.regNameOf(state.getBlock());
-        if ("cable_star".equals(name)) {
-            return Integer.MAX_VALUE;
-        }
-        if ("cable_azure".equals(name)) {
-            return 50_000;
-        }
-        if ("cable_quartz".equals(name)) {
-            return 20_000;
-        }
-        return 1_000;
+        CableTier tier = CableTier.of(state.getBlock());
+        return tier == null ? 0 : tier.capacity();
     }
 
     private static int transferFor(BlockState state) {
-        String name = SafeOperationHelper.regNameOf(state.getBlock());
-        if ("cable_star".equals(name)) {
-            return 200_000;
-        }
-        if ("cable_azure".equals(name)) {
-            return 4_000;
-        }
-        if ("cable_quartz".equals(name)) {
-            return 1_000;
-        }
-        return 200;
+        CableTier tier = CableTier.of(state.getBlock());
+        return tier == null ? 0 : tier.transfer();
     }
 
     private static Label label(int x, int y, String text) {
@@ -237,13 +312,12 @@ public class CableBlockEntity extends CmBlockEntity implements ITransmitterProvi
         return label;
     }
 
+    /** active 只改渲染态位，不再 setBlock 切 BlockState.ACTIVE。 */
     private void setActive(boolean active) {
-        if (level == null) {
-            return;
-        }
-        BlockState state = getBlockState();
-        if (state.hasProperty(com.modularmc.ten.common.block.machine.BaseMachineBlock.ACTIVE) && state.getValue(com.modularmc.ten.common.block.machine.BaseMachineBlock.ACTIVE) != active) {
-            level.setBlock(worldPosition, state.setValue(com.modularmc.ten.common.block.machine.BaseMachineBlock.ACTIVE, active), 3);
+        int next = CableRenderState.withActive(renderPacked, active);
+        if (renderPacked != next) {
+            renderPacked = next;
+            markRenderDirty();
         }
     }
 }
