@@ -1,0 +1,11 @@
+{
+  "type": "kenergyengineering:engine_fuel",
+  "duration": 1600,
+  "engines": [
+    "metalizer"
+  ],
+  "ingredient": {
+    "tag": "kenergyengineering:valuable_ingots"
+  },
+  "rate_multiplier": 1.0
+}

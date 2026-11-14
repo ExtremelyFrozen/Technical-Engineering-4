@@ -219,7 +219,7 @@ public static final BlockEntry<HorizontalMachineBlock> CELL = REGISTRATE
 - `ore()` — 矿石方块（需铁镐及以上，不同的 MapColor）
 - `storage()` / `rawStorage()` — 存储方块
 - `machine()` — 水平朝向机器
-- `engine()` — 发电机（水平朝向，不同纹理映射）
+- `engine()` — 引擎（水平朝向，不同纹理映射）
 - `cable()` — 线缆/管道（multipart blockstate）
 - `item()` — 简单物品
 - `upgrade()` — 升级组件（自定义 Item 子类）
@@ -277,7 +277,7 @@ public static final BlockEntityEntry<FurnaceBlockEntity> FURNACE = REGISTRATE
 |---|---|
 | `cubeAll()` | 简单六面贴图方块 |
 | `machine()` / `machineActive()` | 机器方块模型（带/不带 active 贴图） |
-| `engine()` / `engineActive()` | 发电机模型 |
+| `engine()` / `engineActive()` | 引擎模型 |
 | `energyCellBlockstate()` | 能量单元 blockstate |
 | `channelBlockstate()` | 频道 blockstate（六方向，active 切换） |
 | `cableMultipart()` | 线缆/管道 multipart blockstate（核心 + 六向连接 + active 切换） |

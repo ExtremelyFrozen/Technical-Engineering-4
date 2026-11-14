@@ -6,10 +6,12 @@ public class LevelupMagma extends UpgradeItem {
 
     public LevelupMagma() {
         super(0);
+        asSpecialization();
     }
 
     public LevelupMagma(Properties properties) {
         super(0, properties);
+        asSpecialization();
     }
 
     @Override

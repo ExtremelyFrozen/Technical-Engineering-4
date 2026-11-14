@@ -166,7 +166,7 @@ public class MobRipBlockEntity extends RadiusMachineBlockEntity {
         // 武器槽上限 1 由基类统一规则给出（不可堆叠物品不倍增），无需在此自写 provider
         int B = getLockedBatchSize();
 
-        // 记录周期开始时武器是否存在：若原本有而中途损坏/耗尽则停止剩余批次，
+        // 记录周期开始时武器是否存在：若原本有而中途损坏/耗尽则停止剩余份数，
         // 不回退到徒手伤害；从未有武器则保留原语义（允许无武器运行）。
         boolean weaponWasPresentAtStart = hasValidWeapon();
 

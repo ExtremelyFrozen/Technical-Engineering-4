@@ -1,5 +1,6 @@
 package com.modularmc.ten.common.blockentity.machine;
 
+import com.modularmc.ten.api.blockentity.BatchMath;
 import com.modularmc.ten.api.blockentity.IUpgradableMachine;
 import com.modularmc.ten.api.blockentity.ProcessingMachineBlockEntity;
 import com.modularmc.ten.api.capability.MachineFluidTank;
@@ -43,7 +44,7 @@ import java.util.Optional;
  * 视觉上三条 lane 上下堆叠、间隔 0px，行 y 见 {@link #LANE_SLOT_Y}。
  *
  * <p>
- * 每条 lane 自持进度、配方身份与批处理锁，逐 tick 各自推进；能量与 XP 罐为三路共享，
+ * 每条 lane 自持进度、配方身份与并行运行锁，逐 tick 各自推进；能量与 XP 罐为三路共享，
  * 按 lane 顺序扣减。基类 {@code progress}/{@code maxProgress} 只作单进度镜像，
  * 供冷却器等横切逻辑读取，不再驱动本机加工。
  */
@@ -54,6 +55,18 @@ public class FurnaceBlockEntity extends ProcessingMachineBlockEntity {
 
     /** 三条 lane 的槽位 y：lane 0 居中（沿用旧输入槽位置），1 在上、2 在下。 */
     public static final int[] LANE_SLOT_Y = { 32, 14, 50 };
+
+    /**
+     * 并行运行在熔炼机上按 lane 生效：每条 lane 各持自己的 {@code laneB}，
+     * 一个周期处理该 lane 配方的 B 份，三路互不影响。
+     * <p>
+     * 「三路并行」是结构（3 条独立流水线），「并行运行」是每条流水线一轮做几份，
+     * 两者是相乘关系而不是互斥：整机一轮最多 {@code 3 × B} 份。
+     */
+    @Override
+    public boolean supportsBatch() {
+        return true;
+    }
 
     /** XP 流体输出罐容量（恒存在）。 */
     private static final int XP_TANK_CAPACITY = 4000;
@@ -81,7 +94,7 @@ public class FurnaceBlockEntity extends ProcessingMachineBlockEntity {
     @DescSynced
     public int laneMaxProgress2 = 0;
 
-    /** 各 lane 的批处理锁与配方身份：服务端权威、不持久化，读档后由 conditionStart 重建。 */
+    /** 各 lane 的并行运行锁与配方身份：服务端权威、不持久化，读档后由 conditionStart 重建。 */
     private final int[] laneB = new int[LANES];
     private final int[] laneLockedMaxProgress = new int[LANES];
     private final ResourceLocation[] lastRecipeId = new ResourceLocation[LANES];
@@ -143,6 +156,26 @@ public class FurnaceBlockEntity extends ProcessingMachineBlockEntity {
     public double laneProgressPercent(int lane) {
         int max = laneMaxProgress(lane);
         return max <= 0 ? 0 : Math.min(1.0, (double) laneProgress(lane) / max);
+    }
+
+    @Override
+    public double progressFraction(int lane) {
+        return lane < 0 ? super.progressFraction(lane) : laneProgressPercent(lane);
+    }
+
+    /** 该 lane 的配方刻度总量：配方耗时 T，不随运行速度缩放。 */
+    @Override
+    public int progressTotalTicks(int lane) {
+        if (lane < 0) return super.progressTotalTicks(lane);
+        return Math.max(0, laneMaxProgress(lane));
+    }
+
+    /** 该 lane 已完成的配方刻度：每 tick 增加运行速度 N 格，累计到该 lane 的进度。 */
+    @Override
+    public int progressDoneTicks(int lane) {
+        if (lane < 0) return super.progressDoneTicks(lane);
+        int total = progressTotalTicks(lane);
+        return Math.max(0, Math.min(total, laneProgress(lane)));
     }
 
     private int laneProgress(int lane) {
@@ -210,8 +243,7 @@ public class FurnaceBlockEntity extends ProcessingMachineBlockEntity {
             // 每条只读对应 lane 的进度，不受其他两条 lane 影响。
             for (int lane = 0; lane < LANES; lane++) {
                 final int index = lane;
-                root.addChild(TENMachineBlockUIFactory.progressGaugeModular(this, 74, LANE_SLOT_Y[lane] + 1, true,
-                        m -> ((FurnaceBlockEntity) m).laneProgressPercent(index)));
+                root.addChild(TENMachineBlockUIFactory.progressGaugeModular(this, 74, LANE_SLOT_Y[lane] + 1, index, true));
             }
             // XP 槽仍在最右侧：输出小槽右缘 131，XP 槽左缘 143（间隔 12），与主区垂直对齐 y=17。
             root.addChild(TENMachineBlockUIFactory.createXpFluidSlot(this, 143, 17, 18, 50));
@@ -282,7 +314,7 @@ public class FurnaceBlockEntity extends ProcessingMachineBlockEntity {
         for (int lane = 0; lane < LANES; lane++) {
             boolean start = conditionStart(lane);
             if (!start || !signal) {
-                // 原料消失 / 配方失配：作废本 lane 的进度；缺信号属停滞，保留进度等待恢复。
+                // 原料消失 / 配方失配：作废本 lane 的进度；缺信号属停机，保留进度等待恢复。
                 if (!start && laneProgress(lane) > 0) {
                     setLaneProgress(lane, 0);
                 }
@@ -293,7 +325,7 @@ public class FurnaceBlockEntity extends ProcessingMachineBlockEntity {
             if (expected <= 0 || expected > Integer.MAX_VALUE) continue;
             int fePerTick = (int) expected;
 
-            // 缺能、输出满：保留进度，等待恢复（与基类停滞语义一致）。
+            // 缺能、输出满：保留进度，等待恢复（与基类停机语义一致）。
             if (energyStorage == null || energyStorage.getEnergyStored() < fePerTick) continue;
             if (cooking(lane)) continue;
 
@@ -311,7 +343,7 @@ public class FurnaceBlockEntity extends ProcessingMachineBlockEntity {
             recordEnergyUse(fePerTick);
 
             anyRunning = true;
-            setLaneProgress(lane, laneProgress(lane) + 1);
+            advanceLaneBySpeed(lane);
             if (laneProgress(lane) >= laneMaxProgress(lane)) {
                 onCookFinish(lane);
                 setLaneProgress(lane, 0);
@@ -343,6 +375,14 @@ public class FurnaceBlockEntity extends ProcessingMachineBlockEntity {
         maxProgress = mirror < 0 ? 0 : laneMaxProgress(mirror);
         markDirty("progress");
         markDirty("maxProgress");
+    }
+
+    /**
+     * 按运行速度推进单条 lane：与基类 {@code advanceProgressBySpeed()} 同口径，
+     * 只是三路各有独立进度。速度恒为自然数，一次推进就是整 N 格。
+     */
+    private void advanceLaneBySpeed(int lane) {
+        setLaneProgress(lane, laneProgress(lane) + Math.max(1, runSpeed));
     }
 
     /** 外部推进进度（冷却器）：本机三路同时受益，不落在单一 lane 上。 */
@@ -380,11 +420,11 @@ public class FurnaceBlockEntity extends ProcessingMachineBlockEntity {
         lastRecipeId[lane] = newId;
 
         if (identityChanged || laneB[lane] <= 0) {
-            int mp = Math.max(1, (int) Math.ceil(recipe.getCookingTime() * durationMultiplier));
+            int mp = scaledDuration(recipe.getCookingTime());
             setLaneMaxProgress(lane, mp);
             laneLockedMaxProgress[lane] = mp;
 
-            int B_theory = 1 + batch;
+            int B_theory = getTheoreticalBatchSize();
             ItemStack input = itemHandler.getStackInSlot(inputSlot(lane));
             var registry = level.registryAccess();
             ItemStack result = recipe.getResultItem(registry);
@@ -425,12 +465,12 @@ public class FurnaceBlockEntity extends ProcessingMachineBlockEntity {
                 laneB[lane] = 0;
                 return false;
             }
-            laneB[lane] = Math.min(B, 19);
+            laneB[lane] = Math.min(B, BatchMath.B_HARD_MAX);
         }
         return true;
     }
 
-    /** 返回 true 表示本 lane 的输出侧阻塞，应保留进度停滞。 */
+    /** 返回 true 表示本 lane 的输出侧阻塞，应保留进度停机。 */
     private boolean cooking(int lane) {
         var recipeOpt = getCurrentRecipe(lane);
         if (recipeOpt.isEmpty()) return false;
@@ -500,7 +540,7 @@ public class FurnaceBlockEntity extends ProcessingMachineBlockEntity {
             }
         }
 
-        // Knowledge 门控 XP 产出：执行前预检 XP 罐空间（不足则本周期停滞不消耗输入）
+        // Knowledge 门控 XP 产出：执行前预检 XP 罐空间（不足则本周期停机不消耗输入）
         boolean hasKnowledge = hasUpgrade(LevelupKnow.class);
         int xpFluidTotal = 0;
         if (hasKnowledge) {

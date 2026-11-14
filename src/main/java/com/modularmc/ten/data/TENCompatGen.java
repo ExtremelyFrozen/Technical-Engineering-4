@@ -432,7 +432,7 @@ public class TENCompatGen implements DataProvider {
         return machine(mod, "pulverizer", name, ins, outs, time);
     }
 
-    /** 压缩机压缩：N 个输入 + 大压缩模具（chance 0 = 催化位，不消耗、不随批量倍增）→ 1 个块。 */
+    /** 压缩机压缩：N 个输入 + 大压缩模具（chance 0 = 催化位，不消耗、不随并行运行数倍增）→ 1 个块。 */
     private static Recipe press(String mod, String name, String inputId, int inputCount, String outputId) {
         var ins = new JsonArray();
         ins.add(ingr(inputId, inputCount, false, null));
@@ -444,7 +444,7 @@ public class TENCompatGen implements DataProvider {
 
     /**
      * 冲压机承接：材料（锭）+ 本模组的对应模具（催化位）→ 板/齿轮/杆/线。
-     * 模具与 {@code press} 同理用 {@code chance 0}，不消耗、不随批量倍增。
+     * 模具与 {@code press} 同理用 {@code chance 0}，不消耗、不随并行运行数倍增。
      */
     private static Recipe pressed(String mod, String name, Input input, String mould, String outputId, int outputCount, int time) {
         var ins = new JsonArray();

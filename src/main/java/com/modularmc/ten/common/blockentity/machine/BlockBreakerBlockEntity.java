@@ -22,7 +22,7 @@ import java.util.List;
 /**
  * 方块破坏器（Block Breaker）。
  * 套用采矿场 GUI：槽 0 工具（镐），槽 1..12 输出。
- * 工作范围由面板的 XYZ 范围与 XYZ 相对偏移决定（世界轴向三轴盒子），不再随批处理 B 变化；
+ * 工作范围由面板的 XYZ 范围与 XYZ 相对偏移决定（世界轴向三轴盒子），不再随并行运行 B 变化；
  * 范围升级只抬高可调节半径上限。
  */
 public class BlockBreakerBlockEntity extends RadiusMachineBlockEntity {
@@ -158,7 +158,7 @@ public class BlockBreakerBlockEntity extends RadiusMachineBlockEntity {
     @Override
     public boolean cooking() {
         if (itemHandler == null) return false;
-        // 范围不再由批处理决定：只有输出槽全满才阻塞；单格掉落放不下由 canFitAll 兜底。
+        // 范围不再由并行运行决定：只有输出槽全满才阻塞；单格掉落放不下由 canFitAll 兜底。
         for (int i = 1; i < itemHandler.getSlots(); i++) {
             ItemStack existing = itemHandler.getStackInSlot(i);
             if (existing.isEmpty() || existing.getCount() < itemHandler.getSlotLimit(i)) return false;

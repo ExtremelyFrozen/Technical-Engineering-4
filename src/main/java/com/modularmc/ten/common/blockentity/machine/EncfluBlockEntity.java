@@ -116,10 +116,10 @@ public class EncfluBlockEntity extends ProcessingMachineBlockEntity {
 
         // 无锁时才计算并锁定 B + maxProgress
         if (!hasLockedBatch()) {
-            maxProgress = Math.max(1, (int) Math.ceil(baseTickTime() * durationMultiplier));
+            maxProgress = scaledDuration(baseTickTime());
             lockMaxProgressForNewOperation(maxProgress);
 
-            int B_theory = 1 + batch;
+            int B_theory = getTheoreticalBatchSize();
 
             // B_byTool: 工具槽不可堆叠，仅支持 1 单位
             int B_byTool = 1;
@@ -140,7 +140,7 @@ public class EncfluBlockEntity extends ProcessingMachineBlockEntity {
             int baseFe = Math.max(1, getActualEfficiency());
             int B_byEnergy = energyStorage != null ? energyStorage.getEnergyStored() / baseFe : 0;
 
-            // B_byTool=1 保证实际 B=1（工具不可堆叠，无批量复制）
+            // B_byTool=1 保证实际 B=1（工具不可堆叠，无份数复制）
             if (!validateAndLockB(B_theory, B_byTool, Integer.MAX_VALUE, Math.min(B_byOutput, B_byTank), B_byEnergy)) {
                 return false;
             }
@@ -151,7 +151,7 @@ public class EncfluBlockEntity extends ProcessingMachineBlockEntity {
 
     @Override
     public boolean cooking() {
-        // 进度推进前检查输出槽与罐容量（罐满时停滞，不消耗目标空转）
+        // 进度推进前检查输出槽与罐容量（罐满时停机，不消耗目标空转）
         ItemStack output = itemHandler.getStackInSlot(2);
         if (!output.isEmpty()) return true; // 输出槽被占 → 阻塞
 
@@ -172,7 +172,7 @@ public class EncfluBlockEntity extends ProcessingMachineBlockEntity {
 
     @Override
     public void onCookFinish() {
-        // ── Phase 0: 批量大小 ──
+        // ── Phase 0: 并行运行数 ──
         int B = getLockedBatchSize();
 
         // ── Phase 1: 读快照（副本）──

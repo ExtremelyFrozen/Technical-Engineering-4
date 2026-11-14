@@ -1,0 +1,21 @@
+{
+	"type": "minecraft:crafting_shaped",
+	"pattern": [" B ", "DAD", " C "],
+	"key": {
+		"A": {
+			"item": "kenergyengineering:augmented_levelup"
+		},
+		"B": {
+			"tag": "c:gears/tin"
+		},
+		"C": {
+			"item": "minecraft:redstone"
+		},
+		"D": {
+			"item": "minecraft:copper_ingot"
+		}
+	},
+	"result": {
+		"id": "kenergyengineering:efficiency_levelup"
+	}
+}

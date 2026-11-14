@@ -106,7 +106,7 @@ public class FarmBlockEntity extends RadiusMachineBlockEntity {
 
     @Override
     public boolean cooking() {
-        // 纯容量谓词：输出槽（6..11）无法容纳本周期收割产出时停滞（保留 progress）。
+        // 纯容量谓词：输出槽（6..11）无法容纳本周期收割产出时停机（保留 progress）。
         // 每周期扫描 B 行；单格最多 2 件（1 种子 + 1 产物），阈值 2*B 保证产出放得下。
         if (itemHandler == null) {
             return false;

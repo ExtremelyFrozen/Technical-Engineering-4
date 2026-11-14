@@ -16,6 +16,12 @@ public abstract class EffectMachineBlockEntity extends CmMachineBlockEntity {
         super(type, pos, state);
     }
 
+    /** 效果机按 lockedB 并行处理，并行运行升级有效。 */
+    @Override
+    public boolean supportsBatch() {
+        return true;
+    }
+
     @Override
     public int machineType() {
         return MachineType.MACHINE_EFFECT;
@@ -41,12 +47,12 @@ public abstract class EffectMachineBlockEntity extends CmMachineBlockEntity {
 
             // ── New cycle: lock batch and maxProgress when no lock exists ──
             if (!hasLockedBatch()) {
-                int B_theory = 1 + batch;
+                int B_theory = getTheoreticalBatchSize();
                 // For EffectMachine, B is primarily constrained by energy dimension
                 // (baseFePerTick from efficientIn, not multiplied by B to avoid circular dep)
                 int baseFePerTick = Math.max(1, efficientIn);
                 int B_byEnergy = energyStorage != null ? energyStorage.getEnergyStored() / baseFePerTick : 0;
-                int B_actual = Math.min(B_theory, Math.min(B_byEnergy, 19));
+                int B_actual = Math.min(B_theory, Math.min(B_byEnergy, BatchMath.B_HARD_MAX));
                 B_actual = Math.max(0, B_actual);
                 if (B_actual < 1) {
                     setActive(false);
@@ -54,9 +60,10 @@ public abstract class EffectMachineBlockEntity extends CmMachineBlockEntity {
                 }
                 lockBatchForNewOperation(B_actual);
 
-                // Lock maxProgress at cycle start: ceil(effectInterval * 20 * durationMultiplier)
-                int mp = (int) Math.ceil(effectInterval() * 20.0 * durationMultiplier);
-                maxProgress = Math.max(1, mp);
+                // Lock maxProgress at cycle start: the cycle length in ticks, scaled by the
+                // duration channel. 运行速度另按 N 推进，故耗时 = 总量 ÷ N。
+                int mp = (int) Math.ceil(effectInterval() * 20.0);
+                maxProgress = scaledDuration(mp);
                 lockMaxProgressForNewOperation(maxProgress);
             }
 
@@ -96,8 +103,8 @@ public abstract class EffectMachineBlockEntity extends CmMachineBlockEntity {
             }
             recordEnergyUse(fePerTick);
 
-            // ── Step 6: Advance progress by exactly 1 tick ──
-            progress++;
+            // ── Step 6: 进度按运行速度推进（基准 1）──
+            advanceProgressBySpeed();
 
             // ── Step 7: Completion check — >= maxProgress ──
             if (progress >= maxProgress) {
@@ -110,7 +117,7 @@ public abstract class EffectMachineBlockEntity extends CmMachineBlockEntity {
             // 原料消失守卫：仅当任务条件不满足（conditionStart()==false，如输入被取出/耗尽）
             // 且信号放行时，进行中的进度作废归零——进度条立即清空，不保留半途进度。
             // 信号关闭（start 仍 true，等待恢复）与能量不足（Step 3 内 return）不受影响，
-            // 仍走停滞语义保留 progress 等待恢复。
+            // 仍走停机语义保留 progress 等待恢复。
             if (!start && progress > 0) {
                 progress = 0;
                 clearLockedBatch();

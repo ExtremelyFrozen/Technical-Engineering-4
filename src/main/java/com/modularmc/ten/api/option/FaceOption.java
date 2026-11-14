@@ -87,7 +87,7 @@ public class FaceOption {
      * <p>
      * 面模式不是所有方块、所有方向都能选，判定分两层：设备功能性决定某方向有没有意义
      * （产能类才有能量输出、只有输入槽就没有物品输出、共享存储型方块两向都有），见
-     * {@code CmMachineBlockEntity.supportsFaceDirection}；{@code ten:no_active_face_energy}
+     * {@code CmMachineBlockEntity.supportsFaceDirection}；{@code kenergyengineering:no_active_face_energy}
      * / {@code _item} / {@code _fluid} 是留给整合包整体收回某类资源主动面的覆盖点，基础模组
      * 当前不打任何条目。
      */

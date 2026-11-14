@@ -49,20 +49,12 @@ public class DataGenerators {
                 // 2b. Tag translations → 已迁至独立文件 TENTagLangGen（含 JEI/NeoForge 标准键 + 双语）
                 TENTagLangGen.ZH_ENTRIES.forEach(this::add);
 
-                // 2b5. Miscellaneous items
-                add("kenergyengineering.energy_core", "能量核心");
+                // 2b5. 流体桶物品名；裸键已清理，避免中文侧出现英文缺失的孤儿键
                 add("item.kenergyengineering.liquid_bizarrerie_bucket", "奇异物质桶");
-                add("kenergyengineering.liquid_honey", "蜂蜜");
                 add("item.kenergyengineering.liquid_honey_bucket", "蜂蜜桶");
-                add("kenergyengineering.liquid_royal_jelly", "蜂王浆");
                 add("item.kenergyengineering.liquid_royal_jelly_bucket", "蜂王浆桶");
-                add("kenergyengineering.liquid_spicy_jelly", "香辣蜂王浆");
                 add("item.kenergyengineering.liquid_spicy_jelly_bucket", "香辣蜂王浆桶");
                 add("item.kenergyengineering.liquid_xp_bucket", "液态经验桶");
-                add("kenergyengineering.machine_frame", "机械框架");
-                add("kenergyengineering.world_bag", "世界袋");
-                add("kenergyengineering.liquid_bizarrerie", "奇异物质");
-                add("kenergyengineering.liquid_xp", "液态经验");
 
                 // 2c. Supplement from hand-written zh_cn.json
                 try {
@@ -86,6 +78,8 @@ public class DataGenerators {
         generator.addProvider(event.includeServer(), new TENCompatGen(output));
         // Vanilla pack/split recipes
         generator.addProvider(event.includeServer(), new TENVanillaPackGen(output));
+        // 引擎燃料配方（数据包 engine_fuel，运行期唯一事实源）
+        generator.addProvider(event.includeServer(), new TENFuelGen(output));
         // 主世界锡与镍的矿石生成（configured/placed feature 与 biome modifier）
         generator.addProvider(event.includeServer(), new DatapackBuiltinEntriesProvider(output, event.getLookupProvider(), TENWorldGenGen.BUILDER, Set.of(TEN.MOD_ID)));
     }

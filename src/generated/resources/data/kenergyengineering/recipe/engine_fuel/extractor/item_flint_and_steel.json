@@ -1,0 +1,11 @@
+{
+  "type": "kenergyengineering:engine_fuel",
+  "duration": 67,
+  "engines": [
+    "extractor"
+  ],
+  "ingredient": {
+    "item": "minecraft:flint_and_steel"
+  },
+  "rate_multiplier": 1.0
+}

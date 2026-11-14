@@ -27,7 +27,7 @@ import net.neoforged.testframework.annotation.TestHolder;
  * {@code BE_OUT} 仅可被输出、{@code BOTH} 既可被输入也可被输出。两类面机器本 tick 都不动手。
  *
  * <p>
- * 记账反例来源：超堆叠输出槽（批处理升级，单槽上限 64×B）配合主动推出。父类
+ * 记账反例来源：超堆叠输出槽（并行运行升级，单槽上限 64×B）配合主动推出。父类
  * {@code ItemStackHandler#extractItem} 单次提取被物品自身堆叠上限（64）封顶，旧实现按
  * 「意欲推送量」记账（目标收 256、槽只扣 64），每 tick 净增 192 个物品。
  */
@@ -76,7 +76,7 @@ public class MachineActivePushGameTest {
         if (machine == null) return;
 
         machine.itemFaceMode.put(OUT_SIDE, FaceOption.OUT);
-        // 批处理升级后的单槽上限：64 × 4
+        // 并行运行升级后的单槽上限：64 × 4
         machine.itemHandler.setDynamicSlotLimit((slot, stack) -> 64 * 4);
         machine.itemHandler.setStackInSlot(1, new ItemStack(Items.IRON_INGOT, OVERSTACK));
 

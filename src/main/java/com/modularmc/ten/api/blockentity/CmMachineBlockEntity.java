@@ -11,10 +11,9 @@ import com.modularmc.ten.common.blockentity.PipeBlockEntity;
 import com.modularmc.ten.common.blockentity.TransferNetworks;
 import com.modularmc.ten.common.data.TENTags;
 import com.modularmc.ten.common.gui.TENMachineBlockUIFactory;
-import com.modularmc.ten.common.item.upgrades.LevelupBlast;
-import com.modularmc.ten.common.item.upgrades.LevelupSmoke;
-import com.modularmc.ten.common.item.upgrades.LevelupSyn;
+import com.modularmc.ten.common.item.upgrades.UpgradeCategory;
 import com.modularmc.ten.common.item.upgrades.UpgradeConstants;
+import com.modularmc.ten.common.item.upgrades.UpgradeEffect;
 import com.modularmc.ten.common.item.upgrades.UpgradeItem;
 import com.modularmc.ten.utils.SkyLightHelper;
 
@@ -51,7 +50,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
 /**
- * 机器方块实体总基类：聚合能量/物品/流体三能力与升级、面配置、批处理锁、
+ * 机器方块实体总基类：聚合能量/物品/流体三能力与升级、面配置、并行运行锁、
  * 主动 IO、范围显示等横切机制；子类按机器形态选择下级抽象基类，
  * 不直接继承本类。
  */
@@ -76,11 +75,19 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
     @Persisted
     @DescSynced
     public int maxFuel = 0;
+    /**
+     * 本次燃烧的修正后持续时间（tick）：配方声明的持续时间 T ÷ 运行速度。
+     * 引擎开烧时写入，非引擎机器恒 0。燃料条的进度读数用它换算：
+     * {@code 已消耗 tick = 总 tick × 已耗 FE ÷ 起始 FE}。
+     */
+    @Persisted
+    @DescSynced
+    public int fuelTicksTotal = 0;
     /** 当前能量消耗（FE/t）= 最近 5 tick 实测扣能的滑动平均；停机后随窗口滑出归零。 */
     @Persisted
     @DescSynced
     public int energyUse = 0;
-    /** 最大能量消耗（FE/t）= 实际效率 × 理论批量 B（当前升级配置可达的峰值）。 */
+    /** 最大能量消耗（FE/t）= 实际效率 × 理论并行运行数 B（当前升级配置可达的峰值）。 */
     @Persisted
     @DescSynced
     public int energyUseMax = 0;
@@ -165,13 +172,37 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
     private static final int FACE_SEMANTICS_PASSIVE = 1;
     private static final int FACE_SEMANTICS_ENERGY_DIRECTIONS = 2;
 
-    // ───── 乘法模型与批处理字段 ─────
-    /** 时长乘子（升级叠加；未装时长类升级时恒 1.0）。 */
+    // ───── 乘法模型与并行运行字段 ─────
+    /**
+     * 运行耗时倍率：缩短的是「配方总刻度」——{@code maxProgress = 基础耗时 × 它}。
+     * 未装工序精简时恒 1.0；与速度通道互不推导，两张卡同时装时
+     * {@code 实际耗时 = 基础耗时 × 它 ÷ 运行速度}。取值口径见 {@code UpgradeEffect#duration()}。
+     */
     public double durationMultiplier = 1.0;
+    /**
+     * 运行速度：每 tick 推进多少格配方进度，<b>只能是自然数</b>，基准 1，
+     * 即「N，N 可变但必须为整数」。它只决定时间走多快——
+     * {@code 运行耗时 = ceil(配方刻度 ÷ N)}，配方刻度本身由 {@link #durationMultiplier} 缩放——
+     * 不参与每 tick 的耗电，功率另由 {@link #powerMultiplier} 决定。
+     * <p>
+     * 之所以限定整数：进度每 tick 按 N 整格推进，读数（配方刻度）也就一次跳 N 格；
+     * 小数 N 会让读数出现跳半格这种既不可读也无法对齐的中间态。
+     * <p>
+     * 同步到客户端：进度条的悬停读数直接读 {@code progress} 与 {@code maxProgress}，
+     * 两者都不除 N，玩家看到的跳格速度就是 N。
+     */
+    @Persisted
+    @DescSynced
+    public int runSpeed = 1;
+    /**
+     * 全局倍率对并行运行数的放大系数：{@code B = (1 + Σ并行增量) × batchMultiplier}。
+     * 未装整合组件时为 1.0；装了就取该卡的全局倍率 k。
+     */
+    public double batchMultiplier = 1.0;
     /** 是否已安装 LevelupSyn（光合注能）。 */
     public boolean photosynInstalled = false;
     /**
-     * 批量升级计数（Shulker +3 / Power +1）。服务端 doBaseData 每 tick 计算；
+     * 并行运行升级计数（Shulker +3 / Power +1）。服务端 doBaseData 每 tick 计算；
      * 客户端 @DescSynced 同步（范围预览 getRangeBoxes 需要读取真实 B）。
      */
     @Persisted
@@ -179,8 +210,8 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
     public int batch = 0;
 
     /**
-     * Locked batch size B_actual（批处理锁定的实际批量，四维取最小值）。
-     * 0 = 未锁定（无批处理）；处理中 {@link #getLockedBatchSize()} 返回至少 1。
+     * Locked batch size B_actual（并行运行锁定的实际份数，四维取最小值）。
+     * 0 = 未锁定（无并行运行）；处理中 {@link #getLockedBatchSize()} 返回至少 1。
      */
     public int lockedB = 0;
 
@@ -209,6 +240,8 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
 
     public MachineItemHandler itemHandler;
     public MachineItemHandler upgradeHandler;
+    /** 本 tick 实际生效的独特组件升级；服务端权威，不持久化。 */
+    private UpgradeItem activeSpecialization = null;
     public int upgradeSize = 1;
     public int initialUpgradeSize = 1;
     public static final int MAX_UPGRADE_SLOTS = 6;
@@ -303,8 +336,8 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
     private static final int DEFAULT_SLOT_LIMIT = 64;
 
     /**
-     * 安装全机器统一的批处理倍增堆叠上限。由 {@link #initMachine()} 装一次即可——
-     * provider 每次求值都现读理论 B，不需要随配方变化或锁定批量重装。
+     * 安装全机器统一的并行运行倍增堆叠上限。由 {@link #initMachine()} 装一次即可——
+     * provider 每次求值都现读理论 B，不需要随配方变化或锁定份数重装。
      */
     protected void installBatchSlotLimit() {
         if (itemHandler == null) return;
@@ -318,8 +351,8 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
      * 子类可覆写以表达个别槽位的特殊语义。
      * <p>
      * 注意：这里不能用 {@code Item.ABSOLUTE_MAX_STACK_SIZE} 钳制——该常量在 1.21.1 就是 99，
-     * 一旦套上会把所有批量倍增上限统一压回 99（B≥2 时 128/192/…全变 99），
-     * 使批处理堆叠特性静默失效。
+     * 一旦套上会把所有并行运行数倍增上限统一压回 99（B≥2 时 128/192/…全变 99），
+     * 使并行运行堆叠特性静默失效。
      */
     protected int batchSlotLimitFor(int slot, ItemStack candidate) {
         IngredientType type = slotType(slot);
@@ -368,7 +401,10 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         if (upgradeHandler == null) return false;
         for (int i = 0; i < upgradeHandler.getSlots(); i++) {
             ItemStack stack = upgradeHandler.getStackInSlot(i);
-            if (!stack.isEmpty() && upgradeClass.isInstance(stack.getItem())) return true;
+            if (stack.isEmpty() || !upgradeClass.isInstance(stack.getItem())) continue;
+            // 旧档可能同时插着多张独特组件升级：只有本 tick 生效的那张能被 marker 查询命中
+            if (stack.getItem() instanceof UpgradeItem up && up.category() == UpgradeCategory.SPECIALIZATION && up != activeSpecialization) continue;
+            return true;
         }
         return false;
     }
@@ -510,7 +546,7 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
     }
 
     public int initialFaceModeEnergy() {
-        // 普通机器是耗能方：默认「被动输入」——外部电缆/管道可塞电，但拿不走机器的工作电量。
+        // 普通机器是耗能方：默认「被动输入」——外部线缆/管道可塞电，但拿不走机器的工作电量。
         // 产能类（引擎 / 单元 / 创造单元）覆写为主动输出。
         return FaceOption.BE_IN;
     }
@@ -555,7 +591,7 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
 
     /**
      * 主动面（{@link FaceOption#IN} / {@link FaceOption#OUT}）是否允许，默认允许；
-     * 带 {@code ten:no_active_face_energy} / {@code _item} / {@code _fluid} 的方块被去除。
+     * 带 {@code kenergyengineering:no_active_face_energy} / {@code _item} / {@code _fluid} 的方块被去除。
      *
      * <p>
      * 三个标签同一极性（去除）、同一条判定分支，不做「某资源白名单、另一资源黑名单」的混搭，
@@ -777,7 +813,7 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
 
     public boolean energyAllowRun() {
         if (energyStorage == null) return false;
-        // 批处理锁感知——锁定时按总 FE/t（baseFe × lockedB）检查，
+        // 并行运行锁感知——锁定时按总 FE/t（baseFe × lockedB）检查，
         // 防止 stored >= baseFe 但 < totalFe 时 active 闪烁。
         int baseFe = getActualEfficiency();
         int checkFe = hasLockedBatch() ? (int) Math.round((double) baseFe * getLockedBatchSize()) : baseFe;
@@ -804,7 +840,7 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         return energyStorage.receiveEnergy(UpgradeConstants.SYN_PHOTOSYN_FE, false);
     }
 
-    // ───── 批处理锁定接口（含四维 B_actual 计算与 validateAndLockB）─────
+    // ───── 并行运行锁定接口（含四维 B_actual 计算与 validateAndLockB）─────
 
     public boolean hasLockedBatch() {
         return lockedB != 0;
@@ -819,7 +855,7 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         if (B <= 0) {
             throw new IllegalArgumentException("Batch size must be positive, got " + B);
         }
-        lockedB = Math.min(B, 19);
+        lockedB = Math.min(B, BatchMath.B_HARD_MAX);
     }
 
     /**
@@ -830,14 +866,78 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
     }
 
     /**
-     * @return 理论批处理 B（1 + Σbatch，钳位 1..19）；装批量升级即常驻生效
+     * @return 理论并行运行 B = {@code (1 + Σ并行增量) × 全局倍率}，钳位 1..{@value BatchMath#B_HARD_MAX}。
+     *         不支持并行运行的机器恒返回 1：全局倍率对它们只作用于速度与耗时，
+     *         不能把堆叠 / 流体 / 储能的容量凭空放大。
      */
     public int getTheoreticalBatchSize() {
-        return Math.max(1, Math.min(1 + batch, 19));
+        if (!supportsBatch()) return 1;
+        int parallel = 1 + batch;
+        int scaled = (int) Math.round(parallel * Math.max(1.0, batchMultiplier));
+        return Math.max(1, Math.min(scaled, BatchMath.B_HARD_MAX));
+    }
+
+    /**
+     * 按运行耗时倍率缩放一份配方的刻度：{@code max(1, round(基础耗时 × durationMultiplier))}。
+     * 进程启动时用它锁定 maxProgress，周期内倍率漂移不影响已经开跑的这一份
+     * （由 {@code lockMaxProgressForNewOperation} 兜住）。
+     */
+    protected int scaledDuration(int baseTicks) {
+        if (baseTicks <= 0) return 1;
+        return Math.max(1, (int) Math.round(baseTicks * durationMultiplier));
+    }
+
+    /**
+     * 按运行速度推进一次进度：返回本 tick 实际推进的进度。
+     * 速度恒为自然数，所以一次推进就是整 N 格，不需要余数累积。
+     */
+    protected int advanceProgressBySpeed() {
+        int step = Math.max(1, runSpeed);
+        progress += step;
+        return step;
     }
 
     public boolean hasLockedMaxProgress() {
         return lockedMaxProgress != 0;
+    }
+
+    // ───── 进度条 tick 读数（GUI tooltip 用，lane 参数见熔炼机覆写）─────
+
+    /**
+     * @param lane -1 表示本机单进度（多流水线机器传自己的 lane）
+     * @return 进度比例 0..1，与 {@code progress ÷ maxProgress} 同义
+     */
+    public double progressFraction(int lane) {
+        return maxProgress == 0 ? 0 : Math.min(1.0, (double) progress / maxProgress);
+    }
+
+    /**
+     * 进度条刻度的总量：配方耗时 T（tick），不随运行速度缩放。
+     * 进度每 tick 推进 N 格，读数也就一次跳 N —— 悬停看到的是配方自身的刻度，
+     * 时间走多快由跳的步长体现，而不是把总量除以 N。
+     */
+    public int progressTotalTicks(int lane) {
+        return Math.max(0, maxProgress);
+    }
+
+    /** 已完成刻度：直接就是当前进度（每 tick 增加 runSpeed，而不是恒定 +1）。 */
+    public int progressDoneTicks(int lane) {
+        int total = progressTotalTicks(lane);
+        return Math.max(0, Math.min(total, progress));
+    }
+
+    /** 修正后的持续时间（tick），即燃料条的总刻度。 */
+    public int fuelTotalTicks() {
+        return Math.max(0, fuelTicksTotal);
+    }
+
+    /** 已消耗 tick：按已耗 FE 占比折算，与燃料条填充比例同源。 */
+    public int fuelDoneTicks() {
+        int total = fuelTotalTicks();
+        if (total <= 0 || maxFuel <= 0) return 0;
+        int consumed = Math.max(0, maxFuel - fuel);
+        long done = Math.round((double) total * consumed / maxFuel);
+        return (int) Math.max(0, Math.min(total, done));
     }
 
     public void lockMaxProgressForNewOperation(int progress) {
@@ -1047,8 +1147,8 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         // 使乘子升级效果平方化、radius/batch 每 tick 累加）──
         applyUpgradeEffects();
 
-        // ── 理论 B 批量缩放储能：批量升级后每 tick 总能耗 fePerTick =
-        // efficientIn × lockedB，储能不随 B 放大将导致扣能永久不足 → 全机停滞。
+        // ── 理论 B 并行运行数缩放储能：批量升级后每 tick 总能耗 fePerTick =
+        // efficientIn × lockedB，储能不随 B 放大将导致扣能永久不足 → 全机停机。
         // 收发速率已不限流，因此这里只缩放容量 ──
         int theoreticalB = getTheoreticalBatchSize();
         int effectiveStorage = safeMultiply(initialEnergyStorage, theoreticalB);
@@ -1064,6 +1164,8 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         // （背景：探针证实 progress 自增后客户端/服务端镜像树均读到恒 0，强制推送绕开值比较环节）
         markDirty("progress");
         markDirty("maxProgress");
+        markDirty("runSpeed");
+        markDirty("fuelTicksTotal");
         markDirty("energyStored");
         markDirty("maxEnergyStored");
         markDirty("energyUse");
@@ -1075,7 +1177,7 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         energyUse = rollEnergyUseSample();
         energyUseMax = safeMultiply(getActualEfficiency(), theoreticalB);
         upgSize = upgradeSize;
-        // ── 流体容量批量缩放：每 tank 按构造初始容量 × theoreticalB 独立缩放 ──
+        // ── 流体容量并行运行数缩放：每 tank 按构造初始容量 × theoreticalB 独立缩放 ──
         if (!tanks.isEmpty()) {
             for (var tank : tanks) {
                 int effectiveFluidCapacity = safeMultiply(tank.getInitialCapacity(), theoreticalB);
@@ -1185,16 +1287,32 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
     }
 
     public boolean validUpgrade(int slot, ItemStack stack) {
-        // Slots 0..MAX_UPGRADE_SLOTS-1 (0..5) are always valid for compatible upgrades
         if (!supportsUpgradeSlots()) return false;
         if (slot < 0 || slot >= MAX_UPGRADE_SLOTS) return false;
         if (!(stack.getItem() instanceof UpgradeItem upgradeItem)) return false;
-        // LevelupSyn: max 1 per machine (enforced at install time)
-        if (stack.getItem() instanceof LevelupSyn && hasUpgrade(LevelupSyn.class)) return false;
-        // Blast ↔ Smoke 互斥——不可共存
-        if (stack.getItem() instanceof LevelupBlast && hasUpgrade(LevelupSmoke.class)) return false;
-        if (stack.getItem() instanceof LevelupSmoke && hasUpgrade(LevelupBlast.class)) return false;
-        return upgradeItem.canApply(this);
+        if (!upgradeItem.canApply(this)) return false;
+
+        int sameKind = 0;
+        int specializations = 0;
+        int tiers = 0;
+        // initMachine() 构造 handler 时本字段尚未赋值，需容忍 null
+        if (upgradeHandler != null) {
+            for (int i = 0; i < upgradeHandler.getSlots(); i++) {
+                ItemStack other = upgradeHandler.getStackInSlot(i);
+                if (other.isEmpty() || !(other.getItem() instanceof UpgradeItem installed)) continue;
+                if (installed.getClass() == upgradeItem.getClass()) sameKind++;
+                if (installed.category() == UpgradeCategory.SPECIALIZATION) specializations++;
+                if (installed.category() == UpgradeCategory.TIER) tiers++;
+            }
+        }
+        // 单机数量上限由升级组件自己声明（光合供能抑制等），不再逐卡硬编码
+        if (sameKind >= upgradeItem.maxPerMachine()) return false;
+        // 冲突在放入时拦截，不靠 tooltip 声明：整合组件的全局倍率与独特组件的唯一效果
+        // 整机各只能有一个，槽里已有同类时直接拒绝插入（含同卡重复）。旧存档里
+        // 已存在的多张由 applyUpgradeEffects 取最高档兜底。
+        if (upgradeItem.category() == UpgradeCategory.TIER && tiers > 0) return false;
+        if (upgradeItem.category() == UpgradeCategory.SPECIALIZATION && specializations > 0) return false;
+        return true;
     }
 
     public IngredientType tankType(int tank) {
@@ -1212,29 +1330,98 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         // 重置乘法模型字段
         durationMultiplier = 1.0;
         powerMultiplier = 1.0;
+        runSpeed = 1;
+        batchMultiplier = 1.0;
         batch = 0;
         adjustRangeCap = ADJUST_RANGE_MAX;
         photosynInstalled = false;
         recipeMode = IUpgradableMachine.RECIPE_MODE_SMELTING;
         unlimitedEnergyTransfer = false;
+        activeSpecialization = null;
         // NOTE: lockedB and lockedMaxProgress are NOT reset here —
         // batch/duration lock lifecycle is managed independently by
         // conditionStart/clearLockedBatch/lockBatchForNewOperation.
     }
 
+    /**
+     * 三类别结算（每 tick 由 {@link #doBaseData()} 在重置后调用一次）：
+     * 整合组件取最高档、独特组件取第一个、增益组件线性叠加。
+     * 放入阶段已经拦住了第二张整合组件 / 独特组件卡，这里的「取最高档 / 取第一个」只是
+     * 旧存档、导入库存等绕过校验的多张残留的兜底，不承担互斥语义。
+     * 数值系数先汇总再一次写入，避免逐卡乘性累积；副作用只对实际生效的卡调用。
+     */
     protected void applyUpgradeEffects() {
         if (upgradeHandler == null) return;
+
+        Map<Class<? extends UpgradeItem>, Integer> seen = new HashMap<>();
+        List<UpgradeItem> applicable = new ArrayList<>();
         for (int i = 0; i < upgradeHandler.getSlots(); i++) {
             ItemStack stack = upgradeHandler.getStackInSlot(i);
-            if (stack.getItem() instanceof UpgradeItem upgradeItem) {
-                // Skip incompatible upgrades: canApply must pass first
-                if (!upgradeItem.canApply(this)) continue;
-                upgradeItem.effect(this);
+            if (!(stack.getItem() instanceof UpgradeItem up)) continue;
+            if (!up.canApply(this)) continue;
+            int count = seen.merge(up.getClass(), 1, Integer::sum);
+            if (count > up.maxPerMachine()) continue;
+            applicable.add(up);
+        }
+
+        UpgradeItem bestTier = null;
+        UpgradeItem specialization = null;
+        List<UpgradeItem> active = new ArrayList<>();
+        double power = 1.0;
+        int speedAdd = 0;
+        double duration = 1.0;
+        int batch = 0;
+
+        for (UpgradeItem up : applicable) {
+            switch (up.category()) {
+                case TIER -> {
+                    if (bestTier == null || up.tier() > bestTier.tier()) bestTier = up;
+                }
+                case SPECIALIZATION -> {
+                    if (specialization == null) specialization = up;
+                }
+                case MODIFIER -> {
+                    UpgradeEffect e = up.modifiers();
+                    power += e.power() - 1.0;
+                    speedAdd += e.speed();
+                    duration += e.duration() - 1.0;
+                    batch += e.batch();
+                    active.add(up);
+                }
             }
         }
+        double tierK = 1.0;
+        if (bestTier != null) {
+            UpgradeEffect e = bestTier.modifiers();
+            tierK = Math.max(1.0, e.power());
+            power += e.power() - 1.0;
+            duration += e.duration() - 1.0;
+            batch += e.batch();
+            active.add(bestTier);
+        }
+        activeSpecialization = specialization;
+
+        // 1 + Σ(k-1) 线性叠加，钳正数下限；只乘一次，避免每卡逐次舍入漂移。
+        // 四条通道分工：功率决定每 tick 耗多少电（FE/t），速度决定每 tick 推进多少格，
+        // 耗时倍率决定配方本身有多长，并行运行决定一个周期并行几份。
+        // 实际耗时 = 配方耗时 × 耗时倍率 ÷ N，耗电 = 功率 × 耗时；
+        // 速度与耗时是两条互不推导的通道，各自生效，叠在一起只是相乘。
+        double totalPower = Math.max(0.1, power);
+        applyPowerMultiplier(totalPower);
+        // N = (1 + Σ速度增量) × 全局倍率 k。k 只取 2/3/4，Σ速度增量是自然数，
+        // 所以 N 恒为自然数（这也是速度通道不写成倍率的原因）。
+        runSpeed = (int) Math.max(1, Math.round((1.0 + speedAdd) * tierK));
+        // 耗时倍率只缩短配方总刻度，不碰每 tick 的推进格数。
+        applyDurationMultiplier(Math.max(0.05, duration));
+        // 第 8 条：全局倍率同时乘并行运行数 —— B = (1 + Σ并行增量) × k。
+        batchMultiplier = tierK;
+        if (batch > 0) applyBatchIncrease(batch);
+
+        // 模式 marker / 范围 / 光合标记等副作用
+        for (UpgradeItem up : active) up.effect(this);
+        if (specialization != null) specialization.effect(this);
+
         upgradeSize = MAX_UPGRADE_SLOTS;
-        // Single computation after all upgrades: base FE/t with power multiplier
-        // This avoids per-slot repeated rounding and per-tick re-multiplication drift.
         efficientIn = Math.max(1, (int) Math.round(initialEfficientIn * powerMultiplier));
     }
 

@@ -1,7 +1,7 @@
 package com.modularmc.ten.integration.emi;
 
 import com.modularmc.ten.TENConstants;
-import com.modularmc.ten.common.blockentity.EngineFuelRecipe;
+import com.modularmc.ten.common.blockentity.EngineFuelDisplay;
 
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -35,9 +35,9 @@ public class EngineFuelEmiRecipe implements EmiRecipe {
 
     private final EmiRecipeCategory category;
     private final ResourceLocation id;
-    private final EngineFuelRecipe recipe;
+    private final EngineFuelDisplay recipe;
 
-    public EngineFuelEmiRecipe(EmiRecipeCategory category, ResourceLocation id, EngineFuelRecipe recipe) {
+    public EngineFuelEmiRecipe(EmiRecipeCategory category, ResourceLocation id, EngineFuelDisplay recipe) {
         this.category = category;
         this.id = id;
         this.recipe = recipe;
@@ -85,7 +85,7 @@ public class EngineFuelEmiRecipe implements EmiRecipe {
         widgets.addTexture(TENConstants.FUEL_GAUGE_FILL, FUEL_GAUGE_X, FUEL_GAUGE_Y, FUEL_GAUGE_W, FUEL_GAUGE_H, 0, 0, FUEL_GAUGE_W, FUEL_GAUGE_H, FUEL_GAUGE_W, FUEL_GAUGE_H);
 
         int textColor = 0xFF404040;
-        widgets.addText(Component.translatable("kenergyengineering.jei.base_rate_short", recipe.baseRate()), TEXT_X, TEXT_LINE1_Y, textColor, false);
+        widgets.addText(Component.translatable("kenergyengineering.jei.base_rate_short", recipe.rate()), TEXT_X, TEXT_LINE1_Y, textColor, false);
         widgets.addText(Component.translatable("kenergyengineering.jei.duration_short", recipe.durationTicks()), TEXT_X, TEXT_LINE2_Y, textColor, false);
         widgets.addText(Component.translatable("kenergyengineering.jei.total_short", recipe.baseGeneratedEnergy()), TEXT_X, TEXT_LINE3_Y, textColor, false);
     }

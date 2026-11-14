@@ -1,0 +1,21 @@
+{
+	"type": "minecraft:crafting_shaped",
+	"pattern": ["EBE", "DAD", "EBE"],
+	"key": {
+		"A": {
+			"item": "kenergyengineering:duration_levelup_2"
+		},
+		"B": {
+			"item": "minecraft:diamond"
+		},
+		"D": {
+			"item": "minecraft:gold_ingot"
+		},
+		"E": {
+			"item": "minecraft:clock"
+		}
+	},
+	"result": {
+		"id": "kenergyengineering:duration_levelup_3"
+	}
+}

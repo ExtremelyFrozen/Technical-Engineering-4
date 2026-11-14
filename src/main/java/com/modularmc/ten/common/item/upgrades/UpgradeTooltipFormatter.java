@@ -11,100 +11,121 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * Runtime tooltip formatter for upgrade items.
+ * 升级 tooltip 生成器：数值全部取自 {@link UpgradeConstants} 与
+ * {@link UpgradeItem#modifiers()}，模板键由 {@code TENLangHandler} 生成。
+ *
  * <p>
- * Formats components from shared {@link UpgradeConstants} and item-specific
- * translation keys. The registry path for each upgrade is derived from its
- * class name via {@link #regPathFor(UpgradeItem)}, which works both in
- * production (with game registries) and in unit tests (without registries).
- * <p>
- * Numerical values use generic translation templates shared across upgrades.
- * Formatting uses {@link Locale#ROOT} to avoid floating-point noise.
+ * 只写升级组件自身带来的收益：整合组件给「全局倍率」一个关键词行，增益组件只列
+ * {@code 速度 / 耗时 / 功率 / 并行运行数} 四条通道里真正被改动的那些——运行速度（+N）、
+ * 运行耗时（±n%）、运行功率（FE/t），需要并行时再补一行并行运行数。
+ * 没有变化的维度整行不出现，不写「不变」。独特组件只写卡面专有文本。
+ * 插件类别、互斥关系与适用机型都不进文案——冲突在放入槽位的那一刻由
+ * {@code validUpgrade} / {@code canApply} 直接拒绝。
  */
 public final class UpgradeTooltipFormatter {
 
+    private static final double EPSILON = 1e-6;
+
     private UpgradeTooltipFormatter() {}
 
-    /**
-     * Build the full tooltip component list for an upgrade item.
-     * <p>
-     * Line 0 is the title (GOLD + BOLD), subsequent lines are GOLD only.
-     * Pure-text descriptions use item-specific translation keys;
-     * numerical values use generic shared format keys.
-     *
-     * @param item the upgrade item instance
-     * @return ordered list of tooltip components
-     */
     public static List<Component> format(UpgradeItem item) {
         List<Component> lines = new ArrayList<>();
         String path = regPathFor(item);
         addTitle(lines, path);
 
-        if (item instanceof LevelupAug aug) {
-            addDurationPercent(lines, UpgradeConstants.AUG_DURATION);
-            addPowerMultiplier(lines, UpgradeConstants.AUG_POWER);
-
-        } else if (item instanceof LevelupPower pow) {
-            addBatchCount(lines, UpgradeConstants.POWER_BATCH);
-            addDurationPercent(lines, UpgradeConstants.POWER_DURATION);
-            addPowerMultiplier(lines, UpgradeConstants.POWER_POWER);
-
-        } else if (item instanceof LevelupShulker shulk) {
-            addBatchCount(lines, UpgradeConstants.SHULKER_BATCH);
-            addDurationPercent(lines, UpgradeConstants.SHULKER_DURATION);
-            addPowerMultiplier(lines, UpgradeConstants.SHULKER_POWER);
-
-        } else if (item instanceof LevelupSyn syn) {
-            addDurationPercent(lines, UpgradeConstants.SYN_DURATION);
-            addPowerMultiplier(lines, UpgradeConstants.SYN_POWER);
-            addPhotosynFe(lines, UpgradeConstants.SYN_PHOTOSYN_FE);
-            addPureText(lines, path, 4); // sky/rain/day limits
-            addPureText(lines, path, 5); // Only 1 per machine
-
-        } else if (item instanceof LevelupRg rg) {
-            addRangeFraction(lines, UpgradeConstants.RG_RANGE_FRACTION);
-
-        } else if (item instanceof LevelupPotion pot) {
-            addAmplifier(lines, UpgradeConstants.POTION_AMPLIFIER);
-
-        } else if (item instanceof LevelupBlast blast) {
-            addPureText(lines, path, 1); // Recipe mode: Blast Furnace
-
-        } else if (item instanceof LevelupSmoke smoke) {
-            addPureText(lines, path, 1); // Recipe mode: Smoker
-
-        } else if (item instanceof LevelupIce ice) {
-            addPureText(lines, path, 1); // Output mode: Ice
-
-        } else if (item instanceof LevelupMagma magma) {
-            addPureText(lines, path, 1); // Output mode: Magma
-
-        } else if (item instanceof LevelupMineral mineral) {
-            addPureText(lines, path, 1); // Mining mode: Mineral
-
-        } else if (item instanceof LevelupKnow know) {
-            addPureText(lines, path, 1); // Adds fluid output tank
-            addPureText(lines, path, 2); // Each recipe produces XP
-
-        } else if (item instanceof LevelupStream stream) {
-            addPureText(lines, path, 1); // Energy transfer rate: Infinite
-
-        } else {
-            // Unknown upgrade: static fallback
-            addPureText(lines, "upgrade_tip.unknown", 0);
+        if (item.category() == UpgradeCategory.TIER) {
+            addTier(lines, item.modifiers());
+        } else if (item.category() == UpgradeCategory.MODIFIER) {
+            addModifier(lines, item.modifiers());
         }
+        addCardText(lines, item, path);
 
         return lines;
     }
 
     /**
-     * Derive the registry path for an upgrade item from its class type.
-     * <p>
-     * Uses a known mapping between UpgradeItem subclasses and their registry
-     * paths. This works without requiring the Minecraft {@code BuiltInRegistries}
-     * to be initialized, making it usable in unit tests.
+     * 整合组件：只给「全局倍率 ×k」这一个关键词行。
+     * 速度 / 耗时 / 耗电三者的变化已由该关键词定义，不再逐项展开；
+     * 整合组件不带并行运行，也就不出并行运行行。
      */
+    private static void addTier(List<Component> lines, UpgradeEffect effect) {
+        lines.add(Component.translatable(TEN.MOD_ID + ".upgrade_tip.global.multiply", decimal(effect.power()))
+                .withStyle(ChatFormatting.GOLD));
+    }
+
+    /**
+     * 增益组件：只列出实际改变的通道，没有变化的维度整行不写。
+     *
+     * <p>
+     * 可写的有四项：运行速度（+N）、运行耗时（配方本身的长度，±n%）、
+     * 运行功率（FE/t）、并行运行数。速度与耗时是两条独立通道——
+     * 速度管「每 tick 推进几格」，耗时管「配方有多长」——所以两张卡各写各的行，
+     * 同时装时两行都出现。完成一次配方的耗电是功率与耗时的乘积，玩家自己相乘即可。
+     */
+    private static void addModifier(List<Component> lines, UpgradeEffect effect) {
+        if (effect.speed() != 0) addRunSpeed(lines, effect.speed());
+        if (!isOne(effect.duration())) addRunDuration(lines, effect.duration());
+        if (!isOne(effect.power())) addRunPower(lines, effect.power());
+        if (effect.batch() > 0) addBatchCount(lines, effect.batch());
+    }
+
+    /** 卡面专有文本：光合注能、范围、药水等级等非数值维度。 */
+    private static void addCardText(List<Component> lines, UpgradeItem item, String path) {
+        if (item instanceof LevelupSyn) {
+            addPhotosynFe(lines, UpgradeConstants.SYN_PHOTOSYN_FE);
+            addPureText(lines, path, 4);
+
+        } else if (item instanceof LevelupRg) {
+            addRangeFraction(lines, UpgradeConstants.RG_RANGE_FRACTION);
+
+        } else if (item instanceof LevelupPotion) {
+            addAmplifier(lines, UpgradeConstants.POTION_AMPLIFIER);
+
+        } else if (item instanceof LevelupKnow) {
+            addPureText(lines, path, 1);
+            addPureText(lines, path, 2);
+
+        } else if (item instanceof LevelupBlast || item instanceof LevelupSmoke || item instanceof LevelupIce || item instanceof LevelupMagma || item instanceof LevelupMineral || item instanceof LevelupStream) {
+            addPureText(lines, path, 1);
+        }
+    }
+
+    /** 速度行写整数增量：N 只能是自然数，所以是「运行速度 +2」而不是百分比。 */
+    private static void addRunSpeed(List<Component> lines, int add) {
+        lines.add(Component.translatable(TEN.MOD_ID + ".upgrade_tip.run.speed", formatSignedInt(add))
+                .withStyle(ChatFormatting.GOLD));
+    }
+
+    /** 耗时行写配方长度的百分比变化：{@code 0.90 → -10%}。 */
+    private static void addRunDuration(List<Component> lines, double value) {
+        lines.add(Component.translatable(TEN.MOD_ID + ".upgrade_tip.run.duration", change(value))
+                .withStyle(ChatFormatting.GOLD));
+    }
+
+    private static void addRunPower(List<Component> lines, double value) {
+        lines.add(Component.translatable(TEN.MOD_ID + ".upgrade_tip.run.power", change(value))
+                .withStyle(ChatFormatting.GOLD));
+    }
+
+    /**
+     * 倍率的卡面写法：整数倍率写 {@code xN}，其余写成百分比变化 {@code +20% / -25%}。
+     * 数值源恒为 0.05 的整数倍，百分比必然是 5 的整数倍，不做二次取整。
+     */
+    private static String change(double value) {
+        if (Math.abs(value - Math.rint(value)) < EPSILON) {
+            return "x" + (long) Math.rint(value);
+        }
+        long pct = Math.round((value - 1.0) * 100.0);
+        return (pct >= 0 ? "+" : "") + pct + "%";
+    }
+
+    /** 多级变体：II / III 档的本地化路径加数字后缀，I 档沿用基础路径。 */
     static String regPathFor(UpgradeItem item) {
+        String base = basePath(item);
+        return item.variant() > 1 ? base + "_" + item.variant() : base;
+    }
+
+    private static String basePath(UpgradeItem item) {
         if (item instanceof LevelupAug) return "augmented_levelup";
         if (item instanceof LevelupPower) return "powered_levelup";
         if (item instanceof LevelupShulker) return "relic_levelup";
@@ -118,110 +139,60 @@ public final class UpgradeTooltipFormatter {
         if (item instanceof LevelupMineral) return "mineral_levelup";
         if (item instanceof LevelupKnow) return "knowledge_levelup";
         if (item instanceof LevelupStream) return "stream_levelup";
-        return item.getClass().getSimpleName(); // fallback
+        if (item instanceof LevelupEfficiency) return "efficiency_levelup";
+        if (item instanceof LevelupParallel) return "parallel_levelup";
+        if (item instanceof LevelupDuration) return "duration_levelup";
+        if (item instanceof LevelupSpeed) return "speed_levelup";
+        return item.getClass().getSimpleName();
     }
 
-    // ── Title ──────────────────────────────────────────────────────────
+    private static boolean isOne(double value) {
+        return Math.abs(value - 1.0) < EPSILON;
+    }
 
-    /** Line 0: item-specific title, GOLD + BOLD. */
+    private static String decimal(double value) {
+        String raw = String.format(Locale.ROOT, "%.2f", value);
+        if (raw.contains(".")) {
+            raw = raw.replaceAll("0*$", "").replaceAll("\\.$", "");
+        }
+        return raw;
+    }
+
+    public static String formatSignedInt(int value) {
+        return (value >= 0 ? "+" : "") + value;
+    }
+
     private static void addTitle(List<Component> lines, String path) {
-        String key = TEN.MOD_ID + "." + path + ".0";
-        MutableComponent title = Component.translatable(key)
+        MutableComponent title = Component.translatable(TEN.MOD_ID + "." + path + ".0")
                 .withStyle(ChatFormatting.GOLD)
                 .withStyle(ChatFormatting.BOLD);
         lines.add(title);
     }
 
-    // ── Numeric helpers ────────────────────────────────────────────────
-
-    /**
-     * Format an integer with explicit sign prefix.
-     * <p>
-     * Returns a string like {@code "+1"}, {@code "-3"}, {@code "+0"}.
-     * Used for batch count, photosyn FE, potion amplifier, and range
-     * percentage. The caller passes this string via {@code %s} to
-     * {@link Component#translatable}, avoiding unsupported printf format
-     * specifiers ({@code %+d}, {@code %d}, {@code %f}) in translation
-     * templates.
-     */
-    public static String formatSignedInt(int value) {
-        return (value >= 0 ? "+" : "") + value;
-    }
-
-    /**
-     * Format a duration multiplier as a signed percent change.
-     * <p>
-     * (m - 1) * 100 → displayed with explicit +/- sign.
-     * Examples: 0.75 → -25%, 1.50 → +50%, 0.60 → -40%
-     */
-    private static void addDurationPercent(List<Component> lines, double multiplier) {
-        int pct = (int) Math.round((multiplier - 1.0) * 100.0);
-        String pctStr = (pct >= 0 ? "+" : "") + pct;
-        String key = TEN.MOD_ID + ".upgrade_tip.duration.percent";
-        lines.add(Component.translatable(key, pctStr).withStyle(ChatFormatting.GOLD));
-    }
-
-    /**
-     * Format a power multiplier as {@code x} + trailing-zero-free decimal.
-     * <p>
-     * Uses {@link String#format} with {@link Locale#ROOT} then strips trailing zeros.
-     * Examples: 2.00 → "x2", 1.30 → "x1.3", 0.80 → "x0.8"
-     */
-    private static void addPowerMultiplier(List<Component> lines, double multiplier) {
-        // Format with up to 2 decimal places, strip trailing zeros and decimal point
-        String raw = String.format(Locale.ROOT, "%.2f", multiplier);
-        if (raw.contains(".")) {
-            raw = raw.replaceAll("0*$", "").replaceAll("\\.$", "");
-        }
-        String key = TEN.MOD_ID + ".upgrade_tip.power.multiplier";
-        lines.add(Component.translatable(key, raw).withStyle(ChatFormatting.GOLD));
-    }
-
-    /**
-     * Format an additive batch count with explicit sign.
-     * Example: +1 batch, +3 batch
-     */
     private static void addBatchCount(List<Component> lines, int count) {
-        String key = TEN.MOD_ID + ".upgrade_tip.batch.add";
-        lines.add(Component.translatable(key, formatSignedInt(count)).withStyle(ChatFormatting.GOLD));
+        lines.add(Component.translatable(TEN.MOD_ID + ".upgrade_tip.batch.add", formatSignedInt(count))
+                .withStyle(ChatFormatting.GOLD));
     }
 
-    /**
-     * Format photosynthetic FE/t injection.
-     * Example: +10 FE/t photosynthetic power
-     */
     private static void addPhotosynFe(List<Component> lines, int fe) {
-        String key = TEN.MOD_ID + ".upgrade_tip.photosyn.fe";
-        lines.add(Component.translatable(key, formatSignedInt(fe)).withStyle(ChatFormatting.GOLD));
+        lines.add(Component.translatable(TEN.MOD_ID + ".upgrade_tip.photosyn.fe", formatSignedInt(fe))
+                .withStyle(ChatFormatting.GOLD));
     }
 
-    /**
-     * Format additive range fraction as +XX%.
-     * Example: 0.50 → +50%
-     */
     private static void addRangeFraction(List<Component> lines, double fraction) {
         int pct = (int) Math.round(fraction * 100.0);
-        String key = TEN.MOD_ID + ".upgrade_tip.range.add";
-        lines.add(Component.translatable(key, formatSignedInt(pct)).withStyle(ChatFormatting.GOLD));
+        lines.add(Component.translatable(TEN.MOD_ID + ".upgrade_tip.range.add", formatSignedInt(pct))
+                .withStyle(ChatFormatting.GOLD));
     }
 
-    /**
-     * Format potion amplifier boost.
-     * Example: +1 potion effect level
-     */
     private static void addAmplifier(List<Component> lines, int amp) {
-        String key = TEN.MOD_ID + ".upgrade_tip.potion.amplifier";
-        lines.add(Component.translatable(key, formatSignedInt(amp)).withStyle(ChatFormatting.GOLD));
+        lines.add(Component.translatable(TEN.MOD_ID + ".upgrade_tip.potion.amplifier", formatSignedInt(amp))
+                .withStyle(ChatFormatting.GOLD));
     }
 
-    // ── Pure text helper ───────────────────────────────────────────────
-
-    /**
-     * Add a pure-text line from item-specific translation key.
-     */
     private static void addPureText(List<Component> lines, String path, int index) {
-        String key = TEN.MOD_ID + "." + path + "." + index;
-        MutableComponent text = Component.translatable(key).withStyle(ChatFormatting.GOLD);
+        MutableComponent text = Component.translatable(TEN.MOD_ID + "." + path + "." + index)
+                .withStyle(ChatFormatting.GOLD);
         lines.add(text);
     }
 }

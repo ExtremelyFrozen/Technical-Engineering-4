@@ -13,8 +13,11 @@ public final class BatchMath {
 
     private BatchMath() {}
 
-    /** Hard cap for B_actual (6 × Shulker = 19). */
-    public static final int B_HARD_MAX = 19;
+    /**
+     * Hard cap for B_actual。并行增量本身的上限是 19（6 × Shulker + 1），
+     * 全局倍率最高 ×4（升级：潜影组件），两者相乘得 76。
+     */
+    public static final int B_HARD_MAX = 76;
 
     /**
      * Validates that the given batch size B is positive.

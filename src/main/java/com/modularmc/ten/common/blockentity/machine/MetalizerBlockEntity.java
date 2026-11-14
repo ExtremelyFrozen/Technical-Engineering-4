@@ -3,7 +3,6 @@ package com.modularmc.ten.common.blockentity.machine;
 import com.modularmc.ten.api.blockentity.EngineBlockEntity;
 import com.modularmc.ten.api.option.IngredientType;
 import com.modularmc.ten.api.option.MachineType;
-import com.modularmc.ten.common.blockentity.MatchFuel;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.item.ItemStack;
@@ -19,7 +18,7 @@ public class MetalizerBlockEntity extends EngineBlockEntity {
     public MetalizerBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
         setCapacity(kFE(80));
-        setEfficiency(80);
+        setEfficiency(BASE_GENERATION_RATE);
     }
 
     @Override
@@ -39,7 +38,7 @@ public class MetalizerBlockEntity extends EngineBlockEntity {
 
     @Override
     public boolean valid(int slot, ItemStack stack) {
-        return MatchFuel.matchMetal(stack, true) > 0;
+        return !fuelProfile(stack).isEmpty();
     }
 
     @Override
@@ -53,7 +52,7 @@ public class MetalizerBlockEntity extends EngineBlockEntity {
     }
 
     @Override
-    public int matchFuel(ItemStack stack, boolean simulate) {
-        return MatchFuel.matchMetal(stack, simulate);
+    public String fuelEngineId() {
+        return "metalizer";
     }
 }

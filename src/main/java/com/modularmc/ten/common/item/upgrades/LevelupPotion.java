@@ -6,10 +6,12 @@ public class LevelupPotion extends UpgradeItem {
 
     public LevelupPotion() {
         super(0);
+        asSpecialization();
     }
 
     public LevelupPotion(Properties properties) {
         super(0, properties);
+        asSpecialization();
     }
 
     @Override

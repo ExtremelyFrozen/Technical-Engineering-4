@@ -246,16 +246,11 @@ public final class TENRecipeWidget {
             switch (decoration.kind()) {
                 case PROGRESS -> {
                     tooltips.add(Component.literal((int) (progressPercent() * 100.0d) + "%"));
-                    tooltips.add(Component.literal(String.format("%.1fs", recipe.time() / 20.0d)));
+                    tooltips.add(Component.translatable("kenergyengineering.jei.duration_short", recipe.time()));
                 }
             }
         }
         return tooltips;
-    }
-
-    public static void drawTime(GuiGraphics graphics, int x, int y, int ticks) {
-        Font font = Minecraft.getInstance().font;
-        graphics.drawString(font, String.format("%.1fs", ticks / 20.0d), x, y, 0x555555, false);
     }
 
     public static void drawFluidTank(GuiGraphics graphics, int x, int y, int w, int h, FluidStack stack) {
@@ -278,10 +273,6 @@ public final class TENRecipeWidget {
                 .mapToInt(FluidStack::getAmount)
                 .max()
                 .orElse(Math.max(1, ingredient.amountOrCount()));
-    }
-
-    public static String formatChance(double chance) {
-        return String.format("%.0f%% chance", chance * 100.0d);
     }
 
     /**

@@ -1,31 +1,27 @@
 package com.modularmc.ten.common.item.upgrades;
 
-import com.modularmc.ten.api.blockentity.CmMachineBlockEntity;
 import com.modularmc.ten.api.blockentity.IUpgradableMachine;
 
+/** 整合组件·三档：全局倍率 ×4.00，耗时按倒数缩短，总能耗不变。 */
 public class LevelupShulker extends UpgradeItem {
 
     public LevelupShulker() {
         super(0.75);
+        configure();
     }
 
     public LevelupShulker(Properties properties) {
         super(0.75, properties);
+        configure();
+    }
+
+    private void configure() {
+        asTier("core", 3, UpgradeEffect.global(UpgradeConstants.TIER_MULTIPLY[2]));
     }
 
     @Override
     public boolean canApply(IUpgradableMachine machine) {
-        // 模拟信标不支持潜影组件（规格：信标禁增强/充能/潜影）
+        // 信标模拟机不支持整合组件
         return !machine.isType("BEACON");
-    }
-
-    @Override
-    public boolean effect(IUpgradableMachine machine) {
-        if (machine instanceof CmMachineBlockEntity cm) {
-            cm.applyDurationMultiplier(UpgradeConstants.SHULKER_DURATION); // time ×0.40 (-60%)
-            cm.applyPowerMultiplier(UpgradeConstants.SHULKER_POWER);       // power ×2.00 (+100%)
-            cm.applyBatchIncrease(UpgradeConstants.SHULKER_BATCH);         // batch +3
-        }
-        return true;
     }
 }

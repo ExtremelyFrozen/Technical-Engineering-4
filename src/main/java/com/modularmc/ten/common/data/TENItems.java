@@ -135,6 +135,18 @@ public class TENItems {
     public static final ItemEntry<? extends UpgradeItem> ICE_LEVELUP = upgrade("ice_levelup", "Upgrade: Frozen Soil Drilling", "升级：地下冻土开采", p -> new LevelupIce());
     public static final ItemEntry<? extends UpgradeItem> MAGMA_LEVELUP = upgrade("magma_levelup", "Upgrade: Mantle Drilling", "升级：地幔深层钻井", p -> new LevelupMagma());
     public static final ItemEntry<? extends UpgradeItem> MINERAL_LEVELUP = upgrade("mineral_levelup", "Upgrade: Mineral Detection", "升级：矿物探测仪器", p -> new LevelupMineral());
+    public static final ItemEntry<? extends UpgradeItem> EFFICIENCY_LEVELUP = upgrade("efficiency_levelup", "Upgrade: Flux Efficiency Circuit I", "升级：节能回路 I", p -> new LevelupEfficiency(1));
+    public static final ItemEntry<? extends UpgradeItem> EFFICIENCY_LEVELUP_2 = upgrade("efficiency_levelup_2", "Upgrade: Flux Efficiency Circuit II", "升级：节能回路 II", p -> new LevelupEfficiency(2));
+    public static final ItemEntry<? extends UpgradeItem> EFFICIENCY_LEVELUP_3 = upgrade("efficiency_levelup_3", "Upgrade: Flux Efficiency Circuit III", "升级：节能回路 III", p -> new LevelupEfficiency(3));
+    public static final ItemEntry<? extends UpgradeItem> PARALLEL_LEVELUP = upgrade("parallel_levelup", "Upgrade: Parallel Processing Core I", "升级：并行处理核心 I", p -> new LevelupParallel(1));
+    public static final ItemEntry<? extends UpgradeItem> PARALLEL_LEVELUP_2 = upgrade("parallel_levelup_2", "Upgrade: Parallel Processing Core II", "升级：并行处理核心 II", p -> new LevelupParallel(2));
+    public static final ItemEntry<? extends UpgradeItem> PARALLEL_LEVELUP_3 = upgrade("parallel_levelup_3", "Upgrade: Parallel Processing Core III", "升级：并行处理核心 III", p -> new LevelupParallel(3));
+    public static final ItemEntry<? extends UpgradeItem> DURATION_LEVELUP = upgrade("duration_levelup", "Upgrade: Streamlined Process I", "升级：工序精简 I", p -> new LevelupDuration(1));
+    public static final ItemEntry<? extends UpgradeItem> DURATION_LEVELUP_2 = upgrade("duration_levelup_2", "Upgrade: Streamlined Process II", "升级：工序精简 II", p -> new LevelupDuration(2));
+    public static final ItemEntry<? extends UpgradeItem> DURATION_LEVELUP_3 = upgrade("duration_levelup_3", "Upgrade: Streamlined Process III", "升级：工序精简 III", p -> new LevelupDuration(3));
+    public static final ItemEntry<? extends UpgradeItem> SPEED_LEVELUP = upgrade("speed_levelup", "Upgrade: Overclock Circuit I", "升级：超频回路 I", p -> new LevelupSpeed(1));
+    public static final ItemEntry<? extends UpgradeItem> SPEED_LEVELUP_2 = upgrade("speed_levelup_2", "Upgrade: Overclock Circuit II", "升级：超频回路 II", p -> new LevelupSpeed(2));
+    public static final ItemEntry<? extends UpgradeItem> SPEED_LEVELUP_3 = upgrade("speed_levelup_3", "Upgrade: Overclock Circuit III", "升级：超频回路 III", p -> new LevelupSpeed(3));
 
     private static ItemEntry<Item> item(String name, String englishName, String cn) {
         ZH_NAMES.put(name, cn);

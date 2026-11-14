@@ -1,152 +1,48 @@
 package com.modularmc.ten.common.blockentity;
 
-import com.modularmc.ten.utils.TagHelper;
-
-import net.minecraft.tags.ItemTags;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
-import net.minecraft.world.item.crafting.RecipeType;
-
-public class MatchFuel {
-
-    // ════════════════════════════════════════════════════════════════
-    // Query API — pure, no side effects
-    // ════════════════════════════════════════════════════════════════
+/**
+ * 生产端燃料的共用数据结构。
+ *
+ * <p>
+ * 自 2026-11 起，具体燃料表已移出代码，改由数据包配方
+ * {@code kenergyengineering:engine_fuel} 定义（见 {@code EngineFuelRecipe}），
+ * 本类只保留「一份燃料」的值对象与派生公式，不再有任何写死的物品 / 标签表。
+ */
+public final class MatchFuel {
 
     /**
-     * Returns the fuel budget for the Extractor engine from an item stack,
-     * without consuming it.
+     * 一份燃料的成分：实际产出率、持续时间与 FE/t 修正倍率。
      * <p>
-     * 1.21.1 适配：无 {@code Level.fuelValues()}，先用 {@link ItemStack#getBurnTime}
-     * 查燃烧值，若为 0 则回退到 hardcoded 兼容表。
-     *
-     * @param stack the fuel item stack (not modified).
-     * @return fuel budget in FE-equivalent units; 0 if not a valid fuel.
+     * {@code rate = round(引擎额定功率 × rateMultiplier)} 是配方的实际 FE/t；
+     * {@code durationTicks} 是配方直接声明的持续时间，总能量 = {@code rate × durationTicks}。
+     * 升级抬高产出率后，持续时间按倍率缩短、总能量不变。
      */
-    public static int getExtractorFuelValue(ItemStack stack) {
-        if (stack.isEmpty()) return 0;
-        int time = stack.getBurnTime(RecipeType.SMELTING);
-        if (time > 0) return time * 20;
-        return hardcodedBurnTime(stack) * 20;
-    }
+    public record FuelProfile(int rate, int durationTicks, double rateMultiplier) {
 
-    /**
-     * Returns the fuel budget for the Metalizer engine from an item stack,
-     * without consuming it.
-     *
-     * @param stack the metal item stack (not modified).
-     * @return fuel budget in FE-equivalent units; 0 if not a valid metal fuel.
-     */
-    public static int getMetalFuelValue(ItemStack stack) {
-        if (stack.isEmpty()) return 0;
-        int time = 0;
-        boolean cn = TagHelper.containsItem(stack.getItem(), TagHelper.keyItem("kenergyengineering:common_ingots"));
-        boolean uc = TagHelper.containsItem(stack.getItem(), TagHelper.keyItem("kenergyengineering:uncommon_ingots"));
-        boolean vc = TagHelper.containsItem(stack.getItem(), TagHelper.keyItem("kenergyengineering:valuable_ingots"));
-        if (cn) time = 1000;
-        else if (uc) time = 1500;
-        else if (vc) time = 6400;
-        return time * 20;
-    }
+        public static final FuelProfile EMPTY = new FuelProfile(0, 0, 1.0);
 
-    /**
-     * Returns the fuel budget for the Biomass engine from an item stack,
-     * without consuming it.
-     *
-     * @param stack the plant item stack (not modified).
-     * @return fuel budget in FE-equivalent units; 0 if not a valid biomass fuel.
-     */
-    public static int getBiomassFuelValue(ItemStack stack) {
-        if (stack.isEmpty()) return 0;
-        int time = 0;
-        if (TagHelper.containsItem(stack.getItem(), ItemTags.LEAVES)) time = 20;
-        else if (TagHelper.containsItem(stack.getItem(), ItemTags.LOGS)) time = 120;
-        else if (TagHelper.containsItem(stack.getItem(), ItemTags.FLOWERS)) time = 10;
-        else if (TagHelper.containsItem(stack.getItem(), ItemTags.SAPLINGS)) time = 15;
-        else if (TagHelper.containsItem(stack.getItem(), TagHelper.keyItem("minecraft:saplings"))) time = 15;
-        return time * 60;
-    }
+        /**
+         * 由「燃料总能量预算 + 引擎额定功率 + 修正倍率」排出实际费率与持续时间。
+         * 仅用于兼容兜底（原版燃烧时间 → 总能量），数据包配方直接给 duration。
+         *
+         * @param budget         一份燃料的总能量（FE）
+         * @param engineRate     引擎额定 FE/t
+         * @param rateMultiplier 配方对额定功率的修正倍率
+         */
+        public static FuelProfile of(int budget, int engineRate, double rateMultiplier) {
+            int rate = Math.max(1, (int) Math.round(engineRate * rateMultiplier));
+            int ticks = Math.max(1, (budget + rate - 1) / rate);
+            return new FuelProfile(rate, ticks, rateMultiplier);
+        }
 
-    // ════════════════════════════════════════════════════════════════
-    // Consumer API — delegates to query + conditionally shrinks stack
-    // ════════════════════════════════════════════════════════════════
+        /** 一份燃料的总能量（FE）。 */
+        public int budget() {
+            return rate * durationTicks;
+        }
 
-    public static int matchFuel(ItemStack stack, boolean simulate) {
-        int value = getExtractorFuelValue(stack);
-        if (value > 0 && !simulate) stack.shrink(1);
-        return value;
-    }
-
-    public static int matchPlant(ItemStack stack, boolean simulate) {
-        int value = getBiomassFuelValue(stack);
-        if (value > 0 && !simulate) stack.shrink(1);
-        return value;
-    }
-
-    public static int matchMetal(ItemStack stack, boolean simulate) {
-        int value = getMetalFuelValue(stack);
-        if (value > 0 && !simulate) stack.shrink(1);
-        return value;
-    }
-
-    // ════════════════════════════════════════════════════════════════
-    // Internal
-    // ════════════════════════════════════════════════════════════════
-
-    private static int hardcodedBurnTime(ItemStack stack) {
-        if (stack.is(Items.LAVA_BUCKET)) return 20000;
-        if (stack.is(Items.COAL_BLOCK)) return 16000;
-        if (stack.is(Items.DRIED_KELP_BLOCK)) return 4000;
-        if (stack.is(Items.BLAZE_ROD)) return 2400;
-        if (stack.is(Items.COAL)) return 1600;
-        if (stack.is(Items.CHARCOAL)) return 1600;
-        if (stack.is(Items.BAMBOO_BLOCK)) return 300;
-        if (stack.is(Items.BAMBOO_MOSAIC)) return 300;
-        if (stack.is(Items.BAMBOO_PLANKS)) return 300;
-        if (stack.is(Items.BAMBOO_SLAB)) return 150;
-        if (stack.is(Items.BAMBOO_STAIRS)) return 300;
-        if (stack.is(ItemTags.LOGS)) return 300;
-        if (stack.is(ItemTags.PLANKS)) return 300;
-        if (stack.is(ItemTags.WOODEN_SLABS)) return 150;
-        if (stack.is(ItemTags.WOODEN_STAIRS)) return 300;
-        if (stack.is(ItemTags.WOODEN_TRAPDOORS)) return 300;
-        if (stack.is(ItemTags.WOODEN_DOORS)) return 200;
-        if (stack.is(ItemTags.WOODEN_PRESSURE_PLATES)) return 300;
-        if (stack.is(ItemTags.WOODEN_BUTTONS)) return 100;
-        if (stack.is(ItemTags.WOOL)) return 100;
-        if (stack.is(ItemTags.BANNERS)) return 300;
-        if (stack.is(ItemTags.BOATS)) return 600;
-        if (stack.is(Items.STICK)) return 100;
-        if (stack.is(Items.BOWL)) return 100;
-        if (stack.is(Items.LADDER)) return 300;
-        if (stack.is(Items.BOOKSHELF)) return 300;
-        if (stack.is(Items.CHEST)) return 300;
-        if (stack.is(Items.TRAPPED_CHEST)) return 300;
-        if (stack.is(Items.CRAFTING_TABLE)) return 300;
-        if (stack.is(Items.JUKEBOX)) return 300;
-        if (stack.is(Items.NOTE_BLOCK)) return 300;
-        if (stack.is(Items.FISHING_ROD)) return 300;
-        if (stack.is(Items.BOW)) return 300;
-        if (stack.is(Items.CROSSBOW)) return 300;
-        if (stack.is(Items.WOODEN_SHOVEL)) return 200;
-        if (stack.is(Items.WOODEN_PICKAXE)) return 200;
-        if (stack.is(Items.WOODEN_AXE)) return 200;
-        if (stack.is(Items.WOODEN_HOE)) return 200;
-        if (stack.is(Items.WOODEN_SWORD)) return 200;
-        if (stack.is(Items.FLINT_AND_STEEL)) return 100;
-        if (stack.is(Items.SCAFFOLDING)) return 400;
-        if (stack.is(Items.DAYLIGHT_DETECTOR)) return 300;
-        if (stack.is(Items.COMPOSTER)) return 300;
-        if (stack.is(Items.BARREL)) return 300;
-        if (stack.is(Items.CARTOGRAPHY_TABLE)) return 300;
-        if (stack.is(Items.FLETCHING_TABLE)) return 300;
-        if (stack.is(Items.SMITHING_TABLE)) return 300;
-        if (stack.is(Items.LOOM)) return 300;
-        if (stack.is(Items.BEEHIVE)) return 300;
-        if (stack.is(Items.BEE_NEST)) return 300;
-        if (stack.is(Items.AZALEA)) return 100;
-        if (stack.is(Items.FLOWERING_AZALEA)) return 100;
-        return 0;
+        public boolean isEmpty() {
+            return rate <= 0 || durationTicks <= 0;
+        }
     }
 
     private MatchFuel() {}

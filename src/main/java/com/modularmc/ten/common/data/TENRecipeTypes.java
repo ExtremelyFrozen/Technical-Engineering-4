@@ -1,6 +1,8 @@
 package com.modularmc.ten.common.data;
 
 import com.modularmc.ten.TEN;
+import com.modularmc.ten.api.recipe.EngineFuelRecipe;
+import com.modularmc.ten.api.recipe.EngineFuelRecipeSerializer;
 import com.modularmc.ten.api.recipe.FormsCombinedRecipe;
 import com.modularmc.ten.api.recipe.FormsCombinedRecipeSerializer;
 import com.modularmc.ten.api.recipe.RecipeTypeCm;
@@ -28,18 +30,23 @@ public class TENRecipeTypes {
     public static final DeferredHolder<RecipeType<?>, RecipeType<FormsCombinedRecipe>> INDUCTION_FURNACE_T;
     public static final DeferredHolder<RecipeType<?>, RecipeType<FormsCombinedRecipe>> REFINER_T;
 
+    public static final DeferredHolder<RecipeSerializer<?>, EngineFuelRecipeSerializer> ENGINE_FUEL_S;
+    public static final DeferredHolder<RecipeType<?>, RecipeType<EngineFuelRecipe>> ENGINE_FUEL_T;
+
     static {
         PULVERIZER_T = TYPES.register("pulverizer", () -> new RecipeTypeCm<>("pulverizer"));
         COMPRESSOR_T = TYPES.register("compressor", () -> new RecipeTypeCm<>("compressor"));
         PSIONICANT_T = TYPES.register("psionicant", () -> new RecipeTypeCm<>("psionicant"));
         INDUCTION_FURNACE_T = TYPES.register("induction_furnace", () -> new RecipeTypeCm<>("induction_furnace"));
         REFINER_T = TYPES.register("refiner", () -> new RecipeTypeCm<>("refiner"));
+        ENGINE_FUEL_T = TYPES.register("engine_fuel", () -> new RecipeTypeCm<>("engine_fuel"));
 
         PULVERIZER_S = SERIALIZERS.register("pulverizer", () -> new FormsCombinedRecipeSerializer<>(FormsCombinedRecipe::new, PULVERIZER_T::get, 1, 4));
         COMPRESSOR_S = SERIALIZERS.register("compressor", () -> new FormsCombinedRecipeSerializer<>(FormsCombinedRecipe::new, COMPRESSOR_T::get, 2, 1));
         PSIONICANT_S = SERIALIZERS.register("psionicant", () -> new FormsCombinedRecipeSerializer<>(FormsCombinedRecipe::new, PSIONICANT_T::get, 2, 1));
         INDUCTION_FURNACE_S = SERIALIZERS.register("induction_furnace", () -> new FormsCombinedRecipeSerializer<>(FormsCombinedRecipe::new, INDUCTION_FURNACE_T::get, 3, 1));
         REFINER_S = SERIALIZERS.register("refiner", () -> new FormsCombinedRecipeSerializer<>(FormsCombinedRecipe::new, REFINER_T::get, 2, 2));
+        ENGINE_FUEL_S = SERIALIZERS.register("engine_fuel", EngineFuelRecipeSerializer::new);
     }
 
     public static void init() {}

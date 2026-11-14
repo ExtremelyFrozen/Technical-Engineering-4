@@ -6,10 +6,12 @@ public class LevelupKnow extends UpgradeItem {
 
     public LevelupKnow() {
         super(0);
+        asSpecialization();
     }
 
     public LevelupKnow(Properties properties) {
         super(0, properties);
+        asSpecialization();
     }
 
     @Override

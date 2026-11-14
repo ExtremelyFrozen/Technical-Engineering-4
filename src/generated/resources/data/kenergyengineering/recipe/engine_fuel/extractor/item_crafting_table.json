@@ -1,0 +1,11 @@
+{
+  "type": "kenergyengineering:engine_fuel",
+  "duration": 200,
+  "engines": [
+    "extractor"
+  ],
+  "ingredient": {
+    "item": "minecraft:crafting_table"
+  },
+  "rate_multiplier": 1.0
+}

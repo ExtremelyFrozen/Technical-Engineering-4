@@ -176,21 +176,21 @@ public class TENEmiPlugin implements EmiPlugin {
     }
 
     private void registerEngineFuelCategories(EmiRegistry registry) {
-        record FuelDef(ResourceLocation id, ItemStack icon, Component title,
-                       java.util.function.ToIntFunction<net.minecraft.world.item.ItemStack> fuelValue, int baseRate) {}
+        record FuelDef(ResourceLocation id, ItemStack icon, Component title, String engineId, int baseRate) {}
 
+        var manager = registry.getRecipeManager();
         var defs = List.of(
                 new FuelDef(TEN.id("extractor_fuel"), engineIcon("extraction"),
                         com.modularmc.ten.common.data.TENBlocks.ENGINE_EXTRACTION.get().getName(),
-                        com.modularmc.ten.common.blockentity.MatchFuel::getExtractorFuelValue,
+                        com.modularmc.ten.common.blockentity.EngineFuels.EXTRACTOR,
                         com.modularmc.ten.common.blockentity.machine.ExtractorBlockEntity.BASE_GENERATION_RATE),
                 new FuelDef(TEN.id("metalizer_fuel"), engineIcon("metal"),
                         com.modularmc.ten.common.data.TENBlocks.ENGINE_METAL.get().getName(),
-                        com.modularmc.ten.common.blockentity.MatchFuel::getMetalFuelValue,
+                        com.modularmc.ten.common.blockentity.EngineFuels.METALIZER,
                         com.modularmc.ten.common.blockentity.machine.MetalizerBlockEntity.BASE_GENERATION_RATE),
                 new FuelDef(TEN.id("biomass_fuel"), engineIcon("biomass"),
                         com.modularmc.ten.common.data.TENBlocks.ENGINE_BIOMASS.get().getName(),
-                        com.modularmc.ten.common.blockentity.MatchFuel::getBiomassFuelValue,
+                        com.modularmc.ten.common.blockentity.EngineFuels.BIOMASS,
                         com.modularmc.ten.common.blockentity.machine.BiomassBlockEntity.BASE_GENERATION_RATE));
 
         for (var def : defs) {
@@ -200,19 +200,20 @@ public class TENEmiPlugin implements EmiPlugin {
             registry.addCategory(category);
             registry.addWorkstation(category, icon(def.icon()));
 
-            var recipes = new java.util.ArrayList<com.modularmc.ten.common.blockentity.EngineFuelRecipe>();
+            var recipes = new java.util.ArrayList<com.modularmc.ten.common.blockentity.EngineFuelDisplay>();
             for (var holder : net.minecraft.core.registries.BuiltInRegistries.ITEM) {
                 var stack = new net.minecraft.world.item.ItemStack(holder);
                 if (stack.isEmpty()) continue;
-                int value = def.fuelValue().applyAsInt(stack);
-                if (value > 0) {
-                    recipes.add(new com.modularmc.ten.common.blockentity.EngineFuelRecipe(stack, value, def.baseRate()));
+                // 燃料表来自数据包 engine_fuel 配方；未收录的物品走原版燃烧时间兜底
+                var profile = com.modularmc.ten.common.blockentity.EngineFuels.profile(manager, def.engineId(), def.baseRate(), stack);
+                if (!profile.isEmpty()) {
+                    recipes.add(new com.modularmc.ten.common.blockentity.EngineFuelDisplay(stack, profile, def.baseRate()));
                 }
             }
             recipes.sort(java.util.Comparator.comparing(r -> r.ingredients().get(0).getItem().toString()));
 
             int index = 0;
-            com.modularmc.ten.common.blockentity.EngineFuelRecipe last = null;
+            com.modularmc.ten.common.blockentity.EngineFuelDisplay last = null;
             for (var r : recipes) {
                 if (last != null && net.minecraft.world.item.ItemStack.isSameItemSameComponents(
                         r.ingredients().get(0), last.ingredients().get(0)))

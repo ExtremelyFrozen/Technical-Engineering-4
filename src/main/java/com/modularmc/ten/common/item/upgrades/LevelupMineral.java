@@ -6,10 +6,12 @@ public class LevelupMineral extends UpgradeItem {
 
     public LevelupMineral() {
         super(0);
+        asSpecialization();
     }
 
     public LevelupMineral(Properties properties) {
         super(0, properties);
+        asSpecialization();
     }
 
     @Override

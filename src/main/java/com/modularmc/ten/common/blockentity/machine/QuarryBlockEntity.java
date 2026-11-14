@@ -349,7 +349,7 @@ public class QuarryBlockEntity extends RadiusMachineBlockEntity {
     }
 
     /**
-     * 挖尽停机门禁：游标已初始化且 scanY 到世界底 → 不再锁定批次/消耗能量。
+     * 挖尽停机门禁：游标已初始化且 scanY 到世界底 → 不再锁定并行运行数/消耗能量。
      * 游标未初始化（首次放置/旧存档）时放行，首个 applyEffect 周期会初始化游标。
      */
     @Override
@@ -366,7 +366,7 @@ public class QuarryBlockEntity extends RadiusMachineBlockEntity {
 
     @Override
     public boolean cooking() {
-        // 纯容量谓词：输出槽（1..12）无法容纳本周期 B 次操作产出时停滞（保留 progress）。
+        // 纯容量谓词：输出槽（1..12）无法容纳本周期 B 次操作产出时停机（保留 progress）。
         if (itemHandler == null) {
             return false;
         }

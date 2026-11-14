@@ -6,10 +6,12 @@ public class LevelupBlast extends UpgradeItem {
 
     public LevelupBlast() {
         super(0);
+        asSpecialization();
     }
 
     public LevelupBlast(Properties properties) {
         super(0, properties);
+        asSpecialization();
     }
 
     @Override

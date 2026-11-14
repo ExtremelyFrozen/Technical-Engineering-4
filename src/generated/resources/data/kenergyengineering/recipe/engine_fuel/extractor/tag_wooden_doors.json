@@ -1,0 +1,11 @@
+{
+  "type": "kenergyengineering:engine_fuel",
+  "duration": 134,
+  "engines": [
+    "extractor"
+  ],
+  "ingredient": {
+    "tag": "minecraft:wooden_doors"
+  },
+  "rate_multiplier": 1.0
+}

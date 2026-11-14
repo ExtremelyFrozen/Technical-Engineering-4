@@ -1,0 +1,11 @@
+{
+  "type": "kenergyengineering:engine_fuel",
+  "duration": 2667,
+  "engines": [
+    "extractor"
+  ],
+  "ingredient": {
+    "item": "minecraft:dried_kelp_block"
+  },
+  "rate_multiplier": 1.0
+}

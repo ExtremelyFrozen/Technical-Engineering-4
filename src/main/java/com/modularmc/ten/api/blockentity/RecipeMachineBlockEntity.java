@@ -61,29 +61,29 @@ public abstract class RecipeMachineBlockEntity extends ProcessingMachineBlockEnt
         boolean identityChanged = !Objects.equals(prevId, nextId);
         if (identityChanged) {
             progress = 0;
-            clearLockedBatch(); // 配方身份变化时清批处理锁
+            clearLockedBatch(); // 配方身份变化时清并行运行锁
         }
 
         currentRecipe = nextRecipe;
 
         if (currentRecipe == null) {
             clearLockedBatch();
-            // 空闲时也设置 64×理论B 堆叠（装批量升级即常驻生效，无需配方运行）
+            // 空闲时也设置 64×理论B 堆叠（装并行运行升级即常驻生效，无需配方运行）
             installDynamicSlotLimit();
             return false;
         }
 
         // Lock maxProgress when recipe identity changes or no lock exists yet.
-        // Duration multiplier is captured at start to prevent per-tick drift.
+        // 总量 = 配方耗时 × 耗时倍率；速度另按 N 推进，故耗时 = 总量 ÷ N。
         if (identityChanged || !hasLockedMaxProgress()) {
-            maxProgress = Math.max(1, (int) Math.ceil(baseTickTime() * durationMultiplier));
+            maxProgress = scaledDuration(baseTickTime());
             lockMaxProgressForNewOperation(maxProgress);
         }
 
-        // ───── 批处理 B 锁定（四维计算）─────
+        // ───── 并行运行 B 锁定（四维计算）─────
         if (identityChanged || !hasLockedBatch()) {
             // New operation or no lock: calculate B_actual from all dimensions
-            int B_theory = Math.max(1, 1 + batch);
+            int B_theory = getTheoreticalBatchSize();
             int B_byItems = computeBByItems();
             int B_byFluids = computeBByFluids();
             int B_byOutput = computeBByOutput();
@@ -115,7 +115,7 @@ public abstract class RecipeMachineBlockEntity extends ProcessingMachineBlockEnt
         return true;
     }
 
-    // ───── 批处理 B 维度计算辅助 ─────
+    // ───── 并行运行 B 维度计算辅助 ─────
 
     /**
      * Computes B_byItems: maximum batch size constrained by item input availability.
@@ -215,8 +215,8 @@ public abstract class RecipeMachineBlockEntity extends ProcessingMachineBlockEnt
         var fluidOutputs = currentRecipe.allOutputFluids();
         if (itemOutputs.isEmpty() && fluidOutputs.isEmpty()) return Integer.MAX_VALUE;
 
-        int B_theory = Math.max(1, 1 + batch);
-        int maxB = Math.min(B_theory, 19);
+        int B_theory = getTheoreticalBatchSize();
+        int maxB = Math.min(B_theory, BatchMath.B_HARD_MAX);
 
         // Enumerate descending: first (largest) B that fits is the answer
         for (int candidate = maxB; candidate >= 1; candidate--) {
@@ -408,7 +408,7 @@ public abstract class RecipeMachineBlockEntity extends ProcessingMachineBlockEnt
     // ───── Dynamic slot limit support ─────
 
     /**
-     * 重装统一的批处理倍增堆叠上限（实现在
+     * 重装统一的并行运行倍增堆叠上限（实现在
      * {@link CmMachineBlockEntity#installBatchSlotLimit()}）。
      * <p>
      * 旧版在此按 {@code slotInfo.i1..i2 / o1..o2} 自建 provider，公式与基类一致但漏掉了
@@ -438,7 +438,7 @@ public abstract class RecipeMachineBlockEntity extends ProcessingMachineBlockEnt
     public boolean cooking() {
         if (currentRecipe == null) return true;
 
-        // B > 1 时使用批处理感知的 cooking 检查
+        // B > 1 时使用并行运行感知的 cooking 检查
         if (getLockedBatchSize() > 1) {
             return checkBatchCooking();
         }

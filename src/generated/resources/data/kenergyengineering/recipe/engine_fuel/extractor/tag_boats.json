@@ -1,0 +1,11 @@
+{
+  "type": "kenergyengineering:engine_fuel",
+  "duration": 400,
+  "engines": [
+    "extractor"
+  ],
+  "ingredient": {
+    "tag": "minecraft:boats"
+  },
+  "rate_multiplier": 1.0
+}

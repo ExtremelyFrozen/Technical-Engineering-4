@@ -1,0 +1,11 @@
+{
+  "type": "kenergyengineering:engine_fuel",
+  "duration": 100,
+  "engines": [
+    "extractor"
+  ],
+  "ingredient": {
+    "tag": "minecraft:wooden_slabs"
+  },
+  "rate_multiplier": 1.0
+}

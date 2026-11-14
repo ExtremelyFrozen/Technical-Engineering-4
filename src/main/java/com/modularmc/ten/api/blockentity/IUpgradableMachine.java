@@ -4,7 +4,7 @@ package com.modularmc.ten.api.blockentity;
  * 可升级机器 SPI：升级物品（UpgradeItem/Levelup*）经此接口向机器施加效果。
  * <p>
  * 旧百分比接口 {@code onUpgradeApply} 保留兼容；乘法模型 API 采用乘子叠加
- * （total = Π factor_i），批量增量直接累加；全部 default no-op 保证未实现方不炸。
+ * （total = Π factor_i），并行运行增量直接累加；全部 default no-op 保证未实现方不炸。
  * 仅 {@link CmMachineBlockEntity} 实现。
  */
 public interface IUpgradableMachine {
@@ -89,6 +89,20 @@ public interface IUpgradableMachine {
      */
     default void applyPhotosyn() {
         // Default no-op
+    }
+
+    /**
+     * 该机器是否真的消费并行运行（`getLockedBatchSize()` / 每 lane 的 `laneB`）。
+     * <p>
+     * 判定依据是机器循环里有没有按 B 结算，而不是机型名字：加工 / 配方 / 效果
+     * 三类基类读 `lockedB`，熔炼机三条 lane 各读自己的 `laneB`，都返回 true；
+     * 光伏引擎没有并行运行通道，返回 false。
+     * 并行运行升级只放行返回 true 的机器，否则装上只会白占槽位。
+     *
+     * @return true 表示并行运行对本机有实际产出效果
+     */
+    default boolean supportsBatch() {
+        return false;
     }
 
     // ───── Recipe mode (Blast/Smoke) ─────

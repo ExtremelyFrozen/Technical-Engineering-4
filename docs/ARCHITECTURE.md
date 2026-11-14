@@ -51,7 +51,7 @@
 | `common/blockentity/machine` | 21 | 各机器 BE 实现 |
 | `common/channel` | 4 | `ChannelKey` / `ChannelType` / `ChannelRegistry` / `SharedStorage` |
 | `common/data` | 11 | 注册声明、模型 helper、配方类型、标签、拆解服务 |
-| `common/gui` | 4 | LDLib2 UI 工厂、进度条、流体槽、传输模式按钮 |
+| `common/gui` | 4 | LDLib2 UI 工厂、进度条、流体槽、面配置按钮 |
 | `common/item` | 8 | 物品、能量单元、频道连接器、扳手等 |
 | `common/item/upgrades` | 17 | 升级组件与升级常量 |
 | `common/registry` | 1 | `Registration`：`TENRegistrate` 单例 |
@@ -70,7 +70,7 @@
 ### 分层规矩
 
 - `api/` 放会被机器实现或外部复用的抽象与数据对象，不反向依赖具体机器。
-- `common/blockentity/machine/` 只放具体机器；横切机制（升级、面配置、批处理锁、主动 IO）在 `CmMachineBlockEntity`。
+- `common/blockentity/machine/` 只放具体机器；横切机制（升级、面配置、并行运行数锁定、主动 IO）在 `CmMachineBlockEntity`。
 - `integration/<邻居>` 只写那个邻居的适配。邻居的类型名不得漏进总是加载的类。
 - 客户端专属代码不要放进 main 源集；`src/main` 里的 `client` 子包只放必须与公共代码同源、且带 `Dist.CLIENT` 防护的键位类。
 
@@ -110,7 +110,7 @@ CmBlockEntity (implements ISyncPersistRPCBlockEntity)
 
 - `CmBlockEntity`：同步、NBT 持久化、RPC 通道与主线程被动同步。`serverTick()` 在服务端依次执行
   `tick()`、`onEndTick()`、`passivelySync()`；客户端只走 `onClientTick()`。
-- `CmMachineBlockEntity`：能量/物品/流体三能力、升级、面配置、批处理锁、主动 IO、范围显示。
+- `CmMachineBlockEntity`：能量/物品/流体三能力、升级、面配置、并行运行数锁定、主动 IO、范围显示。
   多数子类按机器形态选择下级抽象基类；能量单元与创造能量单元直接继承本类。
 - `ProcessingMachineBlockEntity`：逐 tick 加工主循环。子类实现 `baseTickTime()`，可覆盖
   `conditionStart()`、`cooking()`、`onProcessTick()`、`onCookFinish()`。
@@ -132,25 +132,26 @@ CmBlockEntity (implements ISyncPersistRPCBlockEntity)
 
 熔炼机走原版 `SMELTING` / `BLASTING` / `SMOKING` 配方；其余五类配方机器使用 `FormsCombinedRecipe`。
 
-### 2.4 处理循环与停滞语义
+### 2.4 处理循环与停机语义
 
 `ProcessingMachineBlockEntity.process()` 的顺序：
 
 1. 客户端直接返回。
 2. 光合注能（`LevelupSyn`）先于所有门禁执行；有光就允许补能。
 3. 检查 `conditionStart()`、`signalAllowRun()`、`energyAllowRun()`。
-4. 计算期望 FE/t：`getActualEfficiency() × getLockedBatchSize()`；越界则停滞。
+4. 计算期望 FE/t：`getActualEfficiency() × getLockedBatchSize()`；越界则停机。
 5. 能量不足、输出满 → 保留进度，等待恢复。
-6. 首次进入周期时锁定 `maxProgress = ceil(baseTickTime() × durationMultiplier)`。
+6. 首次进入周期时锁定 `maxProgress = max(1, baseTickTime())`（配方耗时，不再乘任何倍率）。
 7. 原子扣能：先 `simulate` 验证全量可提取，再真实提取；真实提取少于期望直接抛异常。
-8. `progress++`，执行 `onProcessTick()`；到 `maxProgress` 调用 `onCookFinish()`，清批处理锁并归零。
+8. `advanceProgressBySpeed()` 推进 `runSpeed`（非整数靠 `progressCarry` 余数累积），执行 `onProcessTick()`；
+   到 `maxProgress` 调用 `onCookFinish()`，清并行运行数锁定并归零。
 
-停滞的边界：
+停机的边界：
 
 - 缺能、断信号、输出满：保留进度等待恢复。
 - 输入消失或配方失配：处理型/配方型机器的 `conditionStart()` 为 false，进度归零；
   效果型机器在原料消失时同样归零。
-- 部分取出：批处理锁定期间保持 `lockedB`，取出部分输入不改变本周期批量。
+- 部分取出：并行运行锁定期间保持 `lockedB`，取出部分输入不改变本周期的并行运行数。
 - 采矿场另有「等工具」态：一轮扫到维度底却空手、且过程中有方块被当前工具挡下（`canBreak` 为 false 或无掉落），
   判为暂无可用工具而不是挖尽——游标回到本轮起点 `passStartY`、`conditionStart()` 转 false（不耗能、位置不动），
   工具特征（物品或耐久）一变即从该点续扫。判定表在 `QuarryScanDecision.decide()`，与方块实体解耦以便脱机单测。
@@ -159,8 +160,8 @@ CmBlockEntity (implements ISyncPersistRPCBlockEntity)
 不调用 `ProcessingMachineBlockEntity.process()`。槽位 `0..2` 是输入、`3..5` 是输出，lane i 独占输入槽 i、
 输出槽 `i+3` 与一条进度箭头；三条 lane 上下堆叠、间隔 0px，slot 0 画在中间，因此「槽位索引顺序」同时就是
 输入优先级——快捷移动按 UI 树注册顺序、主动拉取按 `insertIntoInputSlots` 顺序、外部 capability 按索引顺序，
-都优先进中间输入槽。每条 lane 自持进度、配方身份与批处理锁（六个 `@DescSynced` 字段承载客户端镜像），
-能量与 XP 罐三路共享、按 lane 顺序扣减；缺能或输出满只让该 lane 停滞，不影响另外两条。
+都优先进中间输入槽。每条 lane 自持进度、配方身份与并行运行数锁定（六个 `@DescSynced` 字段承载客户端镜像），
+能量与 XP 罐三路共享、按 lane 顺序扣减；缺能或输出满只让该 lane 停机，不影响另外两条。
 `enforcesUniqueItemSlots()` 在熔炼机覆写为 false：原版单物品配方没有「占用槽数决定配方」的歧义，
 同款原料分占三条输入槽是正常用法。基类的 `progress` / `maxProgress` 降级为「第一条在跑 lane」的镜像，
 只供冷却器这类横切逻辑判定；外部推进统一走 `advanceProgress(int)` 钩子，熔炼机覆写为分派到所有在跑的
@@ -169,9 +170,12 @@ lane，不要直接改基类字段。信息栏峰值能耗按三路放大。旧�
 
 ### 2.5 能量模型
 
-`maxProgress = max(1, ceil(baseTickTime() × durationMultiplier))`。
-处理时间由配方与时长升级决定，不再与配方总能耗绑定。实际每 tick 扣能是
-`实际效率 × 锁定批量 B`，所以批量越大，总 FE/t 越高，但单件时间不变。
+`maxProgress = max(1, round(baseTickTime() × durationMultiplier))`（进程启动时锁定一轮），
+进度每 tick 推进 `runSpeed`（N，**自然数**）。
+处理时间 = `ceil(配方刻度 ÷ N)`，与配方总能耗不绑定。实际每 tick 扣能是
+`实际效率 × 锁定并行运行数 B`，所以并行运行数越大，总 FE/t 越高，但单件时间不变。
+`runSpeed` 只由速度通道决定、`durationMultiplier` 只由耗时通道决定、
+`powerMultiplier` 只由功率通道决定，三者互不影响。
 
 机器 IO 全面取消每 tick 限速：能量侧 `MachineEnergyStorage` 的 `maxReceive`/`maxExtract` 恒为
 `Integer.MAX_VALUE`，进出只受储能容量与接收方上限约束（线缆仍按各自档位限速）；物品侧面 capability 的
@@ -214,7 +218,7 @@ lane，不要直接改基类字段。信息栏峰值能耗按三路放大。旧�
     六档归成「向内 / 向外」两种能力：`IN`/`BE_IN` 需要可进项，`OUT`/`BE_OUT` 需要可出项，
     `BOTH` 两者都要。被动档位不参与搬运，但「配了也永远没东西进出」的档位同样是误导项：
     只进不出的引擎不该出现「被动输出」，只有 XP 输出罐的熔炉不该出现「被动输入」。
-  - `allowsActiveFace()`：查 `ten:no_active_face_energy` / `_item` / `_fluid` 三个方块标签。
+  - `allowsActiveFace()`：查 `kenergyengineering:no_active_face_energy` / `_item` / `_fluid` 三个方块标签。
     **标签是「去除」，不是「赋予」**：主动面默认允许，带标签的方块被去掉该资源的主动两态。
     基础模组当前不打任何条目——这是留给整合包整体收回某类资源的覆盖点，不是内部配置表。
 
@@ -236,7 +240,7 @@ lane，不要直接改基类字段。信息栏峰值能耗按三路放大。旧�
 
 - **默认面来自 `initialFaceMode*()`**：`CmMachineBlockEntity` 构造函数逐面写入。产能类机器
   （`EngineBlockEntity`、能量单元、创造单元）覆写为 `OUT`，频道方块覆写为 `OFF`，普通机器
-  能量面为 `BE_IN`（耗能方只收不发，外部电缆可塞电），物品/流体面仍为 `BOTH`。
+  能量面为 `BE_IN`（耗能方只收不发，外部线缆可塞电），物品/流体面仍为 `BOTH`。
   这层覆写曾经被构造函数里硬编码的 `BOTH` 架空——`getOrDefault(..., initialFaceModeX())` 的
   fallback 永不触发，于是「引擎默认主动输出」只是摆设。改面语义时必须同步检查这里，
   否则去掉 `BOTH` 的自动推就等于让引擎和电池停止供电。
@@ -309,21 +313,195 @@ lane，不要直接改基类字段。信息栏峰值能耗按三路放大。旧�
 ### 2.7 升级
 
 升级组件在 `common/item/upgrades/`，由 `IUpgradableMachine` 与 `CmMachineBlockEntity` 消费。
-常用维度：
+类别由 `UpgradeCategory` 声明，数值由 `UpgradeEffect` 声明式给出。
 
-- 时长乘子 `durationMultiplier`：影响 `maxProgress`。
-- 功率乘子 `powerMultiplier`：影响每 tick 扣能。
-- 批量 `batch`：Shulker +3 / Power +1，服务端每 tick 重算并同步给客户端。
-- 范围 `radius`：`LevelupRg` 累加，`RadiusMachineBlockEntity.resetUpgradeEffects()` 每轮重置回基础值。
+**数据职责**（规范 v2，两端对称）：
+
+| 来源 | 提供 | 代码位置 |
+|---|---|---|
+| 消费端机器 | 基准 FE/t（P） | `initialEfficientIn`，由 `setEfficiency` 赋值 |
+| 消费端配方 | 配方耗时（T） | `FormsCombinedRecipe.time`，缺省 150 |
+| 生产端机器 | 基准 FE/t（P） | `BASE_GENERATION_RATE` → `setEfficiency`，产能的唯一来源 |
+| 生产端配方 | 持续时间（T）与 FE/t 修正倍率（m） | 数据包配方 `kenergyengineering:engine_fuel` → `EngineFuelRecipe` |
+| 升级组件 | 只声明功率 / 速度 / 耗时 / 并行运行四类系数 | `UpgradeEffect(power, speed, duration, batch)` |
+
+`T` 是基准刻度：消费端取配方耗时（`FormsCombinedRecipe.time`），生产端取持续时间（`engine_fuel.duration`）。
+
+**结算公式**：
+
+```
+派生量（applyUpgradeEffects 每 tick 一次性写入）：
+运行速度 N   = (1 + Σ速度增量) × k            自然数，基准 1；速度增量与 k 都是整数
+运行耗时倍率 D = 1 + Σ(耗时系数 − 1)          基准 1.0（工序精简给 0.90 / 0.80 / 0.70）
+并行运行数 B = (1 + Σ并行增量) × k            不支持并行运行的机器恒为 1
+
+消费端：
+配方刻度   = round(T × D)                     进度条的总刻度
+运行功率   = P × Σpower × B                   面板上直接可见的那个 FE/t
+实际耗时   = ceil(配方刻度 ÷ N) = ceil(T × D ÷ N)
+一个周期的耗电 = 运行功率 × 实际耗时
+           = P × T × D × Σpower × B ÷ N
+每份耗电   = P × T × D × Σpower ÷ N           与 B 无关
+FE / 流体 / 堆叠容量 = 基础容量 × B
+
+生产端：
+实际产出率 = P × m × Σpower × B
+每份燃料的能量 = P × m × T                    与 N、B、D 都无关
+实际耗时   = ceil(T ÷ N)                     引擎不读配方刻度，D 对它不生效
+```
+
+- 配方不声明绝对 FE/t：产能在两端都只由机器给出，配方只声明耗时与修正倍率，
+  两者相乘才落到实际值。旧口径里「配方写 20 FE/t、机器写 30 FE/t」的两份绝对量互相覆盖，
+  是歧义来源，现已收敛为「机器额定 × 配方修正」。
+
+- 运行速度 N 基准 1，是**独立通道**：它只决定「每 tick 推进几格」——
+  `实际耗时 = ceil(配方刻度 ÷ N)`——不参与每 tick 的耗电。速度是**自然数**：
+  进度每 tick 推进整 N 格，不再有余数累积，进度条的两个读数因此恒为整数。
+  功率只决定每 tick 耗多少电，并行运行数只决定一个周期做几份。四条通道各管一头，互不推导。
+- 运行耗时倍率 D 是另一条独立通道：它缩短的是「配方本身有多长」——
+  `配方刻度 = round(T × D)`——同样不碰每 tick 的 FE/t。两条通道同时装时相乘，
+  互不冒充：超频回路管「每 tick 推进几格」，工序精简管「这道工序一共多少格」。
+  之所以不把两者合成一个旋钮：玩家要能分别表达「同样的活干得更快」与
+  「这道工序本身就变短了」，卡面也才能各写一行自己的量。
+- 速度之所以不写成倍率：机器的基础速度恒为 1，倍率式提速（×1.20）会立刻产生
+  1.2 这种小数 N，进度读数与推进格数都失去整除性。改写成「+N」后，
+  一张卡就是明确的 N 格 / tick，玩家在进度条上看到的跳格数就是他实际拿到的速度。
+  配方长度的缩减交给耗时倍率 D（百分比），两者分工不重叠。
+- 并行运行数 B 是一个周期并行处理的份数：每份仍按同样的速度推进、耗时不变，整机吞吐则是单条流水线的 B 倍。
+  熔炼机的三条 lane 是**结构并行**，每条 lane 各持自己的 B——两者相乘，整机一轮最多 `3 × B` 份。
+  它乘 FE/t、产出、物品堆叠、流体容量与 FE 容量；生产端的 B 是「同时燃烧 B 份燃料」，
+  产出、燃料消耗、总能量都 ×B，每份燃料烧的时间不变。`supportsBatch()=false` 的机器（光伏）B 恒为 1。
+- 全局倍率 k 同时乘速度、除耗时、乘并行运行数：`N = (1 + Σ速度增量) × k`、`B = (1 + Σ并行增量) × k`。
+  k 只取整数（2 / 3 / 4），速度增量也是整数，所以 N 与 B 始终是自然数；
+  速度 ×k 与 B ×k 叠加后整机吞吐为 k² 倍，总 FE/t 同步 k²，每份耗电仍是 `P × T × D × Σpower ÷ N`。
+
+| 术语 | 定义 | 代码旋钮 | 派生关系 |
+|---|---|---|---|
+| 运行功率 | 每 tick 的耗能强度 FE/t | `power` 倍率 | `fePerTick = initialEff × power × B` |
+| 运行速度 | 每 tick 推进多少格配方进度，基准 1，**自然数** | `speed` 整数增量 | `N = (1 + Σspeed) × k` |
+| 运行耗时倍率 | 配方本身长度的缩放，1.0 = 不改 | `duration` 倍率 | `D = 1 + Σ(d − 1)`，配方刻度 `= round(T × D)` |
+| 运行耗时 | 一份产出的处理时间 tick | 无（派生） | `运行耗时 = ceil(T × D ÷ N)` |
+| 耗电 | 运行功率 × 运行耗时 | 无（派生） | `P × T × D × Σpower ÷ N`（每份） |
+| 并行运行 | 一个周期并行处理的份数 B | `batch` 增量 + 全局倍率 | `B = (1 + Σ增量) × k`，上限 76 |
+| 全局倍率 | 整合组件的单一倍率 k | `UpgradeEffect.global(k)` | 速度 ×k、耗时 ÷k、并行运行数 ×k，耗电不变 |
+| 配方功率修正 | 生产端配方对引擎额定 FE/t 的倍率 m | `EngineFuelRecipe.rateMultiplier` | `实际产出率 = P × m`，总能量 `P × m × T` |
+| 整合组件唯一 | 全局倍率整机只能有一个 | `validUpgrade()` | 槽里有整合组件卡时，第二张直接拒绝插入 |
+| 全机唯一 | 独特组件整机只有一个生效 | `activeSpecialization` | 第二张在 `validUpgrade()` 被拒 |
+
+为什么要把速度、耗时、功率分成三条通道：若只留一个「速度 = 功率」的旋钮，就无法分别表达
+「同样的活干得更快」（超频回路）、「这道工序本身变短了」（工序精简）与
+「只改每份耗电、不改时间」（节能回路）这三类卡。现在每个量只有一个出口——
+速度只乘推进格数、耗时倍率只乘配方刻度、功率只乘 FE/t——
+叠多少张都不会凭空产生或吞掉能量。
+
+三类别：
+
+- **整合组件**（`TIER`）：只提供全局倍率，整机仅一个。三档分别为「升级：增强组件」（k=2）、
+  「升级：充能组件」（k=3）、「升级：潜影组件」（k=4）。
+  一个 k 同时覆盖三处：运行速度 ×k、运行耗时 ÷k、并行运行数 ×k，每份耗电不变。
+  卡面只写「全局倍率 ×k」一行——它就是这三件事的总称，再列并行运行数 +n 属于重复。
+  槽里已有一张整合组件卡时，`validUpgrade()` 拒绝后续任何一张（换档需先取出旧卡）。
+- **增益组件**（`MODIFIER`）：提供单项参数增量，可叠加；四个系列各有 I / II / III 三级变体。
+  每张卡只声明它真的要改的通道，不为了「留个代价」去动无关参数：
+  「升级：超频回路」只加运行速度（+1 / +2 / +3），功率与配方长度不变，每份耗电随之 ÷2、÷3、÷4；
+  「升级：工序精简」只缩短运行耗时（配方刻度 ×0.90 / ×0.80 / ×0.70，即 -10% / -20% / -30%），
+  速度与功率不变，每份耗电同比降；
+  「升级：节能回路」只压功率（-10% / -20% / -25%），速度与耗时都不动，每份耗电同比降；
+  「升级：并行处理核心」只加并行运行数（+1 / +2 / +3），功率与运行耗时都不动。
+  速度一律是自然数增量，功率与耗时倍率一律取 0.05 的整数倍（卡面百分比因此恒为 5% 的整数倍）。
+  适用性由 `IUpgradableMachine.supportsBatch()` 判定：加工 / 配方 / 效果三类基类、熔炼机
+  （每条 lane 各持 `laneB`）与燃料引擎为 true；光伏引擎（无燃料槽）覆写为 false。
+  另有「升级：光合供能抑制」（只压功率 -20%，并注能）、
+  「升级：作用范围扩展」（半径或可调上限，不改能量学）。
+- **独特组件**（`SPECIALIZATION`）：提供模式 / 产出特化，整机仅一个生效，`validUpgrade()` 拒绝第二张。
+  七张专用卡都属于此类；`hasUpgrade(Class)` 只认本 tick 生效的那张，旧档里多插的独特组件不会误触发。
+
+结算入口是 `CmMachineBlockEntity.applyUpgradeEffects()`，每 tick 由 `doBaseData()` 在
+`resetUpgradeEffects()` 之后调用一次：先筛 `canApply` 与 `maxPerMachine`，再按类别分组，
+整合组件取最高档（放入已被拦截为一张，此分支只兜底旧存档、导入库存等多张残留）、
+独特组件取第一个、增益组件线性叠加，然后一次性写入四个派生量——
+`powerMultiplier = Σpower`、`runSpeed = (1 + Σ速度增量) × 整合组件 k`、
+`durationMultiplier = 1 + Σ(耗时系数 − 1)`、`batchMultiplier = 整合组件 k`，
+并只对生效的卡调用 `effect()`（模式 marker、范围、光合标记）。
+容量侧由 `doBaseData()` 统一按 `理论B` 缩放：储能 `initialEnergyStorage × B`、
+流体罐 `initialCapacity × B`、输出槽上限 `64 × B`；`supportsBatch()=false` 的机器 B 恒为 1。
+
+生产端另有两条：`EngineBlockEntity.tick()` 按 `P × m × s × B` 产出、按实际写入量扣燃料
+（缓冲满时不扣，避免「燃料烧掉电没发出」）。`m` 与 `T` 来自数据包配方见 2.8，
+`fuelRateMultiplier` 在开始烧一份燃料时锁定、烧完归 1.0，`getActualEfficiency()` 乘上它，
+保证面板显示与实际产出同口径；同一时刻把 `fuelTicksTotal = ceil(能量 ÷ (效率 × B))`
+写入同步字段，燃料条据此显示「已消耗 / 总 tick」（B 与效率在这一刻锁定，中途换升级不会失真）。
+范围面板 cap 的通用化仍属二期。
+
+tooltip 由 `UpgradeTooltipFormatter` 生成，只写升级组件自身带来的收益，且只写实际改动的通道——
+整合组件给「全局倍率 x2 / x3 / x4」一个关键词行（该关键词已定义速度、耗时与耗电的变化，
+并行运行数没有变化也不再补一行「+0」）；增益组件只出现运行速度（+N）、运行耗时（±n%）、
+运行功率（FE/t）、并行运行数里被改动的那几行，**没有变化的维度整行不写**，不再有「不变」行。
+速度与耗时是两条独立通道（每 tick 推进几格 / 配方有多长），两张卡各写各的行，不互相折算。
+数值写法：速度行写整数增量（`+1`），倍率行整数写 `x2`、其余一律百分比（`+20%` / `-25%`），
+功率与耗时倍率都保证是 5% 的整数倍。
+**不新造词条**：完成一份产出的耗电是功率与耗时的乘积，玩家自己相乘即可，卡面不单独成行。
+**不写插件类别，也不写「仅一个生效」「与某者互斥」「仅某类机器可用」之类的约束文案**——这些约束由
+`validUpgrade()` / `canApply()` 在放入槽位时直接拒绝（右键快捷安装会落到「不支持安装」提示），
+玩家不需要先读文案再避坑。
+
+例外与现状：
+
+- 「升级：星辉能量传输」归增益组件但 `modifiers()` 为空，能量限速取消后暂无可观察效果，二期接入缓冲 / 传输维度。
+- 范围类机器仍以 `getCurrentRadius() > 0` 作为「升级：作用范围扩展」的安装门禁。
   例外是**方块破坏器与方块成型器**：工作范围已改由面板 XYZ 决定，`LevelupRg` 不再
   `setCurrentRadius`，改为 `applyAdjustRangeCapMultiplier(2)` 把可调节半径上限翻倍
   （基础 `ADJUST_BASE_CAP=1` 半单位 = 0.5 半径 = 1×1×1，即设备初始作用范围；每件 ×2 得
   1→2→4→8→16→32→64 半单位，硬上限 64）；`resetUpgradeEffects()` 每 tick 重算该上限，
   `doBaseData()` 把越界值（含旧档按旧语义存下的大值）钳回上限，旧档因此也归位到 1×1×1。
   未装范围升级时上下限都是 0.5，加减按钮不改变数值。其它范围机器仍走原公式。
-- 特殊：`LevelupSyn` 光合注能、`LevelupBlast` / `LevelupSmoke` 切换熔炼配方模式。`LevelupStream` 自能量限速取消后为空效果。
 
-### 2.8 冷却剂
+### 2.8 引擎燃料（数据包）
+
+燃料是**生产端的数据包配方**，不是 Java 里的表：每一项 `data/<ns>/recipe/engine_fuel/*.json`
+声明「这个物品（或标签）在某台引擎上烧多久、产出率打几折」。
+
+```json
+{
+  "type": "kenergyengineering:engine_fuel",
+  "ingredient": { "tag": "c:ingots" },
+  "engines": ["metalizer"],
+  "duration": 250,
+  "rate_multiplier": 1.0
+}
+```
+
+| 字段 | 必需 | 含义 |
+|---|---|---|
+| `ingredient` | 是 | 物品或标签，不能为空 |
+| `engines` | 否 | 适用的引擎 id 列表；省略 = 全部引擎 |
+| `duration` | 是 | 持续时间 T（tick），即额定功率下这份燃料的燃烧时长 |
+| `rate_multiplier` | 否 | 对引擎额定 FE/t 的修正倍率 m，缺省 1.0 |
+
+引擎 id 由各 `EngineBlockEntity` 的 `fuelEngineId()` 给出：`extractor` / `metalizer` /
+`biomass` / `solar`。被认领时只读两件事——`duration` 进 `maxFuel`，
+`rate = round(引擎额定 × m)` 进实际产出率；因此一份燃料的总能量
+`round(额定 × m) × duration` 是引擎与配方共同决定的固定量，升级只抬产出率、按同样倍率缩短持续时间。
+
+查询入口只有 `EngineFuels.profile(level, engineId, engineRate, stack)`：精确物品先于标签
+（按 `ingredient.getItems().length` 升序），同优先级取先注册者。索引按 `RecipeManager` 实例
+缓存在 `WeakHashMap` 里——单人游戏客户端与服务端各有一个 `RecipeManager`，共用单字段缓存会
+互相挤掉、每 tick 重建一次索引。数据包没覆盖的物品再回退到原版燃烧时间
+（`getBurnTime(SMELTING)`，按旧口径 20 FE/燃烧 tick 折算），这条兜底**只给萃取引擎**：
+金属与生物质引擎的燃料是白名单，不能被兜底放进来。
+
+`MatchFuel` 退化为纯值对象（`FuelProfile(rate, durationTicks, rateMultiplier)` 加
+`of` / `budget` / `isEmpty`），旧版约 50 项的硬编码燃烧表已删。初始数据由 `TENFuelGen` 在
+`runData` 生成 59 个 `recipe/engine_fuel/<引擎>/<物品|标签>_<id>.json`，数值与旧硬编码逐位一致
+（`duration = ceil(能量密度 × 原版燃烧 tick ÷ 引擎额定)`）；此后增改燃料只动数据包或 KJS。
+JEI / EMI 的燃料页读同一份数据（`EngineFuelDisplay` 只是展示记录，与 `CoolantRecipe` 同构），
+展示层不再出现 `MatchFuel`。
+
+KubeJS 侧 `TENRecipeSchemas` 为 `kenergyengineering:engine_fuel` 注册了 schema，
+字段名与数据包一致，可用 `event.custom({ ... })` 直接增改；`engines` 与 `rate_multiplier`
+可省略，落回「全部引擎 / 1.0」。
+
+### 2.9 冷却剂
 
 冷却器（`CoolerBlockEntity`）按 `effectInterval` 周期把**正面一格**机器的 `progress` 直接推进
 `reductionTicks × lockedB` tick；一份冷却剂作用 `uses` 次后消耗。它不启动机器——`conditionStart()`
@@ -340,7 +518,7 @@ lane，不要直接改基类字段。信息栏峰值能耗按三路放大。旧�
 
 数据包或第三方往标签加物品即可新增冷却剂，无需改代码；`Coolants.register(Item, Coolant)`
 保留为代码侧覆盖，优先级高于标签。展示条目 `CoolantRecipe` 是伪配方（无 `RecipeType`），
-形状与 `EngineFuelRecipe` 一致，由 JEI 在运行时按标签合成。
+形状与引擎燃料的展示记录 `EngineFuelDisplay` 一致，由 JEI 在运行时按标签合成。
 `usesRemaining` / `coolantTotalUses` 是服务端每 tick 写的 `@DescSynced` 镜像——GUI 进度栏在客户端求值，
 不经 `@DescSynced`/RPC 的字段到不了客户端。
 
@@ -350,7 +528,7 @@ JEI 的模组分页按 `RecipeType` uid 的命名空间归组，这些页面全�
 所以「同一模组一组」要靠同一份清单保证；此前冷却剂页是两处手写清单末尾各追一行，
 加页面时漏一处就会与其余 KER 页面脱节——不再保留那种写法。
 
-### 2.9 槽位堆叠、插入去重与超 99 持久化
+### 2.10 槽位堆叠、插入去重与超 99 持久化
 
 堆叠上限由 `CmMachineBlockEntity.installBatchSlotLimit()` 一处给出，全机器统一：
 可进/可出的槽 = `物品 maxStackSize × 理论 B`，不可堆叠物品（工具/武器槽）保持 1，
@@ -371,7 +549,7 @@ JEI 的模组分页按 `RecipeType` uid 的命名空间归组，这些页面全�
 在「只调一次、忽略返回值」的调用方（扳手拆卸）会留下搬不走的余量。
 
 provider 只统一了「上限从哪来」，写入侧仍要各自去问：走 `RecipeMachineBlockEntity`
-的机器由 `computeEffectiveSlotLimit` 给出 `64 × lockedB`，自带批处理数学的机器
+的机器由 `computeEffectiveSlotLimit` 给出 `64 × lockedB`，自带并行运行数学的机器
 （熔炼机）必须改问 `itemHandler.getEffectiveSlotLimit(slot, stack)`——直接用
 `ItemStack#getMaxStackSize()` 判余量会把输出槽悄悄封顶在 64，倍增上限形同不存在。
 
@@ -446,6 +624,9 @@ Registrate 自动产出方块/物品模型、blockstate 与英文语言；`src/g
 
 配方机器的 `findRecipe()` 返回当前配方；`RecipeMachineBlockEntity` 负责 B 锁定与原子产出。
 配方变化会重置进度。
+
+第六类 `engine_fuel` 不参与槽位循环（见 2.8）：没有输出槽、`isSpecial()` 为 true，
+只被引擎与 JEI / EMI 查询，初始数据由 `TENFuelGen` 生成。
 
 矿石处理是「矿石→粗料→粉」三段式，由 `TENRecipeGen.ORE_CHAIN` 生成（`recipe/pulverizer/chain/`）：
 输入用标签（`c:ores/X`、`c:raw_materials/X`），输出写具体物品。材料缺席时靠 `neoforge:conditions` 的
@@ -526,7 +707,7 @@ NeoForge 自带这套配置界面，FML 的 Mods 面板与 Mod Menu 读的都是
 
 **模具只用一个通用标签**：压缩机 `valid(slot, stack)` 只读 `c:moulds` 决定模具能否进催化槽，
 不再有 `c:moulds/shape` 那类功能子标签（成员直接列在 `c:moulds` 里，`TENTagLangGen` 也不再为子标签出语言键）；
-具体用哪种模具由配方自己写明 `kenergyengineering:mould_*` 的静态输入（`chance: 0` = 催化位，不消耗、不随批量倍增），
+具体用哪种模具由配方自己写明 `kenergyengineering:mould_*` 的静态输入（`chance: 0` = 催化位，不消耗、不随并行运行数倍增），
 分类标签对匹配没有任何作用，留着只会让人以为删掉某个子标签会改变行为。
 `FormsCombinedIngredient#itemMembers`/`fluidMembers` 的惰性解析只服务于标签输入的判定与展示，
 不是允许标签输出的理由。
@@ -618,7 +799,7 @@ GUI 走「末影箱模式」：频道目录、创建、接入、退出、删除�
 - `TENMachineBlockUIFactory`：机器 UI 的统一工厂。
 - `RevealProgressBar`：渐显进度条，按 UV 裁切显示能量/燃料/进度。
 - `TENFluidSlot`：流体槽。
-- `TransferModeButtonState`：传输模式按钮状态。
+- `TransferModeButtonState`：面配置按钮状态。
 - `RangeDisplayBER`（客户端源集）：范围机器的工作区线框。
 - 配置面板与升级槽面板由 LDLib2 的 `ModularUI` 组装；面板底图与钮槽坐标要按纹理实测，不要凭感觉改。
 - **服务端 UI 树不跑样式计算**：`StyleEngine` 只在客户端 `init()` 时把 `SlotStyle` 的声明值算进
@@ -627,7 +808,10 @@ GUI 走「末影箱模式」：频道目录、创建、接入、退出、删除�
   **容器槽注册顺序**（= UI 树遍历顺序），不能只靠 `slotStyle`。升级槽面板因此先于机器槽挂进 UI 树。
 - 升级槽面板的展开态是客户端 `UIState` 视图（服务端读不到），经 `rpcSetUpgradePanelOpen` 按玩家
   镜像到服务端；升级槽的 `mayPlace` 据此门控，收起时把升级槽从快捷移动候选里剔除。
-- **进度条的百分比与用途快捷键**：所有机器进度条悬停显示进度百分比，冷却剂消耗条另显示剩余百分比。
+- **进度条读数与用途快捷键**：进度条悬停显示配方刻度而不是百分比——加工条给「已推进 / 配方耗时」，
+  引擎燃料条给「已消耗 / 持续时间」（`progressDoneTicks` / `progressTotalTicks` /
+  `fuelDoneTicks` / `fuelTotalTicks`）。加工条的两个读数都不除 `runSpeed`：进度每 tick 加 N，
+  读数就一次跳 N，与进度条填充同源；燃料条按已耗 FE 占比折算；冷却剂消耗条仍显示剩余百分比。
   快捷键不自己读键位，而是走 LDLib2 的两个 XEI 事件——JEI 的 `IGuiContainerHandler` 派发
   `clickableIngredient`、EMI 的 `addGenericStackProvider` 派发 `stackProvider`，两者都把事件交给
   `ModularUI.getLastHoveredElement()`。`TENMachineBlockUIFactory` 把**机器方块自身的物品**绑到进度条上，
@@ -658,11 +842,11 @@ GUI 走「末影箱模式」：频道目录、创建、接入、退出、删除�
   **目前只有方块破坏器与方块成型器接入**：`adjustedBounds()` 给出世界轴向三轴盒子
   （中心 = 机器位置 + XYZ 偏移，半径 = range/2 方块，每轴方块数 = range，向正负对称取整展开：
   range=1 只有中心 1 格、range=2 为 2 格……），两台机器的 `getRangeBoxes()`、
-  `applyEffect()`、`conditionStart()` 都遍历这个盒子并跳过自身格，批处理 B 不再决定深度；
+  `applyEffect()`、`conditionStart()` 都遍历这个盒子并跳过自身格，并行运行 B 不再决定深度；
   遍历用 `ADJUST_SCAN_LIMIT` 截断防卡顿，输出满判定也不再看 B。其余机器的面板数值只保存与显示，
   工作范围仍按原有 `radius` / `getRangeBoxes()` 语义。
 - **侧栏主按钮 tooltip**：6 个 `info.bar_*` 标题键（`bar_mode/ideas/redstone/control/energy/upgrade`）
-  文案不带冒号，只留尾空格给拼接用（如「传输模式 能量」）。红石按钮 `redstoneTooltips` 分两行：
+  文案不带冒号，只留尾空格给拼接用（如「面配置 能量」）。红石按钮 `redstoneTooltips` 分两行：
   第一行金色标题「红石控制」，第二行是 `info.off/low/high` 三选一的当前类型；
   `info.bar_energy_use*` 是内容标签，保留冒号。改这些文案要改 `TENLangHandler` 再跑 `runData`。
 
@@ -694,6 +878,7 @@ GUI 走「末影箱模式」：频道目录、创建、接入、退出、删除�
 | JEI | `src/client/java` + `integration/xei` | 配方查看、幽灵物品、熔炼机原版熔炉催化剂、引擎燃料与冷却剂页 |
 | EMI | `integration/emi` | 配方查看与共享绘制组件；运行时待验证 |
 | Jade | `src/client/java/com/modularmc/ten/integration/jade` | 频道状态、管道过滤与抽取面 |
+| KubeJS | `integration/kubejs` + `kubejs.plugins.txt` | 六个数据包配方的 `RecipeSchema`：五台配方机器加 `engine_fuel` |
 | GuideME | `src/client/java/.../client/guide` + `common/data/TENGuideItems` | 可选独立指南；GuideME 缺席时指南物品不注册。`folder` 是跨命名空间内容根（`assets/<ns>/<folder>/**.md`），页面 id = `<ns>:folder 内相对路径`（含 `.md`）；起始页交给 GuideME 缺省 `<ns>:index.md`，不要手写 |
 | AE2 | capability 层 + 开发期依赖 | 样板供应器阻挡模式依赖面观察读语义；不直接 import `appeng` |
 | Curios | 编译期可选 | 饰品槽支持 |
@@ -741,7 +926,7 @@ mod 版本校验，只管 Maven 坐标解析。
 `supportsFaceDirection()` 按设备功能性现算（能量向外只给产能类、物品/流体按槽位与罐体方向）。
 六向方块（能朝上/朝下放置）若要收窄可配面，覆写 `supportsFaceOnSide()`——**不要**改
 `faceForLogicalSide()` 的映射，那张表必须对任意朝向保持双射。共享存储型方块若要禁止某个方向
-自搬，覆写 `supportsFaceDirection()` 或补 `ten:no_active_face_energy` / `_item` / `_fluid` 标签
+自搬，覆写 `supportsFaceDirection()` 或补 `kenergyengineering:no_active_face_energy` / `_item` / `_fluid` 标签
 （见 2.6）；基础模组的三个频道两个方向都放行，但只有朝向面可配。
 
 **加一个升级**：`common/item/upgrades/` 新建类 → `TENItems` 注册 → `IUpgradableMachine` 的效果分支 →
@@ -779,7 +964,7 @@ blockstate 占位核心模型与 `src/main/resources` 下的零件模型（见 5
   `allowsFaceMode(direction, type, mode)`，不要退回不带方向的 `allowsFaceMode(type, mode)`——
   后者不知道「这一面是不是设备的面入口」，会在频道这类单面设备上留下配了不生效的档位。
   逻辑面映射（`faceForLogicalSide`）必须对任意朝向保持双射，`getClockWise()` 不得作用于 Y 轴朝向。
-- **批处理锁**：`lockedB` / `lockedMaxProgress` 在周期开始时锁定，完成后清理；中途改语义会破坏停滞契约。
+- **并行运行数锁定**：`lockedB` / `lockedMaxProgress` 在周期开始时锁定，完成后清理；中途改语义会破坏停机契约。
 - **原子产出**：`RecipeMachineBlockEntity` 的快照-模拟-提交不能改成边产边写；失败必须回滚。
 - **客户端边界**：可选集成类型不进总是加载的类；客户端类不进 main 源集。
 - **版本目录**：新增依赖优先走 `gradle/libs.versions.toml` 与 `gradle/forge.versions.toml`；

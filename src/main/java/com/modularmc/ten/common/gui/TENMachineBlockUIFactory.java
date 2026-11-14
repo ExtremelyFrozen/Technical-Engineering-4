@@ -942,24 +942,23 @@ public final class TENMachineBlockUIFactory {
     }
 
     public static ProgressBar progressGaugeModular(CmMachineBlockEntity machine, int x, int y, boolean showPercent) {
-        return progressGaugeModular(machine, x, y, showPercent, TENMachineBlockUIFactory::progressPercent);
+        return progressGaugeModular(machine, x, y, -1, showPercent);
     }
 
     /**
-     * 进度箭头绑定自定义百分比：多流水线机器（熔炼机）用这个重载把每条箭头
-     * 只接到对应 lane 的进度上，彼此不串数据。
+     * 进度箭头绑定指定流水线：多流水线机器（熔炼机）用这个重载把每条箭头
+     * 只接到对应 lane 的进度与 tick 读数上，彼此不串数据。{@code lane = -1} 表示本机单进度。
      */
-    public static ProgressBar progressGaugeModular(CmMachineBlockEntity machine, int x, int y, boolean showPercent,
-                                                   ToDoubleFunction<CmMachineBlockEntity> percentSupplier) {
+    public static ProgressBar progressGaugeModular(CmMachineBlockEntity machine, int x, int y, int lane, boolean showPercent) {
         int type = machine.machineType();
         return horizontalProgressModular(machine, x, y, 22, 16,
-                progressArrowBg(type), progressArrowFill(type), showPercent, percentSupplier);
+                progressArrowBg(type), progressArrowFill(type), lane, showPercent);
     }
 
     public static ProgressBar progressGaugeWide(CmMachineBlockEntity machine, int x, int y, boolean showPercent) {
         return horizontalProgressModular(machine, x, y, 80, 5,
                 com.modularmc.ten.TENConstants.PROGRESS_BAR_WIDE_BG, com.modularmc.ten.TENConstants.PROGRESS_BAR_WIDE_FILL,
-                showPercent, TENMachineBlockUIFactory::progressPercent);
+                -1, showPercent);
     }
 
     /**
@@ -1040,8 +1039,8 @@ public final class TENMachineBlockUIFactory {
     private static ProgressBar horizontalProgressModular(CmMachineBlockEntity machine,
                                                          int x, int y, int width, int height,
                                                          ResourceLocation bgTexture, ResourceLocation fillTexture,
-                                                         boolean showPercent,
-                                                         ToDoubleFunction<CmMachineBlockEntity> percentSupplier) {
+                                                         int lane,
+                                                         boolean showTicks) {
         var filled = SpriteTexture.of(fillTexture).setSprite(0, 0, width, height);
         var progress = absolute(new RevealProgressBar(filled), x, y, width, height);
         progress.barContainer(container -> container.style(style -> style.backgroundTexture(SpriteTexture.of(bgTexture).setSprite(0, 0, width, height)))
@@ -1049,9 +1048,14 @@ public final class TENMachineBlockUIFactory {
         progress.barBackground.style(style -> style.backgroundTexture(IGuiTexture.EMPTY));
         progress.label.setDisplay(false);
         progress.progressBarStyle(style -> style.fillDirection(FillDirection.LEFT_TO_RIGHT).interpolate(true).interpolateStep(0.1f));
-        progress.bindDataSource(SupplierDataSource.of(() -> (float) percentSupplier.applyAsDouble(machine)));
-        if (showPercent) {
-            progress.addEventListener(UIEvents.HOVER_TOOLTIPS, event -> event.hoverTooltips = new HoverTooltips(List.of(ComponentHelper.make((int) (percentSupplier.applyAsDouble(machine) * 100) + "%")), null, null, null));
+        progress.bindDataSource(SupplierDataSource.of(() -> (float) machine.progressFraction(lane)));
+        if (showTicks) {
+            // 读数用配方刻度而不是百分比：已推进刻度 / 配方耗时刻度。
+            // 进度每 tick 推进 N 格，读数也随之一次跳 N（N=1 才逐格走），与进度条填充同源。
+            progress.addEventListener(UIEvents.HOVER_TOOLTIPS, event -> event.hoverTooltips = new HoverTooltips(
+                    List.of(Component.translatable("kenergyengineering.info.progress_ticks",
+                            machine.progressDoneTicks(lane), machine.progressTotalTicks(lane))),
+                    null, null, null));
         }
         // 把机器方块物品挂到进度条上，JEI/EMI 的「显示用途」键在此处即可查到本机器配方。
         MachineProgressShortcut.bind(progress, machine);
@@ -1231,10 +1235,6 @@ public final class TENMachineBlockUIFactory {
         return machine.maxFuel == 0 ? 0 : (double) machine.fuel / machine.maxFuel;
     }
 
-    private static double progressPercent(CmMachineBlockEntity machine) {
-        return machine.maxProgress == 0 ? 0 : (double) machine.progress / machine.maxProgress;
-    }
-
     private static double energyPercent(CmMachineBlockEntity machine) {
         return machine.maxEnergyStored == 0 ? 0 : (double) machine.energyStored / machine.maxEnergyStored;
     }
@@ -1267,8 +1267,13 @@ public final class TENMachineBlockUIFactory {
         return CmMachineBlockEntity.faceForLogicalSide(machine.getFacing(), logicalSide);
     }
 
+    /**
+     * 燃料条读数：已消耗 tick / 修正后的持续时间 tick。
+     * 总刻度在开烧时按「燃料总能量 ÷ 实际产出率」写入，已消耗按已耗 FE 占比折算，
+     * 因此读数与燃料条的填充比例同源，不会出现「条满了但 tick 没走完」。
+     */
     private static Supplier<List<Component>> fuelTooltip(CmMachineBlockEntity machine, boolean displayValue) {
-        return () -> displayValue ? List.of(DisplayHelper.join(machine.fuel, machine.maxFuel)) : List.of(ComponentHelper.make((int) (fuelPercent(machine) * 100) + "%"));
+        return () -> List.of(Component.translatable("kenergyengineering.info.fuel_ticks", machine.fuelDoneTicks(), machine.fuelTotalTicks()));
     }
 
     private static Supplier<List<Component>> energyGaugeTooltip(CmMachineBlockEntity machine, boolean displayValue) {
