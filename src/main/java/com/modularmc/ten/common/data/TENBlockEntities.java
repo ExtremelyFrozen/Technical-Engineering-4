@@ -89,6 +89,10 @@ public class TENBlockEntities {
             .blockEntity("machine_quarry", QuarryBlockEntity::new)
             .validBlocks(TENBlocks.MACHINE_QUARRY)
             .register();
+    public static final BlockEntityEntry<CauldronBlockEntity> CAULDRON = REGISTRATE
+            .blockEntity("machine_dew_collector", CauldronBlockEntity::new)
+            .validBlocks(TENBlocks.MACHINE_DEW_COLLECTOR)
+            .register();
 
     // 三台环境作业机器
     public static final BlockEntityEntry<BlockBreakerBlockEntity> BLOCK_BREAKER = REGISTRATE
@@ -104,7 +108,7 @@ public class TENBlockEntities {
             .validBlocks(TENBlocks.MACHINE_COOLER)
             .register();
 
-    // Engines
+    // 引擎
     public static final BlockEntityEntry<SolarBlockEntity> SOLAR = REGISTRATE
             .blockEntity("engine_solar", SolarBlockEntity::new)
             .validBlocks(TENBlocks.ENGINE_SOLAR)
