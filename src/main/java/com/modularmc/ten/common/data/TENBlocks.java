@@ -1,11 +1,13 @@
 package com.modularmc.ten.common.data;
 
+import com.modularmc.ten.TEN;
 import com.modularmc.ten.common.block.machine.*;
 import com.modularmc.ten.common.item.CableBlockItem;
 
 import com.tterrag.registrate.providers.RegistrateBlockstateProvider;
 import com.tterrag.registrate.util.nullness.NonNullFunction;
 import net.minecraft.core.Direction;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -62,7 +64,7 @@ public class TENBlocks {
     public static final BlockEntry<HorizontalMachineBlock> MACHINE_BLOCK_BREAKER = machine("machine_block_breaker", "Block Breaker", "方块破坏器");
     public static final BlockEntry<HorizontalMachineBlock> MACHINE_BLOCK_FORMER = machine("machine_block_former", "Block Former", "方块成型器");
     public static final BlockEntry<HorizontalMachineBlock> MACHINE_COOLER = machine("machine_cooler", "Cooler", "冷却器");
-    public static final BlockEntry<HorizontalMachineBlock> MACHINE_DEW_COLLECTOR = machine("machine_dew_collector", "Dew Collector", "凝露收集器");
+    public static final BlockEntry<HorizontalMachineBlock> MACHINE_DEW_COLLECTOR = topMachine("machine_dew_collector", "Dew Collector", "凝露收集器", TEN.id("block/machine_dew_collector_top"));
 
     // === Engines ===
     public static final BlockEntry<HorizontalMachineBlock> ENGINE_RECYCLER = engine("engine_recycler", "Recycler Engine", "回收引擎");
@@ -191,6 +193,13 @@ public class TENBlocks {
         return horizontal(n, englishName, cn,
             HorizontalMachineBlock::new,
             TENModels::machine, TENModels::machineActive);
+    }
+
+    private static BlockEntry<HorizontalMachineBlock> topMachine(String n, String englishName, String cn, ResourceLocation top) {
+        return horizontal(n, englishName, cn,
+            HorizontalMachineBlock::new,
+            (prov, name) -> TENModels.machine(prov, name, top),
+            (prov, name) -> TENModels.machineActive(prov, name, top));
     }
 
     private static BlockEntry<HorizontalMachineBlock> engine(String n, String englishName, String cn) {

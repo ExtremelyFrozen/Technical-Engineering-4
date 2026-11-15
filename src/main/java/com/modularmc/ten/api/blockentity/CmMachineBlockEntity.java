@@ -325,7 +325,7 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         }
         // 空槽查询时无从得知物品上限，按 64×B 预留（真正插入时会带 candidate 再算一次）
         int maxStackSize = candidate.isEmpty() ? DEFAULT_SLOT_LIMIT : Math.max(1, candidate.getMaxStackSize());
-        if (maxStackSize <= 1) {
+        if (maxStackSize == 1) {
             return 1;
         }
         return (int) Math.min((long) maxStackSize * getTheoreticalBatchSize(), Integer.MAX_VALUE);
@@ -1182,11 +1182,13 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         if (slot < 0 || slot >= MAX_UPGRADE_SLOTS) return false;
         if (!(stack.getItem() instanceof UpgradeItem upgradeItem)) return false;
         // LevelupSyn: max 1 per machine (enforced at install time)
-        if (stack.getItem() instanceof LevelupSyn && hasUpgrade(LevelupSyn.class)) return false;
-        // Blast ↔ Smoke 互斥——不可共存
-        if (stack.getItem() instanceof LevelupBlast && hasUpgrade(LevelupSmoke.class)) return false;
-        if (stack.getItem() instanceof LevelupSmoke && hasUpgrade(LevelupBlast.class)) return false;
-        return upgradeItem.canApply(this);
+        return switch (stack.getItem()) {
+            case LevelupSyn levelupSyn when hasUpgrade(LevelupSyn.class) -> false;
+            // Blast ↔ Smoke 互斥——不可共存
+            case LevelupBlast levelupBlast when hasUpgrade(LevelupSmoke.class) -> false;
+            case LevelupSmoke levelupSmoke when hasUpgrade(LevelupBlast.class) -> false;
+            default -> upgradeItem.canApply(this);
+        };
     }
 
     public IngredientType tankType(int tank) {

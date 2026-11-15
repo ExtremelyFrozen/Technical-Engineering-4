@@ -8,6 +8,7 @@ import com.modularmc.ten.common.block.machine.DirectionalMachineBlock;
 import com.modularmc.ten.common.block.machine.HorizontalMachineBlock;
 
 import net.minecraft.core.Direction;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.Block;
 import net.neoforged.neoforge.client.model.generators.BlockModelBuilder;
 import net.neoforged.neoforge.client.model.generators.BlockStateProvider;
@@ -23,27 +24,36 @@ public class TENModels {
     }
 
     public static BlockModelBuilder machine(BlockStateProvider prov, String name) {
+        return machine(prov, name, TEN.id("block/machine_top"));
+    }
+
+    public static BlockModelBuilder machine(BlockStateProvider prov, String name, ResourceLocation top) {
         String tex = machineTex(name);
         return prov.models().cube(name,
                 TEN.id("block/machine_bottom"),
-                TEN.id("block/machine_top"),
+                top,
                 TEN.id(tex),
                 TEN.id("block/machine_side"),
                 TEN.id("block/machine_side_connection"),
                 TEN.id("block/machine_side_connection_flipped"))
-                .texture("particle", TEN.id("block/machine_side"));
+            .texture("particle", TEN.id("block/machine_side"));
     }
 
+
     public static BlockModelBuilder machineActive(BlockStateProvider prov, String name) {
+        return machineActive(prov, name, TEN.id("block/machine_top"));
+    }
+
+    public static BlockModelBuilder machineActive(BlockStateProvider prov, String name, ResourceLocation top) {
         String tex = machineTex(name);
         return prov.models().cube(name + "_active",
                 TEN.id("block/machine_bottom"),
-                TEN.id("block/machine_top"),
+                top,
                 TEN.id(tex + "_active"),
                 TEN.id("block/machine_side"),
                 TEN.id("block/machine_side_connection"),
                 TEN.id("block/machine_side_connection_flipped"))
-                .texture("particle", TEN.id("block/machine_side"));
+            .texture("particle", TEN.id("block/machine_side"));
     }
 
     // 引擎方块 —— 顶/侧面同纹，底面单独

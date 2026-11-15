@@ -71,6 +71,6 @@ public enum MachineType implements IMachineType{
 
     @Override
     public boolean isMachineGUI() {
-        return forms.contains(this);
+        return true;
     }
 }

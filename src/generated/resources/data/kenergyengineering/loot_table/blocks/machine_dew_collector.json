@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:block",
+  "pools": [
+    {
+      "bonus_rolls": 0.0,
+      "conditions": [
+        {
+          "condition": "minecraft:survives_explosion"
+        }
+      ],
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "kenergyengineering:machine_dew_collector"
+        }
+      ],
+      "rolls": 1.0
+    }
+  ],
+  "random_sequence": "kenergyengineering:blocks/machine_dew_collector"
+}
