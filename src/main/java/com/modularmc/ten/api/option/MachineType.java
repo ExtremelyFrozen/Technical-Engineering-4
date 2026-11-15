@@ -1,38 +1,76 @@
 package com.modularmc.ten.api.option;
 
-/**
- * 机器类型常量表：0-3 为形态大类（产能/逐 tick 加工/周期效果/范围型），
- * 10+ 具体机器、20+ 功能方块（破坏器/成型器/冷却器）、30+ 引擎、40+ 储能单元；
- * 供 UI 背景选择与行为分支。
- */
-public class MachineType {
+import java.util.EnumSet;
+import java.util.Set;
 
-    public static final int GENERATOR = 0;
-    public static final int MACHINE_PROCESS = 1;
-    public static final int MACHINE_EFFECT = 2;
-    public static final int MACHINE_RADIUSED = 3;
+public enum MachineType implements IMachineType{
+    // Form kinds
+    GENERATOR       (Category.GENERATOR,       EnergyFlow.OUTPUT, EnergyDemand.NOT_FULL),
+    MACHINE_PROCESS (Category.MACHINE_PROCESS, EnergyFlow.INPUT,  EnergyDemand.SUFFICIENT),
+    MACHINE_EFFECT  (Category.MACHINE_EFFECT,  EnergyFlow.INPUT,  EnergyDemand.SUFFICIENT),
+    MACHINE_RADIUSED(Category.MACHINE_RADIUSED,EnergyFlow.INPUT,  EnergyDemand.SUFFICIENT),
+    STORAGE         (Category.STORAGE,         EnergyFlow.BOTH,   EnergyDemand.ALWAYS),
 
-    public static final int FURNACE = 10;
-    public static final int PULVERIZER = 11;
-    public static final int COMPRESSOR = 12;
-    public static final int REFINER = 13;
-    public static final int INDUCTION_FURNACE = 14;
-    public static final int PSIONICANT = 15;
-    public static final int MATTER_CONDENSER = 16;
-    public static final int ENCHANTMENT_FLUSHER = 17;
-    public static final int BEACON = 20;
-    public static final int MOB_RIPPER = 21;
-    public static final int QUARRY = 22;
-    public static final int FARM = 23;
-    public static final int ENGINE_SOLAR = 30;
-    public static final int ENGINE_EXTRACTION = 31;
-    public static final int ENGINE_METAL = 32;
-    public static final int ENGINE_BIOMASS = 33;
-    public static final int ENGINE_RECYCLER = 34;
-    public static final int CELL = 40;
-    public static final int CREATIVE_CELL = 50;
+    // Concrete machines
+    FURNACE             (Category.MACHINE_PROCESS, EnergyFlow.INPUT, EnergyDemand.SUFFICIENT),
+    PULVERIZER          (Category.MACHINE_PROCESS, EnergyFlow.INPUT, EnergyDemand.SUFFICIENT),
+    COMPRESSOR          (Category.MACHINE_PROCESS, EnergyFlow.INPUT, EnergyDemand.SUFFICIENT),
+    REFINER             (Category.MACHINE_PROCESS, EnergyFlow.INPUT, EnergyDemand.SUFFICIENT),
+    INDUCTION_FURNACE   (Category.MACHINE_PROCESS, EnergyFlow.INPUT, EnergyDemand.SUFFICIENT),
+    PSIONICANT          (Category.MACHINE_PROCESS, EnergyFlow.INPUT, EnergyDemand.SUFFICIENT),
+    MATTER_CONDENSER    (Category.MACHINE_PROCESS, EnergyFlow.INPUT, EnergyDemand.SUFFICIENT),
+    ENCHANTMENT_FLUSHER (Category.MACHINE_PROCESS, EnergyFlow.INPUT, EnergyDemand.SUFFICIENT),
 
-    public static final int BLOCK_BREAKER = 24;
-    public static final int BLOCK_FORMER = 25;
-    public static final int COOLER = 26;
+    // Functional blocks
+    BEACON       (Category.MACHINE_EFFECT, EnergyFlow.INPUT, EnergyDemand.SUFFICIENT),
+    MOB_RIPPER   (Category.MACHINE_EFFECT, EnergyFlow.INPUT, EnergyDemand.SUFFICIENT),
+    QUARRY       (Category.MACHINE_EFFECT, EnergyFlow.INPUT, EnergyDemand.SUFFICIENT),
+    FARM         (Category.MACHINE_EFFECT, EnergyFlow.INPUT, EnergyDemand.SUFFICIENT),
+    BLOCK_BREAKER(Category.MACHINE_EFFECT, EnergyFlow.INPUT, EnergyDemand.SUFFICIENT),
+    BLOCK_FORMER (Category.MACHINE_EFFECT, EnergyFlow.INPUT, EnergyDemand.SUFFICIENT),
+    COOLER       (Category.MACHINE_EFFECT, EnergyFlow.INPUT, EnergyDemand.SUFFICIENT),
+    CAULDRON     (Category.MACHINE_EFFECT, EnergyFlow.INPUT, EnergyDemand.SUFFICIENT),
+
+    // Engines
+    ENGINE_SOLAR     (Category.GENERATOR, EnergyFlow.OUTPUT, EnergyDemand.NOT_FULL),
+    ENGINE_EXTRACTION(Category.GENERATOR, EnergyFlow.OUTPUT, EnergyDemand.NOT_FULL),
+    ENGINE_METAL     (Category.GENERATOR, EnergyFlow.OUTPUT, EnergyDemand.NOT_FULL),
+    ENGINE_BIOMASS   (Category.GENERATOR, EnergyFlow.OUTPUT, EnergyDemand.NOT_FULL),
+    ENGINE_RECYCLER  (Category.GENERATOR, EnergyFlow.OUTPUT, EnergyDemand.ALWAYS),
+
+    // Storage
+    CELL         (Category.STORAGE, EnergyFlow.BOTH, EnergyDemand.ALWAYS),
+    CREATIVE_CELL(Category.STORAGE, EnergyFlow.BOTH, EnergyDemand.ALWAYS);
+
+    private final Category category;
+    private final EnergyFlow energyFlow;
+    private final EnergyDemand energyDemand;
+
+    MachineType(Category category, EnergyFlow energyFlow, EnergyDemand energyDemand) {
+        this.category = category;
+        this.energyFlow = energyFlow;
+        this.energyDemand = energyDemand;
+    }
+
+    private static final Set<MachineType> forms = EnumSet.of(GENERATOR, MACHINE_PROCESS, MACHINE_EFFECT, MACHINE_RADIUSED, STORAGE);
+
+    @Override
+    public Category getCategory() {
+        return this.category;
+    }
+
+    @Override
+    public EnergyFlow getEnergyFlow() {
+        return this.energyFlow;
+    }
+
+    @Override
+    public EnergyDemand getEnergyDemand() {
+        return this.energyDemand;
+    }
+
+    @Override
+    public boolean isMachineGUI() {
+        return forms.contains(this);
+    }
 }

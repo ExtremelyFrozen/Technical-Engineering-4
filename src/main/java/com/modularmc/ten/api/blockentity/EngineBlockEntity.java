@@ -1,6 +1,7 @@
 package com.modularmc.ten.api.blockentity;
 
 import com.modularmc.ten.api.option.FaceOption;
+import com.modularmc.ten.api.option.IMachineType;
 import com.modularmc.ten.api.option.MachineType;
 import com.modularmc.ten.common.gui.TENMachineBlockUIFactory;
 
@@ -24,7 +25,7 @@ public abstract class EngineBlockEntity extends CmMachineBlockEntity {
     }
 
     @Override
-    public int machineType() {
+    public IMachineType machineType() {
         return MachineType.GENERATOR;
     }
 

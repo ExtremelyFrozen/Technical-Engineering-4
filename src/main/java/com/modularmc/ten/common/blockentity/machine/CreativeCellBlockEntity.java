@@ -1,6 +1,7 @@
 package com.modularmc.ten.common.blockentity.machine;
 
 import com.modularmc.ten.api.blockentity.CmMachineBlockEntity;
+import com.modularmc.ten.api.option.IMachineType;
 import com.modularmc.ten.api.option.IngredientType;
 import com.modularmc.ten.api.option.MachineType;
 import com.modularmc.ten.common.gui.TENMachineBlockUIFactory;
@@ -22,7 +23,7 @@ public class CreativeCellBlockEntity extends CmMachineBlockEntity {
     }
 
     @Override
-    public int machineType() {
+    public IMachineType machineType() {
         return MachineType.CREATIVE_CELL;
     }
 

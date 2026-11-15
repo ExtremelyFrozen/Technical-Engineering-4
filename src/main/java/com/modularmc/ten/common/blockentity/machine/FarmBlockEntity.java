@@ -1,6 +1,7 @@
 package com.modularmc.ten.common.blockentity.machine;
 
 import com.modularmc.ten.api.blockentity.RadiusMachineBlockEntity;
+import com.modularmc.ten.api.option.IMachineType;
 import com.modularmc.ten.api.option.IngredientType;
 import com.modularmc.ten.api.option.MachineType;
 import com.modularmc.ten.common.block.machine.HorizontalMachineBlock;
@@ -53,7 +54,7 @@ public class FarmBlockEntity extends RadiusMachineBlockEntity {
     public int[] xRowMaturity = new int[0];
 
     @Override
-    public int machineType() {
+    public IMachineType machineType() {
         return MachineType.FARM;
     }
 

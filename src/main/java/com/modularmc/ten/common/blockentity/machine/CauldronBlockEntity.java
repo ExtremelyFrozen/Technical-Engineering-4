@@ -5,6 +5,7 @@ import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
 import com.modularmc.ten.api.blockentity.ProcessingMachineBlockEntity;
 import com.modularmc.ten.api.capability.MachineFluidTank;
 import com.modularmc.ten.api.option.FaceOption;
+import com.modularmc.ten.api.option.IMachineType;
 import com.modularmc.ten.api.option.IngredientType;
 import com.modularmc.ten.api.option.MachineType;
 import com.modularmc.ten.common.gui.TENMachineBlockUIFactory;
@@ -33,7 +34,7 @@ public class CauldronBlockEntity extends ProcessingMachineBlockEntity {
     private int checkCooling = 0;
 
     @Override
-    public MachineType machineType() {
+    public IMachineType machineType() {
         return MachineType.CAULDRON;
     }
 

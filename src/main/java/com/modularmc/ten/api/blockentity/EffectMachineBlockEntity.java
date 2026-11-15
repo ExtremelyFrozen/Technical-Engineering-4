@@ -1,5 +1,6 @@
 package com.modularmc.ten.api.blockentity;
 
+import com.modularmc.ten.api.option.IMachineType;
 import com.modularmc.ten.api.option.MachineType;
 
 import net.minecraft.core.BlockPos;
@@ -17,7 +18,7 @@ public abstract class EffectMachineBlockEntity extends CmMachineBlockEntity {
     }
 
     @Override
-    public int machineType() {
+    public IMachineType machineType() {
         return MachineType.MACHINE_EFFECT;
     }
 

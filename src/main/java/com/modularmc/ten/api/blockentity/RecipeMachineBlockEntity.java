@@ -193,7 +193,7 @@ public abstract class RecipeMachineBlockEntity extends ProcessingMachineBlockEnt
             B = Math.min(B, bForThis);
         }
 
-        return B == Integer.MAX_VALUE ? Integer.MAX_VALUE : B;
+        return B;
     }
 
     /**

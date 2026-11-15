@@ -3,6 +3,7 @@ package com.modularmc.ten.common.blockentity.machine;
 import com.modularmc.ten.api.blockentity.IUpgradableMachine;
 import com.modularmc.ten.api.blockentity.ProcessingMachineBlockEntity;
 import com.modularmc.ten.api.capability.MachineFluidTank;
+import com.modularmc.ten.api.option.IMachineType;
 import com.modularmc.ten.api.option.IngredientType;
 import com.modularmc.ten.api.option.MachineType;
 import com.modularmc.ten.common.data.TENFluids;
@@ -22,6 +23,7 @@ import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.item.crafting.SingleRecipeInput;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.material.Fluid;
 import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 
@@ -102,7 +104,7 @@ public class FurnaceBlockEntity extends ProcessingMachineBlockEntity {
     }
 
     @Override
-    public int machineType() {
+    public IMachineType machineType() {
         return MachineType.FURNACE;
     }
 
@@ -563,7 +565,7 @@ public class FurnaceBlockEntity extends ProcessingMachineBlockEntity {
     }
 
     private static FluidStack xpFluidStack(int amount) {
-        return new FluidStack((net.minecraft.world.level.material.Fluid) TENFluids.LIQUID_XP.getSource(), amount);
+        return new FluidStack((Fluid) TENFluids.LIQUID_XP.getSource(), amount);
     }
 
     @Override

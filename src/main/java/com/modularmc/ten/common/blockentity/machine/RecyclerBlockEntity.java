@@ -3,6 +3,7 @@ package com.modularmc.ten.common.blockentity.machine;
 import com.lowdragmc.lowdraglib2.gui.factory.BlockUIMenuType;
 import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
 import com.modularmc.ten.api.blockentity.EngineBlockEntity;
+import com.modularmc.ten.api.option.IMachineType;
 import com.modularmc.ten.api.option.IngredientType;
 import com.modularmc.ten.api.option.MachineType;
 import com.modularmc.ten.common.gui.TENMachineBlockUIFactory;
@@ -22,7 +23,7 @@ public class RecyclerBlockEntity extends EngineBlockEntity {
     }
 
     @Override
-    public int machineType() {
+    public IMachineType machineType() {
         return MachineType.ENGINE_RECYCLER;
     }
 
@@ -37,24 +38,9 @@ public class RecyclerBlockEntity extends EngineBlockEntity {
     }
 
     @Override
-    public boolean valid(int slot, ItemStack stack) {
-        return true;
-    }
-
-    @Override
     public IngredientType tankType(int tank) {
         return IngredientType.INPUT;
     }
-
-    @Override
-    public boolean valid(int slot, FluidStack stack) {
-        return true;
-    }
-//
-//    @Override
-//    public boolean hasFaceCapabilityFluid(Direction side) {
-//        return true;
-//    }
 
     @Override
     public ModularUI createUI(BlockUIMenuType.BlockUIHolder holder) {

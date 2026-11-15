@@ -1,6 +1,7 @@
 package com.modularmc.ten.common.blockentity.machine;
 
 import com.modularmc.ten.api.blockentity.ProcessingMachineBlockEntity;
+import com.modularmc.ten.api.option.IMachineType;
 import com.modularmc.ten.api.option.IngredientType;
 import com.modularmc.ten.api.option.MachineType;
 import com.modularmc.ten.common.data.TENFluids;
@@ -36,7 +37,7 @@ public class CondenserBlockEntity extends ProcessingMachineBlockEntity {
     }
 
     @Override
-    public int machineType() {
+    public IMachineType machineType() {
         return MachineType.MATTER_CONDENSER;
     }
 
