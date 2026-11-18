@@ -894,12 +894,12 @@ GUI 走「末影箱模式」：频道目录、创建、接入、退出、删除�
 | Sodium / Iris / ModernFix | 编译期可选 | 开发期依赖，仓库暂无直接引用 |
 
 硬前置分两种分发方式：LDLib2 是活动前置，由 `neoforge.mods.toml` 声明 `required`，
-玩家自行安装，不再 `jarJar` 内嵌；Registrate、taffy 仍由 `jarJar` 分发，玩家无需另装。
-taffy 被 7 个类直接引用（5 个核心 BE 加 2 个 GUI 类），原先只靠 LDLib2 的二次嵌套传递，
-现已自行内嵌，避免玩家自装更高版本 LDLib2 时上游改包名或去掉内嵌导致核心 BE 加载失败。
-`jarJar(api(...))` 会把依赖暴露到编译期类路径，taffy 不再单独声明 `compileOnly`。
+玩家自行安装，不再 `jarJar` 内嵌；Registrate 仍由 `jarJar` 分发，玩家无需另装。
+taffy / yoga 由 LDLib2 2.2.45 自动传递，仓库不再声明它们的坐标或 `compileOnly`。
+`ldlib2` 在 `dependencies.gradle` 用 `api(...)` 暴露给编译期；`jarJar(api(...))`
+只用于仍需内嵌的 Registrate，会把依赖暴露到编译期类路径。
 `neoforge.mods.toml` 里 `ldlib2` 的 `required` 版本下限与 `gradle/forge.versions.toml`
-的 ldlib2 条目（CurseForge 文件 id）必须同步升级；该版本范围参与 FML 校验。
+的 Maven 版本必须同步升级；该版本范围参与 FML 校验。
 
 集成红线：
 

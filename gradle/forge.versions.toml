@@ -1,5 +1,5 @@
 [versions]
-ldlib2 = "2.2.45" # LDLib2 2.2.44 (CurseForge)
+ldlib2 = "2.2.45" # LDLib2 2.2.45 (Maven Central)
 taffy = "1.1.5"
 yoga = "1.0.0"
 registrate = "MC1.21.1-1.4.8"

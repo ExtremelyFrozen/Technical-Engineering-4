@@ -36,11 +36,11 @@ enumExtensions = "META-INF/enum_extensions.json"
     side = "BOTH"
 
 # LDLib2 是机器框架的硬前置，由玩家按此 required 依赖自行安装，不再 jarJar 内嵌。
-# 下限对齐 gradle/forge.versions.toml 的 ldlib2 条目（文件 id 9304898 = 2.2.44），升级时两处同步。
+# 下限对齐 gradle/forge.versions.toml 的 ldlib2 条目（Maven 版本 2.2.45），升级时两处同步。
 [[dependencies.${mod_id}]]
     modId = "ldlib2"
     type = "required"
-    versionRange = "[2.2.44,)"
+    versionRange = "[2.2.45,)"
     ordering = "NONE"
     side = "BOTH"
 
