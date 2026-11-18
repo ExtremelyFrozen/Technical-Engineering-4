@@ -4,10 +4,7 @@ dependencies {
     testImplementation(libs.testframework.get())
 
     // LDLIB 2（CurseForge 的 -all 包内含 taffy/yoga/kotlin，taffy 另加 compileOnly 供源码引用）
-    implementation(forge.ldlib2.get())
-    jarJar(api(forge.ldlib2.get()))
-    compileOnly(forge.taffy)
-    compileOnly(forge.yoga)
+    jarJar(api(forge.ldlib2.get())
 
     // Registrate
     jarJar(api(forge.registrate.get()))
