@@ -1,0 +1,19 @@
+{
+	"type": "kenergyengineering:pulverizer",
+	"inputs": [
+		{
+			"form": "item",
+			"type": "static",
+			"key": "minecraft:amethyst_block"
+		}
+	],
+	"outputs": [
+		{
+			"form": "item",
+			"type": "static",
+			"key": "minecraft:amethyst_shard",
+			"count": 4
+		}
+	],
+	"time": 120
+}

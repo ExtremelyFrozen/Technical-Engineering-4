@@ -2,13 +2,21 @@ package com.modularmc.ten.client;
 
 import com.modularmc.ten.TEN;
 import com.modularmc.ten.api.blockentity.CmMachineBlockEntity;
+import com.modularmc.ten.api.transmission.CableRenderState;
 import com.modularmc.ten.client.guide.TENGuideMeClient;
+import com.modularmc.ten.client.model.CableBakedModel;
+import com.modularmc.ten.client.model.CableModelParts;
 import com.modularmc.ten.client.renderer.RangeDisplayBER;
 import com.modularmc.ten.common.data.TENBlockEntities;
 
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderers;
+import net.minecraft.client.renderer.block.BlockModelShaper;
+import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.ModelResourceLocation;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.ModList;
@@ -17,6 +25,8 @@ import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.neoforge.client.event.ModelEvent;
 import net.neoforged.neoforge.client.gui.ConfigurationScreen;
 import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
+
+import java.util.Map;
 
 /**
  * Client setup handler that initializes client-only subsystems.
@@ -68,6 +78,31 @@ public class TENClientSetup {
         // missing 模型（紫黑方块）。AE2/Powah 都不用这个字段，所以踩不到这条。
         if (ModList.get().isLoaded("guideme")) {
             event.register(new ModelResourceLocation(TENGuideMeClient.GUIDE_ITEM_MODEL, "standalone"));
+        }
+        // 线缆/管道的连接零件：blockstate 不再用 multipart，改由动态 BakedModel 按 ModelData 拼装。
+        CableModelParts.register(event);
+    }
+
+    @SubscribeEvent
+    public static void onModifyBakingResult(ModelEvent.ModifyBakingResult event) {
+        Map<ModelResourceLocation, BakedModel> models = event.getModels();
+        for (String name : CableRenderState.VARIANTS) {
+            CableModelParts parts = CableModelParts.build(models, name);
+            if (parts == null) {
+                continue;
+            }
+            Block block = BuiltInRegistries.BLOCK.getOptional(TEN.id(name)).orElse(null);
+            if (block == null) {
+                continue;
+            }
+            for (BlockState state : block.getStateDefinition().getPossibleStates()) {
+                ModelResourceLocation key = BlockModelShaper.stateToModelLocation(state);
+                BakedModel original = models.get(key);
+                if (original == null || original instanceof CableBakedModel) {
+                    continue;
+                }
+                models.put(key, new CableBakedModel(original, parts));
+            }
         }
     }
 }

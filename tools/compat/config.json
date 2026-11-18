@@ -4,30 +4,161 @@
       "E:/GitHub/Technical-Engineering-4/Technical-Engineering-4-1.21.1/src/main/resources/data",
       "E:/GitHub/Technical-Engineering-4/Technical-Engineering-4-1.21.1/src/generated/resources/data"
     ],
-    "enderio_evolution": ["D:/Temp/evoall/data"],
-    "enderio": ["D:/Temp/eiall/data"],
-    "mekanism": ["D:/Temp/mekall/data"],
-    "immersiveengineering": ["D:/Temp/ieall/data"],
-    "alltheores": ["D:/Temp/atoall/data"],
-    "allthemodium": ["D:/Temp/atmdall/data"],
-    "neoecoae": ["D:/Temp/ecoall/data"],
-    "ae2": ["D:/Temp/ae2all/data"],
-    "minecraft": ["D:/Temp/nfall/data", "D:/Temp/mcall/data"]
+    "enderio_evolution": [
+      "D:/Temp/evoall/data"
+    ],
+    "enderio": [
+      "D:/Temp/eiall/data"
+    ],
+    "mekanism": [
+      "D:/Temp/mekall/data"
+    ],
+    "immersiveengineering": [
+      "D:/Temp/ieall/data"
+    ],
+    "alltheores": [
+      "D:/Temp/atoall/data"
+    ],
+    "allthemodium": [
+      "D:/Temp/atmdall/data"
+    ],
+    "neoecoae": [
+      "D:/Temp/ecoall/data"
+    ],
+    "ae2": [
+      "D:/Temp/ae2all/data"
+    ],
+    "ae2cs": [
+      "D:/Temp/ae2csall/data"
+    ],
+    "extendedae": [
+      "D:/Temp/extaeall/data"
+    ],
+    "extendedae_plus": [
+      "D:/Temp/extaeplusall/data"
+    ],
+    "data_energistics": [
+      "D:/Temp/dataeall/data"
+    ],
+    "minecraft": [
+      "D:/Temp/nfall/data",
+      "D:/Temp/mcall/data"
+    ]
+  },
+  "manualRows": [
+    "grains_to_dust_block",
+    "dust_block_to_compressed",
+    "compressed_to_double",
+    "certus_quartz_crystal",
+    "fluix_crystal",
+    "sky_stone_crystal",
+    "ender_quartz",
+    "resonating_crystal",
+    "data_crystal",
+    "entro_crystal",
+    "lattra_crystal",
+    "energized_crystal_dust",
+    "energized_flux_crystal_dust",
+    "coal_enderio_mek",
+    "coal_enderio",
+    "coal_mekanism",
+    "charcoal_black_dye",
+    "charcoal_enderio",
+    "charcoal_mekanism",
+    "coal_coke",
+    "coal_coke_enderio",
+    "sandstone_enderio",
+    "red_sandstone_enderio",
+    "sandstone_immersiveengineering",
+    "red_sandstone_immersiveengineering"
+  ],
+  "droppedRows": {
+    "_comment": "不导入的邻居条目（键 = 来源/机器/行名）。两类：①素材全是原版/通用标签，本模组已转正为原生配方；②同一输入有多家提供，改由 TENCompatGen.GRIND_SPLIT 按组合条件分流。",
+    "enderio/pulverizer/blaze_powder": "转正：recipe/pulverizer/blaze.json（烈焰粉 4、120t）",
+    "enderio/pulverizer/bone_block": "转正：recipe/pulverizer/bone_block.json（素材全原版）",
+    "enderio/pulverizer/cobweb": "转正：recipe/pulverizer/cobweb.json（素材全原版）",
+    "enderio/pulverizer/emerald_ore": "转正：recipe/pulverizer/emerald_ore.json（素材全原版）",
+    "enderio/pulverizer/glass": "转正：recipe/pulverizer/glass.json（素材全原版）",
+    "enderio/pulverizer/lapis_ore": "转正：recipe/pulverizer/lapis_ore.json（素材全原版）",
+    "enderio/pulverizer/prismarine_shard": "转正：recipe/pulverizer/prismarine_shard.json（素材全原版）",
+    "enderio/pulverizer/quartz_slabs": "转正：recipe/pulverizer/quartz_slabs.json（素材全原版）",
+    "enderio/pulverizer/quartz_stairs": "转正：recipe/pulverizer/quartz_stairs.json（素材全原版）",
+    "enderio/pulverizer/wool": "转正：recipe/pulverizer/wool.json（素材全原版）",
+    "enderio/pulverizer/bone": "转正：recipe/pulverizer/bone_meal.json（骨粉 6+10%×2、120t）",
+    "enderio/pulverizer/deepslate": "转正：recipe/pulverizer/deepslate.json",
+    "enderio/pulverizer/quartz_block": "转正：recipe/pulverizer/quartz_block.json",
+    "enderio/pulverizer/stone": "输入 c:stones 已拆成 stone/andesite/diorite/granite/tuff 五条原生配方",
+    "enderio/pulverizer/coal": "GRIND_SPLIT：煤/木炭/焦炭按 EIO/Mek/IE 分流",
+    "enderio/pulverizer/sandstone": "GRIND_SPLIT：砂岩按 EIO/IE 条件二选一",
+    "immersiveengineering/pulverizer/amethyst": "转正：recipe/pulverizer/amethyst.json",
+    "immersiveengineering/pulverizer/black_dye": "GRIND_SPLIT：木炭归黑染料组",
+    "immersiveengineering/pulverizer/bone_meal": "与原生 bone_meal.json（c:bones）同一输入，保留原生",
+    "immersiveengineering/pulverizer/clay": "与 EIO clay 同一输入，保留 EIO 版（硅副产）",
+    "immersiveengineering/pulverizer/cobblestone": "输入父标签 c:cobblestones 会盖掉 normal/mossy/deepslate 三条，圆石族由 EIO 三条 + 原生三条分流",
+    "immersiveengineering/pulverizer/coal": "GRIND_SPLIT",
+    "immersiveengineering/pulverizer/coke": "GRIND_SPLIT",
+    "immersiveengineering/pulverizer/coarse_dirt": "转正：recipe/pulverizer/coarse_dirt.json",
+    "immersiveengineering/pulverizer/dark_prismarine": "转正：recipe/pulverizer/dark_prismarine.json",
+    "immersiveengineering/pulverizer/nether_gold": "矿石三段式已覆盖 c:ores/gold",
+    "immersiveengineering/pulverizer/nether_wart": "转正：recipe/pulverizer/nether_wart.json",
+    "immersiveengineering/pulverizer/prismarine": "转正：recipe/pulverizer/prismarine.json",
+    "immersiveengineering/pulverizer/prismarine_brick": "转正：recipe/pulverizer/prismarine_brick.json",
+    "immersiveengineering/pulverizer/quartz": "与 EIO quartz_block 同一输入，保留 EIO 版",
+    "immersiveengineering/pulverizer/red_sandstone": "GRIND_SPLIT",
+    "immersiveengineering/pulverizer/sandstone": "GRIND_SPLIT",
+    "immersiveengineering/pulverizer/stone": "转正：recipe/pulverizer/stone.json",
+    "immersiveengineering/pulverizer/white_dye": "转正：recipe/pulverizer/white_dye.json"
   },
   "neighbourRecipes": {
     "induction_furnace": [
-      ["enderio", "enderio/recipe/alloy_smelting"],
-      ["enderio_evolution", "enderio_evolution/recipe/alloy_smelter"]
+      [
+        "enderio",
+        "enderio/recipe/alloy_smelting"
+      ],
+      [
+        "enderio_evolution",
+        "enderio_evolution/recipe/alloy_smelter"
+      ],
+      [
+        "immersiveengineering",
+        "immersiveengineering/recipe/alloysmelter"
+      ]
     ],
     "pulverizer": [
-      ["enderio", "enderio/recipe/sag_milling"],
-      ["enderio_evolution", "enderio_evolution/recipe/sag_milling"],
-      ["alltheores", "alltheores/recipe/sag_milling"],
-      ["alltheores", "alltheores/recipe/crusher"],
-      ["neoecoae", "neoecoae/recipe/crushing"]
+      [
+        "enderio",
+        "enderio/recipe/sag_milling"
+      ],
+      [
+        "enderio_evolution",
+        "enderio_evolution/recipe/sag_milling"
+      ],
+      [
+        "alltheores",
+        "alltheores/recipe/sag_milling"
+      ],
+      [
+        "alltheores",
+        "alltheores/recipe/crusher"
+      ],
+      [
+        "neoecoae",
+        "neoecoae/recipe/crushing"
+      ],
+      [
+        "immersiveengineering",
+        "immersiveengineering/recipe/crusher"
+      ]
     ],
     "compressor": [
-      ["alltheores", "alltheores/recipe/metalpress"]
+      [
+        "alltheores",
+        "alltheores/recipe/metalpress"
+      ],
+      [
+        "immersiveengineering",
+        "immersiveengineering/recipe/metalpress"
+      ]
     ]
   },
   "providerPriority": [
@@ -43,8 +174,16 @@
   ],
   "timeRule": {
     "comment": "耗时不按邻居能量换算（IE 一次 51200 FE 会把时长推到 1200 tick 上限，完全脱离本模组原生尺度）。感应炉 = 50 tick × 输入物料份数；粉碎机一次操作 120、粗矿块这类 9 份输入 200；压缩机恒 100 不看份数（与原生压缩配方一致）。",
-    "induction_furnace": { "perUnit": 50 },
-    "pulverizer": { "base": 120, "blockUnits": 9, "blockTime": 200 },
-    "compressor": { "flat": 100 }
+    "induction_furnace": {
+      "perUnit": 50
+    },
+    "pulverizer": {
+      "base": 120,
+      "blockUnits": 9,
+      "blockTime": 200
+    },
+    "compressor": {
+      "flat": 100
+    }
   }
 }

@@ -3,8 +3,15 @@ package com.modularmc.ten.data.lang;
 import com.modularmc.ten.TEN;
 import com.modularmc.ten.common.data.TENBlocks;
 import com.modularmc.ten.common.data.TENItems;
+import com.modularmc.ten.config.TENConfig;
+
+import net.neoforged.neoforge.common.ModConfigSpec;
 
 import com.tterrag.registrate.providers.RegistrateLangProvider;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 public final class TENLangHandler {
 
@@ -27,6 +34,7 @@ public final class TENLangHandler {
         addJei(provider);
         addConfig(provider);
         addGuide(provider);
+        verifyTranslationKeys();
     }
 
     private static void addDirections(RegistrateLangProvider provider) {
@@ -43,10 +51,10 @@ public final class TENLangHandler {
     }
 
     private static void addCommon(RegistrateLangProvider provider) {
-        add(provider, "cable.0", "Transfer: 1 kFE", "传输能量: 1 kFE");
-        add(provider, "cable_quartz.0", "Transfer: 10 kFE", "传输能量: 10 kFE");
-        add(provider, "cable_azure.0", "Transfer: 100 kFE", "传输能量: 100 kFE");
-        add(provider, "cable_star.0", "Transfer: Infinite FE", "传输能量: 无限 FE");
+        // 线缆规格：数值来自 CableTier，由 CableBlockItem 拼进 tooltip
+        add(provider, "cable.tooltip.rate", "Transfer: %s FE/t", "传输速率：%s FE/t");
+        add(provider, "cable.tooltip.buffer", "Buffer: %s FE", "能量缓冲：%s FE");
+        add(provider, "cable.tooltip.infinite", "Infinite", "无限");
         // Removed: spanner — now auto-derived from item registration
         add(provider, "not_consumed", "Not consumed", "不消耗");
         // Removed: energy_capacity — now auto-derived from item registration
@@ -58,8 +66,10 @@ public final class TENLangHandler {
         add(provider, "locked_slot", "This slot has not been unlocked yet.", "未解锁槽位");
         add(provider, "energy_capacity.charging_on", "Charging enabled", "全身充能已开启");
         add(provider, "energy_capacity.charging_off", "Charging disabled", "全身充能已关闭");
-        add(provider, "key.categories." + TEN.MOD_ID, "Kenergy Engineering: Retechnicalized", "科能工程:再技术化");
-        add(provider, "key." + TEN.MOD_ID + ".toggle_charge", "Toggle Energy Unit Charging", "切换能量单元充能");
+        // 按键键名由游戏直接查表，不经 MOD_ID 前缀；用 addRaw 而不是 add，否则会多出一层
+        // kenergyengineering.，界面上就显示原始键名（4.0.2 的 key.categories.kenergyengineering 即此）。
+        addRaw(provider, TEN.KEY_CATEGORY, "Kenergy Engineering Retechnicalized", "科能工程:再技术化");
+        addRaw(provider, TEN.KEY_TOGGLE_CHARGE, "Toggle Energy Module Charging", "切换能量模块充能");
     }
 
     private static void addChannel(RegistrateLangProvider provider) {
@@ -93,14 +103,21 @@ public final class TENLangHandler {
     }
 
     private static void addUpgradeTips(RegistrateLangProvider provider) {
-        // 通用格式键（跨升级共享，UpgradeTooltipFormatter 消费）
-        add(provider, "upgrade_tip.duration.percent", "%s%% duration", "%s%%消耗时间");
-        add(provider, "upgrade_tip.power.multiplier", "x%s energy consumption", "x%s能量消耗");
-        add(provider, "upgrade_tip.batch.add", "%s batch.", "%s批处理。");
-        add(provider, "upgrade_tip.photosyn.fe", "%s FE/t photosynthetic power.", "%s FE/t光合供能。");
-        add(provider, "upgrade_tip.range.add", "%s%% initial range", "%s%%初始作用范围");
-        add(provider, "upgrade_tip.potion.amplifier", "%s potion effect level.", "%s药水效果等级。");
+        // 通用格式键（跨升级共享，UpgradeTooltipFormatter 消费）。
+        // 术语口径：卡面只写真正被声明的量——运行速度（+N）、运行耗时（±n%）、
+        // 运行功率（FE/t）、并行运行数。没有变化的维度整行不写（不再有「不变」行）；
+        // 速度与耗时是两条独立通道（每 tick 推进几格 / 配方有多长），两张卡各写各的行；
+        // 完成一次配方的耗电是功率与耗时的乘积，作为派生量不设词条。
+        // 数值写法：运行速度是自然数增量（+1 / +2 / +3），其余倍率是整数 xN 或百分比（+20% / -25%）。
+        add(provider, "upgrade_tip.batch.add", "Parallel runs %s", "并行运行 %s");
+        add(provider, "upgrade_tip.photosyn.fe", "Photosynthetic power %s FE/t.", "光合供能 %s FE/t");
+        add(provider, "upgrade_tip.range.add", "Range %s%%", "作用范围 %s%%");
+        add(provider, "upgrade_tip.potion.amplifier", "Potion effect level %s.", "药水效果等级 %s");
         add(provider, "upgrade_tip.unknown.0", "Unknown upgrade", "未知升级组件");
+        add(provider, "upgrade_tip.global.multiply", "Global multiplier x%s", "全局倍率 x%s");
+        add(provider, "upgrade_tip.run.speed", "Run speed %s", "运行速度 %s");
+        add(provider, "upgrade_tip.run.duration", "Run duration %s", "运行耗时 %s");
+        add(provider, "upgrade_tip.run.power", "Power %s", "运行功率 %s");
         add(provider, "upgrade_slot", "Upgrade Slot", "升级槽位");
 
         // === 各升级标题（.0）与纯文本行 ===
@@ -109,13 +126,12 @@ public final class TENLangHandler {
         add(provider, "relic_levelup.0", "In machines:", "在机器中：");
         add(provider, "photosyn_levelup.0", "In machines:", "在机器中：");
         add(provider, "photosyn_levelup.4", "Only generates in open sky, no rain, daytime", "仅在露天、无雨且昼间时供能");
-        add(provider, "photosyn_levelup.5", "Only 1 per machine", "每台机器仅可安装1个");
         add(provider, "range_levelup.0", "In effect machines:", "在功能性机器中：");
         add(provider, "blast_levelup.0", "In smelter:", "在熔炼机中：");
-        add(provider, "blast_levelup.1", "Enables Blast Furnace smelting (exclusive with Smoke)", "启用高炉冶炼（与烟熏互斥）");
+        add(provider, "blast_levelup.1", "Enables Blast Furnace smelting", "启用高炉冶炼");
         add(provider, "smoke_levelup.0", "In smelter:", "在熔炼机中：");
-        add(provider, "smoke_levelup.1", "Enables Smoker smelting (exclusive with Blast)", "启用烟熏冶炼（与高炉互斥）");
-        add(provider, "potion_levelup.0", "In beacon simulator:", "在模拟信标中：");
+        add(provider, "smoke_levelup.1", "Enables Smoker smelting", "启用烟熏冶炼");
+        add(provider, "potion_levelup.0", "In beacon simulator:", "在信标模拟机中：");
         add(provider, "ice_levelup.0", "In quarry:", "在采矿场中：");
         add(provider, "ice_levelup.1", "Output mode: Ice", "产出模式修改为冰块");
         add(provider, "magma_levelup.0", "In quarry:", "在采矿场中：");
@@ -124,9 +140,33 @@ public final class TENLangHandler {
         add(provider, "mineral_levelup.1", "Mining mode: Mineral", "开采模式修改为矿物");
         add(provider, "knowledge_levelup.0", "In smelter:", "在熔炼机中：");
         add(provider, "knowledge_levelup.1", "Each recipe produces XP fluid based on cooking time", "每次处理配方按熔炼时间产出经验流体");
-        add(provider, "knowledge_levelup.2", "10 ticks → 1 mB Liquid XP (per unit)", "每10 tick产1 mB液态经验（每单位）");
+        add(provider, "knowledge_levelup.2", "XP rate 1 mB per 10 ticks (per unit)", "经验产率 1 mB/10 tick（每单位）");
+        add(provider, "efficiency_levelup.0", "In machines:", "在机器中：");
+        add(provider, "efficiency_levelup_2.0", "In machines:", "在机器中：");
+        add(provider, "efficiency_levelup_3.0", "In machines:", "在机器中：");
+        add(provider, "parallel_levelup.0", "In machines:", "在机器中：");
+        add(provider, "parallel_levelup_2.0", "In machines:", "在机器中：");
+        add(provider, "parallel_levelup_3.0", "In machines:", "在机器中：");
+        add(provider, "duration_levelup.0", "In machines:", "在机器中：");
+        add(provider, "duration_levelup_2.0", "In machines:", "在机器中：");
+        add(provider, "duration_levelup_3.0", "In machines:", "在机器中：");
+        add(provider, "speed_levelup.0", "In machines:", "在机器中：");
+        add(provider, "speed_levelup_2.0", "In machines:", "在机器中：");
+        add(provider, "speed_levelup_3.0", "In machines:", "在机器中：");
         add(provider, "stream_levelup.0", "In machines:", "在机器中：");
-        add(provider, "stream_levelup.1", "Energy transfer rate: Infinite", "能量传输速率修改为无限");
+        add(provider, "stream_levelup.1", "Energy transfer upgrade, pending redesign", "能量传输升级，待重新定义");
+        add(provider, "press_levelup.0", "In pulverizer:", "在粉碎机中：");
+        add(provider, "press_levelup.1", "Byproduct chance x50%", "副产概率 ×50%");
+        add(provider, "press_levelup.2", "Byproduct output x3", "副产物产出量 ×3");
+        add(provider, "filter_levelup.0", "In pulverizer:", "在粉碎机中：");
+        add(provider, "filter_levelup.1", "Byproduct chance x200% (capped at 100%)", "副产概率 ×200%（上限 100%）");
+        add(provider, "oddgrowth_levelup.0", "In farm manager:", "在农场管理器中：");
+        add(provider, "oddgrowth_levelup.1", "Growth targets 1 random crop in 8 neighbours", "催生目标 周围8格随机1株作物");
+        add(provider, "oddgrowth_levelup.2", "Growth ticks +1", "生长刻度 +1");
+        add(provider, "resprout_levelup.0", "In farm manager:", "在农场管理器中：");
+        add(provider, "resprout_levelup.1", "Reseed chance +25%", "蔓延概率 +25%");
+        add(provider, "resprout_levelup.2", "Reseed targets 4 adjacent empty farmland", "蔓延目标 周围4格空耕地");
+        add(provider, "resprout_levelup.3", "Seed consumption none", "种子消耗 无");
     }
 
     private static void addSpannerInfo(RegistrateLangProvider provider) {
@@ -141,9 +181,13 @@ public final class TENLangHandler {
         add(provider, "info.mode.2", "Redstone", "红石");
         add(provider, "info.mode.3", "Binding", "绑定");
         add(provider, "info.mode.4", "Destroy", "拆除");
+        // 进度条 / 燃料条读数：加工条给「已推进刻度 / 配方耗时刻度」（每 tick 按 N 跳格，不除 N），
+        // 燃料条给「已消耗 tick / 持续时间 tick」。
+        add(provider, "info.progress_ticks", "%s / %s tick", "%s / %s tick");
+        add(provider, "info.fuel_ticks", "%s / %s tick", "%s / %s tick");
         add(provider, "spanner.0", "Right-click a machine to rotate it", "右键机器旋转");
         add(provider, "spanner.1", "Sneak + right-click a machine to dismantle it", "潜行+右键机器拆卸");
-        add(provider, "connection_mode", "Connection mode", "连接模式");
+        add(provider, "connection_mode", "Pipe connection mode", "管道连接模式");
         add(provider, "connection_mode.none", "None", "断开");
         // 设备边（容器视角）：pull=输出（主动从容器抽取）、normal=输入（被动向容器投放）
         add(provider, "connection_mode.pull", "Output", "输出");
@@ -163,7 +207,7 @@ public final class TENLangHandler {
         add(provider, "info.energy", "Energy", "能量");
         add(provider, "info.item", "Item", "物品");
         add(provider, "info.fluid", "Fluid", "流体");
-        add(provider, "info.bar_mode", "Mode: ", "传输模式: ");
+        add(provider, "info.bar_mode", "Face Config ", "面配置 ");
         add(provider, "info.in", "Active Input", "主动输入");
         add(provider, "info.out", "Active Output", "主动输出");
         add(provider, "info.be_in", "Passive Input", "被动输入");
@@ -173,13 +217,13 @@ public final class TENLangHandler {
         add(provider, "info.off", "Off", "禁用");
         add(provider, "info.low", "Low", "低电平");
         add(provider, "info.high", "High", "高电平");
-        add(provider, "info.bar_ideas", "Information: ", "信息: ");
-        add(provider, "info.bar_redstone", "Redstone Control: ", "红石控制: ");
-        add(provider, "info.bar_control", "Transfer Control: ", "传输配置: ");
-        add(provider, "info.bar_energy", "Power: ", "功率:");
-        add(provider, "info.bar_upgrade", "Upgrades: ", "升级: ");
-        add(provider, "info.bar_energy_use", "Energy Use: ", "当前能量消耗: ");
-        add(provider, "info.bar_energy_use_max", "Max Energy Use: ", "最大能量消耗: ");
+        add(provider, "info.bar_ideas", "Information ", "信息 ");
+        add(provider, "info.bar_redstone", "Redstone Control ", "红石控制 ");
+        add(provider, "info.bar_control", "Face Config ", "面配置 ");
+        add(provider, "info.bar_energy", "Power ", "功率");
+        add(provider, "info.bar_upgrade", "Upgrades ", "升级 ");
+        add(provider, "info.bar_energy_use", "Current FE/t: ", "当前 FE/t: ");
+        add(provider, "info.bar_energy_use_max", "Peak FE/t: ", "峰值 FE/t: ");
         // 采石场扫描模式切换（GUI 按钮文案与 tooltip，供后续功能移植）
         add(provider, "info.quarry.scan_mode", "Scan Mode", "扫描模式");
         add(provider, "info.quarry.scan_normal", "Normal", "标准");
@@ -194,6 +238,14 @@ public final class TENLangHandler {
         add(provider, "info.range_display_on_tip", "Showing the working range outline.", "正在显示工作范围线框。");
         add(provider, "info.range_display_off_tip", "Working range outline is hidden.", "工作范围线框已隐藏。");
         add(provider, "info.range_display_click", "Click to toggle range display", "点击切换范围显示");
+        // 范围调节面板：大按钮 tooltip + 六行标签（12 个小加减钮与关闭钮不带 tooltip）
+        add(provider, "info.adjust.tab", "Range Adjustment", "范围调节");
+        add(provider, "info.adjust.range_x", "X Radius", "X半径");
+        add(provider, "info.adjust.range_y", "Y Radius", "Y半径");
+        add(provider, "info.adjust.range_z", "Z Radius", "Z半径");
+        add(provider, "info.adjust.offset_x", "X Offset", "X偏移");
+        add(provider, "info.adjust.offset_y", "Y Offset", "Y偏移");
+        add(provider, "info.adjust.offset_z", "Z Offset", "Z偏移");
         // 应用工具/武器附魔切换按钮（useEnchantmentsToggleButton）
         add(provider, "info.use_enchantments", "Use Enchantments", "应用附魔");
         add(provider, "info.use_enchantments_on", "Enchants: On", "附魔: 开启");
@@ -225,7 +277,7 @@ public final class TENLangHandler {
         add(provider, "info.farm_manager.0", "Throw your farm work to it!", "把你的农活都交给它吧！");
         add(provider, "info.farm_manager.1", "Give it some seeds and they will be planted automatically.", "放点种子，它们就会自动被种下。");
         add(provider, "info.farm_manager.2", "Ripe crops will also be harvested.", "成熟的作物也会被采收。");
-        add(provider, "info.engine_extraction.0", "A common generator.", "一台普通的发电机，");
+        add(provider, "info.engine_extraction.0", "A common engine.", "一台普通的引擎，");
         add(provider, "info.engine_extraction.1", "Extracts energy from fuel.", "可以从燃料当中提取能量。");
         add(provider, "info.engine_metal.0", "Generates energy from metal.", "使用金属发电。");
         add(provider, "info.engine_metal.1", "Throw all useless ingots into it now!", "现在把所有没用的锭扔进去吧！");
@@ -265,12 +317,12 @@ public final class TENLangHandler {
     }
 
     private static void addAdvancements(RegistrateLangProvider provider) {
-        add(provider, "adv.root", "Kenergy Engineering: Retechnicalized", "科能工程:再技术化");
+        add(provider, "adv.root", "Kenergy Engineering Retechnicalized", "科能工程:再技术化");
         add(provider, "adv.root.0", "And the dream begins.", "梦开始的地方");
         add(provider, "adv.copper", "Isn't that copper?", "这不是铜吗？");
         add(provider, "adv.copper.0", "Get a copper ore from caves.", "从山洞里搞个铜矿石。");
         add(provider, "adv.engine", "Fire Energy", "火力发电");
-        add(provider, "adv.engine.0", "Craft an Extraction Engine.", "制作萃取发电机。");
+        add(provider, "adv.engine.0", "Craft an Extraction Engine.", "制作萃取引擎。");
         add(provider, "adv.compress", "Do not put your hand in there!", "别把手伸里头！");
         add(provider, "adv.compress.0", "Craft a Compressor.", "制作压缩机。");
         add(provider, "adv.crush", "Double Ores", "双倍矿产");
@@ -278,7 +330,7 @@ public final class TENLangHandler {
         add(provider, "adv.cable", "Where will it go?", "它要去哪？");
         add(provider, "adv.cable.0", "Craft some Glass Energy Cables.", "制作一点玻璃能量线缆。");
         add(provider, "adv.energy_cell", "Where it will go.", "它要去那。");
-        add(provider, "adv.energy_cell.0", "Craft an Energy Cell to store energy.", "制作一个玻璃能量单元来储存能量。");
+        add(provider, "adv.energy_cell.0", "Craft an Energy Cell to store energy.", "制作一个能量单元来储存能量。");
         add(provider, "adv.span", "Machine Engineer", "机械工程师");
         add(provider, "adv.span.0", "Craft a Spanner to configure machines.", "扳手，它会帮助你调配机器的。");
         add(provider, "adv.relic", "Present and Past", "过去与现在");
@@ -300,13 +352,16 @@ public final class TENLangHandler {
     }
 
     private static void addJei(RegistrateLangProvider provider) {
-        // JEI 引擎燃料信息
-        add(provider, "jei.base_output", "Base Output: %s FE", "基础产出: %s FE");
-        add(provider, "jei.base_rate", "Base Rate: %s FE/t", "基础功率: %s FE/t");
+        // JEI 引擎燃料信息：引擎额定 × 配方修正 = 实际 FE/t，配方另行给出持续时间
+        // 时间单位口径：完整文案（jei.duration_ticks / jei.coolant_* / info.*_ticks）用 tick；
+        // 紧凑读数（*_short）统一用 t，与 FE/t 的 t 同义。
+        add(provider, "jei.base_rate", "Output: %s FE/t", "实际产能: %s FE/t");
+        add(provider, "jei.engine_rate", "Engine Rating: %s FE/t", "引擎额定: %s FE/t");
+        add(provider, "jei.rate_multiplier", "Power Modifier: %s×", "功率修正: %s×");
         add(provider, "jei.duration_ticks", "Duration: %s ticks", "持续时间: %s tick");
         add(provider, "jei.total_energy", "Total Energy: %s FE", "总能量: %s FE");
         add(provider, "jei.base_rate_short", "%s FE/t", "%s FE/t");
-        add(provider, "jei.duration_short", "%s ticks", "%s tick");
+        add(provider, "jei.duration_short", "%s t", "%s t");
         add(provider, "jei.total_short", "%s FE", "%s FE");
         // JEI 冷却剂分类（数值来自 c:coolants 分档标签）
         add(provider, "jei.coolant_interval", "Cooling cycle: %s ticks", "冷却周期: %s tick");
@@ -323,9 +378,9 @@ public final class TENLangHandler {
         add(provider, "jei.category.smelter_smoking", "Smelter \u2014 Smoking", "熔炼机 \u2014 烟熏");
         // JEI 槽位覆盖（chance/rolls）
         // 位置参数：en_ud 由 Registrate 翻转 en_us 自动生成，翻转后 %s 视觉顺序颠倒，
-        // %1$s/%2$s 锚定参数语义，避免「附加几率: 9% × 40 rolls」式错乱
-        add(provider, "jei_addition_chance", "Additional Chance: %1$s%%", "副产概率: %s%%");
-        add(provider, "jei_addition_chance_rolls", "Additional Chance: %1$s%% × %2$s rolls", "附加几率: %s%% × %s 次");
+        // %1$s/%2$s 锚定参数语义，避免「副产概率: 9% × 40 次」式错乱
+        add(provider, "jei_addition_chance", "Additional Chance: %1$s%%", "副产概率: %1$s%%");
+        add(provider, "jei_addition_chance_rolls", "Additional Chance: %1$s%% × %2$s rolls", "副产概率: %1$s%% × %2$s 次");
     }
 
     private static void add(RegistrateLangProvider provider, String suffix, String en, String cn) {
@@ -343,17 +398,24 @@ public final class TENLangHandler {
      * 少一条就在界面上直接显示键名，所以每个 define 项都要有名字，说明按需要补 tooltip。
      */
     private static void addConfig(RegistrateLangProvider provider) {
-        addRaw(provider, "kenergyengineering.configuration.title", "Kenergy Engineering Configuration", "科能工程：再技术化 配置");
+        addRaw(provider, "kenergyengineering.configuration.title", "Kenergy Engineering Configuration", "科能工程:再技术化 配置");
         addRaw(provider, "kenergyengineering.configuration.section.common", "Common", "通用");
         addRaw(provider, "kenergyengineering.configuration.section.client", "Client", "客户端");
 
         addRaw(provider, "kenergyengineering.configuration.client", "Client", "客户端");
+        addRaw(provider, "kenergyengineering.configuration.client.tooltip",
+                "Client-side display options; never affects server behaviour.",
+                "客户端显示选项，不影响服务端行为。");
         addRaw(provider, "kenergyengineering.configuration.client.showMachineHUD", "Show machine HUD", "显示机器 HUD");
         addRaw(provider, "kenergyengineering.configuration.client.showMachineHUD.tooltip", "Show the machine information overlay on HUD.", "在 HUD 上显示机器信息栏。");
-        addRaw(provider, "kenergyengineering.configuration.client.showCableHUD", "Show cable HUD", "显示管道 HUD");
-        addRaw(provider, "kenergyengineering.configuration.client.showCableHUD.tooltip", "Show the cable network statistics overlay on HUD.", "在 HUD 上显示管道的能量传输统计。");
+        // 术语对齐方块名：cable 一律作「线缆」，pipe 才作「管道」（这个开关控的是线缆网络）
+        addRaw(provider, "kenergyengineering.configuration.client.showCableHUD", "Show cable HUD", "显示线缆 HUD");
+        addRaw(provider, "kenergyengineering.configuration.client.showCableHUD.tooltip", "Show the cable network statistics overlay on HUD.", "在 HUD 上显示线缆的能量传输统计。");
 
         addRaw(provider, "kenergyengineering.configuration.machine", "Machines", "机器");
+        addRaw(provider, "kenergyengineering.configuration.machine.tooltip",
+                "Defaults shared by every machine of the same type.",
+                "同一类机器共享的默认参数。");
         addRaw(provider, "kenergyengineering.configuration.machine.energyMultiplier", "Energy multiplier", "能量倍率");
         addRaw(provider, "kenergyengineering.configuration.machine.energyMultiplier.tooltip",
                 "Global energy multiplier applied to every machine.", "作用于所有机器的全局能量倍率。");
@@ -366,54 +428,125 @@ public final class TENLangHandler {
         addMachineToggle(provider, "enableRefiner", "Refiner", "精炼机");
         addMachineToggle(provider, "enableInductionFurnace", "Induction Furnace", "感应炉");
         addMachineToggle(provider, "enablePsionicant", "Psionicant", "灵能处理器");
-        addMachineToggle(provider, "enableBeacon", "Beacon", "信标");
+        // 名称必须与方块名逐字一致，否则配置界面里出现第二个叫法
+        addMachineToggle(provider, "enableBeacon", "Beacon Simulator", "信标模拟机");
         addMachineToggle(provider, "enableMobRipper", "Mob Ripper", "生物啃噬者");
         addMachineToggle(provider, "enableQuarry", "Quarry", "采矿场");
         addMachineToggle(provider, "enableEnchantmentFlusher", "Enchantment Flusher", "祛魔机");
         addMachineToggle(provider, "enableCondenser", "Matter Condenser", "物质结晶器");
-        addMachineToggle(provider, "enableFarmManager", "Farm Manager", "农场管理器");
+        addMachineToggle(provider, "enableFarmManager", "Farm Manager", "农场管理机");
 
-        addRaw(provider, "kenergyengineering.configuration.energyUnit", "Energy Unit", "能量模块");
+        addRaw(provider, "kenergyengineering.configuration.energyUnit", "Energy Module", "能量模块");
+        addRaw(provider, "kenergyengineering.configuration.energyUnit.tooltip",
+                "Charging and output behaviour of Energy Modules.",
+                "能量模块的充电与输出行为。");
         addRaw(provider, "kenergyengineering.configuration.energyUnit.maxEnergy", "Maximum energy", "最大能量");
         addRaw(provider, "kenergyengineering.configuration.energyUnit.maxEnergy.tooltip",
-                "Energy stored by one Energy Unit (FE).", "单个能量模块可存储的能量上限（FE）。");
-        addRaw(provider, "kenergyengineering.configuration.energyUnit.chargeRate", "Charge rate (FE/t)", "充电速率（FE/刻）");
+                "Energy stored by one Energy Module (FE).", "单个能量模块可存储的能量上限（FE）。");
+        addRaw(provider, "kenergyengineering.configuration.energyUnit.chargeRate", "Charge rate (FE/t)", "充电速率（FE/t）");
         addRaw(provider, "kenergyengineering.configuration.energyUnit.chargeRate.tooltip",
-                "How fast an Energy Unit charges inside a machine.", "能量模块在机器内被充电的速率。");
-        addRaw(provider, "kenergyengineering.configuration.energyUnit.inputRate", "Input rate (FE/t)", "输入速率（FE/刻）");
+                "How fast an Energy Module charges inside a machine.", "能量模块在机器内被充电的速率。");
+        addRaw(provider, "kenergyengineering.configuration.energyUnit.inputRate", "Input rate (FE/t)", "输入速率（FE/t）");
         addRaw(provider, "kenergyengineering.configuration.energyUnit.inputRate.tooltip",
                 "Energy accepted per tick from outside.", "每 tick 可从外部接收的能量上限。");
-        addRaw(provider, "kenergyengineering.configuration.energyUnit.outputRate", "Output rate (FE/t)", "输出速率（FE/刻）");
+        addRaw(provider, "kenergyengineering.configuration.energyUnit.outputRate", "Output rate (FE/t)", "输出速率（FE/t）");
         addRaw(provider, "kenergyengineering.configuration.energyUnit.outputRate.tooltip",
                 "Energy emitted per tick to outside.", "每 tick 可向外部输出的能量上限。");
         addRaw(provider, "kenergyengineering.configuration.energyUnit.chargingDefault", "Charging mode by default", "默认充电模式");
         addRaw(provider, "kenergyengineering.configuration.energyUnit.chargingDefault.tooltip",
-                "Initial mode of a newly crafted Energy Unit.", "新制作的能量模块的初始模式。");
+                "Initial mode of a newly crafted Energy Module.", "新制作的能量模块的初始模式。");
 
-        addRaw(provider, "kenergyengineering.configuration.farm", "Farm Manager", "农场管理器");
+        addRaw(provider, "kenergyengineering.configuration.farm", "Farm Manager", "农场管理机");
+        addRaw(provider, "kenergyengineering.configuration.farm.tooltip",
+                "Block lists the Farm Manager harvests.",
+                "农场管理机识别的作物方块列表。");
         addRaw(provider, "kenergyengineering.configuration.farm.bushCrops", "Bush crop blocks", "灌木状作物");
         addRaw(provider, "kenergyengineering.configuration.farm.bushCrops.tooltip",
                 "Block IDs harvested as bushes (multi-tile crops) instead of by age.",
                 "按灌木整体收获（而非按生长阶段）的作物方块 id 列表。");
 
         addRaw(provider, "kenergyengineering.configuration.compat", "Neighbour mod compatibility", "邻居模组兼容");
+        addRaw(provider, "kenergyengineering.configuration.compat.tooltip",
+                "Which compat sources are active, and which mod provides a shared material.",
+                "哪些兼容来源生效，同种材料由哪个模组提供。");
         addRaw(provider, "kenergyengineering.configuration.compat.disabledSources", "Disabled compat sources", "关闭的兼容来源");
         addRaw(provider, "kenergyengineering.configuration.compat.disabledSources.tooltip",
                 "Sources whose compat recipes are dropped at load time and hidden in JEI, e.g. enderio_evolution.",
                 "列出的来源其兼容配方在加载期整体消失，JEI 也不再显示，例如 enderio_evolution。");
         addRaw(provider, "kenergyengineering.configuration.compat.providerPriority", "Material provider priority", "材料归属优先级");
         addRaw(provider, "kenergyengineering.configuration.compat.providerPriority.tooltip",
-                "Best first. Decides which mod owns an item when several mods ship the same material"
-                        + " (ore chain, alloys). A switched-off source is skipped here too.",
+                "Best first. Decides which mod owns an item when several mods ship the same material" + " (ore chain, alloys). A switched-off source is skipped here too.",
                 "从优到劣排列。同一种材料（矿石链、合金）由列表中最先「已加载且未被关闭」的模组提供。");
 
         addRaw(provider, "kenergyengineering.configuration.panelAnimation", "Panel Animation", "面板动画");
+        addRaw(provider, "kenergyengineering.configuration.panelAnimation.tooltip",
+                "Expand/collapse animation of the config and upgrade panels.",
+                "配置面板与升级面板的展开、收起动画。");
         addRaw(provider, "kenergyengineering.configuration.panelAnimation.enabled", "Enable panel animation", "启用面板展开动画");
         addRaw(provider, "kenergyengineering.configuration.panelAnimation.enabled.tooltip", "Animate the config & upgrade panels expanding/collapsing. Disable for instant toggle.", "配置面板与升级面板展开/收起时播放动画。关闭后立即展开/收起（无动画）。");
-        addRaw(provider, "kenergyengineering.configuration.panelAnimation.speed", "Common panel speed (px/tick)", "通用面板速度（像素/刻）");
+        addRaw(provider, "kenergyengineering.configuration.panelAnimation.speed", "Common panel speed (px/tick)", "通用面板速度（像素/tick）");
         addRaw(provider, "kenergyengineering.configuration.panelAnimation.speed.tooltip", "Expand/collapse speed shared by all panels. Higher = faster. Per-panel override takes precedence when nonzero.", "所有展开面板共用的展开/收起速度，数值越大越快。面板独立速度非 0 时优先生效。");
-        addRaw(provider, "kenergyengineering.configuration.panelAnimation.upgradeSpeed", "Upgrade panel speed override (px/tick)", "升级面板独立速度（像素/刻）");
+        addRaw(provider, "kenergyengineering.configuration.panelAnimation.upgradeSpeed", "Upgrade panel speed override (px/tick)", "升级面板独立速度（像素/tick）");
         addRaw(provider, "kenergyengineering.configuration.panelAnimation.upgradeSpeed.tooltip", "Speed override for the upgrade panel only. 0 = use common speed.", "仅升级面板使用的独立展开/收起速度，0 = 使用通用面板速度。");
+    }
+
+    /**
+     * 校验「游戏直接查表」的两类键：配置项（label + tooltip）与按键绑定（分类 + 键名）。
+     * 缺一条就让 datagen 失败，而不是等玩家在界面里看到原始键名。
+     * <p>
+     * 配置侧遍历 {@link ModConfigSpec#getSpec()} 的树：分组与叶子都要求 tooltip（配置界面两者都读）。
+     * 按键侧取 {@link TEN#KEY_CATEGORY} / {@link TEN#KEY_TOGGLE_CHARGE}，
+     * 与 {@code TENKeybinds} 共用同一份常量。键集合取自 {@link #ZH_ENTRIES}——{@code addRaw}
+     * 每写一条都会登记，所以校验的是这次 datagen 实际产出的键，不是另抄一份清单。
+     */
+    private static void verifyTranslationKeys() {
+        List<String> missing = new ArrayList<>();
+        collectMissingKeys(TENConfig.COMMON_SPEC, missing);
+        collectMissingKeys(TENConfig.CLIENT_SPEC, missing);
+        for (String key : new String[] { TEN.KEY_CATEGORY, TEN.KEY_TOGGLE_CHARGE }) {
+            if (!ZH_ENTRIES.containsKey(key)) missing.add(key);
+        }
+        if (!missing.isEmpty()) {
+            throw new IllegalStateException("界面键缺少本地化 " + missing.size() + " 条，游戏里会显示原始键名：\n  " + String.join("\n  ", missing) + "\n在 TENConfig 补 .translation()、在 TENLangHandler 对应 addXxx() 补条目后再跑 datagen。");
+        }
+    }
+
+    /**
+     * 遍历 spec 树，检查界面**实际会查**的翻译键，而不是按路径猜键名。
+     * <p>
+     * 分组走 {@link ModConfigSpec#getLevelTranslationKey(List)}，配置项走
+     * {@link ModConfigSpec.ValueSpec#getTranslationKey()}。两者为 null 说明 {@code push}/{@code define}
+     * 没接 {@code .translation()}，NeoForge 会退回不带分组前缀的裸键名——嵌套在 {@code compat} 里的
+     * {@code disabledSources} 于是去找 {@code ...configuration.disabledSources}，界面显示原文。
+     */
+    private static void collectMissingKeys(ModConfigSpec spec, List<String> missing) {
+        collectMissingKeys(spec, spec.getSpec().valueMap(), List.of(), missing);
+    }
+
+    private static void collectMissingKeys(ModConfigSpec spec, Map<?, ?> specTree, List<String> path, List<String> missing) {
+        for (Map.Entry<?, ?> entry : specTree.entrySet()) {
+            List<String> child = new ArrayList<>(path);
+            child.add(String.valueOf(entry.getKey()));
+            if (entry.getValue() instanceof Map<?, ?> sub) {
+                checkKey(spec.getLevelTranslationKey(child), String.join(".", child), "分组", missing);
+                collectMissingKeys(spec, sub, child, missing);
+            } else if (entry.getValue() instanceof ModConfigSpec.ValueSpec valueSpec) {
+                checkKey(valueSpec.getTranslationKey(), String.join(".", child), "配置项", missing);
+                // 列表没有 newElementSupplier 时配置界面无法新增条目，默认空列表会整页空白。
+                if (valueSpec instanceof ModConfigSpec.ListValueSpec listSpec && listSpec.getNewElementSupplier() == null) {
+                    missing.add("列表 " + String.join(".", child) + " 缺少 newElementSupplier，界面无法新增条目");
+                }
+            }
+        }
+    }
+
+    private static void checkKey(String translationKey, String path, String kind, List<String> missing) {
+        if (translationKey == null) {
+            missing.add(kind + " " + path + " 未设 .translation()");
+            return;
+        }
+        if (!ZH_ENTRIES.containsKey(translationKey)) missing.add(translationKey);
+        if (!ZH_ENTRIES.containsKey(translationKey + ".tooltip")) missing.add(translationKey + ".tooltip");
     }
 
     /** 机器开关：中英文都跟着方块术语走，避免界面里出现第二套机器名称。 */

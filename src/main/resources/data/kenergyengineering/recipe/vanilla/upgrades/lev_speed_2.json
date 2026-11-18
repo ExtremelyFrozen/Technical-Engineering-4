@@ -1,0 +1,21 @@
+{
+	"type": "minecraft:crafting_shaped",
+	"pattern": ["EBE", "DAD", "EBE"],
+	"key": {
+		"A": {
+			"item": "kenergyengineering:speed_levelup"
+		},
+		"B": {
+			"item": "minecraft:gold_ingot"
+		},
+		"D": {
+			"item": "minecraft:redstone"
+		},
+		"E": {
+			"item": "minecraft:gunpowder"
+		}
+	},
+	"result": {
+		"id": "kenergyengineering:speed_levelup_2"
+	}
+}

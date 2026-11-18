@@ -5,8 +5,9 @@ import com.modularmc.ten.api.option.CoolantRecipe;
 import com.modularmc.ten.api.option.Coolants;
 import com.modularmc.ten.api.recipe.FormsCombinedRecipe;
 import com.modularmc.ten.client.TENClientRecipeCache;
-import com.modularmc.ten.common.blockentity.EngineFuelRecipe;
-import com.modularmc.ten.common.blockentity.MatchFuel;
+import com.modularmc.ten.common.gui.MachineProgressShortcut;
+import com.modularmc.ten.common.blockentity.EngineFuelDisplay;
+import com.modularmc.ten.common.blockentity.EngineFuels;
 import com.modularmc.ten.common.blockentity.machine.BiomassBlockEntity;
 import com.modularmc.ten.common.blockentity.machine.ExtractorBlockEntity;
 import com.modularmc.ten.common.blockentity.machine.MetalizerBlockEntity;
@@ -57,6 +58,9 @@ public class TENJeiPlugin implements IModPlugin {
 
     private static final ResourceLocation UID = TEN.id("jei_plugin");
 
+    /** 方法引用存成常量：JEI 重载时会重复调用 registerGuiHandlers，去重才有意义。 */
+    private static final MachineProgressShortcut.Binder PROGRESS_USES_BINDER = JeiProgressShortcutBinder::bind;
+
     // ── Smelter JEI recipe types (three independent pages) ────────────
     public static final mezz.jei.api.recipe.RecipeType<SmelterJeiCategory.Recipe> SMELTER_SMELTING =
             new mezz.jei.api.recipe.RecipeType<>(TEN.id("smelter_smelting"), SmelterJeiCategory.Recipe.class);
@@ -73,12 +77,12 @@ public class TENJeiPlugin implements IModPlugin {
     private static final List<MachineTypeDef> MACHINE_TYPES = buildMachineTypeDefs();
 
     // ── Engine fuel recipe types ─────────────────────────────────────
-    public static final mezz.jei.api.recipe.RecipeType<EngineFuelRecipe> EXTRACTOR_FUEL =
-            new mezz.jei.api.recipe.RecipeType<>(TEN.id("extractor_fuel"), EngineFuelRecipe.class);
-    public static final mezz.jei.api.recipe.RecipeType<EngineFuelRecipe> METALIZER_FUEL =
-            new mezz.jei.api.recipe.RecipeType<>(TEN.id("metalizer_fuel"), EngineFuelRecipe.class);
-    public static final mezz.jei.api.recipe.RecipeType<EngineFuelRecipe> BIOMASS_FUEL =
-            new mezz.jei.api.recipe.RecipeType<>(TEN.id("biomass_fuel"), EngineFuelRecipe.class);
+    public static final mezz.jei.api.recipe.RecipeType<EngineFuelDisplay> EXTRACTOR_FUEL =
+            new mezz.jei.api.recipe.RecipeType<>(TEN.id("extractor_fuel"), EngineFuelDisplay.class);
+    public static final mezz.jei.api.recipe.RecipeType<EngineFuelDisplay> METALIZER_FUEL =
+            new mezz.jei.api.recipe.RecipeType<>(TEN.id("metalizer_fuel"), EngineFuelDisplay.class);
+    public static final mezz.jei.api.recipe.RecipeType<EngineFuelDisplay> BIOMASS_FUEL =
+            new mezz.jei.api.recipe.RecipeType<>(TEN.id("biomass_fuel"), EngineFuelDisplay.class);
 
     // ── Cooler coolant recipe type ───────────────────────────────────
     public static final mezz.jei.api.recipe.RecipeType<CoolantRecipe> COOLER_COOLANT =
@@ -177,8 +181,6 @@ public class TENJeiPlugin implements IModPlugin {
     // ── Category Registration ────────────────────────────────────────────
     @Override
     public void registerCategories(IRecipeCategoryRegistration registration) {
-        if (!TEN.Mods.isJEILoaded()) return;
-
         IGuiHelper helper = registration.getJeiHelpers().getGuiHelper();
 
         for (var data : buildCategories()) {
@@ -197,35 +199,40 @@ public class TENJeiPlugin implements IModPlugin {
     // ── Recipe Registration ──────────────────────────────────────────────
     @Override
     public void registerRecipes(IRecipeRegistration registration) {
-        if (!TEN.Mods.isJEILoaded()) return;
-
         var ingredientManager = registration.getIngredientManager();
         if (ingredientManager == null) return;
 
         var allStacks = ingredientManager.getAllItemStacks();
         if (allStacks == null) return;
 
-        List<EngineFuelRecipe> extractorRecipes = new ArrayList<>();
-        List<EngineFuelRecipe> metalizerRecipes = new ArrayList<>();
-        List<EngineFuelRecipe> biomassRecipes = new ArrayList<>();
+        List<EngineFuelDisplay> extractorRecipes = new ArrayList<>();
+        List<EngineFuelDisplay> metalizerRecipes = new ArrayList<>();
+        List<EngineFuelDisplay> biomassRecipes = new ArrayList<>();
         List<CoolantRecipe> coolantRecipes = new ArrayList<>();
+
+        // 燃料表来自数据包 engine_fuel 配方；未收录的物品走原版燃烧时间兜底。
+        var level = net.minecraft.client.Minecraft.getInstance().level;
+        var fuelManager = level == null ? null : level.getRecipeManager();
 
         for (ItemStack stack : allStacks) {
             if (stack == null || stack.isEmpty()) continue;
 
-            int extractorValue = MatchFuel.getExtractorFuelValue(stack);
-            if (extractorValue > 0) {
-                extractorRecipes.add(new EngineFuelRecipe(stack, extractorValue, ExtractorBlockEntity.BASE_GENERATION_RATE));
+            int extractorRate = ExtractorBlockEntity.BASE_GENERATION_RATE;
+            var extractorProfile = EngineFuels.profile(fuelManager, EngineFuels.EXTRACTOR, extractorRate, stack);
+            if (!extractorProfile.isEmpty()) {
+                extractorRecipes.add(new EngineFuelDisplay(stack, extractorProfile, extractorRate));
             }
 
-            int metalValue = MatchFuel.getMetalFuelValue(stack);
-            if (metalValue > 0) {
-                metalizerRecipes.add(new EngineFuelRecipe(stack, metalValue, MetalizerBlockEntity.BASE_GENERATION_RATE));
+            int metalRate = MetalizerBlockEntity.BASE_GENERATION_RATE;
+            var metalProfile = EngineFuels.profile(fuelManager, EngineFuels.METALIZER, metalRate, stack);
+            if (!metalProfile.isEmpty()) {
+                metalizerRecipes.add(new EngineFuelDisplay(stack, metalProfile, metalRate));
             }
 
-            int biomassValue = MatchFuel.getBiomassFuelValue(stack);
-            if (biomassValue > 0) {
-                biomassRecipes.add(new EngineFuelRecipe(stack, biomassValue, BiomassBlockEntity.BASE_GENERATION_RATE));
+            int biomassRate = BiomassBlockEntity.BASE_GENERATION_RATE;
+            var biomassProfile = EngineFuels.profile(fuelManager, EngineFuels.BIOMASS, biomassRate, stack);
+            if (!biomassProfile.isEmpty()) {
+                biomassRecipes.add(new EngineFuelDisplay(stack, biomassProfile, biomassRate));
             }
 
             var coolantValue = Coolants.get(stack);
@@ -234,14 +241,14 @@ public class TENJeiPlugin implements IModPlugin {
             }
         }
 
-        Comparator<EngineFuelRecipe> byItemIdThenComponents = Comparator.comparing(
-                (EngineFuelRecipe r) -> r.ingredients().get(0).getItem().toString());
+        Comparator<EngineFuelDisplay> byItemIdThenComponents = Comparator.comparing(
+                (EngineFuelDisplay r) -> r.ingredients().get(0).getItem().toString());
         Comparator<CoolantRecipe> coolantSortKey = Comparator.comparing(
                 (CoolantRecipe r) -> r.ingredients().get(0).getItem().toString());
 
-        registration.addRecipes(EXTRACTOR_FUEL, dedupSorted(extractorRecipes, byItemIdThenComponents, EngineFuelRecipe::ingredients));
-        registration.addRecipes(METALIZER_FUEL, dedupSorted(metalizerRecipes, byItemIdThenComponents, EngineFuelRecipe::ingredients));
-        registration.addRecipes(BIOMASS_FUEL, dedupSorted(biomassRecipes, byItemIdThenComponents, EngineFuelRecipe::ingredients));
+        registration.addRecipes(EXTRACTOR_FUEL, dedupSorted(extractorRecipes, byItemIdThenComponents, EngineFuelDisplay::ingredients));
+        registration.addRecipes(METALIZER_FUEL, dedupSorted(metalizerRecipes, byItemIdThenComponents, EngineFuelDisplay::ingredients));
+        registration.addRecipes(BIOMASS_FUEL, dedupSorted(biomassRecipes, byItemIdThenComponents, EngineFuelDisplay::ingredients));
         registration.addRecipes(COOLER_COOLANT, dedupSorted(coolantRecipes, coolantSortKey, CoolantRecipe::ingredients));
     }
 
@@ -251,7 +258,6 @@ public class TENJeiPlugin implements IModPlugin {
 
     @Override
     public void onRuntimeAvailable(IJeiRuntime jeiRuntime) {
-        if (!TEN.Mods.isJEILoaded()) return;
         IRecipeManager recipeManager = jeiRuntime.getRecipeManager();
 
         if (recipeManager != activeRecipeManager) {
@@ -389,8 +395,6 @@ public class TENJeiPlugin implements IModPlugin {
     // ── Catalyst Registration ────────────────────────────────────────────
     @Override
     public void registerRecipeCatalysts(IRecipeCatalystRegistration registration) {
-        if (!TEN.Mods.isJEILoaded()) return;
-
         for (var data : buildCategories()) {
             var type = new mezz.jei.api.recipe.RecipeType<FormsCombinedRecipe>(data.id, FormsCombinedRecipe.class);
             registration.addRecipeCatalyst(data.icon, type);
@@ -403,7 +407,8 @@ public class TENJeiPlugin implements IModPlugin {
 
     @Override
     public void registerGuiHandlers(IGuiHandlerRegistration registration) {
-        if (!TEN.Mods.isJEILoaded()) return;
         registration.addGuiContainerHandler(ModularUIContainerScreen.class, ModularUIJEIHandlers.GUI_CONTAINER_HANDLER);
+        // 进度条按「显示用途」键转跳到本机器配方页：把机器方块物品交给 JEI 的 ingredient 查询。
+        MachineProgressShortcut.register(PROGRESS_USES_BINDER);
     }
 }

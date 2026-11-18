@@ -1,0 +1,11 @@
+{
+  "type": "kenergyengineering:engine_fuel",
+  "duration": 15,
+  "engines": [
+    "biomass"
+  ],
+  "ingredient": {
+    "tag": "minecraft:leaves"
+  },
+  "rate_multiplier": 1.0
+}

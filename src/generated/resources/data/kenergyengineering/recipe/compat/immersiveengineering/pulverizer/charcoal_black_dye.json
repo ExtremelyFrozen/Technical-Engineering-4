@@ -1,0 +1,34 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "immersiveengineering"
+    },
+    {
+      "type": "kenergyengineering:compat_enabled",
+      "source": "immersiveengineering"
+    }
+  ],
+  "type": "kenergyengineering:pulverizer",
+  "inputs": [
+    {
+      "type": "static",
+      "form": "item",
+      "key": "minecraft:charcoal"
+    }
+  ],
+  "outputs": [
+    {
+      "type": "static",
+      "form": "item",
+      "key": "minecraft:black_dye"
+    },
+    {
+      "type": "static",
+      "chance": 0.2,
+      "form": "item",
+      "key": "minecraft:gray_dye"
+    }
+  ],
+  "time": 120
+}

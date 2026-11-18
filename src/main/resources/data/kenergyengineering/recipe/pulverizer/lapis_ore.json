@@ -1,0 +1,31 @@
+{
+	"type": "kenergyengineering:pulverizer",
+	"inputs": [
+		{
+			"form": "item",
+			"type": "tag",
+			"key": "c:ores/lapis"
+		}
+	],
+	"outputs": [
+		{
+			"form": "item",
+			"type": "static",
+			"key": "minecraft:lapis_lazuli",
+			"count": 8
+		},
+		{
+			"form": "item",
+			"type": "static",
+			"key": "minecraft:lapis_lazuli",
+			"chance": 0.2
+		},
+		{
+			"form": "item",
+			"type": "static",
+			"key": "minecraft:cobblestone",
+			"chance": 0.15
+		}
+	],
+	"time": 120
+}

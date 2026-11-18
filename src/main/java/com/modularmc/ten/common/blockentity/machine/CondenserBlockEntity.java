@@ -86,7 +86,7 @@ public class CondenserBlockEntity extends ProcessingMachineBlockEntity {
     @Override
     public boolean conditionStart() {
         // Compute and lock B_actual (四维：输入/流体/输出罐/能量)
-        int B_theory = 1 + batch;
+        int B_theory = getTheoreticalBatchSize();
 
         // B_byInput: catalyst must be present for any processing
         boolean hasCatalyst = !itemHandler.getStackInSlot(0).isEmpty();
@@ -102,8 +102,8 @@ public class CondenserBlockEntity extends ProcessingMachineBlockEntity {
 
         // Only compute and lock B when no lock exists yet
         if (!hasLockedBatch()) {
-            // Lock maxProgress with durationMultiplier captured at operation start
-            maxProgress = Math.max(1, (int) Math.ceil(baseTickTime() * durationMultiplier));
+            // 总量 = 配方耗时 × 耗时倍率；速度另按 N 推进（耗时 = 总量 ÷ N）
+            maxProgress = scaledDuration(baseTickTime());
             lockMaxProgressForNewOperation(maxProgress);
 
             int B_byInput = hasCatalyst ? B_theory : 0;
@@ -131,7 +131,7 @@ public class CondenserBlockEntity extends ProcessingMachineBlockEntity {
     @Override
     public boolean cooking() {
         // 纯容量谓词：只检查输出罐能否容纳 B×5mB。
-        // 无 progress 读写、无催化剂消耗、无副作用——输出满时保留 progress（停滞语义）。
+        // 无 progress 读写、无催化剂消耗、无副作用——输出满时保留 progress（停机语义）。
         int B = getLockedBatchSize();
         FluidStack produced = new FluidStack((net.minecraft.world.level.material.Fluid) TENFluids.LIQUID_BIZARRERIE.getSource(), 5 * B);
         if (tanks.isEmpty() || tanks.get(0).fill(produced, IFluidHandler.FluidAction.SIMULATE) < produced.getAmount()) {
@@ -143,7 +143,7 @@ public class CondenserBlockEntity extends ProcessingMachineBlockEntity {
     @Override
     protected void onProcessTick() {
         // 催化剂消耗：每 20 个成功处理 tick 消耗 1 个。
-        // 仅在实际处理（能量已扣、进度已推进）的 tick 消耗；停滞/受阻 tick 不消耗。
+        // 仅在实际处理（能量已扣、进度已推进）的 tick 消耗；停机/受阻 tick 不消耗。
         // 单催化剂/周期（不随 B 倍增），与旧语义一致。
         catalystTickCounter++;
         if (catalystTickCounter >= 20) {

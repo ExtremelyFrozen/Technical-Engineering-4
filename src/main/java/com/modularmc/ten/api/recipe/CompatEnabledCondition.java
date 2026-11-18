@@ -1,12 +1,12 @@
 package com.modularmc.ten.api.recipe;
 
-import com.mojang.serialization.MapCodec;
-import com.mojang.serialization.codecs.RecordCodecBuilder;
-
 import com.modularmc.ten.TEN;
 import com.modularmc.ten.config.TENConfig;
 
 import net.neoforged.neoforge.common.conditions.ICondition;
+
+import com.mojang.serialization.MapCodec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
 
 /**
  * 邻居兼容层开关条件：{@code {"type":"kenergyengineering:compat_enabled","source":"enderio"}}。
@@ -19,7 +19,7 @@ public record CompatEnabledCondition(String source) implements ICondition {
 
     public static final MapCodec<CompatEnabledCondition> CODEC = RecordCodecBuilder.mapCodec(
             builder -> builder.group(
-                            com.mojang.serialization.Codec.STRING.fieldOf("source").forGetter(CompatEnabledCondition::source))
+                    com.mojang.serialization.Codec.STRING.fieldOf("source").forGetter(CompatEnabledCondition::source))
                     .apply(builder, CompatEnabledCondition::new));
 
     @Override

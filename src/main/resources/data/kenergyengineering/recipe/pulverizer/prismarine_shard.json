@@ -1,0 +1,24 @@
+{
+	"type": "kenergyengineering:pulverizer",
+	"inputs": [
+		{
+			"form": "item",
+			"type": "static",
+			"key": "minecraft:prismarine_shard"
+		}
+	],
+	"outputs": [
+		{
+			"form": "item",
+			"type": "static",
+			"key": "minecraft:prismarine_crystals"
+		},
+		{
+			"form": "item",
+			"type": "static",
+			"key": "minecraft:prismarine_crystals",
+			"chance": 0.1
+		}
+	],
+	"time": 120
+}

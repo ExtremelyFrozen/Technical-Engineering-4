@@ -12,7 +12,7 @@
       "type": "neoforge:not",
       "value": {
         "type": "neoforge:tag_empty",
-        "tag": "c:mats/lead"
+        "tag": "c:ingots/lead"
       }
     },
     {
@@ -24,8 +24,9 @@
   "inputs": [
     {
       "type": "tag",
+      "count": 4,
       "form": "item",
-      "key": "c:mats/lead"
+      "key": "c:ingots/lead"
     },
     {
       "type": "static",

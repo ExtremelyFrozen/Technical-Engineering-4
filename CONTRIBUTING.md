@@ -1,6 +1,6 @@
 # 贡献指南
 
-欢迎参与 **Technical-Engineering 4 (Kenergy Engineering Retechnicalized)** 的开发。  
+欢迎参与 **Kenergy Engineering Retechnicalized（简称 KER，Technical Engineering 4 的重制分支）** 的开发。  
 本文档概述了项目的结构、编码约定和贡献流程，帮助新贡献者快速上手。
 
 ---
@@ -62,7 +62,7 @@ Technical-Engineering 4 是一个 **NeoForge 1.21.1** 科技模组，继承自 T
 1. **JDK 21** — 确保 `JAVA_HOME` 指向 JDK 21。
 2. **克隆仓库**：
    ```bash
-   git clone https://github.com/ModularMCLib/Technical-Engineering-4.git
+   git clone https://github.com/ExtremelyFrozen/Technical-Engineering-4.git
    cd Technical-Engineering-4
    ```
 3. **导入 IDE** — 作为 Gradle 项目导入（IntelliJ IDEA 推荐）。
@@ -219,7 +219,7 @@ public static final BlockEntry<HorizontalMachineBlock> CELL = REGISTRATE
 - `ore()` — 矿石方块（需铁镐及以上，不同的 MapColor）
 - `storage()` / `rawStorage()` — 存储方块
 - `machine()` — 水平朝向机器
-- `engine()` — 发电机（水平朝向，不同纹理映射）
+- `engine()` — 引擎（水平朝向，不同纹理映射）
 - `cable()` — 线缆/管道（multipart blockstate）
 - `item()` — 简单物品
 - `upgrade()` — 升级组件（自定义 Item 子类）
@@ -277,7 +277,7 @@ public static final BlockEntityEntry<FurnaceBlockEntity> FURNACE = REGISTRATE
 |---|---|
 | `cubeAll()` | 简单六面贴图方块 |
 | `machine()` / `machineActive()` | 机器方块模型（带/不带 active 贴图） |
-| `engine()` / `engineActive()` | 发电机模型 |
+| `engine()` / `engineActive()` | 引擎模型 |
 | `energyCellBlockstate()` | 能量单元 blockstate |
 | `channelBlockstate()` | 频道 blockstate（六方向，active 切换） |
 | `cableMultipart()` | 线缆/管道 multipart blockstate（核心 + 六向连接 + active 切换） |
@@ -301,6 +301,19 @@ REGISTRATE.addDataGenerator(ProviderType.LANG, TENLangHandler::init);
 
 不要创建新的 `GatherDataEvent` 订阅者——在已有 `DataGenerators` 类中扩展即可。
 
+#### 物品贴图脚本
+
+四张独特组件升级卡（副产物压榨 / 副产物筛选 / 奇异催生 / 幼芽复种）的 16x16 贴图由
+`tools/gen_upgrade_textures.py` 生成：
+
+```bash
+python tools/gen_upgrade_textures.py --preview   # 生成四张 PNG，并在 build/ 输出放大对比图
+```
+
+脚本从 `mineral_levelup.png` 逐像素继承外壳的立体边框（8 阶灰阶映射到主题色系），
+中心图案用字符画声明。改图案请改脚本里的 `art` 字符画，不要直接改 PNG——
+手改会在下次重新生成时被覆盖，也容易让四张卡的边框结构漂移。
+
 ### 本地化
 
 - **英文**通过 `.lang("English Name")` 直接在注册链中设置。
@@ -311,6 +324,18 @@ REGISTRATE.addDataGenerator(ProviderType.LANG, TENLangHandler::init);
   - `addRaw(provider, fullKey, en, cn)` 用于完整键。
 - 新增中文条目时，同时提供英文原文作为第二个参数。
 - 确保中文字符串文件的编码为 **UTF-8**。
+
+**新增配置项必须同时补本地化。** `TENConfig` 里每个 `define*` 在配置界面上占一行，NeoForge 按
+`<modid>.configuration.<路径>` 查表；键不存在就直接显示键名。所以加完配置项后要在
+`TENLangHandler.addConfig` 补上组名（新建 `push` 分组时）与 `kenergyengineering.configuration.<路径>`，
+叶子项再加一条 `.tooltip`。`verifyTranslationKeys()` 会在 datagen 末尾遍历 `COMMON_SPEC` 与
+`CLIENT_SPEC`，缺键直接抛异常并列出清单——跑一次 `./gradlew runData` 就知道漏了哪条。
+
+**按键绑定用完整键，不要走 `add()`。** 游戏原样查 `KeyMapping` 里那个字符串，`add()` 会多补一层
+`kenergyengineering.`，界面上就显示原始键名（4.0.2 的 `key.categories.kenergyengineering` 即此）。
+键名常量定义在 `TEN.KEY_CATEGORY` 与 `TEN.KEY_TOGGLE_CHARGE`——放 `TEN` 而不是 `client.TENKeybinds`，
+是因为 datagen 侧的 `TENLangHandler` 在服务端也会被方法引用加载，不能引用带 `KeyMapping` 的客户端类。
+语言条目用 `addRaw` 写完整键；新增按键时把常量加进 `TEN`，`verifyTranslationKeys()` 会一并校验。
 
 ---
 

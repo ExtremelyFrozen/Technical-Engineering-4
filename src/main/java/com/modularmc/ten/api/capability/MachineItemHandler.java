@@ -14,7 +14,7 @@ import java.util.function.BiPredicate;
 import java.util.function.ToIntBiFunction;
 
 /**
- * 机器物品槽能力：槽位级插入/提取校验（回调注入），支持批处理动态堆叠上限
+ * 机器物品槽能力：槽位级插入/提取校验（回调注入），支持并行运行动态堆叠上限
  * （{@link #setDynamicSlotLimit}），并自行实现超 99 堆叠的 NBT 读写。
  */
 @Setter
@@ -153,6 +153,45 @@ public class MachineItemHandler extends ItemStackHandler {
             return limit;
         }
         return super.getStackLimit(slot, stack);
+    }
+
+    /**
+     * 提取：以槽内实际数量为上限，不再被物品自身堆叠上限（通常 64）截断。
+     * <p>
+     * 父类实现取 {@code Math.min(amount, existing.getMaxStackSize())}，而本 handler 允许
+     * 并行运行超堆叠（单槽上限 64×B）。若沿用父类，超堆叠槽一次最多只能交出 64 个，
+     * 所有「先插入目标、再按插入量扣槽」的调用方都会凭空多出物品；
+     * 反之忽略返回值、只调一次的调用方（扳手拆卸）会把剩余部分留在即将移除的 BE 里，
+     * 随后被方块移除逻辑撒到地上而不是进背包。
+     * 这里与 {@link #getSlotLimit(int)} 的超堆叠语义对齐：上限 = 槽内现有数量。
+     */
+    @Override
+    public ItemStack extractItem(int slot, int amount, boolean simulate) {
+        if (amount <= 0) return ItemStack.EMPTY;
+
+        validateSlotIndex(slot);
+
+        ItemStack existing = stacks.get(slot);
+        if (existing.isEmpty()) return ItemStack.EMPTY;
+
+        int toExtract = Math.min(amount, existing.getCount());
+        if (toExtract <= 0) return ItemStack.EMPTY;
+
+        if (simulate) {
+            return existing.copyWithCount(toExtract);
+        }
+
+        if (toExtract >= existing.getCount()) {
+            stacks.set(slot, ItemStack.EMPTY);
+            onContentsChanged(slot);
+            return existing;
+        }
+
+        // 超堆叠：不能 whole-copy，先取出副本再收缩原栈
+        ItemStack extracted = existing.copyWithCount(toExtract);
+        existing.shrink(toExtract);
+        onContentsChanged(slot);
+        return extracted;
     }
 
     @Override

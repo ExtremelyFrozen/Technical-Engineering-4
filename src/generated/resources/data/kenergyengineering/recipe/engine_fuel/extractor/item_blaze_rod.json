@@ -1,0 +1,11 @@
+{
+  "type": "kenergyengineering:engine_fuel",
+  "duration": 1600,
+  "engines": [
+    "extractor"
+  ],
+  "ingredient": {
+    "item": "minecraft:blaze_rod"
+  },
+  "rate_multiplier": 1.0
+}

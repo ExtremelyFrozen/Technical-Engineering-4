@@ -12,7 +12,7 @@
       "type": "neoforge:not",
       "value": {
         "type": "neoforge:tag_empty",
-        "tag": "c:mats/aluminum"
+        "tag": "c:ingots/aluminum"
       }
     },
     {
@@ -24,8 +24,9 @@
   "inputs": [
     {
       "type": "tag",
+      "count": 4,
       "form": "item",
-      "key": "c:mats/aluminum"
+      "key": "c:ingots/aluminum"
     },
     {
       "type": "static",

@@ -19,7 +19,7 @@ import java.util.UUID;
  * <ul>
  * <li>染色（DyeColor）：本工程管道资源无染色渲染支持，染色会成无视觉反馈的孤立功能</li>
  * <li>Filter/Blocker：无逐跳运输过滤门，无红石控制器变体</li>
- * <li>客户端网络镜像/reduced update tag：连接外观走 CableBased.CONNECTION blockstate</li>
+ * <li>客户端网络镜像/reduced update tag：连接外观走 CableRenderState 的 ModelData 同步</li>
  * <li>内容兼容钩子（isContentsCompatible）：本工程无流体管道，无内容约束场景</li>
  * </ul>
  * 连接位语义：transmitter 位=管道间连接（渲染为 connect）；acceptor 位=管道-设备

@@ -1,0 +1,19 @@
+{
+	"type": "kenergyengineering:pulverizer",
+	"inputs": [
+		{
+			"form": "item",
+			"type": "static",
+			"key": "minecraft:dark_prismarine"
+		}
+	],
+	"outputs": [
+		{
+			"form": "item",
+			"type": "static",
+			"key": "minecraft:prismarine_shard",
+			"count": 8
+		}
+	],
+	"time": 120
+}

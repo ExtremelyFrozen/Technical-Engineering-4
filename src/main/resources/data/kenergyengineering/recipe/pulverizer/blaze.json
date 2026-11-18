@@ -3,8 +3,8 @@
 	"inputs": [
 		{
 			"form": "item",
-			"type": "static",
-			"key": "minecraft:blaze_rod"
+			"type": "tag",
+			"key": "c:rods/blaze"
 		}
 	],
 	"outputs": [
@@ -12,22 +12,8 @@
 			"form": "item",
 			"type": "static",
 			"key": "minecraft:blaze_powder",
-			"count": 3
-		},
-		{
-			"form": "item",
-			"type": "static",
-			"key": "minecraft:blaze_powder",
-			"count": 1,
-			"chance": 0.5
-		},
-		{
-			"form": "item",
-			"type": "static",
-			"key": "minecraft:blaze_powder",
-			"count": 1,
-			"chance": 0.2
+			"count": 4
 		}
 	],
-	"time": 100
+	"time": 120
 }

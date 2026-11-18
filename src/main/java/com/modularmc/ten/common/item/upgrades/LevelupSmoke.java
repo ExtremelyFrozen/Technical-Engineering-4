@@ -6,10 +6,12 @@ public class LevelupSmoke extends UpgradeItem {
 
     public LevelupSmoke() {
         super(0);
+        asSpecialization();
     }
 
     public LevelupSmoke(Properties properties) {
         super(0, properties);
+        asSpecialization();
     }
 
     @Override

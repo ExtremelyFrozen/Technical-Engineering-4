@@ -1,0 +1,11 @@
+{
+  "type": "kenergyengineering:engine_fuel",
+  "duration": 267,
+  "engines": [
+    "extractor"
+  ],
+  "ingredient": {
+    "item": "minecraft:scaffolding"
+  },
+  "rate_multiplier": 1.0
+}

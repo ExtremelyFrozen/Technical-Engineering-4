@@ -12,7 +12,7 @@
       "type": "neoforge:not",
       "value": {
         "type": "neoforge:tag_empty",
-        "tag": "c:mats/platinum"
+        "tag": "c:ingots/platinum"
       }
     },
     {
@@ -25,7 +25,7 @@
     {
       "type": "tag",
       "form": "item",
-      "key": "c:mats/platinum"
+      "key": "c:ingots/platinum"
     },
     {
       "type": "static",

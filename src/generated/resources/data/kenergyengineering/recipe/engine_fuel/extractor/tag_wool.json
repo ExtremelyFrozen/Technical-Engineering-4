@@ -1,0 +1,11 @@
+{
+  "type": "kenergyengineering:engine_fuel",
+  "duration": 67,
+  "engines": [
+    "extractor"
+  ],
+  "ingredient": {
+    "tag": "minecraft:wool"
+  },
+  "rate_multiplier": 1.0
+}

@@ -82,7 +82,7 @@ public class CommonProxy {
             }
         }
 
-        // Energy Unit item capability
+        // Energy Module item capability
         event.registerItem(Capabilities.EnergyStorage.ITEM, (stack, ctx) -> {
             var data = com.modularmc.ten.component.EnergyUnitData.of(stack);
             return new IEnergyStorage() {

@@ -117,7 +117,7 @@ public class BaseMachineBlock extends Block implements EntityBlock, BlockUIMenuT
         if (stack.is(TENTags.SPANNER)) {
             return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
         }
-        // 右键快捷安装（用户决策）：手持升级插件直接安装且不开 GUI——复用扳手式提前拦截，
+        // 右键快捷安装（用户决策）：手持升级组件直接安装且不开 GUI——复用扳手式提前拦截，
         // 原「潜行+右键」门禁移除（探针证实普通右键全部落在开 GUI 分支，安装永不可达）
         if (be instanceof CmMachineBlockEntity machine && stack.getItem() instanceof UpgradeItem && machine.supportsUpgradeSlots()) {
             if (level.isClientSide()) {

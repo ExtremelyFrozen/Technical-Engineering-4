@@ -28,6 +28,9 @@ Kenergy Engineering Retechnicalized（KER），Minecraft 1.21.1 / NeoForge 科�
 ## 二、动手前必须知道的硬约定
 
 - **语言**：注释、`docs/` 与两份更新日志一律中文；代码标识符与游戏内英文文案除外。
+- **界面键要齐**：新增配置项必须在 `TENLangHandler.addConfig` 同时补 label 与 tooltip；
+  按键键名用 `TEN.KEY_*` 配 `addRaw`（走 `add()` 会多一层 `kenergyengineering.` 前缀）。
+  `runData` 末尾的 `verifyTranslationKeys()` 会遍历两个 spec 并列出缺失键。
 - **生成资源不手改**：`src/generated/resources/` 由 DataGen 产出。模型、blockstate、语言、配方要改生成器。
 - **客户端边界**：客户端类放 `src/client/java`；`src/main` 里的 `client` 子包必须带 `Dist.CLIENT` 防护。
   可选集成的类型名不得漏进总是加载的类，缺邻居时整包要能正常加载。
@@ -35,7 +38,7 @@ Kenergy Engineering Retechnicalized（KER），Minecraft 1.21.1 / NeoForge 科�
   不要恢复异步线程，否则进度条会被中间态覆盖成 0/0。
 - **面 capability 的观察读**：`getStackInSlot` / `getFluidInTank` 这类读必须反映机器真实内容，不能被抽取权限藏空；
   写入与抽取再按面权限单独门控。AE2 样板供应器的阻挡模式依赖这一点。
-- **批处理**：四维 B 锁定（物品/流体/输出/能量）与 `lockedMaxProgress` 是停滞语义的核心；
+- **并行运行**：四维 B 锁定（物品/流体/输出/能量）与 `lockedMaxProgress` 是停机语义的核心；
   配方产出走快照-模拟-提交，失败必须回滚。
 - **依赖版本**：新增依赖优先走 `gradle/libs.versions.toml` 与 `gradle/forge.versions.toml`；
   现有硬编码坐标（Lombok、Curios、开发运行期模组、Kotlin 插件）暂按现状，迁移时再收编。

@@ -1,0 +1,31 @@
+{
+	"type": "kenergyengineering:pulverizer",
+	"inputs": [
+		{
+			"form": "item",
+			"type": "tag",
+			"key": "c:ores/emerald"
+		}
+	],
+	"outputs": [
+		{
+			"form": "item",
+			"type": "static",
+			"key": "minecraft:emerald",
+			"count": 2
+		},
+		{
+			"form": "item",
+			"type": "static",
+			"key": "minecraft:emerald",
+			"chance": 0.25
+		},
+		{
+			"form": "item",
+			"type": "static",
+			"key": "minecraft:cobblestone",
+			"chance": 0.15
+		}
+	],
+	"time": 120
+}

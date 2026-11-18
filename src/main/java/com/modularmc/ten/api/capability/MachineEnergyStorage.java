@@ -3,7 +3,7 @@ package com.modularmc.ten.api.capability;
 import net.neoforged.neoforge.energy.EnergyStorage;
 
 /**
- * 机器储能能力：容量可在运行时调整（批处理 B 缩放、频道动态容量），存量超容时截断。
+ * 机器储能能力：容量可在运行时调整（并行运行 B 缩放、频道动态容量），存量超容时截断。
  * 收发速率恒为不限——能量进出只受容量与接收方自身上限约束。
  */
 public class MachineEnergyStorage extends EnergyStorage {

@@ -1,0 +1,21 @@
+{
+	"type": "minecraft:crafting_shaped",
+	"pattern": [" B ", "DAD", " C "],
+	"key": {
+		"A": {
+			"item": "kenergyengineering:redstone_ai"
+		},
+		"B": {
+			"item": "minecraft:hopper"
+		},
+		"C": {
+			"item": "minecraft:iron_bars"
+		},
+		"D": {
+			"item": "kenergyengineering:redstone_conductor"
+		}
+	},
+	"result": {
+		"id": "kenergyengineering:filter_levelup"
+	}
+}

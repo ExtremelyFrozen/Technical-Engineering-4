@@ -26,7 +26,7 @@
 | `build` | `publish.yml` | `./gradlew assemble`，上传 `build/libs/*` 为 3 天 artifact |
 | `upload-release-artifacts` | 同上 | 用 `softprops/action-gh-release` 把 jar 挂到 Release |
 | `publish-modrinth` | `simulate == false` | `Kir-Antipov/mc-publish@v3.3.0`，项目 id `PS4p8SFk` |
-| `publish-cf` | `simulate == false` | 同 action，CurseForge 项目 id `1545758` |
+| `publish-cf` | `simulate == false` | `Kira-NT/mc-publish@v3.3.1`（传 `environment` 而非 `curseforge-environment`），CurseForge 项目 id `1545758` |
 | `bump-version-and-changelog` | `build` 与附件上传后 | 升 `mod_version`，按需补录 changelog，推分支并开 PR |
 
 `simulate` 的判定在 `publish-on-release.yml`：

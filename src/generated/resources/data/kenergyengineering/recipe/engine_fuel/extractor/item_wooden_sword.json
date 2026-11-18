@@ -1,0 +1,11 @@
+{
+  "type": "kenergyengineering:engine_fuel",
+  "duration": 134,
+  "engines": [
+    "extractor"
+  ],
+  "ingredient": {
+    "item": "minecraft:wooden_sword"
+  },
+  "rate_multiplier": 1.0
+}

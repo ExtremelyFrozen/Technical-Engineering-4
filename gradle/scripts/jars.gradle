@@ -1,11 +1,14 @@
 jar {
     exclude "**/.cache"
+    // client 源集不显式 from 就进不了主 jar；dev 靠 run 的 sourceSet 绑定掩盖了这个缺口
+    from sourceSets.client.output
 }
 
 tasks.register('slimJar', Jar) {
     dependsOn("classes")
     archiveClassifier = "slim"
     from sourceSets.main.output
+    from sourceSets.client.output
 }
 
 java {
@@ -18,6 +21,8 @@ sourcesJar {
         sourceSets.main.allSource.contains it.file
     }
     from delombok
+    // client 源集不经 lombok，直接给源码即可
+    from sourceSets.client.allJava
 }
 
 base {

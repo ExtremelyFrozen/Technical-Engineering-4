@@ -1,0 +1,11 @@
+{
+  "type": "kenergyengineering:engine_fuel",
+  "duration": 13334,
+  "engines": [
+    "extractor"
+  ],
+  "ingredient": {
+    "item": "minecraft:lava_bucket"
+  },
+  "rate_multiplier": 1.0
+}

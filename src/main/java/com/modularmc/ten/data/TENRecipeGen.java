@@ -170,7 +170,7 @@ public class TENRecipeGen implements DataProvider {
             new ChainRow("uranium", List.of("mekanism:raw_uranium", "immersiveengineering:raw_uranium", "alltheores:raw_uranium"),
                     List.of("mekanism:dust_uranium", "immersiveengineering:dust_uranium", "alltheores:uranium_dust")),
             new ChainRow("aluminum", List.of("neoecoae:raw_aluminum_ore", "immersiveengineering:raw_aluminum",
-                            "alltheores:raw_aluminum"),
+                    "alltheores:raw_aluminum"),
                     List.of("neoecoae:aluminum_dust", "immersiveengineering:dust_aluminum", "alltheores:aluminum_dust")),
             new ChainRow("tungsten", List.of("neoecoae:raw_tungsten_ore"), List.of("neoecoae:tungsten_dust")),
             new ChainRow("silver", List.of("enderio_evolution:raw_silver", "immersiveengineering:raw_silver", "alltheores:raw_silver"),
@@ -186,11 +186,11 @@ public class TENRecipeGen implements DataProvider {
      * 固定比率合金：感应炉的通用配方，也就是这些合金的**默认**配比，一律由邻居的**粉末**配方推导。
      * <ul>
      * <li>ATO：{@code alltheores/recipe/crafting/<alloy>/alloy_blending_from_dust.json} 与它的锭层面
-     *     {@code alloy_smelting/<alloy>_ingot.json} 一致——青铜/黄铜 3+1→4、因瓦 2+1→3、电子/康铜 1+1→2；
-     *     非常规的 steel/enderium/lumium/signalum 照同一份表。</li>
+     * {@code alloy_smelting/<alloy>_ingot.json} 一致——青铜/黄铜 3+1→4、因瓦 2+1→3、电子/康铜 1+1→2；
+     * 非常规的 steel/enderium/lumium/signalum 照同一份表。</li>
      * <li>ECO（NEO ECO AE Extension）：{@code neoecoae} 的 {@code <alloy>_dust.json} 无形状合成——
-     *     铝合金 1 铁 + 1 铝 + 2 赛斯特石英、黑钨合金 1 钨 + 1 铝合金 + 2 流克斯；它的粉→锭是 1:1，
-     *     所以这里直接落成 1 锭。</li>
+     * 铝合金 1 铁 + 1 铝 + 2 赛斯特石英、黑钨合金 1 钨 + 1 铝合金 + 2 流克斯；它的粉→锭是 1:1，
+     * 所以这里直接落成 1 锭。</li>
      * </ul>
      * 产出数按邻居数据里的 {@code result.count} 写死，不套「原子守恒」：lumium 是 4+1+3→4，
      * 守恒假设会算成 8。
@@ -221,19 +221,19 @@ public class TENRecipeGen implements DataProvider {
             new AlloyRow("steel", List.of(new AlloyIn("c:ingots/iron", 1), new AlloyIn("minecraft:coals", 1)),
                     List.of("alltheores:steel_ingot", "mekanism:ingot_steel", "immersiveengineering:ingot_steel"), 1),
             new AlloyRow("enderium", List.of(new AlloyIn("c:ingots/lead", 3), new AlloyIn("c:ingots/platinum", 1),
-                            new AlloyIn("c:ender_pearls", 2)),
+                    new AlloyIn("c:ender_pearls", 2)),
                     List.of("alltheores:enderium_ingot"), 4),
             new AlloyRow("lumium", List.of(new AlloyIn("c:dusts/glowstone", 4), new AlloyIn("c:ingots/silver", 1),
-                            new AlloyIn("c:ingots/tin", 3)),
+                    new AlloyIn("c:ingots/tin", 3)),
                     List.of("alltheores:lumium_ingot"), 4),
             new AlloyRow("signalum", List.of(new AlloyIn("c:ingots/copper", 3), new AlloyIn("c:ingots/silver", 1),
-                            new AlloyIn("c:dusts/redstone", 4)),
+                    new AlloyIn("c:dusts/redstone", 4)),
                     List.of("alltheores:signalum_ingot"), 4),
             new AlloyRow("aluminum_alloy", List.of(new AlloyIn("c:ingots/iron", 1), new AlloyIn("c:ingots/aluminum", 1),
-                            new AlloyIn("c:dusts/certus_quartz", 2)),
+                    new AlloyIn("c:dusts/certus_quartz", 2)),
                     List.of("neoecoae:aluminum_alloy_ingot"), 1),
             new AlloyRow("black_tungsten_alloy", List.of(new AlloyIn("c:ingots/tungsten", 1),
-                            new AlloyIn("c:ingots/aluminum_alloy", 1), new AlloyIn("c:dusts/fluix", 2)),
+                    new AlloyIn("c:ingots/aluminum_alloy", 1), new AlloyIn("c:dusts/fluix", 2)),
                     List.of("neoecoae:black_tungsten_alloy_ingot"), 1));
 
     private record SmeltFmt(String input, String output, float xp, String suffix) {}
@@ -341,7 +341,7 @@ public class TENRecipeGen implements DataProvider {
 
     /** 三段式第一段：{@code c:ores/X} → 具体粗料物品 1 + 0.33，附带 0.15 圆石副产。 */
     private void buildOreToRaw(List<CompletableFuture<?>> futures, CachedOutput cache, Path recipeDir, String mat,
-            List<String> candidates) {
+                               List<String> candidates) {
         buildChainStage(futures, cache, recipeDir, mat, "ore_raw", "c:ores/" + mat, candidates, 120, item -> {
             var outs = new JsonArray();
             outs.add(ingr("item", "static", item, 1, null));
@@ -353,7 +353,7 @@ public class TENRecipeGen implements DataProvider {
 
     /** 三段式第二段：{@code c:raw_materials/X} → 具体粉尘物品 1 + 0.8（合计 1.8 粉/粗料）。 */
     private void buildRawToDust(List<CompletableFuture<?>> futures, CachedOutput cache, Path recipeDir, String mat,
-            List<String> candidates) {
+                                List<String> candidates) {
         buildChainStage(futures, cache, recipeDir, mat, "raw_dust", "c:raw_materials/" + mat, candidates, 120, item -> {
             var outs = new JsonArray();
             outs.add(ingr("item", "static", item, 1, null));
@@ -368,7 +368,7 @@ public class TENRecipeGen implements DataProvider {
      * 原来按 9 倍写 900 是把「物料份数」当成了「操作次数」，粉碎机原生一律是 100–200 一级。
      */
     private void buildRawBlockToDust(List<CompletableFuture<?>> futures, CachedOutput cache, Path recipeDir, String mat,
-            List<String> candidates) {
+                                     List<String> candidates) {
         buildChainStage(futures, cache, recipeDir, mat, "block_dust", "c:storage_blocks/raw_" + mat, candidates, 200, item -> {
             var outs = new JsonArray();
             outs.add(ingr("item", "static", item, 9, null));
@@ -382,7 +382,7 @@ public class TENRecipeGen implements DataProvider {
      * 这里只补邻居材料（铅/锇/铀/铝/银/锌…），所以候选头一个是我们的粉时直接跳过。
      */
     private void buildIngotToDust(List<CompletableFuture<?>> futures, CachedOutput cache, Path recipeDir, String mat,
-            List<String> candidates) {
+                                  List<String> candidates) {
         if (providerOf(candidates.get(0)).equals(TEN.MOD_ID)) return;
         buildChainStage(futures, cache, recipeDir, mat, "ingot_dust", "c:ingots/" + mat, candidates, 100, item -> {
             var outs = new JsonArray();
@@ -396,8 +396,8 @@ public class TENRecipeGen implements DataProvider {
      * {@code provider_priority} 互斥变体组，加载期只留赢家（规则见 {@link #ORE_CHAIN} 说明）。
      */
     private void buildChainStage(List<CompletableFuture<?>> futures, CachedOutput cache, Path recipeDir,
-            String mat, String stage, String inputTag, List<String> candidates, int time,
-            java.util.function.Function<String, JsonArray> outputs) {
+                                 String mat, String stage, String inputTag, List<String> candidates, int time,
+                                 java.util.function.Function<String, JsonArray> outputs) {
         boolean exclusive = candidates.size() > 1;
         var group = candidates.stream().map(TENRecipeGen::providerOf).toList();
         for (String item : candidates) {
@@ -503,6 +503,7 @@ public class TENRecipeGen implements DataProvider {
         j.add("result", obj("id", mat.itemId("gear")));
         return j;
     }
+
     private JsonObject buildSmelting(String input, String result, float xp, int time) {
         var j = new JsonObject();
         j.addProperty("type", "minecraft:smelting");

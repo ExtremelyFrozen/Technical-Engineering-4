@@ -30,6 +30,12 @@ public class PulverizerBlockEntity extends RecipeMachineBlockEntity {
         return MachineType.PULVERIZER;
     }
 
+    /** 粉碎机配方带概率输出（副产物），两张副产物独特组件只放行本机。 */
+    @Override
+    public boolean supportsByproductTuning() {
+        return true;
+    }
+
     @Override
     public int inventorySize() {
         return 5;
@@ -68,7 +74,7 @@ public class PulverizerBlockEntity extends RecipeMachineBlockEntity {
             root.addChild(TENMachineBlockUIFactory.machineSlotModular(this, 4, 122, 43));
         }, root -> {
             root.addChild(TENMachineBlockUIFactory.energyGaugeModular(this, 8, 18, true));
-            root.addChild(TENMachineBlockUIFactory.progressGaugeModular(this, 68, 33, false));
+            root.addChild(TENMachineBlockUIFactory.progressGaugeModular(this, 68, 33, true));
         });
     }
 

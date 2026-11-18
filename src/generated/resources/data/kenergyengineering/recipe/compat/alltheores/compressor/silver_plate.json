@@ -12,7 +12,7 @@
       "type": "neoforge:not",
       "value": {
         "type": "neoforge:tag_empty",
-        "tag": "c:mats/silver"
+        "tag": "c:ingots/silver"
       }
     },
     {
@@ -25,7 +25,7 @@
     {
       "type": "tag",
       "form": "item",
-      "key": "c:mats/silver"
+      "key": "c:ingots/silver"
     },
     {
       "type": "static",

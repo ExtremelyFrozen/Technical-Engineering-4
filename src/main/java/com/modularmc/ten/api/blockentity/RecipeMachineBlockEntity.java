@@ -5,6 +5,9 @@ import com.modularmc.ten.api.capability.MachineFluidTank;
 import com.modularmc.ten.api.capability.MachineItemHandler;
 import com.modularmc.ten.api.recipe.FormsCombinedIngredient;
 import com.modularmc.ten.api.recipe.FormsCombinedRecipe;
+import com.modularmc.ten.common.item.upgrades.LevelupFilter;
+import com.modularmc.ten.common.item.upgrades.LevelupPress;
+import com.modularmc.ten.common.item.upgrades.UpgradeConstants;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
@@ -61,29 +64,29 @@ public abstract class RecipeMachineBlockEntity extends ProcessingMachineBlockEnt
         boolean identityChanged = !Objects.equals(prevId, nextId);
         if (identityChanged) {
             progress = 0;
-            clearLockedBatch(); // 配方身份变化时清批处理锁
+            clearLockedBatch(); // 配方身份变化时清并行运行锁
         }
 
         currentRecipe = nextRecipe;
 
         if (currentRecipe == null) {
             clearLockedBatch();
-            // 空闲时也设置 64×理论B 堆叠（装批量升级即常驻生效，无需配方运行）
+            // 空闲时也设置 64×理论B 堆叠（装并行运行升级即常驻生效，无需配方运行）
             installDynamicSlotLimit();
             return false;
         }
 
         // Lock maxProgress when recipe identity changes or no lock exists yet.
-        // Duration multiplier is captured at start to prevent per-tick drift.
+        // 总量 = 配方耗时 × 耗时倍率；速度另按 N 推进，故耗时 = 总量 ÷ N。
         if (identityChanged || !hasLockedMaxProgress()) {
-            maxProgress = Math.max(1, (int) Math.ceil(baseTickTime() * durationMultiplier));
+            maxProgress = scaledDuration(baseTickTime());
             lockMaxProgressForNewOperation(maxProgress);
         }
 
-        // ───── 批处理 B 锁定（四维计算）─────
+        // ───── 并行运行 B 锁定（四维计算）─────
         if (identityChanged || !hasLockedBatch()) {
             // New operation or no lock: calculate B_actual from all dimensions
-            int B_theory = Math.max(1, 1 + batch);
+            int B_theory = getTheoreticalBatchSize();
             int B_byItems = computeBByItems();
             int B_byFluids = computeBByFluids();
             int B_byOutput = computeBByOutput();
@@ -115,7 +118,7 @@ public abstract class RecipeMachineBlockEntity extends ProcessingMachineBlockEnt
         return true;
     }
 
-    // ───── 批处理 B 维度计算辅助 ─────
+    // ───── 并行运行 B 维度计算辅助 ─────
 
     /**
      * Computes B_byItems: maximum batch size constrained by item input availability.
@@ -215,8 +218,8 @@ public abstract class RecipeMachineBlockEntity extends ProcessingMachineBlockEnt
         var fluidOutputs = currentRecipe.allOutputFluids();
         if (itemOutputs.isEmpty() && fluidOutputs.isEmpty()) return Integer.MAX_VALUE;
 
-        int B_theory = Math.max(1, 1 + batch);
-        int maxB = Math.min(B_theory, 19);
+        int B_theory = getTheoreticalBatchSize();
+        int maxB = Math.min(B_theory, BatchMath.B_HARD_MAX);
 
         // Enumerate descending: first (largest) B that fits is the answer
         for (int candidate = maxB; candidate >= 1; candidate--) {
@@ -341,6 +344,9 @@ public abstract class RecipeMachineBlockEntity extends ProcessingMachineBlockEnt
 
                 // Worst-case per batch unit
                 int perUnitWorst = Math.multiplyExact(ing.amountOrCount(), ing.rolls());
+                // 副产物压榨把概率输出的数量 ×3，最坏产出要按同一倍率预检，
+                // 否则提交阶段会被 validatePendingOutputsFit 判为放不下而回滚。
+                if (isByproduct(ing)) perUnitWorst = Math.multiplyExact(perUnitWorst, byproductCountMultiplier());
                 if (perUnitWorst <= 0) continue;
                 long totalWorst = (long) perUnitWorst * B;
                 if (totalWorst > Integer.MAX_VALUE) return false;
@@ -408,7 +414,7 @@ public abstract class RecipeMachineBlockEntity extends ProcessingMachineBlockEnt
     // ───── Dynamic slot limit support ─────
 
     /**
-     * 重装统一的批处理倍增堆叠上限（实现在
+     * 重装统一的并行运行倍增堆叠上限（实现在
      * {@link CmMachineBlockEntity#installBatchSlotLimit()}）。
      * <p>
      * 旧版在此按 {@code slotInfo.i1..i2 / o1..o2} 自建 provider，公式与基类一致但漏掉了
@@ -438,7 +444,7 @@ public abstract class RecipeMachineBlockEntity extends ProcessingMachineBlockEnt
     public boolean cooking() {
         if (currentRecipe == null) return true;
 
-        // B > 1 时使用批处理感知的 cooking 检查
+        // B > 1 时使用并行运行感知的 cooking 检查
         if (getLockedBatchSize() > 1) {
             return checkBatchCooking();
         }
@@ -483,6 +489,7 @@ public abstract class RecipeMachineBlockEntity extends ProcessingMachineBlockEnt
 
             // Compute max possible output for this ingredient
             int maxCount = Math.multiplyExact(ing.amountOrCount(), ing.rolls());
+            if (isByproduct(ing)) maxCount = Math.multiplyExact(maxCount, byproductCountMultiplier());
             if (maxCount <= 0) continue;
 
             // Pre-compute the slot limit for this item
@@ -663,12 +670,32 @@ public abstract class RecipeMachineBlockEntity extends ProcessingMachineBlockEnt
         commitCollectedFluids(fluids);
     }
 
+    /** 副产物 = 配方里 {@code 0 < chance < 1} 的概率输出；确定产出与 catalyst 不算。 */
+    private static boolean isByproduct(FormsCombinedIngredient ing) {
+        return ing.chance() > 0 && ing.chance() < 1.0d - 1e-12;
+    }
+
+    /**
+     * 副产物概率倍率。两张独特组件整机互斥，只可能命中一张；标记每 tick 由
+     * {@code hasUpgrade(Class)} 查询，不需要持久化或复位字段。
+     */
+    private double byproductChanceMultiplier() {
+        if (hasUpgrade(LevelupPress.class)) return UpgradeConstants.BYPRODUCT_PRESS_CHANCE;
+        if (hasUpgrade(LevelupFilter.class)) return UpgradeConstants.BYPRODUCT_FILTER_CHANCE;
+        return 1.0;
+    }
+
+    /** 副产物产出量倍率，只有副产物压榨放大；预检与收集必须取同一个值。 */
+    private int byproductCountMultiplier() {
+        return hasUpgrade(LevelupPress.class) ? UpgradeConstants.BYPRODUCT_PRESS_COUNT : 1;
+    }
+
     /**
      * Collects batch outputs into the given lists without mutating the handler.
      * <p>
      * Deterministic outputs (chance ≥ 1.0): amountOrCount × B.
      * Probability outputs (chance < 1.0): B calls to genItem/genFluid,
-     * each with internal rolls.
+     * each with internal rolls; 副产物倍率只改写有效概率与产出量，不碰确定产出。
      * <p>
      * Returns false if any output has an invalid amount (overflow, zero after
      * generation, or exceeds safety limits). No handler mutation occurs on
@@ -698,11 +725,16 @@ public abstract class RecipeMachineBlockEntity extends ProcessingMachineBlockEnt
                             itemCollector.add(new ItemStack(base.getItem(), (int) totalCount));
                         }
                     } else {
-                        // Probability: B calls to genItem, each with internal rolls
+                        // 概率物品：B 次 genItem，每次内部仍按 rolls 掷骰。
+                        // 倍率只作用于概率输出：有效概率改写 + 产出量放大，预检已按放大后的最坏量算过容量。
+                        double chanceMultiplier = byproductChanceMultiplier();
+                        int countMultiplier = byproductCountMultiplier();
                         for (int b = 0; b < B; b++) {
-                            ItemStack result = ing.genItem();
+                            ItemStack result = ing.genItem(chanceMultiplier);
                             if (!result.isEmpty()) {
-                                if (result.getCount() > ABSOLUTE_MAX_STACK) return false;
+                                int scaled = Math.multiplyExact(result.getCount(), countMultiplier);
+                                if (scaled > ABSOLUTE_MAX_STACK) return false;
+                                if (countMultiplier != 1) result.setCount(scaled);
                                 itemCollector.add(result);
                             }
                         }
@@ -716,12 +748,15 @@ public abstract class RecipeMachineBlockEntity extends ProcessingMachineBlockEnt
                         if (totalAmount > Integer.MAX_VALUE) return false;
                         fluidCollector.add(new FluidStack(base.getFluid(), (int) totalAmount));
                     } else {
-                        // Probability fluid: B calls to genFluid
+                        // 概率流体：B 次 genFluid，倍率与物品概率输出同源。
+                        double chanceMultiplier = byproductChanceMultiplier();
+                        int countMultiplier = byproductCountMultiplier();
                         for (int b = 0; b < B; b++) {
-                            FluidStack result = ing.genFluid();
+                            FluidStack result = ing.genFluid(chanceMultiplier);
                             if (!result.isEmpty()) {
-                                if (result.getAmount() < 0) return false;
-                                fluidCollector.add(result);
+                                int scaled = Math.multiplyExact(result.getAmount(), countMultiplier);
+                                if (scaled < 0) return false;
+                                fluidCollector.add(new FluidStack(result.getFluid(), scaled));
                             }
                         }
                     }

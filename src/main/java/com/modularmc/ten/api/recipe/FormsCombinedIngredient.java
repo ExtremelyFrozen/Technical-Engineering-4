@@ -286,30 +286,46 @@ public class FormsCombinedIngredient {
 
     // Output helpers
     public ItemStack genItem() {
-        return genItem(Math::random);
+        return genItem(1.0);
+    }
+
+    /** 按概率倍率生成输出：独特组件只给 {@code chance < 1} 的概率输出传非 1 倍率。 */
+    public ItemStack genItem(double chanceMultiplier) {
+        return genItem(chanceMultiplier, Math::random);
+    }
+
+    public ItemStack genItem(java.util.function.DoubleSupplier random) {
+        return genItem(1.0, random);
+    }
+
+    /** 有效概率 = 原 chance × 倍率，钳到 [0, 1]；非法倍率退回原概率，不影响既有配方。 */
+    public double effectiveChance(double chanceMultiplier) {
+        if (!Double.isFinite(chanceMultiplier) || chanceMultiplier < 0) return chance;
+        return Math.min(1.0, chance * chanceMultiplier);
     }
 
     /**
      * 生成一个带可控随机源的输出物品。
-     * 执行 {@code rolls} 次独立伯努利试验，每次成功概率 {@code chance}；
-     * 输出数量 = 成功次数 × {@code amountOrCount}。
+     * 执行 {@code rolls} 次独立伯努利试验，每次成功概率为
+     * {@code effectiveChance(chanceMultiplier)}；输出数量 = 成功次数 × {@code amountOrCount}。
      * 总数超过 {@link Item#ABSOLUTE_MAX_STACK_SIZE}（99）时 fail-fast 抛异常，
      * 而非静默截断——配方定义必须修正以避免物品丢失。
      *
      * @param random 每次试验的 [0, 1) 双精度随机源
      * @return 生成的 ItemStack（可能为空）
      */
-    public ItemStack genItem(java.util.function.DoubleSupplier random) {
+    public ItemStack genItem(double chanceMultiplier, java.util.function.DoubleSupplier random) {
+        double effective = effectiveChance(chanceMultiplier);
         if (rolls <= 1) {
             if (amountOrCount > Item.ABSOLUTE_MAX_STACK_SIZE) {
                 throw new IllegalStateException(
                         "genItem: amountOrCount=" + amountOrCount + " exceeds ABSOLUTE_MAX_STACK_SIZE=" + Item.ABSOLUTE_MAX_STACK_SIZE + " for key=" + key);
             }
-            return random.getAsDouble() < chance ? symbolItem() : ItemStack.EMPTY;
+            return random.getAsDouble() < effective ? symbolItem() : ItemStack.EMPTY;
         }
         int successCount = 0;
         for (int i = 0; i < rolls; i++) {
-            if (random.getAsDouble() < chance) successCount++;
+            if (random.getAsDouble() < effective) successCount++;
         }
         if (successCount == 0) return ItemStack.EMPTY;
         int totalCount = Math.multiplyExact(successCount, amountOrCount);
@@ -328,11 +344,16 @@ public class FormsCombinedIngredient {
     }
 
     public FluidStack genFluid() {
+        return genFluid(1.0);
+    }
+
+    /** 流体概率输出同样接受倍率；rolls > 1 的流体输出在 create() 阶段已被拒绝。 */
+    public FluidStack genFluid(double chanceMultiplier) {
         if (rolls > 1) {
             throw new IllegalStateException(
                     "genFluid: rolls must be 1 for fluid output, but got rolls=" + rolls + " for key=" + key);
         }
-        return Math.random() < chance ? symbolFluid() : FluidStack.EMPTY;
+        return Math.random() < effectiveChance(chanceMultiplier) ? symbolFluid() : FluidStack.EMPTY;
     }
 
     public FluidStack symbolFluid() {

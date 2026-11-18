@@ -1,0 +1,9 @@
+{
+  "type": "neoforge:add_features",
+  "biomes": "#minecraft:is_overworld",
+  "features": [
+    "kenergyengineering:ore_nickel",
+    "kenergyengineering:ore_nickel_scatter"
+  ],
+  "step": "underground_ores"
+}

@@ -1,0 +1,42 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "immersiveengineering"
+    },
+    {
+      "type": "neoforge:not",
+      "value": {
+        "type": "neoforge:tag_empty",
+        "tag": "c:ingots/aluminum"
+      }
+    },
+    {
+      "type": "kenergyengineering:compat_enabled",
+      "source": "immersiveengineering"
+    }
+  ],
+  "type": "kenergyengineering:compressor",
+  "inputs": [
+    {
+      "type": "tag",
+      "form": "item",
+      "key": "c:ingots/aluminum"
+    },
+    {
+      "type": "static",
+      "chance": 0.0,
+      "form": "item",
+      "key": "kenergyengineering:mould_string"
+    }
+  ],
+  "outputs": [
+    {
+      "type": "static",
+      "count": 2,
+      "form": "item",
+      "key": "immersiveengineering:wire_aluminum"
+    }
+  ],
+  "time": 100
+}

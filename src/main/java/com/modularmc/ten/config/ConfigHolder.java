@@ -53,7 +53,7 @@ public final class ConfigHolder {
         };
     }
 
-    // ── Energy Unit config ────────────────────────────────────────────
+    // ── Energy Module config ────────────────────────────────────────────
 
     public static TENConfig.EnergyUnitConfig energyUnit() {
         return TENConfig.ENERGY_UNIT;

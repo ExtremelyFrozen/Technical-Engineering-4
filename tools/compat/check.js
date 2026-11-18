@@ -14,10 +14,33 @@ const MACHINE_TYPES = new Set([
 // ── 1. 输入签名歧义（同 RecipeSignature#claim）─────────────────────────
 // 变体组豁免：provider_priority 的同一候选组内每个模组各一条，加载期只留赢家，不算冲突；
 // 但「同一组里同模组出现两次」「同一输入挂两条不同的组」「变体组与无条件配方撞车」仍然报。
+// 条件分流豁免：mod_loaded(X) 与 not(mod_loaded(X)) 成对出现时两条互斥，属于设计内重复；
+// 两条能同时成立（含任一方无条件）仍是冲突。
 const claims = new Map();
 const chainGroups = new Map();
+const sigConds = new Map();
 const duplicates = [];
 const recipes = [];
+
+// 负侧可能是 mod_loaded，也可能是 and(mod_loaded, compat_enabled)——后者表达「该来源可用」，照样记进负集合
+const collectMod = (c, set) => {
+  if (!c || !c.type) return;
+  if (c.type === "neoforge:mod_loaded" && c.modid) set.add(c.modid);
+  else if (c.type === "neoforge:and" && Array.isArray(c.values)) c.values.forEach(v => collectMod(v, set));
+};
+const condOf = j => {
+  const on = new Set(), off = new Set();
+  for (const c of j["neoforge:conditions"] || []) {
+    if (!c) continue;
+    if (c.type === "neoforge:mod_loaded") collectMod(c, on);
+    if (c.type === "neoforge:not" && c.value) collectMod(c.value, off);
+  }
+  return { on, off };
+};
+const disjoint = (a, b) => { for (const x of a) if (b.has(x)) return false; return true; };
+// 能同时成立即冲突：只有「一条要 X、另一条要非 X」才算互斥
+const canCoexist = (a, b) => disjoint(a.on, b.off) && disjoint(b.on, a.off);
+const describe = c => [...[...c.on].map(m => "+" + m), ...[...c.off].map(m => "-" + m)].join("") || "无条件";
 
 for (const root of [MAIN, GEN]) {
   for (const file of walk(path.join(root, "kenergyengineering/recipe"))) {
@@ -37,13 +60,19 @@ for (const root of [MAIN, GEN]) {
     if (!prio) {
       const owner = chainGroups.get(sig);
       if (owner) duplicates.push(`无条件配方与互斥变体组抢同一输入 ${sig}\n      ${owner}\n      ${who}`);
-      if (claims.has(sig) && claims.get(sig) !== who) {
-        duplicates.push(`输入签名重复 ${sig}\n      ${claims.get(sig)}\n      ${who}`);
+      const key = condOf(j);
+      const list = sigConds.get(sig) || [];
+      for (const prev of list) {
+        if (canCoexist(prev.key, key)) {
+          duplicates.push(`输入签名重复且两条能同时生效 ${sig}（${describe(prev.key)} / ${describe(key)}）\n      ${prev.who}\n      ${who}`);
+          break;
+        }
       }
-      if (!claims.has(sig)) claims.set(sig, who);
+      list.push({ key, who });
+      sigConds.set(sig, list);
       continue;
     }
-    if (claims.has(sig)) duplicates.push(`互斥变体组与无条件配方抢同一输入 ${sig}\n      ${claims.get(sig)}\n      ${who}`);
+    if (sigConds.has(sig)) duplicates.push(`互斥变体组与条件分流行抢同一输入 ${sig}\n      ${sigConds.get(sig)[0].who}\n      ${who}`);
     const group = prio.candidates.join("+");
     const prevGroup = chainGroups.get(sig);
     if (prevGroup !== undefined && prevGroup !== group) {

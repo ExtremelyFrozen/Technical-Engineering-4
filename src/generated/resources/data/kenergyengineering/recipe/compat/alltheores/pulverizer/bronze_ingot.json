@@ -9,14 +9,10 @@
       "modid": "enderio"
     },
     {
-      "type": "neoforge:mod_loaded",
-      "modid": "mekanism"
-    },
-    {
       "type": "neoforge:not",
       "value": {
         "type": "neoforge:tag_empty",
-        "tag": "c:mats/bronze"
+        "tag": "c:ingots/bronze"
       }
     },
     {
@@ -29,7 +25,7 @@
     {
       "type": "tag",
       "form": "item",
-      "key": "c:mats/bronze"
+      "key": "c:ingots/bronze"
     }
   ],
   "outputs": [

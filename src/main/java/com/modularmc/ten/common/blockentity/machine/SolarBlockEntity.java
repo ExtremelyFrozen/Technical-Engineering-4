@@ -3,6 +3,7 @@ package com.modularmc.ten.common.blockentity.machine;
 import com.modularmc.ten.api.blockentity.EngineBlockEntity;
 import com.modularmc.ten.api.option.IngredientType;
 import com.modularmc.ten.api.option.MachineType;
+import com.modularmc.ten.common.blockentity.MatchFuel.FuelProfile;
 import com.modularmc.ten.common.gui.TENMachineBlockUIFactory;
 
 import net.minecraft.core.BlockPos;
@@ -16,10 +17,16 @@ import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
 
 public class SolarBlockEntity extends EngineBlockEntity {
 
+    /** 光合引擎额定产能（FE/t），与 setEfficiency 一致。 */
+    public static final int BASE_GENERATION_RATE = 10;
+
+    /** 晴天一份「光照燃料」的总能量（FE）。 */
+    private static final int SOLAR_CLEAR_SKY_BUDGET = 600;
+
     public SolarBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
         setCapacity(kFE(80));
-        setEfficiency(10);
+        setEfficiency(BASE_GENERATION_RATE);
     }
 
     @Override
@@ -61,11 +68,27 @@ public class SolarBlockEntity extends EngineBlockEntity {
         });
     }
 
+    /**
+     * 光合引擎没有燃料槽，产能由天空条件续杯而非消耗物品，
+     * 并行运行对它没有「并行燃烧几份」的语义，因此不开放并行运行。
+     */
     @Override
-    public int matchFuel(ItemStack stack, boolean simulate) {
+    public boolean supportsBatch() {
+        return false;
+    }
+
+    /** 晴天一份「光照燃料」的总能量（FE）。 */
+    @Override
+    public FuelProfile fuelProfile(ItemStack stack) {
         if (level != null && level.canSeeSky(worldPosition.above()) && level.isDay() && !level.isRaining()) {
-            return 600;
+            return FuelProfile.of(SOLAR_CLEAR_SKY_BUDGET, BASE_GENERATION_RATE, 1.0);
         }
-        return 0;
+        return FuelProfile.EMPTY;
+    }
+
+    /** 光合引擎不烧物品，燃料由天空条件续杯，不参与 {@code engine_fuel} 配方匹配。 */
+    @Override
+    public String fuelEngineId() {
+        return "solar";
     }
 }

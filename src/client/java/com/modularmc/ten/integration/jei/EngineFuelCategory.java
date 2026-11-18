@@ -1,7 +1,7 @@
 package com.modularmc.ten.integration.jei;
 
 import com.modularmc.ten.TENConstants;
-import com.modularmc.ten.common.blockentity.EngineFuelRecipe;
+import com.modularmc.ten.common.blockentity.EngineFuelDisplay;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -23,7 +23,7 @@ import mezz.jei.api.recipe.category.IRecipeCategory;
  * <p>
  * 1.21.1 适配：GuiGraphics 替代 GuiGraphicsExtractor，ResourceLocation 替代 Identifier。
  */
-public class EngineFuelCategory implements IRecipeCategory<EngineFuelRecipe> {
+public class EngineFuelCategory implements IRecipeCategory<EngineFuelDisplay> {
 
     private static final int WIDTH = 150;
     private static final int HEIGHT = 50;
@@ -42,7 +42,7 @@ public class EngineFuelCategory implements IRecipeCategory<EngineFuelRecipe> {
     private static final int TEXT_LINE2_Y = 21;
     private static final int TEXT_LINE3_Y = 34;
 
-    private final RecipeType<EngineFuelRecipe> recipeType;
+    private final RecipeType<EngineFuelDisplay> recipeType;
     private final Component title;
     private final IDrawable icon;
     private final IDrawable background;
@@ -51,7 +51,7 @@ public class EngineFuelCategory implements IRecipeCategory<EngineFuelRecipe> {
     private final IDrawable fuelGaugeFill;
 
     public EngineFuelCategory(IGuiHelper helper, ResourceLocation categoryId,
-                              RecipeType<EngineFuelRecipe> type, ItemStack iconStack,
+                              RecipeType<EngineFuelDisplay> type, ItemStack iconStack,
                               Component title) {
         this.recipeType = type;
         this.title = title;
@@ -63,7 +63,7 @@ public class EngineFuelCategory implements IRecipeCategory<EngineFuelRecipe> {
     }
 
     @Override
-    public RecipeType<EngineFuelRecipe> getRecipeType() { return recipeType; }
+    public RecipeType<EngineFuelDisplay> getRecipeType() { return recipeType; }
 
     @Override
     public Component getTitle() { return title; }
@@ -78,21 +78,30 @@ public class EngineFuelCategory implements IRecipeCategory<EngineFuelRecipe> {
     public IDrawable getIcon() { return icon; }
 
     @Override
-    public void setRecipe(IRecipeLayoutBuilder builder, EngineFuelRecipe recipe, IFocusGroup focuses) {
+    public void setRecipe(IRecipeLayoutBuilder builder, EngineFuelDisplay recipe, IFocusGroup focuses) {
         var slot = builder.addSlot(RecipeIngredientRole.INPUT, INPUT_SLOT_X, INPUT_SLOT_Y)
                 .setBackground(inputSlot, -1, -1)
                 .addItemStacks(recipe.ingredients());
 
         slot.addRichTooltipCallback((view, tooltip) -> {
-            tooltip.add(Component.translatable("kenergyengineering.jei.base_output", recipe.fuelBudget()));
-            tooltip.add(Component.translatable("kenergyengineering.jei.base_rate", recipe.baseRate()));
+            tooltip.add(Component.translatable("kenergyengineering.jei.base_rate", recipe.rate()));
+            tooltip.add(Component.translatable("kenergyengineering.jei.engine_rate", recipe.baseRate()));
+            tooltip.add(Component.translatable("kenergyengineering.jei.rate_multiplier", formatMultiplier(recipe.rateMultiplier())));
             tooltip.add(Component.translatable("kenergyengineering.jei.duration_ticks", recipe.durationTicks()));
             tooltip.add(Component.translatable("kenergyengineering.jei.total_energy", recipe.baseGeneratedEnergy()));
         });
     }
 
+    /** 倍率显示：整数不补小数位，其余保留两位并去掉尾随 0。 */
+    private static String formatMultiplier(double multiplier) {
+        if (Math.abs(multiplier - Math.rint(multiplier)) < 1.0E-6) {
+            return String.valueOf((long) Math.rint(multiplier));
+        }
+        return String.format(java.util.Locale.ROOT, "%.2f", multiplier).replaceAll("0+$", "").replaceAll("\\.$", "");
+    }
+
     @Override
-    public void draw(EngineFuelRecipe recipe, IRecipeSlotsView slotsView, GuiGraphics graphics, double mouseX, double mouseY) {
+    public void draw(EngineFuelDisplay recipe, IRecipeSlotsView slotsView, GuiGraphics graphics, double mouseX, double mouseY) {
         background.draw(graphics);
 
         fuelGaugeBg.draw(graphics, FUEL_GAUGE_X, FUEL_GAUGE_Y);
@@ -101,7 +110,7 @@ public class EngineFuelCategory implements IRecipeCategory<EngineFuelRecipe> {
         var font = Minecraft.getInstance().font;
         int textColor = 0xFF404040;
 
-        graphics.drawString(font, Component.translatable("kenergyengineering.jei.base_rate_short", recipe.baseRate()),
+        graphics.drawString(font, Component.translatable("kenergyengineering.jei.base_rate_short", recipe.rate()),
                 TEXT_X, TEXT_LINE1_Y, textColor, false);
         graphics.drawString(font, Component.translatable("kenergyengineering.jei.duration_short", recipe.durationTicks()),
                 TEXT_X, TEXT_LINE2_Y, textColor, false);

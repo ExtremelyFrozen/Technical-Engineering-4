@@ -1,0 +1,21 @@
+{
+	"type": "minecraft:crafting_shaped",
+	"pattern": [" B ", "DAD", " C "],
+	"key": {
+		"A": {
+			"item": "kenergyengineering:redstone_ai"
+		},
+		"B": {
+			"item": "minecraft:piston"
+		},
+		"C": {
+			"item": "minecraft:iron_block"
+		},
+		"D": {
+			"item": "kenergyengineering:redstone_conductor"
+		}
+	},
+	"result": {
+		"id": "kenergyengineering:press_levelup"
+	}
+}

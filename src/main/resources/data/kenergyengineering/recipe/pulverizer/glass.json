@@ -1,0 +1,18 @@
+{
+	"type": "kenergyengineering:pulverizer",
+	"inputs": [
+		{
+			"form": "item",
+			"type": "tag",
+			"key": "c:glass_blocks"
+		}
+	],
+	"outputs": [
+		{
+			"form": "item",
+			"type": "static",
+			"key": "minecraft:sand"
+		}
+	],
+	"time": 120
+}

@@ -1,0 +1,11 @@
+{
+  "type": "kenergyengineering:engine_fuel",
+  "duration": 1067,
+  "engines": [
+    "extractor"
+  ],
+  "ingredient": {
+    "item": "minecraft:charcoal"
+  },
+  "rate_multiplier": 1.0
+}
