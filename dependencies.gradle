@@ -4,7 +4,7 @@ dependencies {
     testImplementation(libs.testframework.get())
 
     // LDLIB 2：活动前置，由 neoforge.mods.toml 声明 required 并由玩家自行安装，不做 jarJar 内嵌
-    api(forge.ldlib2.get())
+    api(forge.ldlib2)
 
     // Registrate
     jarJar(api(forge.registrate.get()))
