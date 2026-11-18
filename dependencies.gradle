@@ -10,9 +10,8 @@ dependencies {
     // 是事实上的硬前置。原先只靠 LDLib2 的二次 jarJar 传递（KER → ldlib → taffy 三层嵌套）：
     // 玩家装更高版本 LDLib2 时，若上游改包名或去掉内嵌，KER 会在加载核心 BE 时
     // NoClassDefFoundError，且报错栈指向 KER 而非 LDLib2。自行 jarJar 把版本契约收回本仓库。
-    // compileOnly 保留编译期可见性，dev 侧仍由 LDLib2 的嵌套 jarJar 提供，避免双份类。
-    compileOnly(forge.taffy)
-    jarJar(forge.taffy.get())
+    // jarJar(api(...)) 会把依赖暴露到编译期，无需再单独 compileOnly，避免重复声明。
+    jarJar(api(forge.taffy.get()))
     compileOnly(forge.yoga)
 
     // Registrate
