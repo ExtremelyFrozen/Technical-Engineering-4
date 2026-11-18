@@ -1,0 +1,21 @@
+{
+	"type": "minecraft:crafting_shaped",
+	"pattern": [" B ", "DAD", " C "],
+	"key": {
+		"A": {
+			"item": "kenergyengineering:hydraulic_widget"
+		},
+		"B": {
+			"item": "minecraft:wheat_seeds"
+		},
+		"C": {
+			"item": "minecraft:vine"
+		},
+		"D": {
+			"item": "minecraft:honey_block"
+		}
+	},
+	"result": {
+		"id": "kenergyengineering:resprout_levelup"
+	}
+}

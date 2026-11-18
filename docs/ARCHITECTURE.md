@@ -414,7 +414,11 @@ FE / 流体 / 堆叠容量 = 基础容量 × B
   另有「升级：光合供能抑制」（只压功率 -20%，并注能）、
   「升级：作用范围扩展」（半径或可调上限，不改能量学）。
 - **独特组件**（`SPECIALIZATION`）：提供模式 / 产出特化，整机仅一个生效，`validUpgrade()` 拒绝第二张。
-  七张专用卡都属于此类；`hasUpgrade(Class)` 只认本 tick 生效的那张，旧档里多插的独特组件不会误触发。
+  十一张专用卡都属于此类；`hasUpgrade(Class)` 只认本 tick 生效的那张，旧档里多插的独特组件不会误触发。
+  熔炼机三张（配方模式 / 经验流体）、采矿场三张（产出模式）、信标一张（药水等级）、
+  粉碎机两张（副产物压榨 / 筛选，互斥）、农场两张（奇异催生 / 幼芽复种，互斥）。
+  后四张按能力声明放行：`supportsByproductTuning()` 与 `supportsHarvestSpecialization()`，
+  不往 `isType()` 的机型字符串分支里继续塞条目。
 
 结算入口是 `CmMachineBlockEntity.applyUpgradeEffects()`，每 tick 由 `doBaseData()` 在
 `resetUpgradeEffects()` 之后调用一次：先筛 `canApply` 与 `maxPerMachine`，再按类别分组，
@@ -447,6 +451,11 @@ tooltip 由 `UpgradeTooltipFormatter` 生成，只写升级组件自身带来的
 
 例外与现状：
 
+- 粉碎机的副产物倍率只作用于 `0 < chance < 1` 的概率输出；确定性产出与催化剂不受影响。
+  `collectBatchOutputs` 用有效概率掷骰并按压榨倍率放大产出量，`canFitOutputs` /
+  `canFitOutputsForBatch` 取同一倍率算最坏容量，保证快照-模拟-提交一致。
+- 农场的催生按固定生长阶段推进（不消耗骨粉、不产生掉落）；复种不消耗种子槽物品，
+  只铺到四邻的空耕地。两张卡都只写 marker，收获路径通过 `hasUpgrade(Class)` 查询。
 - 「升级：星辉能量传输」归增益组件但 `modifiers()` 为空，能量限速取消后暂无可观察效果，二期接入缓冲 / 传输维度。
 - 范围类机器仍以 `getCurrentRadius() > 0` 作为「升级：作用范围扩展」的安装门禁。
   例外是**方块破坏器与方块成型器**：工作范围已改由面板 XYZ 决定，`LevelupRg` 不再

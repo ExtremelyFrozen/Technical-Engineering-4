@@ -105,6 +105,24 @@ public interface IUpgradableMachine {
         return false;
     }
 
+    /**
+     * 该机器是否消费「副产物」维度（配方里 {@code chance < 1} 的概率输出）。
+     * <p>
+     * 粉碎机返回 true；副产物压榨 / 副产物筛选两张独特组件以此放行，
+     * 避免把机型字符串塞进 {@code isType} 的分支表。
+     */
+    default boolean supportsByproductTuning() {
+        return false;
+    }
+
+    /**
+     * 该机器是否有「收获」动作（农场管理器返回 true）。
+     * 奇异催生 / 幼芽复种两张独特组件以此放行。
+     */
+    default boolean supportsHarvestSpecialization() {
+        return false;
+    }
+
     // ───── Recipe mode (Blast/Smoke) ─────
 
     /** Recipe mode: vanilla furnace (smelting). */

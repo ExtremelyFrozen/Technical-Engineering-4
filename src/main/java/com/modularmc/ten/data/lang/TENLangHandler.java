@@ -110,9 +110,9 @@ public final class TENLangHandler {
         // 完成一次配方的耗电是功率与耗时的乘积，作为派生量不设词条。
         // 数值写法：运行速度是自然数增量（+1 / +2 / +3），其余倍率是整数 xN 或百分比（+20% / -25%）。
         add(provider, "upgrade_tip.batch.add", "Parallel runs %s", "并行运行 %s");
-        add(provider, "upgrade_tip.photosyn.fe", "%s FE/t photosynthetic power.", "%s FE/t光合供能。");
-        add(provider, "upgrade_tip.range.add", "%s%% initial range", "%s%%初始作用范围");
-        add(provider, "upgrade_tip.potion.amplifier", "%s potion effect level.", "%s药水效果等级。");
+        add(provider, "upgrade_tip.photosyn.fe", "Photosynthetic power %s FE/t.", "光合供能 %s FE/t");
+        add(provider, "upgrade_tip.range.add", "Range %s%%", "作用范围 %s%%");
+        add(provider, "upgrade_tip.potion.amplifier", "Potion effect level %s.", "药水效果等级 %s");
         add(provider, "upgrade_tip.unknown.0", "Unknown upgrade", "未知升级组件");
         add(provider, "upgrade_tip.global.multiply", "Global multiplier x%s", "全局倍率 x%s");
         add(provider, "upgrade_tip.run.speed", "Run speed %s", "运行速度 %s");
@@ -140,7 +140,7 @@ public final class TENLangHandler {
         add(provider, "mineral_levelup.1", "Mining mode: Mineral", "开采模式修改为矿物");
         add(provider, "knowledge_levelup.0", "In smelter:", "在熔炼机中：");
         add(provider, "knowledge_levelup.1", "Each recipe produces XP fluid based on cooking time", "每次处理配方按熔炼时间产出经验流体");
-        add(provider, "knowledge_levelup.2", "10 ticks → 1 mB Liquid XP (per unit)", "每10 tick产1 mB液态经验（每单位）");
+        add(provider, "knowledge_levelup.2", "XP rate 1 mB per 10 ticks (per unit)", "经验产率 1 mB/10 tick（每单位）");
         add(provider, "efficiency_levelup.0", "In machines:", "在机器中：");
         add(provider, "efficiency_levelup_2.0", "In machines:", "在机器中：");
         add(provider, "efficiency_levelup_3.0", "In machines:", "在机器中：");
@@ -155,6 +155,18 @@ public final class TENLangHandler {
         add(provider, "speed_levelup_3.0", "In machines:", "在机器中：");
         add(provider, "stream_levelup.0", "In machines:", "在机器中：");
         add(provider, "stream_levelup.1", "Energy transfer upgrade, pending redesign", "能量传输升级，待重新定义");
+        add(provider, "press_levelup.0", "In pulverizer:", "在粉碎机中：");
+        add(provider, "press_levelup.1", "Byproduct chance x50%", "副产概率 ×50%");
+        add(provider, "press_levelup.2", "Byproduct output x3", "副产物产出量 ×3");
+        add(provider, "filter_levelup.0", "In pulverizer:", "在粉碎机中：");
+        add(provider, "filter_levelup.1", "Byproduct chance x200% (capped at 100%)", "副产概率 ×200%（上限 100%）");
+        add(provider, "oddgrowth_levelup.0", "In farm manager:", "在农场管理器中：");
+        add(provider, "oddgrowth_levelup.1", "Growth targets 1 random crop in 8 neighbours", "催生目标 周围8格随机1株作物");
+        add(provider, "oddgrowth_levelup.2", "Growth ticks +1", "生长刻度 +1");
+        add(provider, "resprout_levelup.0", "In farm manager:", "在农场管理器中：");
+        add(provider, "resprout_levelup.1", "Reseed chance +25%", "蔓延概率 +25%");
+        add(provider, "resprout_levelup.2", "Reseed targets 4 adjacent empty farmland", "蔓延目标 周围4格空耕地");
+        add(provider, "resprout_levelup.3", "Seed consumption none", "种子消耗 无");
     }
 
     private static void addSpannerInfo(RegistrateLangProvider provider) {

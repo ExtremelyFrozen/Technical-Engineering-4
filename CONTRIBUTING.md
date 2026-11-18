@@ -301,6 +301,19 @@ REGISTRATE.addDataGenerator(ProviderType.LANG, TENLangHandler::init);
 
 不要创建新的 `GatherDataEvent` 订阅者——在已有 `DataGenerators` 类中扩展即可。
 
+#### 物品贴图脚本
+
+四张独特组件升级卡（副产物压榨 / 副产物筛选 / 奇异催生 / 幼芽复种）的 16x16 贴图由
+`tools/gen_upgrade_textures.py` 生成：
+
+```bash
+python tools/gen_upgrade_textures.py --preview   # 生成四张 PNG，并在 build/ 输出放大对比图
+```
+
+脚本从 `mineral_levelup.png` 逐像素继承外壳的立体边框（8 阶灰阶映射到主题色系），
+中心图案用字符画声明。改图案请改脚本里的 `art` 字符画，不要直接改 PNG——
+手改会在下次重新生成时被覆盖，也容易让四张卡的边框结构漂移。
+
 ### 本地化
 
 - **英文**通过 `.lang("English Name")` 直接在注册链中设置。

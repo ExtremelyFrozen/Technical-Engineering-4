@@ -135,6 +135,10 @@ public class TENItems {
     public static final ItemEntry<? extends UpgradeItem> ICE_LEVELUP = upgrade("ice_levelup", "Upgrade: Frozen Soil Drilling", "升级：地下冻土开采", p -> new LevelupIce());
     public static final ItemEntry<? extends UpgradeItem> MAGMA_LEVELUP = upgrade("magma_levelup", "Upgrade: Mantle Drilling", "升级：地幔深层钻井", p -> new LevelupMagma());
     public static final ItemEntry<? extends UpgradeItem> MINERAL_LEVELUP = upgrade("mineral_levelup", "Upgrade: Mineral Detection", "升级：矿物探测仪器", p -> new LevelupMineral());
+    public static final ItemEntry<? extends UpgradeItem> PRESS_LEVELUP = upgrade("press_levelup", "Upgrade: Byproduct Press", "升级：副产物压榨", p -> new LevelupPress());
+    public static final ItemEntry<? extends UpgradeItem> FILTER_LEVELUP = upgrade("filter_levelup", "Upgrade: Byproduct Filter", "升级：副产物筛选", p -> new LevelupFilter());
+    public static final ItemEntry<? extends UpgradeItem> ODDGROWTH_LEVELUP = upgrade("oddgrowth_levelup", "Upgrade: Odd Growth", "升级：奇异催生", p -> new LevelupOddGrowth());
+    public static final ItemEntry<? extends UpgradeItem> RESPROUT_LEVELUP = upgrade("resprout_levelup", "Upgrade: Sprout Reseed", "升级：幼芽复种", p -> new LevelupReseed());
     public static final ItemEntry<? extends UpgradeItem> EFFICIENCY_LEVELUP = upgrade("efficiency_levelup", "Upgrade: Flux Efficiency Circuit I", "升级：节能回路 I", p -> new LevelupEfficiency(1));
     public static final ItemEntry<? extends UpgradeItem> EFFICIENCY_LEVELUP_2 = upgrade("efficiency_levelup_2", "Upgrade: Flux Efficiency Circuit II", "升级：节能回路 II", p -> new LevelupEfficiency(2));
     public static final ItemEntry<? extends UpgradeItem> EFFICIENCY_LEVELUP_3 = upgrade("efficiency_levelup_3", "Upgrade: Flux Efficiency Circuit III", "升级：节能回路 III", p -> new LevelupEfficiency(3));

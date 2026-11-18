@@ -59,6 +59,22 @@ public final class UpgradeConstants {
     /** Potion effect amplifier boost. */
     public static final int POTION_AMPLIFIER = 1;
 
+    // ── 独特组件·粉碎机副产物 ──────────────────────────────────────
+    /** 副产物压榨：概率倍率（0.50 = 减半）与产出量倍率（期望 ×1.5）。 */
+    public static final double BYPRODUCT_PRESS_CHANCE = 0.50;
+    public static final int BYPRODUCT_PRESS_COUNT = 3;
+    /** 副产物筛选：概率倍率（单次概率钳到 100%）。 */
+    public static final double BYPRODUCT_FILTER_CHANCE = 2.00;
+
+    // ── 独特组件·农场管理器收获期 ───────────────────────────────────
+    /** 奇异催生：从周围 8 格中随机选中的作物株数与每株推进的生长刻度。 */
+    public static final int FARM_GROW_TARGETS = 1;
+    public static final int FARM_GROW_AGE_STEPS = 1;
+    /** 幼芽复种：每次收获触发蔓延的概率。 */
+    public static final double FARM_RESEED_CHANCE = 0.25;
+    /** 幼芽复种：四邻偏移（同层，上下左右）。 */
+    public static final int[][] FARM_RESEED_OFFSETS = { { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 } };
+
     public static int index(int level, int length) {
         return Math.max(0, Math.min(level - 1, length - 1));
     }

@@ -1,18 +1,18 @@
 {
 	"type": "minecraft:crafting_shaped",
-	"pattern": ["EBE", "DAD", "EBE"],
+	"pattern": [" B ", "DAD", " C "],
 	"key": {
 		"A": {
-			"item": "kenergyengineering:powered_levelup"
+			"item": "kenergyengineering:redstone_ai"
 		},
 		"B": {
-			"tag": "c:gears/tin"
+			"item": "minecraft:shulker_shell"
 		},
-		"D": {
+		"C": {
 			"tag": "c:glass_blocks/colorless"
 		},
-		"E": {
-			"item": "minecraft:shulker_shell"
+		"D": {
+			"tag": "c:gears/tin"
 		}
 	},
 	"result": {

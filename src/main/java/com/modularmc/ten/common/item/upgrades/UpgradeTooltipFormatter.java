@@ -87,6 +87,22 @@ public final class UpgradeTooltipFormatter {
 
         } else if (item instanceof LevelupBlast || item instanceof LevelupSmoke || item instanceof LevelupIce || item instanceof LevelupMagma || item instanceof LevelupMineral || item instanceof LevelupStream) {
             addPureText(lines, path, 1);
+
+        } else if (item instanceof LevelupPress) {
+            addPureText(lines, path, 1);
+            addPureText(lines, path, 2);
+
+        } else if (item instanceof LevelupFilter) {
+            addPureText(lines, path, 1);
+
+        } else if (item instanceof LevelupOddGrowth) {
+            addPureText(lines, path, 1);
+            addPureText(lines, path, 2);
+
+        } else if (item instanceof LevelupReseed) {
+            addPureText(lines, path, 1);
+            addPureText(lines, path, 2);
+            addPureText(lines, path, 3);
         }
     }
 
@@ -143,6 +159,10 @@ public final class UpgradeTooltipFormatter {
         if (item instanceof LevelupParallel) return "parallel_levelup";
         if (item instanceof LevelupDuration) return "duration_levelup";
         if (item instanceof LevelupSpeed) return "speed_levelup";
+        if (item instanceof LevelupPress) return "press_levelup";
+        if (item instanceof LevelupFilter) return "filter_levelup";
+        if (item instanceof LevelupOddGrowth) return "oddgrowth_levelup";
+        if (item instanceof LevelupReseed) return "resprout_levelup";
         return item.getClass().getSimpleName();
     }
 
