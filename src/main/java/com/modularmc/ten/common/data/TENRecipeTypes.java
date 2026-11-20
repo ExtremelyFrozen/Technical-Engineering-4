@@ -23,13 +23,16 @@ public class TENRecipeTypes {
     public static final DeferredHolder<RecipeSerializer<?>, FormsCombinedRecipeSerializer<FormsCombinedRecipe>> PSIONICANT_S;
     public static final DeferredHolder<RecipeSerializer<?>, FormsCombinedRecipeSerializer<FormsCombinedRecipe>> INDUCTION_FURNACE_S;
     public static final DeferredHolder<RecipeSerializer<?>, FormsCombinedRecipeSerializer<FormsCombinedRecipe>> REFINER_S;
+    public static final DeferredHolder<RecipeSerializer<?>, FormsCombinedRecipeSerializer<FormsCombinedRecipe>> DISTILLATOR_S;
+
 
     public static final DeferredHolder<RecipeType<?>, RecipeType<FormsCombinedRecipe>> PULVERIZER_T;
     public static final DeferredHolder<RecipeType<?>, RecipeType<FormsCombinedRecipe>> COMPRESSOR_T;
     public static final DeferredHolder<RecipeType<?>, RecipeType<FormsCombinedRecipe>> PSIONICANT_T;
     public static final DeferredHolder<RecipeType<?>, RecipeType<FormsCombinedRecipe>> INDUCTION_FURNACE_T;
     public static final DeferredHolder<RecipeType<?>, RecipeType<FormsCombinedRecipe>> REFINER_T;
-
+    public static final DeferredHolder<RecipeType<?>, RecipeType<FormsCombinedRecipe>> DISTILLATOR_T
+        ;
     public static final DeferredHolder<RecipeSerializer<?>, EngineFuelRecipeSerializer> ENGINE_FUEL_S;
     public static final DeferredHolder<RecipeType<?>, RecipeType<EngineFuelRecipe>> ENGINE_FUEL_T;
 
@@ -39,6 +42,8 @@ public class TENRecipeTypes {
         PSIONICANT_T = TYPES.register("psionicant", () -> new RecipeTypeCm<>("psionicant"));
         INDUCTION_FURNACE_T = TYPES.register("induction_furnace", () -> new RecipeTypeCm<>("induction_furnace"));
         REFINER_T = TYPES.register("refiner", () -> new RecipeTypeCm<>("refiner"));
+        DISTILLATOR_T = TYPES.register("distillator", () -> new RecipeTypeCm<>("distillator"));
+
         ENGINE_FUEL_T = TYPES.register("engine_fuel", () -> new RecipeTypeCm<>("engine_fuel"));
 
         PULVERIZER_S = SERIALIZERS.register("pulverizer", () -> new FormsCombinedRecipeSerializer<>(FormsCombinedRecipe::new, PULVERIZER_T::get, 1, 4));
@@ -46,6 +51,8 @@ public class TENRecipeTypes {
         PSIONICANT_S = SERIALIZERS.register("psionicant", () -> new FormsCombinedRecipeSerializer<>(FormsCombinedRecipe::new, PSIONICANT_T::get, 2, 1));
         INDUCTION_FURNACE_S = SERIALIZERS.register("induction_furnace", () -> new FormsCombinedRecipeSerializer<>(FormsCombinedRecipe::new, INDUCTION_FURNACE_T::get, 3, 1));
         REFINER_S = SERIALIZERS.register("refiner", () -> new FormsCombinedRecipeSerializer<>(FormsCombinedRecipe::new, REFINER_T::get, 2, 2));
+        DISTILLATOR_S = SERIALIZERS.register("distillator", () -> new FormsCombinedRecipeSerializer<>(FormsCombinedRecipe::new, DISTILLATOR_T::get, 1, 4));
+
         ENGINE_FUEL_S = SERIALIZERS.register("engine_fuel", EngineFuelRecipeSerializer::new);
     }
 

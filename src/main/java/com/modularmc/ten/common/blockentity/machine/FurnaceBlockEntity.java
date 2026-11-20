@@ -4,6 +4,7 @@ import com.modularmc.ten.api.blockentity.BatchMath;
 import com.modularmc.ten.api.blockentity.IUpgradableMachine;
 import com.modularmc.ten.api.blockentity.ProcessingMachineBlockEntity;
 import com.modularmc.ten.api.capability.MachineFluidTank;
+import com.modularmc.ten.api.option.IMachineType;
 import com.modularmc.ten.api.option.IngredientType;
 import com.modularmc.ten.api.option.MachineType;
 import com.modularmc.ten.common.data.TENFluids;
@@ -115,7 +116,7 @@ public class FurnaceBlockEntity extends ProcessingMachineBlockEntity {
     }
 
     @Override
-    public int machineType() {
+    public IMachineType machineType() {
         return MachineType.FURNACE;
     }
 

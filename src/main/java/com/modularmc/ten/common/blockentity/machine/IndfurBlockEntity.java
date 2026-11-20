@@ -74,7 +74,6 @@ public class IndfurBlockEntity extends RecipeMachineBlockEntity {
 
     @Override
     public FormsCombinedRecipe findRecipe() {
-        if (level == null) return null;
         var recipes = level.getRecipeManager().getAllRecipesFor(TENRecipeTypes.INDUCTION_FURNACE_T.get());
         for (var holder : recipes) {
             var recipe = holder.value();

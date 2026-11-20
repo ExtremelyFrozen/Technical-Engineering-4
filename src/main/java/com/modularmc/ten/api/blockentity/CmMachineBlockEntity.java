@@ -3,10 +3,7 @@ package com.modularmc.ten.api.blockentity;
 import com.modularmc.ten.api.capability.MachineEnergyStorage;
 import com.modularmc.ten.api.capability.MachineFluidTank;
 import com.modularmc.ten.api.capability.MachineItemHandler;
-import com.modularmc.ten.api.option.FaceOption;
-import com.modularmc.ten.api.option.IngredientType;
-import com.modularmc.ten.api.option.MachineType;
-import com.modularmc.ten.api.option.RedstoneMode;
+import com.modularmc.ten.api.option.*;
 import com.modularmc.ten.common.blockentity.PipeBlockEntity;
 import com.modularmc.ten.common.blockentity.TransferNetworks;
 import com.modularmc.ten.common.data.TENTags;
@@ -282,7 +279,7 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
 
     public abstract int inventorySize();
 
-    public abstract int machineType();
+    public abstract IMachineType machineType();
 
     public static int kFE(double k) {
         return (int) (1000 * k);
@@ -648,10 +645,7 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
 
     /** 能量主动输入是否有意义：普通机器取电、能量单元充电；引擎是纯电源，灌电只会来回搬运。 */
     private boolean canPullEnergy() {
-        if (!canExternalExtract()) {
-            return true;
-        }
-        return machineType() == MachineType.CELL || machineType() == MachineType.CREATIVE_CELL;
+        return machineType().getEnergyFlow() != IMachineType.EnergyFlow.OUTPUT;
     }
 
     /** 是否存在可进（{@code output=false}）/ 可出（{@code output=true}）的物品槽。 */
@@ -817,9 +811,10 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         // 防止 stored >= baseFe 但 < totalFe 时 active 闪烁。
         int baseFe = getActualEfficiency();
         int checkFe = hasLockedBatch() ? (int) Math.round((double) baseFe * getLockedBatchSize()) : baseFe;
-        return switch (machineType()) {
-            case com.modularmc.ten.api.option.MachineType.GENERATOR, com.modularmc.ten.api.option.MachineType.ENGINE_SOLAR, com.modularmc.ten.api.option.MachineType.ENGINE_EXTRACTION, com.modularmc.ten.api.option.MachineType.ENGINE_METAL, com.modularmc.ten.api.option.MachineType.ENGINE_BIOMASS -> energyStorage.getEnergyStored() + checkFe <= maxStorageEnergy;
-            default -> energyStorage.getEnergyStored() >= checkFe;
+        return switch (machineType().getEnergyDemand()){
+            case IMachineType.EnergyDemand.SUFFICIENT -> energyStorage.getEnergyStored() >= checkFe;
+            case IMachineType.EnergyDemand.NOT_FULL -> energyStorage.getEnergyStored() + checkFe <= maxStorageEnergy;
+            case IMachineType.EnergyDemand.ALWAYS -> true;
         };
     }
 
@@ -1111,10 +1106,7 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
     }
 
     public final boolean canExternalExtract() {
-        return switch (machineType()) {
-            case com.modularmc.ten.api.option.MachineType.GENERATOR, com.modularmc.ten.api.option.MachineType.ENGINE_SOLAR, com.modularmc.ten.api.option.MachineType.ENGINE_EXTRACTION, com.modularmc.ten.api.option.MachineType.ENGINE_METAL, com.modularmc.ten.api.option.MachineType.ENGINE_BIOMASS, com.modularmc.ten.api.option.MachineType.CELL, com.modularmc.ten.api.option.MachineType.CREATIVE_CELL -> true;
-            default -> false;
-        };
+        return machineType().getEnergyFlow() != IMachineType.EnergyFlow.INPUT;
     }
 
     /**
@@ -1311,8 +1303,7 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         // 整机各只能有一个，槽里已有同类时直接拒绝插入（含同卡重复）。旧存档里
         // 已存在的多张由 applyUpgradeEffects 取最高档兜底。
         if (upgradeItem.category() == UpgradeCategory.TIER && tiers > 0) return false;
-        if (upgradeItem.category() == UpgradeCategory.SPECIALIZATION && specializations > 0) return false;
-        return true;
+        return upgradeItem.category() != UpgradeCategory.SPECIALIZATION || specializations <= 0;
     }
 
     public IngredientType tankType(int tank) {
@@ -2423,11 +2414,11 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
     @Override
     public boolean isType(String type) {
         return switch (type) {
-            case "MACHINE_PROCESS" -> machineType() == MachineType.MACHINE_PROCESS || machineType() == MachineType.FURNACE || machineType() == MachineType.PULVERIZER || machineType() == MachineType.COMPRESSOR || machineType() == MachineType.REFINER || machineType() == MachineType.INDUCTION_FURNACE || machineType() == MachineType.PSIONICANT || machineType() == MachineType.MATTER_CONDENSER || machineType() == MachineType.ENCHANTMENT_FLUSHER;
-            case "MACHINE_EFFECT" -> machineType() == MachineType.MACHINE_EFFECT || machineType() == MachineType.BEACON || machineType() == MachineType.MOB_RIPPER || machineType() == MachineType.FARM || machineType() == MachineType.BLOCK_BREAKER || machineType() == MachineType.BLOCK_FORMER || machineType() == MachineType.COOLER;
             case "FURNACE" -> machineType() == MachineType.FURNACE;
             case "BEACON" -> machineType() == MachineType.BEACON;
             case "QUARRY" -> machineType() == MachineType.QUARRY;
+            case "MACHINE_PROCESS" -> machineType().getCategory() == IMachineType.Category.MACHINE_PROCESS;
+            case "MACHINE_EFFECT" -> machineType().getCategory() == IMachineType.Category.MACHINE_EFFECT;
             default -> false;
         };
     }

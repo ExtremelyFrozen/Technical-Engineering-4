@@ -1,11 +1,15 @@
 package com.modularmc.ten.api.blockentity;
 
 import com.modularmc.ten.api.option.FaceOption;
+import com.modularmc.ten.api.option.IMachineType;
 import com.modularmc.ten.api.option.MachineType;
+import com.modularmc.ten.api.recipe.EngineFuelRecipe;
 import com.modularmc.ten.common.blockentity.EngineFuels;
 import com.modularmc.ten.common.blockentity.MatchFuel.FuelProfile;
 import com.modularmc.ten.common.gui.TENMachineBlockUIFactory;
 
+import lombok.Getter;
+import lombok.Setter;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.ItemStack;
@@ -23,13 +27,20 @@ import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
  * 配方只给「耗时 T」与「FE/t 修正倍率 m」。实际产出 {@code P × m × s × B}，
  * 燃料总能量 {@code P × m × T × B}——配方不再声明绝对 FE/t。
  */
+@Getter
 public abstract class EngineBlockEntity extends CmMachineBlockEntity {
 
     /**
      * 当前燃烧燃料对引擎额定 FE/t 的修正倍率（配方数据）。
      * 无燃料时为 1.0，因此空载面板显示引擎额定功率。
+     * -- GETTER --
+     * 当前燃料的 FE/t 修正倍率（1.0 = 按引擎额定）。
+
      */
     protected double fuelRateMultiplier = 1.0;
+
+    @Setter
+    private EngineFuelRecipe recipe;
 
     public EngineBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
@@ -44,13 +55,8 @@ public abstract class EngineBlockEntity extends CmMachineBlockEntity {
         return Math.max(1, (int) Math.round(super.getActualEfficiency() * fuelRateMultiplier));
     }
 
-    /** 当前燃料的 FE/t 修正倍率（1.0 = 按引擎额定）。 */
-    public double getFuelRateMultiplier() {
-        return fuelRateMultiplier;
-    }
-
     @Override
-    public int machineType() {
+    public IMachineType machineType() {
         return MachineType.GENERATOR;
     }
 
@@ -59,10 +65,10 @@ public abstract class EngineBlockEntity extends CmMachineBlockEntity {
         return FaceOption.OUT;
     }
 
-    @Override
-    public boolean hasFaceCapabilityFluid(Direction side) {
-        return false;
-    }
+//    @Override
+//    public boolean hasFaceCapabilityFluid(Direction side) {
+//        return false;
+//    }
 
     @Override
     public boolean hasFaceCapabilityEnergy(Direction side) {
@@ -97,7 +103,10 @@ public abstract class EngineBlockEntity extends CmMachineBlockEntity {
     @Override
     public void tick() {
         doBaseData();
+        process();
+    }
 
+    public void process() {
         if (!signalAllowRun() || !energyAllowRun()) return;
 
         int batchSize = getTheoreticalBatchSize();
@@ -159,6 +168,6 @@ public abstract class EngineBlockEntity extends CmMachineBlockEntity {
      * 返回 {@link FuelProfile#EMPTY} 表示不接受该物品。
      */
     public FuelProfile fuelProfile(ItemStack stack) {
-        return EngineFuels.profile(level, fuelEngineId(), initialEfficientIn, stack);
+        return EngineFuels.profile(level, fuelEngineId(), initialEfficientIn, stack, recipe, this);
     }
 }

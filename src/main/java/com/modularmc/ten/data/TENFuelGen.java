@@ -177,7 +177,10 @@ public class TENFuelGen implements DataProvider {
         tag(list, "biomass", "minecraft:logs", 120);
         tag(list, "biomass", "minecraft:flowers", 10);
         tag(list, "biomass", "minecraft:saplings", 15);
-
+        tag(list, "biomass", "minecraft:saplings", 15);
+        tag(list, "biomass", "c:seeds", 15);
+        item(list, "biomass", "minecraft:moss_block", 20);
+        item(list, "biomass", "minecraft:sculk", 300);
         return list;
     }
 

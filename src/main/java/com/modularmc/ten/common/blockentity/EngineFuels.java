@@ -1,5 +1,6 @@
 package com.modularmc.ten.common.blockentity;
 
+import com.modularmc.ten.api.blockentity.EngineBlockEntity;
 import com.modularmc.ten.api.recipe.EngineFuelRecipe;
 import com.modularmc.ten.common.blockentity.MatchFuel.FuelProfile;
 import com.modularmc.ten.common.data.TENRecipeTypes;
@@ -49,13 +50,32 @@ public final class EngineFuels {
      * @param stack      燃料物品（不修改）
      * @return 燃料参数；不是本引擎的燃料时返回 {@link FuelProfile#EMPTY}
      */
-    public static FuelProfile profile(Level level, String engineId, int engineRate, ItemStack stack) {
-        return profile(level == null ? null : level.getRecipeManager(), engineId, engineRate, stack);
+    public static FuelProfile profile(Level level, String engineId, int engineRate, ItemStack stack, EngineFuelRecipe current, EngineBlockEntity entity) {
+        if (level == null || stack == null || stack.isEmpty()) return FuelProfile.EMPTY;
+        if (current != null && current.test(stack)) {
+            int rate = rateOf(engineRate, current.rateMultiplier());
+            return new FuelProfile(rate, current.duration(), current.rateMultiplier());
+        }
+        return profile(level.getRecipeManager(), engineId, engineRate, stack, entity);
+    }
+
+    public static FuelProfile profile(RecipeManager manager, String engineId, int engineRate, ItemStack stack, EngineBlockEntity entity) {
+
+        for (EngineFuelRecipe recipe : recipes(manager)) {
+            if (!recipe.appliesTo(engineId)) continue;
+            if (!recipe.test(stack)) continue;
+            int rate = rateOf(engineRate, recipe.rateMultiplier());
+            entity.setRecipe(recipe);
+            return new FuelProfile(rate, recipe.duration(), recipe.rateMultiplier());
+        }
+        // 兜底只给萃取引擎：它历史上就吃「任何有原版燃烧时间的物品」。
+        // 金属引擎与生物质引擎的燃料是白名单（锭 / 植物标签），不能被兜底放进来。
+        return EXTRACTOR.equals(engineId) ? vanillaBurnFallback(engineRate, stack) : FuelProfile.EMPTY;
     }
 
     /** 供 JEI/EMI 等自带 RecipeManager 的展示层使用。 */
     public static FuelProfile profile(RecipeManager manager, String engineId, int engineRate, ItemStack stack) {
-        if (stack == null || stack.isEmpty()) return FuelProfile.EMPTY;
+
         for (EngineFuelRecipe recipe : recipes(manager)) {
             if (!recipe.appliesTo(engineId)) continue;
             if (!recipe.test(stack)) continue;

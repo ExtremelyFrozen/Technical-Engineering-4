@@ -41,6 +41,16 @@ public abstract class RecipeMachineBlockEntity extends ProcessingMachineBlockEnt
         this.slotInfo = info;
     }
 
+
+    //先检查当前配方是否不变
+    public FormsCombinedRecipe testCurrentRecipe() {
+        if (level == null) return null;
+        if (currentRecipe != null && currentRecipe.matches(itemHandler, tanks, this::slotType, this::tankType)){
+            return currentRecipe;
+        }
+        return findRecipe();
+    }
+
     public abstract FormsCombinedRecipe findRecipe();
 
     @Override
@@ -52,7 +62,7 @@ public abstract class RecipeMachineBlockEntity extends ProcessingMachineBlockEnt
     public boolean conditionStart() {
         // Capture previous recipe before looking up the new one
         FormsCombinedRecipe previousRecipe = currentRecipe;
-        FormsCombinedRecipe nextRecipe = findRecipe();
+        FormsCombinedRecipe nextRecipe = testCurrentRecipe();
 
         // Reset progress if recipe identity changed.
         // Comparison uses stable recipe registry ID (ResourceLocation) via Objects.equals:

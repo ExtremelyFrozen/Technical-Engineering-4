@@ -1,6 +1,7 @@
 package com.modularmc.ten.common.block;
 
 import com.modularmc.ten.common.blockentity.SpringBlockEntity;
+import com.modularmc.ten.common.data.TENBlockEntities;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.context.BlockPlaceContext;
@@ -23,12 +24,10 @@ import java.util.function.Supplier;
 public class SpringBlock extends Block implements EntityBlock {
     public static final BooleanProperty FACING_AIR = BooleanProperty.create("facing_air");
     private final Supplier<Fluid> fluid;
-    private final Supplier<Block> fluidBlock;
 
-    public SpringBlock(Properties properties, Supplier<Fluid> fluid, Supplier<Block> fluidBlock) {
+    public SpringBlock(Properties properties, Supplier<Fluid> fluid) {
         super(properties);
         this.fluid = fluid;
-        this.fluidBlock = fluidBlock;
     }
 
     @Override
@@ -53,7 +52,7 @@ public class SpringBlock extends Block implements EntityBlock {
 
     @Override
     public @Nullable BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
-        return new SpringBlockEntity(null, pos, state);
+        return new SpringBlockEntity(TENBlockEntities.SPRING.get(), pos, state);
     }
 
     @Nullable
@@ -68,9 +67,5 @@ public class SpringBlock extends Block implements EntityBlock {
 
     public Fluid getFluid(){
         return fluid.get();
-    }
-
-    public BlockState getBlock(){
-        return fluidBlock.get().defaultBlockState();
     }
 }

@@ -1,19 +1,30 @@
 package com.modularmc.ten.common.data;
 
+import com.modularmc.ten.TEN;
+import com.modularmc.ten.common.block.SpringBlock;
 import com.modularmc.ten.common.block.machine.CableBased;
 import com.modularmc.ten.common.block.machine.CableTier;
 import com.modularmc.ten.common.block.machine.ChannelBlock;
 import com.modularmc.ten.common.block.machine.HorizontalMachineBlock;
 import com.modularmc.ten.common.item.CableBlockItem;
 
+import com.tterrag.registrate.providers.RegistrateBlockstateProvider;
+import com.tterrag.registrate.util.nullness.NonNullFunction;
 import net.minecraft.core.Direction;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.SoundType;
+import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.MapColor;
 
 import com.tterrag.registrate.util.entry.BlockEntry;
+import net.neoforged.neoforge.client.model.generators.ModelFile;
+
+import java.util.function.BiFunction;
+import java.util.function.Supplier;
 
 import static com.modularmc.ten.common.registry.Registration.REGISTRATE;
 
@@ -31,6 +42,7 @@ public class TENBlocks {
     public static final BlockEntry<Block> NICKEL_ORE = ore("nickel_ore", "Nickel Ore", "镍矿石", 4, MapColor.STONE);
     public static final BlockEntry<Block> DEEP_TIN_ORE = ore("deep_tin_ore", "Deep Tin Ore", "深层锡矿石", 4, MapColor.DEEPSLATE);
     public static final BlockEntry<Block> DEEP_NICKEL_ORE = ore("deep_nickel_ore", "Deep Nickel Ore", "深层镍矿石", 5, MapColor.DEEPSLATE);
+    public static final BlockEntry<SpringBlock> OIL_SPRING = spring("oil_spring", "Ore Spring", "油泉", TENFluids.CRUDE_OIL::getSource);
 
     // === Storage Blocks ===
     public static final BlockEntry<Block> TIN_BLOCK = storage("tin_block", "Block of Tin", "锡块", 4);
@@ -39,6 +51,9 @@ public class TENBlocks {
     public static final BlockEntry<Block> CHLORIUM_BLOCK = storage("chlorium_block", "Block of Chlorium", "叶绿块", 5);
     public static final BlockEntry<Block> RAW_TIN_BLOCK = rawStorage("raw_tin_block", "Raw Tin Block", "粗锡块", 3);
     public static final BlockEntry<Block> RAW_NICKEL_BLOCK = rawStorage("raw_nickel_block", "Raw Nickel Block", "粗镍块", 4);
+    public static final BlockEntry<Block> PARAFFIN_BLOCK = special("paraffin_block", "Block of Paraffin", "石蜡块", 1, BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_GRAY).requiresCorrectToolForDrops().sound(SoundType.COBWEB).friction(0.999F));
+    public static final BlockEntry<Block> BITUMEN_BLOCK = special("bitumen_block", "Block of Bitumen", "沥青块", 1, BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_BLACK).requiresCorrectToolForDrops().sound(SoundType.STONE).speedFactor(1.25f));
+    public static final BlockEntry<Block> BITUMEN_ROAD = special("bitumen_road", "Bitumen Road", "沥青路面", 1, BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_BLACK).requiresCorrectToolForDrops().sound(SoundType.STONE).speedFactor(1.25f));
 
     // === Machines ===
     static {
@@ -59,8 +74,11 @@ public class TENBlocks {
     public static final BlockEntry<HorizontalMachineBlock> MACHINE_BLOCK_BREAKER = machine("machine_block_breaker", "Block Breaker", "方块破坏器");
     public static final BlockEntry<HorizontalMachineBlock> MACHINE_BLOCK_FORMER = machine("machine_block_former", "Block Former", "方块成型器");
     public static final BlockEntry<HorizontalMachineBlock> MACHINE_COOLER = machine("machine_cooler", "Cooler", "冷却器");
+    public static final BlockEntry<HorizontalMachineBlock> MACHINE_DEW_COLLECTOR = topMachine("machine_dew_collector", "Dew Collector", "凝露收集器", TEN.id("block/machine_dew_collector_top"));
+    public static final BlockEntry<HorizontalMachineBlock> MACHINE_DISTILLATOR = topMachine("machine_distillator", "Distillator", "分馏器", TEN.id("block/machine_distillator_top"));
 
     // === Engines ===
+    public static final BlockEntry<HorizontalMachineBlock> ENGINE_RECYCLER = engine("engine_recycler", "Recycler Engine", "回收引擎");
     public static final BlockEntry<HorizontalMachineBlock> ENGINE_EXTRACTION = engine("engine_extraction", "Extraction Engine", "萃取引擎");
     public static final BlockEntry<HorizontalMachineBlock> ENGINE_METAL = engine("engine_metal", "Metal Engine", "金属引擎");
     public static final BlockEntry<HorizontalMachineBlock> ENGINE_BIOMASS = engine("engine_biomass", "Biomass Engine", "生物质引擎");
@@ -115,6 +133,18 @@ public class TENBlocks {
 
     // === Helpers ===
 
+    private static BlockEntry<Block> special(String n, String englishName, String cn, double h, BlockBehaviour.Properties func) {
+        ZH_NAMES.put(n, cn);
+        EN_NAMES.put(n, englishName);
+        return REGISTRATE.block(n, Block::new)
+            .lang(englishName)
+            .initialProperties(() -> Blocks.IRON_BLOCK)
+            .properties((p) -> func)
+            .tag(BlockTags.NEEDS_IRON_TOOL, BlockTags.MINEABLE_WITH_PICKAXE)
+            .blockstate((ctx, prov) -> prov.simpleBlock(ctx.getEntry(), TENModels.cubeAll(prov, n)))
+            .simpleItem().register();
+    }
+
     private static BlockEntry<Block> ore(String n, String englishName, String cn, double h, MapColor c) {
         ZH_NAMES.put(n, cn);
         EN_NAMES.put(n, englishName);
@@ -152,66 +182,53 @@ public class TENBlocks {
                 .simpleItem().register();
     }
 
-    private static BlockEntry<HorizontalMachineBlock> machine(String n, String englishName, String cn) {
+    private static <B extends HorizontalMachineBlock> BlockEntry<B> horizontal(String n, String englishName, String cn, NonNullFunction<BlockBehaviour.Properties, B> factory, BiFunction<RegistrateBlockstateProvider, String, ModelFile> normalModel, BiFunction<RegistrateBlockstateProvider, String, ModelFile> activeModel) {
         ZH_NAMES.put(n, cn);
         EN_NAMES.put(n, englishName);
-        return REGISTRATE.block(n, HorizontalMachineBlock::new)
-                .lang(englishName)
-                .tag(TENTags.MACHINES)
-                .blockstate((ctx, prov) -> {
-                    var normal = TENModels.machine(prov, n);
-                    var active = TENModels.machineActive(prov, n);
-                    var builder = prov.getVariantBuilder(ctx.getEntry());
-                    for (var dir : Direction.Plane.HORIZONTAL) {
-                        int y = switch (dir) {
-                            case NORTH -> 0;
-                            case EAST -> 90;
-                            case SOUTH -> 180;
-                            case WEST -> 270;
-                            default -> 0;
-                        };
-                        builder.partialState()
-                                .with(HorizontalMachineBlock.FACING, dir)
-                                .with(HorizontalMachineBlock.ACTIVE, false)
-                                .modelForState().modelFile(normal).rotationY(y).addModel()
-                                .partialState()
-                                .with(HorizontalMachineBlock.FACING, dir)
-                                .with(HorizontalMachineBlock.ACTIVE, true)
-                                .modelForState().modelFile(active).rotationY(y).addModel();
-                    }
-                })
-                .item().model((ctx, prov) -> prov.blockItem(ctx::getEntry)).build().register();
+        return REGISTRATE.block(n, factory)
+            .lang(englishName)
+            .tag(TENTags.MACHINES)
+            .blockstate((ctx, prov) -> {
+                var normal = normalModel.apply(prov, n);
+                var active = activeModel.apply(prov, n);
+                var builder = prov.getVariantBuilder(ctx.getEntry());
+                for (var dir : Direction.Plane.HORIZONTAL) {
+                    int y = switch (dir) {
+                        case EAST -> 90;
+                        case SOUTH -> 180;
+                        case WEST -> 270;
+                        default -> 0;
+                    };
+                    builder.partialState()
+                        .with(HorizontalMachineBlock.FACING, dir)
+                        .with(HorizontalMachineBlock.ACTIVE, false)
+                        .modelForState().modelFile(normal).rotationY(y).addModel()
+                        .partialState()
+                        .with(HorizontalMachineBlock.FACING, dir)
+                        .with(HorizontalMachineBlock.ACTIVE, true)
+                        .modelForState().modelFile(active).rotationY(y).addModel();
+                }
+            })
+            .item().model((ctx, prov) -> prov.blockItem(ctx::getEntry)).build().register();
+    }
+
+    private static BlockEntry<HorizontalMachineBlock> machine(String n, String englishName, String cn) {
+        return horizontal(n, englishName, cn,
+            HorizontalMachineBlock::new,
+            TENModels::machine, TENModels::machineActive);
+    }
+
+    private static BlockEntry<HorizontalMachineBlock> topMachine(String n, String englishName, String cn, ResourceLocation top) {
+        return horizontal(n, englishName, cn,
+            HorizontalMachineBlock::new,
+            (prov, name) -> TENModels.machine(prov, name, top),
+            (prov, name) -> TENModels.machineActive(prov, name, top));
     }
 
     private static BlockEntry<HorizontalMachineBlock> engine(String n, String englishName, String cn) {
-        ZH_NAMES.put(n, cn);
-        EN_NAMES.put(n, englishName);
-        return REGISTRATE.block(n, HorizontalMachineBlock::new)
-                .lang(englishName)
-                .tag(TENTags.MACHINES)
-                .blockstate((ctx, prov) -> {
-                    var normal = TENModels.engine(prov, n);
-                    var active = TENModels.engineActive(prov, n);
-                    var builder = prov.getVariantBuilder(ctx.getEntry());
-                    for (var dir : Direction.Plane.HORIZONTAL) {
-                        int y = switch (dir) {
-                            case NORTH -> 0;
-                            case EAST -> 90;
-                            case SOUTH -> 180;
-                            case WEST -> 270;
-                            default -> 0;
-                        };
-                        builder.partialState()
-                                .with(HorizontalMachineBlock.FACING, dir)
-                                .with(HorizontalMachineBlock.ACTIVE, false)
-                                .modelForState().modelFile(normal).rotationY(y).addModel()
-                                .partialState()
-                                .with(HorizontalMachineBlock.FACING, dir)
-                                .with(HorizontalMachineBlock.ACTIVE, true)
-                                .modelForState().modelFile(active).rotationY(y).addModel();
-                    }
-                })
-                .item().model((ctx, prov) -> prov.blockItem(ctx::getEntry)).build().register();
+        return horizontal(n, englishName, cn,
+            HorizontalMachineBlock::new,
+            TENModels::engine, TENModels::engineActive);
     }
 
     /** 线缆：登记能量规格，物品提示与方块实体共用同一份数值。 */
@@ -239,9 +256,19 @@ public class TENBlocks {
         return REGISTRATE.block(n, HorizontalMachineBlock::new)
                 .lang(englishName)
                 .tag(TENTags.MACHINES)
-                .properties(p -> p.noOcclusion())
+                .properties(BlockBehaviour.Properties::noOcclusion)
                 .blockstate((ctx, prov) -> TENModels.cellBlockstate(prov, ctx.getEntry(), n))
                 .item().model((ctx, prov) -> prov.blockItem(ctx::getEntry)).build().register();
+    }
+
+    private static BlockEntry<SpringBlock> spring(String n, String englishName, String cn, Supplier<Fluid> fluid) {
+        ZH_NAMES.put(n, cn);
+        EN_NAMES.put(n, englishName);
+        return REGISTRATE.block(n, (p) -> new SpringBlock(p, fluid))
+            .lang(englishName)
+            //.properties(func)
+            .blockstate((ctx, prov) -> TENModels.cellBlockstate(prov, ctx.getEntry(), n))
+            .item().model((ctx, prov) -> prov.blockItem(ctx::getEntry)).build().register();
     }
 
     public static void init() {}

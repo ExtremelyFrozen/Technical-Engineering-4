@@ -1,7 +1,6 @@
 package com.modularmc.ten.common.item;
 
 import net.minecraft.world.item.BucketItem;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.level.material.Fluid;
 
 public class TENBucketItem extends BucketItem {

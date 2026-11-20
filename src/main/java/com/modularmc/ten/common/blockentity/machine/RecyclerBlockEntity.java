@@ -3,12 +3,11 @@ package com.modularmc.ten.common.blockentity.machine;
 import com.lowdragmc.lowdraglib2.gui.factory.BlockUIMenuType;
 import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
 import com.modularmc.ten.api.blockentity.EngineBlockEntity;
-import com.modularmc.ten.api.blockentity.SlotInfo;
 import com.modularmc.ten.api.capability.MachineFluidTank;
+import com.modularmc.ten.api.option.FaceOption;
 import com.modularmc.ten.api.option.IMachineType;
 import com.modularmc.ten.api.option.IngredientType;
 import com.modularmc.ten.api.option.MachineType;
-import com.modularmc.ten.api.recipe.FormsCombinedRecipe;
 import com.modularmc.ten.common.gui.TENMachineBlockUIFactory;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.item.ItemStack;
@@ -46,6 +45,11 @@ public class RecyclerBlockEntity extends EngineBlockEntity {
     }
 
     @Override
+    public int initialFaceModeFluid() {
+        return FaceOption.IN;
+    }
+
+    @Override
     public ModularUI createUI(BlockUIMenuType.BlockUIHolder holder) {
         return buildMachineUI(holder, TENMachineBlockUIFactory.backgroundFor(machineType()), root -> {
             root.addChild(TENMachineBlockUIFactory.machineSlotModular(this, 0, 43, 36));
@@ -65,7 +69,7 @@ public class RecyclerBlockEntity extends EngineBlockEntity {
             fuelStack = itemHandler.getStackInSlot(0);
         }
 
-        int fuelVal = matchFuel(fuelStack, false);
+        int fuelVal = matchFuel(fuelStack);
         //持续消耗，FE只是副产物
         if (fuel > 0) {
             energyStorage.receiveEnergy(getActualEfficiency(), false);
@@ -84,8 +88,7 @@ public class RecyclerBlockEntity extends EngineBlockEntity {
     }
 
     //持续消耗物品和流体
-    @Override
-    public int matchFuel(ItemStack stack, boolean simulate) {
+    public int matchFuel(ItemStack stack) {
         int t = 0;
         if (!stack.isEmpty()) {
             t += 100;
@@ -96,5 +99,10 @@ public class RecyclerBlockEntity extends EngineBlockEntity {
             tanks.getFirst().setFluid(FluidStack.EMPTY);
         }
         return t;
+    }
+
+    @Override
+    public String fuelEngineId() {
+        return "";
     }
 }

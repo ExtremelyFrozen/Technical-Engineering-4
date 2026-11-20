@@ -3,7 +3,6 @@ package com.modularmc.ten.common.blockentity;
 import com.modularmc.ten.api.blockentity.CmBlockEntity;
 import com.modularmc.ten.api.capability.MachineFluidTank;
 import com.modularmc.ten.common.block.SpringBlock;
-import com.modularmc.ten.common.data.TENBlockEntities;
 import com.modularmc.ten.common.data.TENDataComponents;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -66,7 +65,7 @@ public class SpringBlockEntity extends CmBlockEntity {
 }
 
     public SpringBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
-        super(TENBlockEntities.SPRING.get(), pos, state);
+        super(type, pos, state);
         // 罐内容变化 → markDirty → sendBlockUpdated → 客户端收到 update tag
         tank.setChangeListener(this::markDirty);
     }
@@ -78,7 +77,7 @@ public class SpringBlockEntity extends CmBlockEntity {
     @Override
     protected void onPlaced() {
         if (level == null || level.isClientSide()) return;
-        if (capacity <= 0 || tank.getCapacity() <= 0) {
+        if (capacity <= 0) {
             RandomSource random = level.getRandom();
             capacity = random.nextIntBetweenInclusive(1, 8) * 1000;
             amount = random.nextIntBetweenInclusive(1, 8) * 10;
@@ -104,13 +103,17 @@ public class SpringBlockEntity extends CmBlockEntity {
         if (produceTimer >= PRODUCE_INTERVAL) {
             produceTimer = 0;
             Fluid fluid0 = getBlock().getFluid();
-            if (tank.getSpace() == 0 && getBlockState().getValue(SpringBlock.FACING_AIR)){
-                tank.drain(new FluidStack(fluid0, 1000),
-                    IFluidHandler.FluidAction.EXECUTE);
-                level.setBlock(worldPosition.above(), getBlock().getBlock(), 3);
+            if (tank.getSpace() == 0){
+                if (getBlockState().getValue(SpringBlock.FACING_AIR)){
+                    FluidStack fluid = new FluidStack(fluid0, 1000);
+                    fluid.set(TENDataComponents.QUALITY.get(), new TENDataComponents.FluidQuality(item1, item2, fluid1, fluid2));
+                    tank.drain(fluid, IFluidHandler.FluidAction.EXECUTE);
+                    level.setBlock(worldPosition.above(), getBlock().getFluid().defaultFluidState().createLegacyBlock(), 3);
+                }
+                return;
             }
             FluidStack fluid = new FluidStack(fluid0, amount);
-                fluid.set(TENDataComponents.QUALITY.get(), new TENDataComponents.FluidQuality(item1, item2, fluid1, fluid2));
+            fluid.set(TENDataComponents.QUALITY.get(), new TENDataComponents.FluidQuality(item1, item2, fluid1, fluid2));
             tank.fill(fluid, IFluidHandler.FluidAction.EXECUTE);
         }
     }
@@ -125,13 +128,14 @@ public class SpringBlockEntity extends CmBlockEntity {
         amount = tag.getInt("amount");
         capacity = tag.getInt("capacity");
         produceTimer = tag.getInt("produceTimer");
-        CompoundTag tankTag = tag.getCompound("tank");
         item1 = tag.getFloat("item1");
         item2 = tag.getFloat("item2");
-        fluid1 = tag.getFloat("item1");
-        fluid2 = tag.getFloat("item2");
+        fluid1 = tag.getFloat("fluid1");
+        fluid2 = tag.getFloat("fluid2");
         // 空 tag 守卫：LDLib2 GUI 空同步 / 无关更新包可能带来空 tag，
         // 直接 readFromNBT 会把客户端罐清空
+        tank.setCapacity(capacity);
+        CompoundTag tankTag = tag.getCompound("tank");
         if (!tankTag.isEmpty()) {
             tank.readFromNBT(registries, tankTag);
         }

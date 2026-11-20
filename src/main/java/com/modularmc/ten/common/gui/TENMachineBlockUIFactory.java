@@ -3,6 +3,7 @@ package com.modularmc.ten.common.gui;
 import com.modularmc.ten.TENConstants;
 import com.modularmc.ten.api.blockentity.CmMachineBlockEntity;
 import com.modularmc.ten.api.option.FaceOption;
+import com.modularmc.ten.api.option.IMachineType;
 import com.modularmc.ten.api.option.MachineType;
 import com.modularmc.ten.api.option.RedstoneMode;
 import com.modularmc.ten.config.TENConfig;
@@ -46,7 +47,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
-import java.util.function.ToDoubleFunction;
 
 public final class TENMachineBlockUIFactory {
 
@@ -951,7 +951,7 @@ public final class TENMachineBlockUIFactory {
      * 只接到对应 lane 的进度与 tick 读数上，彼此不串数据。{@code lane = -1} 表示本机单进度。
      */
     public static ProgressBar progressGaugeModular(CmMachineBlockEntity machine, int x, int y, int lane, boolean showPercent) {
-        int type = machine.machineType();
+        IMachineType type = machine.machineType();
         return horizontalProgressModular(machine, x, y, 22, 16,
                 progressArrowBg(type), progressArrowFill(type), lane, showPercent);
     }
@@ -1063,7 +1063,7 @@ public final class TENMachineBlockUIFactory {
         return progress;
     }
 
-    private static ResourceLocation progressArrowBg(int machineType) {
+    private static ResourceLocation progressArrowBg(IMachineType machineType) {
         return switch (machineType) {
             case MachineType.FURNACE -> com.modularmc.ten.TENConstants.PROGRESS_ARROW_SMELTER_BG;
             case MachineType.PULVERIZER -> com.modularmc.ten.TENConstants.PROGRESS_ARROW_PULVERIZER_BG;
@@ -1076,15 +1076,13 @@ public final class TENMachineBlockUIFactory {
         };
     }
 
-    private static ResourceLocation progressArrowFill(int machineType) {
+    private static ResourceLocation progressArrowFill(IMachineType machineType) {
         return switch (machineType) {
-            case MachineType.FURNACE -> com.modularmc.ten.TENConstants.PROGRESS_ARROW_SMELTER_FILL;
             case MachineType.PULVERIZER -> com.modularmc.ten.TENConstants.PROGRESS_ARROW_PULVERIZER_FILL;
             case MachineType.COMPRESSOR -> com.modularmc.ten.TENConstants.PROGRESS_ARROW_COMPRESSOR_FILL;
             case MachineType.REFINER -> com.modularmc.ten.TENConstants.PROGRESS_ARROW_REFINER_FILL;
             case MachineType.INDUCTION_FURNACE -> com.modularmc.ten.TENConstants.PROGRESS_ARROW_INDUCTION_FURNACE_FILL;
             case MachineType.PSIONICANT -> com.modularmc.ten.TENConstants.PROGRESS_ARROW_PSIONICANT_FILL;
-            case MachineType.ENCHANTMENT_FLUSHER -> com.modularmc.ten.TENConstants.PROGRESS_ARROW_SMELTER_FILL;
             default -> com.modularmc.ten.TENConstants.PROGRESS_ARROW_SMELTER_FILL;
         };
     }
@@ -1224,13 +1222,10 @@ public final class TENMachineBlockUIFactory {
         return SpriteTexture.of(resourceLocation).setSprite(0, 0, width, height);
     }
 
-    public static ResourceLocation backgroundFor(int machineType) {
-        return switch (machineType) {
-            // 全部机器统一 MACHINE_GUI 空面板，
-            // 槽框/仪表由 modular 素材族绘制；专属背景 PNG 保留作回退素材不删。
-            case MachineType.FURNACE, MachineType.PULVERIZER, MachineType.COMPRESSOR, MachineType.REFINER, MachineType.INDUCTION_FURNACE, MachineType.PSIONICANT, MachineType.ENCHANTMENT_FLUSHER, MachineType.MATTER_CONDENSER, MachineType.BEACON, MachineType.MOB_RIPPER, MachineType.QUARRY, MachineType.FARM, MachineType.CELL, MachineType.CREATIVE_CELL, MachineType.ENGINE_SOLAR, MachineType.ENGINE_EXTRACTION, MachineType.ENGINE_METAL, MachineType.ENGINE_BIOMASS, MachineType.BLOCK_BREAKER, MachineType.BLOCK_FORMER, MachineType.COOLER -> TENConstants.MACHINE_GUI;
-            default -> TENConstants.LEGACY_SHEET;
-        };
+    public static ResourceLocation backgroundFor(IMachineType machineType) {
+        // 全部机器统一 MACHINE_GUI 空面板，
+        // 槽框/仪表由 modular 素材族绘制；专属背景 PNG 保留作回退素材不删。
+        return machineType.isMachineGUI() ? TENConstants.MACHINE_GUI : TENConstants.LEGACY_SHEET;
     }
 
     private static double fuelPercent(CmMachineBlockEntity machine) {

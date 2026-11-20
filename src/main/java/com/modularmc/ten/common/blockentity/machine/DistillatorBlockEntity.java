@@ -241,7 +241,7 @@ public class DistillatorBlockEntity extends RecipeMachineBlockEntity {
         float gate = Math.min(1f, mult);
         for (int b = 0; b < B; b++) {
             if (gate < 1f && rng.getAsDouble() >= gate) continue;
-            FluidStack result = ing.genFluid(rng);
+            FluidStack result = ing.genFluid(rng.getAsDouble());
             if (result.isEmpty()) continue;
             if (result.getAmount() < 0) return false;
             collector.add(result);
@@ -251,7 +251,6 @@ public class DistillatorBlockEntity extends RecipeMachineBlockEntity {
 
     @Override
     public FormsCombinedRecipe findRecipe() {
-        if (level == null) return null;
         var recipes = level.getRecipeManager().getAllRecipesFor(TENRecipeTypes.DISTILLATOR_T.get());
         for (var holder : recipes) {
             var recipe = holder.value();
