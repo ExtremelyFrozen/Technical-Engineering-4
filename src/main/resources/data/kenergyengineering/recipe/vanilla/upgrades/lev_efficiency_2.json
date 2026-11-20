@@ -1,0 +1,21 @@
+{
+	"type": "minecraft:crafting_shaped",
+	"pattern": ["EBE", "DAD", "EBE"],
+	"key": {
+		"A": {
+			"item": "kenergyengineering:efficiency_levelup"
+		},
+		"B": {
+			"item": "minecraft:gold_ingot"
+		},
+		"D": {
+			"item": "minecraft:lapis_lazuli"
+		},
+		"E": {
+			"item": "minecraft:copper_ingot"
+		}
+	},
+	"result": {
+		"id": "kenergyengineering:efficiency_levelup_2"
+	}
+}

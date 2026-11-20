@@ -1,0 +1,21 @@
+{
+	"type": "minecraft:crafting_shaped",
+	"pattern": [" B ", "DAD", " C "],
+	"key": {
+		"A": {
+			"item": "kenergyengineering:redstone_ai"
+		},
+		"B": {
+			"item": "minecraft:shulker_shell"
+		},
+		"C": {
+			"tag": "c:glass_blocks/colorless"
+		},
+		"D": {
+			"tag": "c:gears/tin"
+		}
+	},
+	"result": {
+		"id": "kenergyengineering:parallel_levelup"
+	}
+}

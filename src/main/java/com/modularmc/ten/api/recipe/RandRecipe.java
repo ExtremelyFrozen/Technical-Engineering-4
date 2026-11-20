@@ -35,6 +35,6 @@ public interface RandRecipe extends IBaseRecipeCm {
 
     @Override
     default ItemStack getResultItem(HolderLookup.Provider registries) {
-        return output().isEmpty() ? ItemStack.EMPTY : output().get(0).symbolItem();
+        return output().isEmpty() ? ItemStack.EMPTY : output().getFirst().symbolItem();
     }
 }

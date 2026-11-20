@@ -219,7 +219,7 @@ public static final BlockEntry<HorizontalMachineBlock> CELL = REGISTRATE
 - `ore()` — 矿石方块（需铁镐及以上，不同的 MapColor）
 - `storage()` / `rawStorage()` — 存储方块
 - `machine()` — 水平朝向机器
-- `engine()` — 发电机（水平朝向，不同纹理映射）
+- `engine()` — 引擎（水平朝向，不同纹理映射）
 - `cable()` — 线缆/管道（multipart blockstate）
 - `item()` — 简单物品
 - `upgrade()` — 升级组件（自定义 Item 子类）
@@ -277,7 +277,7 @@ public static final BlockEntityEntry<FurnaceBlockEntity> FURNACE = REGISTRATE
 |---|---|
 | `cubeAll()` | 简单六面贴图方块 |
 | `machine()` / `machineActive()` | 机器方块模型（带/不带 active 贴图） |
-| `engine()` / `engineActive()` | 发电机模型 |
+| `engine()` / `engineActive()` | 引擎模型 |
 | `energyCellBlockstate()` | 能量单元 blockstate |
 | `channelBlockstate()` | 频道 blockstate（六方向，active 切换） |
 | `cableMultipart()` | 线缆/管道 multipart blockstate（核心 + 六向连接 + active 切换） |
@@ -300,6 +300,19 @@ REGISTRATE.addDataGenerator(ProviderType.LANG, TENLangHandler::init);
 ```
 
 不要创建新的 `GatherDataEvent` 订阅者——在已有 `DataGenerators` 类中扩展即可。
+
+#### 物品贴图脚本
+
+四张独特组件升级卡（副产物压榨 / 副产物筛选 / 奇异催生 / 幼芽复种）的 16x16 贴图由
+`tools/gen_upgrade_textures.py` 生成：
+
+```bash
+python tools/gen_upgrade_textures.py --preview   # 生成四张 PNG，并在 build/ 输出放大对比图
+```
+
+脚本从 `mineral_levelup.png` 逐像素继承外壳的立体边框（8 阶灰阶映射到主题色系），
+中心图案用字符画声明。改图案请改脚本里的 `art` 字符画，不要直接改 PNG——
+手改会在下次重新生成时被覆盖，也容易让四张卡的边框结构漂移。
 
 ### 本地化
 

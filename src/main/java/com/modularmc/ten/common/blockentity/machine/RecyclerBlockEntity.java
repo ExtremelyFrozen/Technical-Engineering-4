@@ -3,9 +3,12 @@ package com.modularmc.ten.common.blockentity.machine;
 import com.lowdragmc.lowdraglib2.gui.factory.BlockUIMenuType;
 import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
 import com.modularmc.ten.api.blockentity.EngineBlockEntity;
+import com.modularmc.ten.api.blockentity.SlotInfo;
+import com.modularmc.ten.api.capability.MachineFluidTank;
 import com.modularmc.ten.api.option.IMachineType;
 import com.modularmc.ten.api.option.IngredientType;
 import com.modularmc.ten.api.option.MachineType;
+import com.modularmc.ten.api.recipe.FormsCombinedRecipe;
 import com.modularmc.ten.common.gui.TENMachineBlockUIFactory;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.item.ItemStack;
@@ -19,7 +22,7 @@ public class RecyclerBlockEntity extends EngineBlockEntity {
         super(type, pos, state);
         setCapacity(kFE(80));
         setEfficiency(5);
-        tanks.add(new com.modularmc.ten.api.capability.MachineFluidTank(8000));
+        tanks.add(new MachineFluidTank(8000));
     }
 
     @Override

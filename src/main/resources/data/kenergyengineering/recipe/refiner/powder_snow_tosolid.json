@@ -1,0 +1,19 @@
+{
+	"type": "kenergyengineering:refiner",
+	"inputs": [
+		{
+			"form": "fluid",
+			"type": "tag",
+			"key": "c:powder_snow",
+			"amount": 1000
+		}
+	],
+	"outputs": [
+		{
+			"form": "item",
+			"type": "static",
+			"key": "minecraft:powder_snow_bucket"
+		}
+	],
+	"time": 50
+}

@@ -1,0 +1,21 @@
+{
+	"type": "minecraft:crafting_shaped",
+	"pattern": ["EBE", "DAD", "EBE"],
+	"key": {
+		"A": {
+			"item": "kenergyengineering:parallel_levelup_2"
+		},
+		"B": {
+			"item": "minecraft:diamond"
+		},
+		"D": {
+			"item": "minecraft:gold_ingot"
+		},
+		"E": {
+			"item": "minecraft:shulker_shell"
+		}
+	},
+	"result": {
+		"id": "kenergyengineering:parallel_levelup_3"
+	}
+}

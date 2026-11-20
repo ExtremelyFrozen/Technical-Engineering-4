@@ -1,0 +1,37 @@
+{
+	"type": "kenergyengineering:distillator",
+	"inputs": [
+		{
+			"form": "fluid",
+			"type": "static",
+			"key": "kenergyengineering:crude_oil",
+      "amount": 200
+		}
+	],
+	"outputs": [
+    {
+      "form": "item",
+      "type": "static",
+      "key": "kenergyengineering:paraffin"
+    },
+    {
+      "form": "item",
+      "type": "static",
+      "key": "kenergyengineering:bitumen",
+      "count": 4
+    },
+		{
+			"form": "fluid",
+			"type": "static",
+			"key": "kenergyengineering:naphtha",
+			"amount": 200
+		},
+    {
+      "form": "fluid",
+      "type": "static",
+      "key": "kenergyengineering:kerosene",
+      "amount": 200
+    }
+	],
+	"time": 75
+}

@@ -257,7 +257,7 @@ public class CableBlockEntity extends CmBlockEntity implements ITransmitterProvi
         tag.putInt("renderPacked", renderPacked);
         EnergyNetwork net = transmitter.getNetwork();
         long share;
-        if (net != null && !net.isEmpty()) {
+        if (net != null && net.size() > 0) {
             // 均分份额存档：余数给 root 成员，保证 Σ份额 = 网络能量（卸载不丢 FE）
             share = net.getBuffer() / net.size();
             if (isNetworkRootMember(net)) {

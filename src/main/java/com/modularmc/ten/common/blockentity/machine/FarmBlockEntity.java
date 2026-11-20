@@ -1,11 +1,13 @@
 package com.modularmc.ten.common.blockentity.machine;
 
 import com.modularmc.ten.api.blockentity.RadiusMachineBlockEntity;
-import com.modularmc.ten.api.option.IMachineType;
 import com.modularmc.ten.api.option.IngredientType;
 import com.modularmc.ten.api.option.MachineType;
 import com.modularmc.ten.common.block.machine.HorizontalMachineBlock;
 import com.modularmc.ten.common.gui.TENMachineBlockUIFactory;
+import com.modularmc.ten.common.item.upgrades.LevelupOddGrowth;
+import com.modularmc.ten.common.item.upgrades.LevelupReseed;
+import com.modularmc.ten.common.item.upgrades.UpgradeConstants;
 import com.modularmc.ten.config.ConfigHolder;
 import com.modularmc.ten.utils.WorkingHelper;
 
@@ -28,6 +30,7 @@ import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
 import com.lowdragmc.lowdraglib2.syncdata.annotation.DescSynced;
 import com.lowdragmc.lowdraglib2.syncdata.annotation.Persisted;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -54,8 +57,14 @@ public class FarmBlockEntity extends RadiusMachineBlockEntity {
     public int[] xRowMaturity = new int[0];
 
     @Override
-    public IMachineType machineType() {
+    public int machineType() {
         return MachineType.FARM;
+    }
+
+    /** 农场有收获动作，奇异催生 / 幼芽复种两张独特组件只放行本机。 */
+    @Override
+    public boolean supportsHarvestSpecialization() {
+        return true;
     }
 
     @Override
@@ -107,7 +116,7 @@ public class FarmBlockEntity extends RadiusMachineBlockEntity {
 
     @Override
     public boolean cooking() {
-        // 纯容量谓词：输出槽（6..11）无法容纳本周期收割产出时停滞（保留 progress）。
+        // 纯容量谓词：输出槽（6..11）无法容纳本周期收割产出时停机（保留 progress）。
         // 每周期扫描 B 行；单格最多 2 件（1 种子 + 1 产物），阈值 2*B 保证产出放得下。
         if (itemHandler == null) {
             return false;
@@ -278,6 +287,7 @@ public class FarmBlockEntity extends RadiusMachineBlockEntity {
                     if (canFitAll(drops)) {
                         fitAll(drops);
                         level.setBlock(pos, scanState.setValue(CropBlock.AGE, 1), 3);
+                        afterHarvest(pos);
                     }
                 } else if (age >= maxAge - 1) {
                     maturity++;
@@ -295,6 +305,7 @@ public class FarmBlockEntity extends RadiusMachineBlockEntity {
                     if (canFitAll(drops)) {
                         fitAll(drops);
                         level.setBlock(pos, scanState.setValue(ageProp, Math.max(0, maxAge - 1)), 3);
+                        afterHarvest(pos);
                     }
                 } else if (age >= maxAge - 1) {
                     maturity++;
@@ -309,6 +320,7 @@ public class FarmBlockEntity extends RadiusMachineBlockEntity {
                 if (canFitAll(drops)) {
                     fitAll(drops);
                     level.destroyBlock(pos, false);
+                    afterHarvest(pos);
                 }
                 continue;
             }
@@ -326,6 +338,69 @@ public class FarmBlockEntity extends RadiusMachineBlockEntity {
             }
         }
         return maturity;
+    }
+
+    /** 收获后触发独特组件：两张卡整机互斥，只可能命中一张。 */
+    private void afterHarvest(BlockPos pos) {
+        if (level == null) return;
+        if (hasUpgrade(LevelupOddGrowth.class)) {
+            growOneAround(pos);
+        } else if (hasUpgrade(LevelupReseed.class)) {
+            spreadSeed(pos);
+        }
+    }
+
+    /**
+     * 奇异催生：收获后从目标同层周围 8 格中随机选 1 株可生长作物，推进 1 个生长刻度。
+     * 候选只在还有生长空间的作物里挑；满龄、茎类与目标格本身不参与抽取。
+     * 不用骨粉物品、不产生掉落。
+     */
+    private void growOneAround(BlockPos center) {
+        List<BlockPos> candidates = new ArrayList<>();
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dz = -1; dz <= 1; dz++) {
+                if (dx == 0 && dz == 0) continue;
+                BlockPos target = new BlockPos(center.getX() + dx, center.getY(), center.getZ() + dz);
+                if (growthAge(level.getBlockState(target)) == null) continue;
+                candidates.add(target);
+            }
+        }
+        if (candidates.isEmpty()) return;
+
+        for (int i = 0; i < UpgradeConstants.FARM_GROW_TARGETS && !candidates.isEmpty(); i++) {
+            BlockPos target = candidates.remove(level.random.nextInt(candidates.size()));
+            BlockState state = level.getBlockState(target);
+            IntegerProperty ageProp = growthAge(state);
+            if (ageProp == null) continue;
+            int age = state.getValue(ageProp);
+            int maxAge = ageProp.getPossibleValues().stream().max(Integer::compare).orElse(0);
+            level.setBlock(target, state.setValue(ageProp, Math.min(maxAge, age + UpgradeConstants.FARM_GROW_AGE_STEPS)), 3);
+        }
+    }
+
+    /** 可催生的作物年龄属性；非作物、茎类与已满龄目标返回 null。 */
+    private static IntegerProperty growthAge(BlockState state) {
+        if (state.getBlock() instanceof StemBlock) return null;
+        IntegerProperty prop = findAgeProperty(state);
+        if (prop == null) return null;
+        int age = state.getValue(prop);
+        int maxAge = prop.getPossibleValues().stream().max(Integer::compare).orElse(0);
+        return age >= maxAge ? null : prop;
+    }
+
+    /** 幼芽复种：25% 概率把种子槽的作物种子铺到四邻空耕地，不消耗种子槽物品。 */
+    private void spreadSeed(BlockPos center) {
+        if (Math.random() >= UpgradeConstants.FARM_RESEED_CHANCE) return;
+        ItemStack seed = getSeed();
+        if (seed.isEmpty() || !(seed.getItem() instanceof BlockItem bi)) return;
+        Block plantBlock = bi.getBlock();
+        if (!(plantBlock instanceof CropBlock)) return;
+        for (int[] offset : UpgradeConstants.FARM_RESEED_OFFSETS) {
+            BlockPos target = new BlockPos(center.getX() + offset[0], center.getY(), center.getZ() + offset[1]);
+            if (!level.getBlockState(target).isAir()) continue;
+            if (!level.getBlockState(target.below()).is(Blocks.FARMLAND)) continue;
+            level.setBlock(target, plantBlock.defaultBlockState(), 3);
+        }
     }
 
     private static boolean isBushCrop(BlockState state) {

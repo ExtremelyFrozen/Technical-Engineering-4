@@ -6,10 +6,12 @@ public class LevelupIce extends UpgradeItem {
 
     public LevelupIce() {
         super(0);
+        asSpecialization();
     }
 
     public LevelupIce(Properties properties) {
         super(0, properties);
+        asSpecialization();
     }
 
     @Override

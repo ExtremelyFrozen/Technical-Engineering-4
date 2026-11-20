@@ -1,0 +1,11 @@
+{
+  "type": "kenergyengineering:engine_fuel",
+  "duration": 8,
+  "engines": [
+    "biomass"
+  ],
+  "ingredient": {
+    "tag": "minecraft:flowers"
+  },
+  "rate_multiplier": 1.0
+}

@@ -383,7 +383,7 @@ public class TENRecipeGen implements DataProvider {
      */
     private void buildIngotToDust(List<CompletableFuture<?>> futures, CachedOutput cache, Path recipeDir, String mat,
                                   List<String> candidates) {
-        if (providerOf(candidates.get(0)).equals(TEN.MOD_ID)) return;
+        if (providerOf(candidates.getFirst()).equals(TEN.MOD_ID)) return;
         buildChainStage(futures, cache, recipeDir, mat, "ingot_dust", "c:ingots/" + mat, candidates, 100, item -> {
             var outs = new JsonArray();
             outs.add(ingr("item", "static", item, 1, null));
@@ -487,7 +487,7 @@ public class TENRecipeGen implements DataProvider {
         var a = new JsonArray();
         java.util.Set<String> seen = new java.util.LinkedHashSet<>();
         for (var c : conds) if (c != null && seen.add(c.toString())) a.add(c);
-        if (a.size() > 0) j.add("neoforge:conditions", a);
+        if (!a.isEmpty()) j.add("neoforge:conditions", a);
     }
 
     /** 条件：该标签非空（材料缺席时整条配方在加载期被剔除）。 */

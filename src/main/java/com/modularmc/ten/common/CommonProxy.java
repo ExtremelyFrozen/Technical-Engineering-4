@@ -1,5 +1,6 @@
 package com.modularmc.ten.common;
 
+import com.modularmc.ten.api.blockentity.CmMachineBlockEntity;
 import com.modularmc.ten.common.block.machine.BaseMachineBlock;
 import com.modularmc.ten.common.data.*;
 import com.modularmc.ten.common.item.EnergyUnitItem;
@@ -57,7 +58,7 @@ public class CommonProxy {
                     if (blockEntity instanceof com.modularmc.ten.common.blockentity.CableBlockEntity cable) {
                         return cable.getEnergy(side);
                     }
-                    if (blockEntity instanceof com.modularmc.ten.api.blockentity.CmMachineBlockEntity machine) {
+                    if (blockEntity instanceof CmMachineBlockEntity machine) {
                         return machine.getEnergyStorage(side);
                     }
                     return null;
@@ -67,22 +68,22 @@ public class CommonProxy {
                     if (blockEntity instanceof com.modularmc.ten.common.blockentity.PipeBlockEntity pipe) {
                         return pipe.getTransportHandler(side);
                     }
-                    if (blockEntity instanceof com.modularmc.ten.api.blockentity.CmMachineBlockEntity machine) {
+                    if (blockEntity instanceof CmMachineBlockEntity machine) {
                         return machine.getItemHandler(side);
                     }
                     return null;
                 }, block);
 
                 event.registerBlock(Capabilities.FluidHandler.BLOCK, (level, pos, state, blockEntity, side) -> {
-                    if (blockEntity instanceof com.modularmc.ten.api.blockentity.CmMachineBlockEntity machine) {
+                    if (blockEntity instanceof CmMachineBlockEntity machine) {
                         return machine.getFluidHandler(side);
                     }
                     return null;
                 }, block);
             }
         }
-
-        // Energy Unit item capability
+        event.registerBlockEntity(Capabilities.FluidHandler.BLOCK, TENBlockEntities.SPRING.get(), (be, side) -> be.getFluidHandler(side));
+        // Energy Module item capability
         event.registerItem(Capabilities.EnergyStorage.ITEM, (stack, ctx) -> {
             var data = com.modularmc.ten.component.EnergyUnitData.of(stack);
             return new IEnergyStorage() {

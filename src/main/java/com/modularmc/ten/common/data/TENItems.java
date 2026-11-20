@@ -5,17 +5,22 @@ import com.modularmc.ten.common.item.EnergyUnitItem;
 import com.modularmc.ten.common.item.SpannerItem;
 import com.modularmc.ten.common.item.upgrades.*;
 
+import net.minecraft.tags.TagKey;
+import net.minecraft.world.item.HoneycombItem;
 import net.minecraft.world.item.Item;
 
 import com.tterrag.registrate.util.entry.ItemEntry;
 import com.tterrag.registrate.util.nullness.NonNullFunction;
+import net.neoforged.neoforge.common.Tags;
+
+import java.util.LinkedHashMap;
 
 import static com.modularmc.ten.common.registry.Registration.REGISTRATE;
 
 public class TENItems {
 
-    public static final java.util.LinkedHashMap<String, String> ZH_NAMES = new java.util.LinkedHashMap<>();
-    public static final java.util.LinkedHashMap<String, String> EN_NAMES = new java.util.LinkedHashMap<>();
+    public static final LinkedHashMap<String, String> ZH_NAMES = new LinkedHashMap<>();
+    public static final LinkedHashMap<String, String> EN_NAMES = new LinkedHashMap<>();
 
     static {
         REGISTRATE.creativeModeTab(() -> TENCreativeModeTabs.ITEM_TAB);
@@ -72,9 +77,9 @@ public class TENItems {
     public static final ItemEntry<Item> REDSTONE_CONDUCTOR = texturedItem("redstone_conductor", "Redstone Conductor", "红石传导元件", "item/crafting/redstone_conductor");
     public static final ItemEntry<Item> REDSTONE_CONVERTER = texturedItem("redstone_converter", "Redstone Converter", "红石转化元件", "item/crafting/redstone_converter");
     public static final ItemEntry<Item> REDSTONE_STORER = texturedItem("redstone_storer", "Redstone Storer", "红石转存元件", "item/crafting/redstone_storer");
-    public static final ItemEntry<Item> INDIGO = texturedItem("indigo", "Indigo", "靛青", "item/crafting/indigo");
-    public static final ItemEntry<Item> AZURE_GLASS = texturedItem("azure_glass", "Azure Glass", "琉璃", "item/crafting/azure_glass");
-    public static final ItemEntry<Item> BIZARRERIE = texturedItem("bizarrerie", "Bizarrerie", "奇异物质", "item/crafting/bizarrerie");
+    public static final ItemEntry<Item> INDIGO = texturedItem("indigo", "Indigo", "靛青", "item/crafting/indigo", Tags.Items.ENCHANTING_FUELS);
+    public static final ItemEntry<Item> AZURE_GLASS = texturedItem("azure_glass", "Azure Glass", "琉璃", "item/crafting/azure_glass", Tags.Items.ENCHANTING_FUELS);
+    public static final ItemEntry<Item> BIZARRERIE = texturedItem("bizarrerie", "Bizarrerie", "奇异物质", "item/crafting/bizarrerie", Tags.Items.ENCHANTING_FUELS);
     public static final ItemEntry<Item> REDSTONE_AI = texturedItem("redstone_ai", "Redstone AI", "红石智能芯片", "item/crafting/redstone_ai");
     public static final ItemEntry<Item> REDSTONE_AI_ADVANCED = texturedItem("redstone_ai_advanced", "Advanced Redstone AI", "自律红石智能芯片", "item/crafting/redstone_ai_advanced");
     public static final ItemEntry<Item> HYDRAULIC_WIDGET = texturedItem("hydraulic_widget", "Hydraulic Widget", "液压组件", "item/crafting/hydraulic_widget");
@@ -82,6 +87,9 @@ public class TENItems {
 
     public static final ItemEntry<Item> ROYAL_JELLY = texturedItem("royal_jelly", "Royal Jelly", "蜂王浆", "item/royal_jelly");
     public static final ItemEntry<Item> SPICY_JELLY = texturedItem("spicy_jelly", "Spicy Jelly", "香辣蜂王浆", "item/spicy_jelly");
+
+    public static final ItemEntry<Item> PARAFFIN = burnableItem("paraffin", "Paraffin", "石蜡", "item/paraffin", 200, HoneycombItem::new);
+    public static final ItemEntry<Item> BITUMEN = texturedItem("bitumen", "Bitumen", "沥青", "item/spicy_jelly");
 
     // === Moulds ===
     static {
@@ -135,6 +143,22 @@ public class TENItems {
     public static final ItemEntry<? extends UpgradeItem> ICE_LEVELUP = upgrade("ice_levelup", "Upgrade: Frozen Soil Drilling", "升级：地下冻土开采", p -> new LevelupIce());
     public static final ItemEntry<? extends UpgradeItem> MAGMA_LEVELUP = upgrade("magma_levelup", "Upgrade: Mantle Drilling", "升级：地幔深层钻井", p -> new LevelupMagma());
     public static final ItemEntry<? extends UpgradeItem> MINERAL_LEVELUP = upgrade("mineral_levelup", "Upgrade: Mineral Detection", "升级：矿物探测仪器", p -> new LevelupMineral());
+    public static final ItemEntry<? extends UpgradeItem> PRESS_LEVELUP = upgrade("press_levelup", "Upgrade: Byproduct Press", "升级：副产物压榨", p -> new LevelupPress());
+    public static final ItemEntry<? extends UpgradeItem> FILTER_LEVELUP = upgrade("filter_levelup", "Upgrade: Byproduct Filter", "升级：副产物筛选", p -> new LevelupFilter());
+    public static final ItemEntry<? extends UpgradeItem> ODDGROWTH_LEVELUP = upgrade("oddgrowth_levelup", "Upgrade: Odd Growth", "升级：奇异催生", p -> new LevelupOddGrowth());
+    public static final ItemEntry<? extends UpgradeItem> RESPROUT_LEVELUP = upgrade("resprout_levelup", "Upgrade: Sprout Reseed", "升级：幼芽复种", p -> new LevelupReseed());
+    public static final ItemEntry<? extends UpgradeItem> EFFICIENCY_LEVELUP = upgrade("efficiency_levelup", "Upgrade: Flux Efficiency Circuit I", "升级：节能回路 I", p -> new LevelupEfficiency(1));
+    public static final ItemEntry<? extends UpgradeItem> EFFICIENCY_LEVELUP_2 = upgrade("efficiency_levelup_2", "Upgrade: Flux Efficiency Circuit II", "升级：节能回路 II", p -> new LevelupEfficiency(2));
+    public static final ItemEntry<? extends UpgradeItem> EFFICIENCY_LEVELUP_3 = upgrade("efficiency_levelup_3", "Upgrade: Flux Efficiency Circuit III", "升级：节能回路 III", p -> new LevelupEfficiency(3));
+    public static final ItemEntry<? extends UpgradeItem> PARALLEL_LEVELUP = upgrade("parallel_levelup", "Upgrade: Parallel Processing Core I", "升级：并行处理核心 I", p -> new LevelupParallel(1));
+    public static final ItemEntry<? extends UpgradeItem> PARALLEL_LEVELUP_2 = upgrade("parallel_levelup_2", "Upgrade: Parallel Processing Core II", "升级：并行处理核心 II", p -> new LevelupParallel(2));
+    public static final ItemEntry<? extends UpgradeItem> PARALLEL_LEVELUP_3 = upgrade("parallel_levelup_3", "Upgrade: Parallel Processing Core III", "升级：并行处理核心 III", p -> new LevelupParallel(3));
+    public static final ItemEntry<? extends UpgradeItem> DURATION_LEVELUP = upgrade("duration_levelup", "Upgrade: Streamlined Process I", "升级：工序精简 I", p -> new LevelupDuration(1));
+    public static final ItemEntry<? extends UpgradeItem> DURATION_LEVELUP_2 = upgrade("duration_levelup_2", "Upgrade: Streamlined Process II", "升级：工序精简 II", p -> new LevelupDuration(2));
+    public static final ItemEntry<? extends UpgradeItem> DURATION_LEVELUP_3 = upgrade("duration_levelup_3", "Upgrade: Streamlined Process III", "升级：工序精简 III", p -> new LevelupDuration(3));
+    public static final ItemEntry<? extends UpgradeItem> SPEED_LEVELUP = upgrade("speed_levelup", "Upgrade: Overclock Circuit I", "升级：超频回路 I", p -> new LevelupSpeed(1));
+    public static final ItemEntry<? extends UpgradeItem> SPEED_LEVELUP_2 = upgrade("speed_levelup_2", "Upgrade: Overclock Circuit II", "升级：超频回路 II", p -> new LevelupSpeed(2));
+    public static final ItemEntry<? extends UpgradeItem> SPEED_LEVELUP_3 = upgrade("speed_levelup_3", "Upgrade: Overclock Circuit III", "升级：超频回路 III", p -> new LevelupSpeed(3));
 
     private static ItemEntry<Item> item(String name, String englishName, String cn) {
         ZH_NAMES.put(name, cn);
@@ -144,22 +168,35 @@ public class TENItems {
                 .register();
     }
 
-    private static ItemEntry<Item> texturedItem(String name, String englishName, String cn, String texturePath) {
-        ZH_NAMES.put(name, cn);
-        EN_NAMES.put(name, englishName);
-        return REGISTRATE.item(name, Item::new)
-                .lang(englishName)
-                .model((ctx, prov) -> prov.generated(ctx::getEntry, prov.modLoc(texturePath)))
-                .register();
+    @SafeVarargs
+    private static ItemEntry<Item> texturedItem(String name, String englishName, String cn, String texturePath, TagKey<Item>... tags) {
+        return specialItem(name, englishName, cn, texturePath, Item::new, tags);
     }
 
     private static <T extends UpgradeItem> ItemEntry<T> upgrade(String name, String englishName, String cn, NonNullFunction<Item.Properties, T> factory) {
+        return specialItem(name, englishName, cn, "item/upgrade/" + name, factory);
+    }
+
+    @SafeVarargs
+    private static <T extends Item> ItemEntry<T> burnableItem(String name, String englishName, String cn, String texturePath, int tick, NonNullFunction<Item.Properties, T> factory, TagKey<Item>... tags) {
         ZH_NAMES.put(name, cn);
         EN_NAMES.put(name, englishName);
         return REGISTRATE.item(name, factory)
-                .lang(englishName)
-                .model((ctx, prov) -> prov.generated(ctx::getEntry, prov.modLoc("item/upgrade/" + name)))
-                .register();
+            .lang(englishName).burnTime(tick)
+            .model((ctx, prov) -> prov.generated(ctx::getEntry, prov.modLoc(texturePath)))
+            .tag(tags)
+            .register();
+    }
+
+    @SafeVarargs
+    private static <T extends Item> ItemEntry<T> specialItem(String name, String englishName, String cn, String texturePath, NonNullFunction<Item.Properties, T> factory, TagKey<Item>... tags) {
+        ZH_NAMES.put(name, cn);
+        EN_NAMES.put(name, englishName);
+        return REGISTRATE.item(name, factory)
+            .lang(englishName)
+            .model((ctx, prov) -> prov.generated(ctx::getEntry, prov.modLoc(texturePath)))
+            .tag(tags)
+            .register();
     }
 
     @SafeVarargs
@@ -170,15 +207,10 @@ public class TENItems {
             String name = mat.id + "_" + category;
             mat.markRegistered(category);
             String englishName = mat.englishName(categoryEn);
-            String chineseName = mat.cn + categoryCn;
+            String cn = mat.cn + categoryCn;
             String texturePath = "item/material/" + category + "/" + name;
 
-            ZH_NAMES.put(name, chineseName);
-            EN_NAMES.put(name, englishName);
-            REGISTRATE.item(name, factory)
-                    .lang(englishName)
-                    .model((ctx, prov) -> prov.generated(ctx::getEntry, prov.modLoc(texturePath)))
-                    .register();
+            specialItem(name, englishName, cn, texturePath, factory);
         }
     }
 

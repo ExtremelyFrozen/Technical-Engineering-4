@@ -2,6 +2,7 @@ package com.modularmc.ten.api.recipe;
 
 import com.modularmc.ten.utils.TagHelper;
 
+import lombok.Getter;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
 import net.minecraft.resources.ResourceLocation;
@@ -25,11 +26,13 @@ import java.util.List;
 public class FormsCombinedRecipe implements RandRecipe {
 
     protected ResourceLocation regName;
+    @Getter
     protected ResourceLocation id;
     protected List<FormsCombinedIngredient> input;
     protected List<FormsCombinedIngredient> output;
     protected int time;
 
+    @Getter
     public RecipeSerializer<?> serializer;
     public RecipeType<?> recipeType;
 
@@ -155,10 +158,6 @@ public class FormsCombinedRecipe implements RandRecipe {
         return ItemStack.EMPTY;
     }
 
-    public ResourceLocation getId() {
-        return id;
-    }
-
     /**
      * 回填配方 id：1.21 Codec 体系下 serializer 解码时拿不到 id（由 RecipeManager 经
      * RecipeHolder 从文件路径提供）→ {@link FormsCombinedRecipeSerializer} 只能传 null。
@@ -172,10 +171,6 @@ public class FormsCombinedRecipe implements RandRecipe {
 
     public RecipeType<?> getType() {
         return recipeType;
-    }
-
-    public RecipeSerializer<?> getSerializer() {
-        return serializer;
     }
 
     public List<FormsCombinedIngredient> output() {

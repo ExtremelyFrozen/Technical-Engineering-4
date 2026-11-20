@@ -30,6 +30,7 @@ public enum MachineType implements IMachineType{
     BLOCK_FORMER (Category.MACHINE_EFFECT, EnergyFlow.INPUT, EnergyDemand.SUFFICIENT),
     COOLER       (Category.MACHINE_EFFECT, EnergyFlow.INPUT, EnergyDemand.SUFFICIENT),
     CAULDRON     (Category.MACHINE_EFFECT, EnergyFlow.INPUT, EnergyDemand.SUFFICIENT),
+    DISTILLATOR  (Category.MACHINE_EFFECT, EnergyFlow.INPUT, EnergyDemand.SUFFICIENT),
 
     // Engines
     ENGINE_SOLAR     (Category.GENERATOR, EnergyFlow.OUTPUT, EnergyDemand.NOT_FULL),

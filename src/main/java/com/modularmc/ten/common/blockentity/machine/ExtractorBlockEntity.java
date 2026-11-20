@@ -4,7 +4,6 @@ import com.modularmc.ten.api.blockentity.EngineBlockEntity;
 import com.modularmc.ten.api.option.IMachineType;
 import com.modularmc.ten.api.option.IngredientType;
 import com.modularmc.ten.api.option.MachineType;
-import com.modularmc.ten.common.blockentity.MatchFuel;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.item.ItemStack;
@@ -20,7 +19,7 @@ public class ExtractorBlockEntity extends EngineBlockEntity {
     public ExtractorBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
         setCapacity(kFE(60));
-        setEfficiency(30);
+        setEfficiency(BASE_GENERATION_RATE);
     }
 
     @Override
@@ -40,7 +39,7 @@ public class ExtractorBlockEntity extends EngineBlockEntity {
 
     @Override
     public boolean valid(int slot, ItemStack stack) {
-        return MatchFuel.matchFuel(stack, true) > 0;
+        return !fuelProfile(stack).isEmpty();
     }
 
     @Override
@@ -54,7 +53,7 @@ public class ExtractorBlockEntity extends EngineBlockEntity {
     }
 
     @Override
-    public int matchFuel(ItemStack stack, boolean simulate) {
-        return MatchFuel.matchFuel(stack, simulate);
+    public String fuelEngineId() {
+        return "extractor";
     }
 }

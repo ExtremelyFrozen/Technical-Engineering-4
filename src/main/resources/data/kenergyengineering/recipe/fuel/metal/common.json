@@ -1,0 +1,12 @@
+{
+	"type": "kenergyengineering:biomass_fuel",
+	"inputs": [
+		{
+			"form": "item",
+			"type": "tag",
+			"key": "kenergyengineering:common_ingots"
+		}
+	],
+  "outputs": [],
+	"time": 20000
+}

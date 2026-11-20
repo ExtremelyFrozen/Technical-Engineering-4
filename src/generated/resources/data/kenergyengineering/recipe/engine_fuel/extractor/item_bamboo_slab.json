@@ -1,0 +1,11 @@
+{
+  "type": "kenergyengineering:engine_fuel",
+  "duration": 100,
+  "engines": [
+    "extractor"
+  ],
+  "ingredient": {
+    "item": "minecraft:bamboo_slab"
+  },
+  "rate_multiplier": 1.0
+}

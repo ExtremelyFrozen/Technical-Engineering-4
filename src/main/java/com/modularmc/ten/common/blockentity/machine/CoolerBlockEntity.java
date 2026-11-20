@@ -2,7 +2,10 @@ package com.modularmc.ten.common.blockentity.machine;
 
 import com.modularmc.ten.api.blockentity.CmMachineBlockEntity;
 import com.modularmc.ten.api.blockentity.EffectMachineBlockEntity;
-import com.modularmc.ten.api.option.*;
+import com.modularmc.ten.api.option.Coolant;
+import com.modularmc.ten.api.option.Coolants;
+import com.modularmc.ten.api.option.IngredientType;
+import com.modularmc.ten.api.option.MachineType;
 import com.modularmc.ten.common.gui.TENMachineBlockUIFactory;
 
 import net.minecraft.core.BlockPos;
@@ -52,7 +55,7 @@ public class CoolerBlockEntity extends EffectMachineBlockEntity {
     }
 
     @Override
-    public IMachineType machineType() {
+    public int machineType() {
         return MachineType.COOLER;
     }
 

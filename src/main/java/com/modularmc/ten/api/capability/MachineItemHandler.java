@@ -14,7 +14,7 @@ import java.util.function.BiPredicate;
 import java.util.function.ToIntBiFunction;
 
 /**
- * 机器物品槽能力：槽位级插入/提取校验（回调注入），支持批处理动态堆叠上限
+ * 机器物品槽能力：槽位级插入/提取校验（回调注入），支持并行运行动态堆叠上限
  * （{@link #setDynamicSlotLimit}），并自行实现超 99 堆叠的 NBT 读写。
  */
 @Setter
@@ -159,7 +159,7 @@ public class MachineItemHandler extends ItemStackHandler {
      * 提取：以槽内实际数量为上限，不再被物品自身堆叠上限（通常 64）截断。
      * <p>
      * 父类实现取 {@code Math.min(amount, existing.getMaxStackSize())}，而本 handler 允许
-     * 批处理超堆叠（单槽上限 64×B）。若沿用父类，超堆叠槽一次最多只能交出 64 个，
+     * 并行运行超堆叠（单槽上限 64×B）。若沿用父类，超堆叠槽一次最多只能交出 64 个，
      * 所有「先插入目标、再按插入量扣槽」的调用方都会凭空多出物品；
      * 反之忽略返回值、只调一次的调用方（扳手拆卸）会把剩余部分留在即将移除的 BE 里，
      * 随后被方块移除逻辑撒到地上而不是进背包。

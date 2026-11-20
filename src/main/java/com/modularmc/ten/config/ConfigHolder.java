@@ -1,7 +1,5 @@
 package com.modularmc.ten.config;
 
-import com.modularmc.ten.api.option.MachineType;
-
 import java.util.List;
 
 /**
@@ -36,26 +34,26 @@ public final class ConfigHolder {
         return TENConfig.MACHINE.baseEnergyCapacity();
     }
 
-    public static boolean enableMachine(MachineType machineType) {
+    public static boolean enableMachine(int machineType) {
         var m = TENConfig.MACHINE;
         return switch (machineType) {
-            case MachineType.FURNACE -> m.enableSmelter();
-            case MachineType.PULVERIZER -> m.enablePulverizer();
-            case MachineType.COMPRESSOR -> m.enableCompressor();
-            case MachineType.REFINER -> m.enableRefiner();
-            case MachineType.INDUCTION_FURNACE -> m.enableInductionFurnace();
-            case MachineType.PSIONICANT -> m.enablePsionicant();
-            case MachineType.BEACON -> m.enableBeacon();
-            case MachineType.MOB_RIPPER -> m.enableMobRipper();
-            case MachineType.QUARRY -> m.enableQuarry();
-            case MachineType.ENCHANTMENT_FLUSHER -> m.enableEnchantmentFlusher();
-            case MachineType.MATTER_CONDENSER -> m.enableCondenser();
-            case MachineType.FARM -> m.enableFarmManager();
+            case com.modularmc.ten.api.option.MachineType.FURNACE -> m.enableSmelter();
+            case com.modularmc.ten.api.option.MachineType.PULVERIZER -> m.enablePulverizer();
+            case com.modularmc.ten.api.option.MachineType.COMPRESSOR -> m.enableCompressor();
+            case com.modularmc.ten.api.option.MachineType.REFINER -> m.enableRefiner();
+            case com.modularmc.ten.api.option.MachineType.INDUCTION_FURNACE -> m.enableInductionFurnace();
+            case com.modularmc.ten.api.option.MachineType.PSIONICANT -> m.enablePsionicant();
+            case com.modularmc.ten.api.option.MachineType.BEACON -> m.enableBeacon();
+            case com.modularmc.ten.api.option.MachineType.MOB_RIPPER -> m.enableMobRipper();
+            case com.modularmc.ten.api.option.MachineType.QUARRY -> m.enableQuarry();
+            case com.modularmc.ten.api.option.MachineType.ENCHANTMENT_FLUSHER -> m.enableEnchantmentFlusher();
+            case com.modularmc.ten.api.option.MachineType.MATTER_CONDENSER -> m.enableCondenser();
+            case com.modularmc.ten.api.option.MachineType.FARM -> m.enableFarmManager();
             default -> true;
         };
     }
 
-    // ── Energy Unit config ────────────────────────────────────────────
+    // ── Energy Module config ────────────────────────────────────────────
 
     public static TENConfig.EnergyUnitConfig energyUnit() {
         return TENConfig.ENERGY_UNIT;

@@ -8,6 +8,7 @@ import com.modularmc.ten.api.option.FaceOption;
 import com.modularmc.ten.api.option.IMachineType;
 import com.modularmc.ten.api.option.IngredientType;
 import com.modularmc.ten.api.option.MachineType;
+import com.modularmc.ten.common.data.TENFluids;
 import com.modularmc.ten.common.gui.TENMachineBlockUIFactory;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
@@ -71,8 +72,7 @@ public class CauldronBlockEntity extends ProcessingMachineBlockEntity {
         }
         MachineFluidTank tank = tanks.getFirst();
         if (tank.getSpace() == 0) return false;
-        if (checkCooling > 0){
-            checkCooling --;
+        if (--checkCooling > 0){
             return false;
         }
         int type = checkStalactiteDrip(level, worldPosition);
@@ -121,7 +121,7 @@ public class CauldronBlockEntity extends ProcessingMachineBlockEntity {
         WATER { public FluidStack produce() { return new FluidStack(Fluids.WATER, 2500); } },
         WATER_ENHANCED { public FluidStack produce() { return new FluidStack(Fluids.WATER, 5000); } },
         LAVA  { public FluidStack produce() { return new FluidStack(Fluids.LAVA, 100); } },
-        SNOW  { public FluidStack produce() { return new FluidStack(Fluids.WATER, 100); } };
+        SNOW  { public FluidStack produce() { return new FluidStack(TENFluids.POWDER_SNOW, 100); } };
 
         public abstract FluidStack produce();  // 每次返回新实例，避免 FluidStack 可变共享
     }

@@ -1,5 +1,6 @@
 package com.modularmc.ten.common.data;
 
+import com.modularmc.ten.common.blockentity.SpringBlockEntity;
 import com.modularmc.ten.common.blockentity.CableBlockEntity;
 import com.modularmc.ten.common.blockentity.PipeBlockEntity;
 import com.modularmc.ten.common.blockentity.channel.ChannelEnergyBlockEntity;
@@ -93,6 +94,10 @@ public class TENBlockEntities {
             .blockEntity("machine_dew_collector", CauldronBlockEntity::new)
             .validBlocks(TENBlocks.MACHINE_DEW_COLLECTOR)
             .register();
+    public static final BlockEntityEntry<DistillatorBlockEntity> DISTILLATOR = REGISTRATE
+            .blockEntity("machine_distillator", DistillatorBlockEntity::new)
+            .validBlocks(TENBlocks.MACHINE_DISTILLATOR)
+            .register();
 
     // 三台环境作业机器
     public static final BlockEntityEntry<BlockBreakerBlockEntity> BLOCK_BREAKER = REGISTRATE
@@ -108,7 +113,7 @@ public class TENBlockEntities {
             .validBlocks(TENBlocks.MACHINE_COOLER)
             .register();
 
-    // 引擎
+    // Engines
     public static final BlockEntityEntry<SolarBlockEntity> SOLAR = REGISTRATE
             .blockEntity("engine_solar", SolarBlockEntity::new)
             .validBlocks(TENBlocks.ENGINE_SOLAR)
@@ -139,6 +144,11 @@ public class TENBlockEntities {
     public static final BlockEntityEntry<CreativeCellBlockEntity> CREATIVE_CELL = REGISTRATE
             .blockEntity("creative_energy_cell", CreativeCellBlockEntity::new)
             .validBlocks(TENBlocks.CREATIVE_CELL)
+            .register();
+
+    public static final BlockEntityEntry<SpringBlockEntity> SPRING = REGISTRATE
+            .blockEntity("spring", SpringBlockEntity::new)
+            .validBlocks(TENBlocks.OIL_SPRING)
             .register();
 
     public static void init() {}

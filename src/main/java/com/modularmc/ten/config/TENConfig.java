@@ -172,22 +172,22 @@ public final class TENConfig {
         public final ModConfigSpec.BooleanValue chargingDefault;
 
         EnergyUnitConfig(ModConfigSpec.Builder builder) {
-            builder.push("energyUnit").comment("Energy Unit item configuration")
+            builder.push("energyUnit").comment("Energy Module item configuration")
                     .translation(key("energyUnit"));
 
-            maxEnergy = builder.comment("Maximum energy storage of the Energy Unit")
+            maxEnergy = builder.comment("Maximum energy storage of the Energy Module")
                     .translation(key("energyUnit.maxEnergy"))
                     .defineInRange("maxEnergy", 400_000, 1000, 100_000_000);
-            chargeRate = builder.comment("Energy Unit charge rate (FE/t)")
+            chargeRate = builder.comment("Energy Module charge rate (FE/t)")
                     .translation(key("energyUnit.chargeRate"))
                     .defineInRange("chargeRate", 2_000, 1, 100_000);
-            inputRate = builder.comment("Energy Unit input rate (FE/t)")
+            inputRate = builder.comment("Energy Module input rate (FE/t)")
                     .translation(key("energyUnit.inputRate"))
                     .defineInRange("inputRate", 2_000, 1, 100_000);
-            outputRate = builder.comment("Energy Unit output rate (FE/t)")
+            outputRate = builder.comment("Energy Module output rate (FE/t)")
                     .translation(key("energyUnit.outputRate"))
                     .defineInRange("outputRate", 2_000, 1, 100_000);
-            chargingDefault = builder.comment("Default charging mode for new Energy Units")
+            chargingDefault = builder.comment("Default charging mode for new Energy Modules")
                     .translation(key("energyUnit.chargingDefault"))
                     .define("chargingDefault", false);
 

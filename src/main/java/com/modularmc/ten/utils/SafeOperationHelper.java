@@ -1,5 +1,6 @@
 package com.modularmc.ten.utils;
 
+import lombok.Getter;
 import net.minecraft.Util;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.util.RandomSource;
@@ -19,7 +20,8 @@ public class SafeOperationHelper {
         return Objects.requireNonNull(BuiltInRegistries.ITEM.getKey(item)).getPath();
     }
 
-    static RandomSource random = RandomSource.create();
+    @Getter
+    private final static RandomSource random = RandomSource.create();
 
     @SuppressWarnings("unchecked")
     public static <T> T randomInCollection(Collection<T> col) {

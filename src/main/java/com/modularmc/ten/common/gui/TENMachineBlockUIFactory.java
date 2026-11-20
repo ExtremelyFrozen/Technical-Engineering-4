@@ -3,20 +3,19 @@ package com.modularmc.ten.common.gui;
 import com.modularmc.ten.TENConstants;
 import com.modularmc.ten.api.blockentity.CmMachineBlockEntity;
 import com.modularmc.ten.api.option.FaceOption;
-import com.modularmc.ten.api.option.IMachineType;
 import com.modularmc.ten.api.option.MachineType;
 import com.modularmc.ten.api.option.RedstoneMode;
 import com.modularmc.ten.config.TENConfig;
 import com.modularmc.ten.utils.ComponentHelper;
 import com.modularmc.ten.utils.DisplayHelper;
 
+import lombok.Getter;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.Slot;
-import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.items.SlotItemHandler;
 
 import com.lowdragmc.lowdraglib2.gui.factory.BlockUIMenuType;
@@ -211,8 +210,8 @@ public final class TENMachineBlockUIFactory {
         // 展开动画期间九宫格拼接：四角 4×4 固定，边/心随目标宽高拉伸填充（可适配任意目标尺寸）。
         // NOTE: 改 CONFIG_PANEL_WIDTH/HEIGHT 需同步 syncSidebar/syncUpgrade 两套动画逻辑（宽高按比例同步对角生长，见 panelHeightFor）。
         var configButton = textureElement(CONFIG_TAB_X, configTabY, CONFIG_TAB_SIZE, CONFIG_TAB_SIZE,
-            fullTexture(TENConstants.ICON_CONFIG, CONFIG_TAB_SIZE, CONFIG_TAB_SIZE),
-            TENMachineBlockUIFactory::controlTooltip,
+                fullTexture(TENConstants.ICON_CONFIG, CONFIG_TAB_SIZE, CONFIG_TAB_SIZE),
+                () -> controlTooltip(),
                 () -> {
                     // 互斥：开配置面板先关升级面板
                     uiState.setUpgradeOpen(false);
@@ -268,17 +267,17 @@ public final class TENMachineBlockUIFactory {
         // 未悬停已选 y=28 / 悬停已选 y=42；syncTexture（TICK）实时刷新，hover 由 element.isHover() 取
         var modeIconTex = TENConstants.CONFIG_MODE_BUTTONS;
         var energyModeButton = textureElement(overlayOriginX + 2, overlayOriginY + 59, 14, 14,
-                IGuiTexture.EMPTY, TENMachineBlockUIFactory::energyModeTooltip, () -> uiState.setSelectedTransferMode(0), null, null)
+                IGuiTexture.EMPTY, () -> energyModeTooltip(), () -> uiState.setSelectedTransferMode(0), null, null)
                 .style(style -> style.zIndex(1));
         syncTexture(energyModeButton, () -> sprite(modeIconTex, 14,
                 (uiState.getSelectedTransferMode() == 0 ? 2 : 0) * 14 + (energyModeButton.isHover() ? 14 : 0), 14, 14));
         var itemModeButton = textureElement(overlayOriginX + 18, overlayOriginY + 59, 14, 14,
-                IGuiTexture.EMPTY, TENMachineBlockUIFactory::itemModeTooltip, () -> uiState.setSelectedTransferMode(1), null, null)
+                IGuiTexture.EMPTY, () -> itemModeTooltip(), () -> uiState.setSelectedTransferMode(1), null, null)
                 .style(style -> style.zIndex(1));
         syncTexture(itemModeButton, () -> sprite(modeIconTex, 28,
                 (uiState.getSelectedTransferMode() == 1 ? 2 : 0) * 14 + (itemModeButton.isHover() ? 14 : 0), 14, 14));
         var fluidModeButton = textureElement(overlayOriginX + 34, overlayOriginY + 59, 14, 14,
-                IGuiTexture.EMPTY, TENMachineBlockUIFactory::fluidModeTooltip, () -> uiState.setSelectedTransferMode(2), null, null)
+                IGuiTexture.EMPTY, () -> fluidModeTooltip(), () -> uiState.setSelectedTransferMode(2), null, null)
                 .style(style -> style.zIndex(1));
         syncTexture(fluidModeButton, () -> sprite(modeIconTex, 0,
                 (uiState.getSelectedTransferMode() == 2 ? 2 : 0) * 14 + (fluidModeButton.isHover() ? 14 : 0), 14, 14));
@@ -292,7 +291,7 @@ public final class TENMachineBlockUIFactory {
         // close 热区（IGuiTexture.EMPTY，无图元可对齐）：钉面板右上角 10×10，同升级面板 close 锚法，
         // 不越出面板上缘（像素扫描确认 legacy 纹理右上区仅棋盘格空位，无 X 图元，故不进纹理像素坐标系）
         var closeButton = textureElement(CONFIG_PANEL_LEFT_X + CONFIG_PANEL_WIDTH - 14, configTabY, 10, 10, IGuiTexture.EMPTY,
-            TENMachineBlockUIFactory::controlTooltip, () -> uiState.setControlOpen(false), null, null)
+                () -> controlTooltip(), () -> uiState.setControlOpen(false), null, null)
                 .style(style -> style.zIndex(1));
 
         root.addChild(configPanel);
@@ -449,6 +448,8 @@ public final class TENMachineBlockUIFactory {
         // NOTE: 同 zIndex 时按 addChild 索引降序排序、倒序绘制——切片（先 add，index 小）先画、
         // 槽（后 add，index 大）后画，故槽底图/物品绘制在面板切片之上（painter 顶层）。
         // 物品渲染 z = 面板 zIndex(1) + 槽 zIndex(0) + 32 = 33，与主 GUI 机器槽 z=32 同安全档。
+        int slotBaseX = UPGRADE_CONTENT_INSET;
+        int slotBaseY = UPGRADE_CONTENT_INSET;
         int upgradeSlots = machine.upgradeHandler.getSlots();
         List<UIElement> upgradeContents = new ArrayList<>();
 
@@ -464,8 +465,8 @@ public final class TENMachineBlockUIFactory {
         for (int i = 0; i < upgradeSlots; i++) {
             int col = i % UPGRADE_COLS;
             int row = i / UPGRADE_COLS;
-            int sx = UPGRADE_CONTENT_INSET + col * (UPGRADE_SLOT_SIZE + UPGRADE_SLOT_GAP);
-            int sy = UPGRADE_CONTENT_INSET + row * (UPGRADE_SLOT_SIZE + UPGRADE_SLOT_GAP);
+            int sx = slotBaseX + col * (UPGRADE_SLOT_SIZE + UPGRADE_SLOT_GAP);
+            int sy = slotBaseY + row * (UPGRADE_SLOT_SIZE + UPGRADE_SLOT_GAP);
             ItemSlot slot = upgradePanelSlot(machine, player, i, sx, sy);
             upgradePanel.addChild(slot);
             upgradeContents.add(slot);
@@ -714,7 +715,7 @@ public final class TENMachineBlockUIFactory {
         SlotItemHandler slot = new SlotItemHandler(machine.upgradeHandler, index, 0, 0) {
 
             @Override
-            public boolean mayPlace(ItemStack stack) {
+            public boolean mayPlace(net.minecraft.world.item.ItemStack stack) {
                 // 客户端只做点击预测（隐藏槽本来就点不到），门控只作用于服务端容器的 quickMoveStack
                 if (!player.level().isClientSide() && !machine.isUpgradePanelOpenFor(player)) {
                     return false;
@@ -820,13 +821,13 @@ public final class TENMachineBlockUIFactory {
         Slot slot = new SlotItemHandler(channel.getChannelItemFacade(), index, 0, 0) {
 
             @Override
-            public boolean mayPlace(ItemStack stack) {
+            public boolean mayPlace(net.minecraft.world.item.ItemStack stack) {
                 var type = channel.slotType(getSlotIndex());
                 return type.canIn() && channel.valid(getSlotIndex(), stack) && super.mayPlace(stack);
             }
 
             @Override
-            public int getMaxStackSize(ItemStack stack) {
+            public int getMaxStackSize(net.minecraft.world.item.ItemStack stack) {
                 // 末影箱动态堆叠：上限=共享槽位上限（64×成员数），不按物品原版 64 封顶
                 return getMaxStackSize();
             }
@@ -838,13 +839,13 @@ public final class TENMachineBlockUIFactory {
         Slot slot = new SlotItemHandler(machine.itemHandler, index, 0, 0) {
 
             @Override
-            public boolean mayPlace(ItemStack stack) {
+            public boolean mayPlace(net.minecraft.world.item.ItemStack stack) {
                 var type = machine.slotType(getSlotIndex());
                 return type.canIn() && machine.canPlaceItem(getSlotIndex(), stack) && super.mayPlace(stack);
             }
 
             @Override
-            public int getMaxStackSize(ItemStack stack) {
+            public int getMaxStackSize(net.minecraft.world.item.ItemStack stack) {
                 // 上限=底层 itemHandler 槽位上限（动态容量），不按物品原版 64 封顶
                 return getMaxStackSize();
             }
@@ -942,24 +943,23 @@ public final class TENMachineBlockUIFactory {
     }
 
     public static ProgressBar progressGaugeModular(CmMachineBlockEntity machine, int x, int y, boolean showPercent) {
-        return progressGaugeModular(machine, x, y, showPercent, TENMachineBlockUIFactory::progressPercent);
+        return progressGaugeModular(machine, x, y, -1, showPercent);
     }
 
     /**
-     * 进度箭头绑定自定义百分比：多流水线机器（熔炼机）用这个重载把每条箭头
-     * 只接到对应 lane 的进度上，彼此不串数据。
+     * 进度箭头绑定指定流水线：多流水线机器（熔炼机）用这个重载把每条箭头
+     * 只接到对应 lane 的进度与 tick 读数上，彼此不串数据。{@code lane = -1} 表示本机单进度。
      */
-    public static ProgressBar progressGaugeModular(CmMachineBlockEntity machine, int x, int y, boolean showPercent,
-                                                   ToDoubleFunction<CmMachineBlockEntity> percentSupplier) {
-        IMachineType type = machine.machineType();
+    public static ProgressBar progressGaugeModular(CmMachineBlockEntity machine, int x, int y, int lane, boolean showPercent) {
+        int type = machine.machineType();
         return horizontalProgressModular(machine, x, y, 22, 16,
-                progressArrowBg(type), progressArrowFill(type), showPercent, percentSupplier);
+                progressArrowBg(type), progressArrowFill(type), lane, showPercent);
     }
 
     public static ProgressBar progressGaugeWide(CmMachineBlockEntity machine, int x, int y, boolean showPercent) {
         return horizontalProgressModular(machine, x, y, 80, 5,
                 com.modularmc.ten.TENConstants.PROGRESS_BAR_WIDE_BG, com.modularmc.ten.TENConstants.PROGRESS_BAR_WIDE_FILL,
-                showPercent, TENMachineBlockUIFactory::progressPercent);
+                -1, showPercent);
     }
 
     /**
@@ -1040,8 +1040,8 @@ public final class TENMachineBlockUIFactory {
     private static ProgressBar horizontalProgressModular(CmMachineBlockEntity machine,
                                                          int x, int y, int width, int height,
                                                          ResourceLocation bgTexture, ResourceLocation fillTexture,
-                                                         boolean showPercent,
-                                                         ToDoubleFunction<CmMachineBlockEntity> percentSupplier) {
+                                                         int lane,
+                                                         boolean showTicks) {
         var filled = SpriteTexture.of(fillTexture).setSprite(0, 0, width, height);
         var progress = absolute(new RevealProgressBar(filled), x, y, width, height);
         progress.barContainer(container -> container.style(style -> style.backgroundTexture(SpriteTexture.of(bgTexture).setSprite(0, 0, width, height)))
@@ -1049,33 +1049,42 @@ public final class TENMachineBlockUIFactory {
         progress.barBackground.style(style -> style.backgroundTexture(IGuiTexture.EMPTY));
         progress.label.setDisplay(false);
         progress.progressBarStyle(style -> style.fillDirection(FillDirection.LEFT_TO_RIGHT).interpolate(true).interpolateStep(0.1f));
-        progress.bindDataSource(SupplierDataSource.of(() -> (float) percentSupplier.applyAsDouble(machine)));
-        if (showPercent) {
-            progress.addEventListener(UIEvents.HOVER_TOOLTIPS, event -> event.hoverTooltips = new HoverTooltips(List.of(ComponentHelper.make((int) (percentSupplier.applyAsDouble(machine) * 100) + "%")), null, null, null));
+        progress.bindDataSource(SupplierDataSource.of(() -> (float) machine.progressFraction(lane)));
+        if (showTicks) {
+            // 读数用配方刻度而不是百分比：已推进刻度 / 配方耗时刻度。
+            // 进度每 tick 推进 N 格，读数也随之一次跳 N（N=1 才逐格走），与进度条填充同源。
+            progress.addEventListener(UIEvents.HOVER_TOOLTIPS, event -> event.hoverTooltips = new HoverTooltips(
+                    List.of(Component.translatable("kenergyengineering.info.progress_ticks",
+                            machine.progressDoneTicks(lane), machine.progressTotalTicks(lane))),
+                    null, null, null));
         }
         // 把机器方块物品挂到进度条上，JEI/EMI 的「显示用途」键在此处即可查到本机器配方。
         MachineProgressShortcut.bind(progress, machine);
         return progress;
     }
 
-    private static ResourceLocation progressArrowBg(IMachineType machineType) {
+    private static ResourceLocation progressArrowBg(int machineType) {
         return switch (machineType) {
+            case MachineType.FURNACE -> com.modularmc.ten.TENConstants.PROGRESS_ARROW_SMELTER_BG;
             case MachineType.PULVERIZER -> com.modularmc.ten.TENConstants.PROGRESS_ARROW_PULVERIZER_BG;
             case MachineType.COMPRESSOR -> com.modularmc.ten.TENConstants.PROGRESS_ARROW_COMPRESSOR_BG;
             case MachineType.REFINER -> com.modularmc.ten.TENConstants.PROGRESS_ARROW_REFINER_BG;
             case MachineType.INDUCTION_FURNACE -> com.modularmc.ten.TENConstants.PROGRESS_ARROW_INDUCTION_FURNACE_BG;
             case MachineType.PSIONICANT -> com.modularmc.ten.TENConstants.PROGRESS_ARROW_PSIONICANT_BG;
+            case MachineType.ENCHANTMENT_FLUSHER -> com.modularmc.ten.TENConstants.PROGRESS_ARROW_SMELTER_BG;
             default -> com.modularmc.ten.TENConstants.PROGRESS_ARROW_SMELTER_BG;
         };
     }
 
-    private static ResourceLocation progressArrowFill(IMachineType machineType) {
+    private static ResourceLocation progressArrowFill(int machineType) {
         return switch (machineType) {
+            case MachineType.FURNACE -> com.modularmc.ten.TENConstants.PROGRESS_ARROW_SMELTER_FILL;
             case MachineType.PULVERIZER -> com.modularmc.ten.TENConstants.PROGRESS_ARROW_PULVERIZER_FILL;
             case MachineType.COMPRESSOR -> com.modularmc.ten.TENConstants.PROGRESS_ARROW_COMPRESSOR_FILL;
             case MachineType.REFINER -> com.modularmc.ten.TENConstants.PROGRESS_ARROW_REFINER_FILL;
             case MachineType.INDUCTION_FURNACE -> com.modularmc.ten.TENConstants.PROGRESS_ARROW_INDUCTION_FURNACE_FILL;
             case MachineType.PSIONICANT -> com.modularmc.ten.TENConstants.PROGRESS_ARROW_PSIONICANT_FILL;
+            case MachineType.ENCHANTMENT_FLUSHER -> com.modularmc.ten.TENConstants.PROGRESS_ARROW_SMELTER_FILL;
             default -> com.modularmc.ten.TENConstants.PROGRESS_ARROW_SMELTER_FILL;
         };
     }
@@ -1100,11 +1109,12 @@ public final class TENMachineBlockUIFactory {
                 .fillDirection(FillDirection.DOWN_TO_UP)
                 .showFluidTooltips(true));
         slot.amountLabel.setDisplay(false);
-        var handler = machine.getFluidHandler(null);
+        //TODO： 此处修改需要验证
+        var handler = machine.tanks.get(tankIndex);
         if (handler == null) {
-            throw new IllegalStateException("fluidGauge on machine with no tanks: " + machine);
+            throw new IllegalStateException("fluidGauge on machine with no correct tanks: " + machine);
         }
-        slot.bind(handler, tankIndex);
+        slot.bind(handler, 0);
         return slot;
     }
 
@@ -1214,16 +1224,17 @@ public final class TENMachineBlockUIFactory {
         return SpriteTexture.of(resourceLocation).setSprite(0, 0, width, height);
     }
 
-    public static ResourceLocation backgroundFor(IMachineType machineType) {
-        return machineType.isMachineGUI() ? TENConstants.MACHINE_GUI : TENConstants.LEGACY_SHEET;
+    public static ResourceLocation backgroundFor(int machineType) {
+        return switch (machineType) {
+            // 全部机器统一 MACHINE_GUI 空面板，
+            // 槽框/仪表由 modular 素材族绘制；专属背景 PNG 保留作回退素材不删。
+            case MachineType.FURNACE, MachineType.PULVERIZER, MachineType.COMPRESSOR, MachineType.REFINER, MachineType.INDUCTION_FURNACE, MachineType.PSIONICANT, MachineType.ENCHANTMENT_FLUSHER, MachineType.MATTER_CONDENSER, MachineType.BEACON, MachineType.MOB_RIPPER, MachineType.QUARRY, MachineType.FARM, MachineType.CELL, MachineType.CREATIVE_CELL, MachineType.ENGINE_SOLAR, MachineType.ENGINE_EXTRACTION, MachineType.ENGINE_METAL, MachineType.ENGINE_BIOMASS, MachineType.BLOCK_BREAKER, MachineType.BLOCK_FORMER, MachineType.COOLER -> TENConstants.MACHINE_GUI;
+            default -> TENConstants.LEGACY_SHEET;
+        };
     }
 
     private static double fuelPercent(CmMachineBlockEntity machine) {
         return machine.maxFuel == 0 ? 0 : (double) machine.fuel / machine.maxFuel;
-    }
-
-    private static double progressPercent(CmMachineBlockEntity machine) {
-        return machine.maxProgress == 0 ? 0 : (double) machine.progress / machine.maxProgress;
     }
 
     private static double energyPercent(CmMachineBlockEntity machine) {
@@ -1258,8 +1269,13 @@ public final class TENMachineBlockUIFactory {
         return CmMachineBlockEntity.faceForLogicalSide(machine.getFacing(), logicalSide);
     }
 
+    /**
+     * 燃料条读数：已消耗 tick / 修正后的持续时间 tick。
+     * 总刻度在开烧时按「燃料总能量 ÷ 实际产出率」写入，已消耗按已耗 FE 占比折算，
+     * 因此读数与燃料条的填充比例同源，不会出现「条满了但 tick 没走完」。
+     */
     private static Supplier<List<Component>> fuelTooltip(CmMachineBlockEntity machine, boolean displayValue) {
-        return () -> displayValue ? List.of(DisplayHelper.join(machine.fuel, machine.maxFuel)) : List.of(ComponentHelper.make((int) (fuelPercent(machine) * 100) + "%"));
+        return () -> List.of(Component.translatable("kenergyengineering.info.fuel_ticks", machine.fuelDoneTicks(), machine.fuelTotalTicks()));
     }
 
     private static Supplier<List<Component>> energyGaugeTooltip(CmMachineBlockEntity machine, boolean displayValue) {
@@ -1344,13 +1360,25 @@ public final class TENMachineBlockUIFactory {
         private static final Map<String, Snapshot> CACHE = new ConcurrentHashMap<>();
 
         private final String key;
+        @Getter
         private int selectedTransferMode;
+        @Getter
         private boolean controlOpen;
+        @Getter
         private boolean upgradeOpen;
+        @Getter
         private boolean adjustOpen;
-        /** 视图态（不入快照）：展开面板动画是否已到全开；仅供 faceModeElement 等内部 syncDisplay 联动查询。 */
+        /** 视图态（不入快照）：展开面板动画是否已到全开；仅供 faceModeElement 等内部 syncDisplay 联动查询。
+         * -- GETTER --
+         * 展开面板动画是否已全开（视图态，仅当前帧有效）。
+         */
+        @Getter
         private boolean panelFullyOpen;
-        /** 视图态（不入快照）：升级槽面板动画是否已全开。 */
+        /** 视图态（不入快照）：升级槽面板动画是否已全开。
+         * -- GETTER --
+         * 升级槽面板动画是否已全开（视图态）。
+         */
+        @Getter
         private boolean upgradePanelFullyOpen;
 
         public UIState(BlockUIMenuType.BlockUIHolder holder) {
@@ -1364,17 +1392,9 @@ public final class TENMachineBlockUIFactory {
             this.upgradePanelFullyOpen = false;
         }
 
-        public int getSelectedTransferMode() {
-            return selectedTransferMode;
-        }
-
         public void setSelectedTransferMode(int selectedTransferMode) {
             this.selectedTransferMode = selectedTransferMode;
             snapshot().selectedTransferMode = selectedTransferMode;
-        }
-
-        public boolean isControlOpen() {
-            return controlOpen;
         }
 
         public void setControlOpen(boolean controlOpen) {
@@ -1392,10 +1412,6 @@ public final class TENMachineBlockUIFactory {
             }
         }
 
-        public boolean isUpgradeOpen() {
-            return upgradeOpen;
-        }
-
         public void setUpgradeOpen(boolean upgradeOpen) {
             if (upgradeOpen) {
                 this.controlOpen = false;
@@ -1410,10 +1426,6 @@ public final class TENMachineBlockUIFactory {
             }
         }
 
-        public boolean isAdjustOpen() {
-            return adjustOpen;
-        }
-
         public void setAdjustOpen(boolean adjustOpen) {
             if (adjustOpen) {
                 this.controlOpen = false;
@@ -1425,18 +1437,8 @@ public final class TENMachineBlockUIFactory {
             snapshot().adjustOpen = adjustOpen;
         }
 
-        /** 展开面板动画是否已全开（视图态，仅当前帧有效）。 */
-        public boolean isPanelFullyOpen() {
-            return panelFullyOpen;
-        }
-
         private void setPanelFullyOpen(boolean panelFullyOpen) {
             this.panelFullyOpen = panelFullyOpen;
-        }
-
-        /** 升级槽面板动画是否已全开（视图态）。 */
-        public boolean isUpgradePanelFullyOpen() {
-            return upgradePanelFullyOpen;
         }
 
         private void setUpgradePanelFullyOpen(boolean upgradePanelFullyOpen) {

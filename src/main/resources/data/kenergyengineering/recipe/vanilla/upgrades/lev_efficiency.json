@@ -1,0 +1,21 @@
+{
+	"type": "minecraft:crafting_shaped",
+	"pattern": [" B ", "DAD", " C "],
+	"key": {
+		"A": {
+			"item": "kenergyengineering:redstone_conductor"
+		},
+		"B": {
+			"tag": "c:gears/tin"
+		},
+		"C": {
+			"item": "minecraft:lapis_lazuli"
+		},
+		"D": {
+			"item": "minecraft:copper_ingot"
+		}
+	},
+	"result": {
+		"id": "kenergyengineering:efficiency_levelup"
+	}
+}

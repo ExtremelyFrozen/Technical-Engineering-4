@@ -1,0 +1,12 @@
+{
+	"type": "kenergyengineering:biomass_fuel",
+	"inputs": [
+		{
+			"form": "item",
+			"type": "static",
+			"key": "minecraft:sculk"
+		}
+	],
+  "outputs": [],
+	"time": 18000
+}

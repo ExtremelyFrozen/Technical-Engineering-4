@@ -1,0 +1,12 @@
+{
+	"type": "kenergyengineering:biomass_fuel",
+	"inputs": [
+		{
+			"form": "item",
+			"type": "tag",
+			"key": "minecraft:saplings"
+		}
+	],
+  "outputs": [],
+	"time": 900
+}

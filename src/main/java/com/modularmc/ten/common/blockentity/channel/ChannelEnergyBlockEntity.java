@@ -1,7 +1,6 @@
 package com.modularmc.ten.common.blockentity.channel;
 
 import com.modularmc.ten.TENConstants;
-import com.modularmc.ten.api.option.IMachineType;
 import com.modularmc.ten.api.option.MachineType;
 import com.modularmc.ten.common.channel.ChannelKey;
 import com.modularmc.ten.common.channel.ChannelRegistry;
@@ -49,7 +48,7 @@ public class ChannelEnergyBlockEntity extends AbstractChannelBlockEntity {
     }
 
     @Override
-    public IMachineType machineType() {
+    public int machineType() {
         return MachineType.MACHINE_EFFECT;
     }
 

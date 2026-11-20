@@ -1,14 +1,14 @@
 # Content Overview
 
 Kenergy Engineering Retechnicalized (KER) is a remake branch of Technical Engineering 4 — a tech mod about processing and automation infrastructure.
-Engines make power, cables carry it, machines process, pipes and channels move the output away, and batching scales it up. The whole chain lives in one mod.
+Engines make power, cables carry it, machines process, pipes and channels move the output away, and parallel runs scale it up. The whole chain lives in one mod.
 This page lists the content; recipes, timings and numbers belong to the in-game guide and to your recipe viewer.
 
 Platform: Minecraft 1.21.1 / NeoForge
 
 ## Processing machines
 
-Eight machines, one shared recipe model, one batching rule, one stall behaviour — learn one, you know them all. A cycle runs several units at once and waits when input, output room or energy falls short.
+Eight machines, one shared recipe model, one parallel-run rule, one stall behaviour — learn one, you know them all. A cycle runs several units at once and waits when input, output room or energy falls short.
 
 | Machine | What it does |
 |---|---|
@@ -74,9 +74,9 @@ Upgrades go into the upgrade slots of the machine screen; anything a machine doe
 
 | Upgrade | What it does |
 |---|---|
-| Powered Kit | Faster and stronger, plus extra batch |
+| Powered Kit | Faster and stronger, plus extra parallel runs |
 | Augmented Kit | Faster and stronger, more gently |
-| Shulker Kit | The biggest speed, power and batch gains; found in end city chests |
+| Shulker Kit | The biggest speed, power and parallel-run gains; found in end city chests |
 | Photosynthetic Power | Feeds the machine a little power in open sky during dry daytime, at the cost of longer processing |
 | Range Expansion | Widens the working radius of range machines |
 | Blasting Professor | Moves the Smelter to blasting recipes; exclusive with smoking |
@@ -114,4 +114,4 @@ Every material is registered under common tags, so other mods can add members an
 
 ## In-game guide
 
-The Kenergy Engineering Guide needs GuideME and covers everything from powering your first machine to face config and the order a batch lock is evaluated.
+The Kenergy Engineering Guide needs GuideME and covers everything from powering your first machine to face config and the order a parallel run is locked.

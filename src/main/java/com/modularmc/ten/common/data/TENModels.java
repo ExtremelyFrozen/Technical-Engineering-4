@@ -19,6 +19,10 @@ public class TENModels {
         return prov.models().cubeAll(name, TEN.id("block/" + name));
     }
 
+    public static BlockModelBuilder cubeTop(BlockStateProvider prov, String name) {
+        return prov.models().cubeTop(name, TEN.id("block/" + name), TEN.id("block/" + name + "top"));
+    }
+
     private static String machineTex(String name) {
         return "block/" + name;
     }

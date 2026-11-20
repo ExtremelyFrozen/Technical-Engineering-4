@@ -4,10 +4,12 @@ import com.modularmc.ten.TEN;
 
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.BlockTags;
+import net.minecraft.tags.FluidTags;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.material.Fluid;
 
 public class TENTags {
 
@@ -46,12 +48,25 @@ public class TENTags {
      */
     public static final TagKey<Item> SPANNER = itemTag("spanner");
 
+    public static final TagKey<Fluid> CRUDE_OIL = cFluidTag("crude_oil");
+    //不知道匠魂为什么要用加-ed的标签和注册名，先留着
+    public static final TagKey<Fluid> POWDERED_SNOW = cFluidTag("powdered_snow");
+    public static final TagKey<Fluid> POWDER_SNOW = cFluidTag("powder_snow");
+
     private static TagKey<Block> blockTag(String path) {
-        return BlockTags.create(ResourceLocation.fromNamespaceAndPath(TEN.MOD_ID, path));
+        return BlockTags.create(TEN.id(path));
     }
 
     private static TagKey<Item> itemTag(String path) {
-        return ItemTags.create(ResourceLocation.fromNamespaceAndPath(TEN.MOD_ID, path));
+        return ItemTags.create(TEN.id(path));
+    }
+
+    private static TagKey<Fluid> fluidTag(String path) {
+        return FluidTags.create(TEN.id(path));
+    }
+
+    private static TagKey<Fluid> cFluidTag(String path) {
+        return FluidTags.create(ResourceLocation.fromNamespaceAndPath("c", path));
     }
 
     public static void init() {}

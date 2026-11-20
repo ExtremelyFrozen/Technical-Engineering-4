@@ -31,6 +31,12 @@ public class PulverizerBlockEntity extends RecipeMachineBlockEntity {
         return MachineType.PULVERIZER;
     }
 
+    /** 粉碎机配方带概率输出（副产物），两张副产物独特组件只放行本机。 */
+    @Override
+    public boolean supportsByproductTuning() {
+        return true;
+    }
+
     @Override
     public int inventorySize() {
         return 5;
