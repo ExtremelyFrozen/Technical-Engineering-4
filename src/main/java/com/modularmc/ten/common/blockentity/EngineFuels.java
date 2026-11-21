@@ -1,8 +1,10 @@
 package com.modularmc.ten.common.blockentity;
 
 import com.modularmc.ten.api.blockentity.EngineBlockEntity;
+import com.modularmc.ten.api.recipe.EngineFluidFuelRecipe;
 import com.modularmc.ten.api.recipe.EngineFuelRecipe;
 import com.modularmc.ten.common.blockentity.MatchFuel.FuelProfile;
+import com.modularmc.ten.common.blockentity.machine.CombustionBlockEntity;
 import com.modularmc.ten.common.data.TENRecipeTypes;
 
 import net.minecraft.world.item.ItemStack;
@@ -10,6 +12,7 @@ import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
+import net.neoforged.neoforge.fluids.FluidStack;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -39,7 +42,9 @@ public final class EngineFuels {
 
     /** 缓存按 RecipeManager 实例失效：重载数据包会换一个新实例。 */
     private static final Map<RecipeManager, List<EngineFuelRecipe>> CACHE = new WeakHashMap<>();
+    private static final Map<RecipeManager, List<EngineFluidFuelRecipe>> FLUID_CACHE = new WeakHashMap<>();
     private static List<EngineFuelRecipe> lastResolved = List.of();
+    private static List<EngineFluidFuelRecipe> lastFluidResolved = List.of();
 
     private EngineFuels() {}
 
@@ -87,6 +92,43 @@ public final class EngineFuels {
         return EXTRACTOR.equals(engineId) ? vanillaBurnFallback(engineRate, stack) : FuelProfile.EMPTY;
     }
 
+    public static FuelProfile fluidProfile(Level level, String engineId, int engineRate, FluidStack stack, EngineFluidFuelRecipe current, CombustionBlockEntity entity) {
+        if (level == null || stack == null || stack.isEmpty()) return FuelProfile.EMPTY;
+        if (current != null && current.test(stack)) {
+            int rate = rateOf(engineRate, current.rateMultiplier());
+            return new FuelProfile(rate, current.duration(), current.rateMultiplier());
+        }
+        return fluidProfile(level.getRecipeManager(), engineId, engineRate, stack, entity);
+    }
+
+    public static FuelProfile fluidProfile(RecipeManager manager, String engineId, int engineRate, FluidStack stack, CombustionBlockEntity entity) {
+
+        for (EngineFluidFuelRecipe recipe : fluidRecipes(manager)) {
+            if (!recipe.appliesTo(engineId)) continue;
+            if (!recipe.test(stack)) continue;
+            int rate = rateOf(engineRate, recipe.rateMultiplier());
+            entity.setRecipe(recipe);
+            return new FuelProfile(rate, recipe.duration(), recipe.rateMultiplier());
+        }
+        // 兜底只给萃取引擎：它历史上就吃「任何有原版燃烧时间的物品」。
+        // 金属引擎与生物质引擎的燃料是白名单（锭 / 植物标签），不能被兜底放进来。
+        return FuelProfile.EMPTY;
+    }
+
+    /** 供 JEI/EMI 等自带 RecipeManager 的展示层使用。 */
+    public static FuelProfile fluidProfile(RecipeManager manager, String engineId, int engineRate, FluidStack stack) {
+
+        for (EngineFluidFuelRecipe recipe : fluidRecipes(manager)) {
+            if (!recipe.appliesTo(engineId)) continue;
+            if (!recipe.test(stack)) continue;
+            int rate = rateOf(engineRate, recipe.rateMultiplier());
+            return new FuelProfile(rate, recipe.duration(), recipe.rateMultiplier());
+        }
+        // 兜底只给萃取引擎：它历史上就吃「任何有原版燃烧时间的物品」。
+        // 金属引擎与生物质引擎的燃料是白名单（锭 / 植物标签），不能被兜底放进来。
+        return FuelProfile.EMPTY;
+    }
+
     /** 引擎额定 × 配方修正倍率 = 该配方在这台引擎上的实际 FE/t。 */
     public static int rateOf(int engineRate, double rateMultiplier) {
         return Math.max(1, (int) Math.round(engineRate * rateMultiplier));
@@ -117,6 +159,22 @@ public final class EngineFuels {
             list.sort(Comparator.comparingInt(r -> r.ingredient().getItems().length));
             lastResolved = List.copyOf(list);
             return lastResolved;
+        });
+    }
+
+    private static List<EngineFluidFuelRecipe> fluidRecipes(RecipeManager manager) {
+        if (manager == null) return lastFluidResolved;
+        // 单人游戏里服务端与客户端各有一个 RecipeManager，两边都会来查：
+        // 按实例分别缓存，避免两边互相把对方的缓存挤掉、每 tick 重建一次索引。
+        return FLUID_CACHE.computeIfAbsent(manager, m -> {
+            List<EngineFluidFuelRecipe> list = new ArrayList<>();
+            for (RecipeHolder<EngineFluidFuelRecipe> holder : m.getAllRecipesFor(TENRecipeTypes.ENGINE_FLUID_FUEL_T.get())) {
+                list.add(holder.value());
+            }
+            // 精确物品（解析出 1 个物品）排在标签前面，避免同名标签盖掉专门的条目
+            list.sort(Comparator.comparingInt(r -> r.ingredient().getStacks().length));
+            lastFluidResolved = List.copyOf(list);
+            return lastFluidResolved;
         });
     }
 

@@ -1,5 +1,6 @@
 package com.modularmc.ten.api.recipe;
 
+import com.modularmc.ten.common.data.TENRecipeTypes;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
@@ -27,12 +28,7 @@ import java.util.List;
  * {@code engines} 留空表示所有引擎通用；填了就只在列出的引擎上生效
  * （取值为 {@code extractor} / {@code metalizer} / {@code biomass}）。
  */
-public class EngineFuelRecipe implements Recipe<SingleRecipeInput> {
-
-    private final Ingredient ingredient;
-    private final List<String> engines;
-    private final int duration;
-    private final double rateMultiplier;
+public record EngineFuelRecipe(Ingredient ingredient, List<String> engines, int duration, double rateMultiplier) implements Recipe<SingleRecipeInput> {
 
     public EngineFuelRecipe(Ingredient ingredient, List<String> engines, int duration, double rateMultiplier) {
         if (ingredient == null || ingredient.isEmpty()) {
@@ -50,21 +46,26 @@ public class EngineFuelRecipe implements Recipe<SingleRecipeInput> {
         this.rateMultiplier = rateMultiplier;
     }
 
-    public Ingredient ingredient() {
-        return ingredient;
-    }
-
-    /** 适用引擎 id 列表；空表示全部引擎。 */
+    /**
+     * 适用引擎 id 列表；空表示全部引擎。
+     */
+    @Override
     public List<String> engines() {
         return engines;
     }
 
-    /** 持续时间（tick），即额定功率下这份燃料的燃烧时长。 */
+    /**
+     * 持续时间（tick），即额定功率下这份燃料的燃烧时长。
+     */
+    @Override
     public int duration() {
         return duration;
     }
 
-    /** 对引擎额定 FE/t 的修正倍率。 */
+    /**
+     * 对引擎额定 FE/t 的修正倍率。
+     */
+    @Override
     public double rateMultiplier() {
         return rateMultiplier;
     }
@@ -77,7 +78,9 @@ public class EngineFuelRecipe implements Recipe<SingleRecipeInput> {
         return !stack.isEmpty() && ingredient.test(stack);
     }
 
-    /** 一份燃料（额定功率、无升级）的总能量 FE。 */
+    /**
+     * 一份燃料（额定功率、无升级）的总能量 FE。
+     */
     public int energy(int engineRate) {
         return (int) Math.round(engineRate * rateMultiplier) * duration;
     }
@@ -114,11 +117,11 @@ public class EngineFuelRecipe implements Recipe<SingleRecipeInput> {
 
     @Override
     public RecipeSerializer<?> getSerializer() {
-        return com.modularmc.ten.common.data.TENRecipeTypes.ENGINE_FUEL_S.get();
+        return TENRecipeTypes.ENGINE_FUEL_S.get();
     }
 
     @Override
     public RecipeType<?> getType() {
-        return com.modularmc.ten.common.data.TENRecipeTypes.ENGINE_FUEL_T.get();
+        return TENRecipeTypes.ENGINE_FUEL_T.get();
     }
 }

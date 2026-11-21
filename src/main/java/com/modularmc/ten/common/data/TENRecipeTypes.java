@@ -1,11 +1,7 @@
 package com.modularmc.ten.common.data;
 
 import com.modularmc.ten.TEN;
-import com.modularmc.ten.api.recipe.EngineFuelRecipe;
-import com.modularmc.ten.api.recipe.EngineFuelRecipeSerializer;
-import com.modularmc.ten.api.recipe.FormsCombinedRecipe;
-import com.modularmc.ten.api.recipe.FormsCombinedRecipeSerializer;
-import com.modularmc.ten.api.recipe.RecipeTypeCm;
+import com.modularmc.ten.api.recipe.*;
 
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.item.crafting.RecipeSerializer;
@@ -24,17 +20,18 @@ public class TENRecipeTypes {
     public static final DeferredHolder<RecipeSerializer<?>, FormsCombinedRecipeSerializer<FormsCombinedRecipe>> INDUCTION_FURNACE_S;
     public static final DeferredHolder<RecipeSerializer<?>, FormsCombinedRecipeSerializer<FormsCombinedRecipe>> REFINER_S;
     public static final DeferredHolder<RecipeSerializer<?>, FormsCombinedRecipeSerializer<FormsCombinedRecipe>> DISTILLATOR_S;
-
+    public static final DeferredHolder<RecipeSerializer<?>, EngineFuelRecipeSerializer> ENGINE_FUEL_S;
+    public static final DeferredHolder<RecipeSerializer<?>, EngineFluidFuelRecipeSerializer> ENGINE_FLUID_FUEL_S;
 
     public static final DeferredHolder<RecipeType<?>, RecipeType<FormsCombinedRecipe>> PULVERIZER_T;
     public static final DeferredHolder<RecipeType<?>, RecipeType<FormsCombinedRecipe>> COMPRESSOR_T;
     public static final DeferredHolder<RecipeType<?>, RecipeType<FormsCombinedRecipe>> PSIONICANT_T;
     public static final DeferredHolder<RecipeType<?>, RecipeType<FormsCombinedRecipe>> INDUCTION_FURNACE_T;
     public static final DeferredHolder<RecipeType<?>, RecipeType<FormsCombinedRecipe>> REFINER_T;
-    public static final DeferredHolder<RecipeType<?>, RecipeType<FormsCombinedRecipe>> DISTILLATOR_T
-        ;
-    public static final DeferredHolder<RecipeSerializer<?>, EngineFuelRecipeSerializer> ENGINE_FUEL_S;
+    public static final DeferredHolder<RecipeType<?>, RecipeType<FormsCombinedRecipe>> DISTILLATOR_T;
+
     public static final DeferredHolder<RecipeType<?>, RecipeType<EngineFuelRecipe>> ENGINE_FUEL_T;
+    public static final DeferredHolder<RecipeType<?>, RecipeType<EngineFluidFuelRecipe>> ENGINE_FLUID_FUEL_T;
 
     static {
         PULVERIZER_T = TYPES.register("pulverizer", () -> new RecipeTypeCm<>("pulverizer"));
@@ -45,6 +42,7 @@ public class TENRecipeTypes {
         DISTILLATOR_T = TYPES.register("distillator", () -> new RecipeTypeCm<>("distillator"));
 
         ENGINE_FUEL_T = TYPES.register("engine_fuel", () -> new RecipeTypeCm<>("engine_fuel"));
+        ENGINE_FLUID_FUEL_T = TYPES.register("engine_fluid_fuel", () -> new RecipeTypeCm<>("engine_fluid_fuel"));
 
         PULVERIZER_S = SERIALIZERS.register("pulverizer", () -> new FormsCombinedRecipeSerializer<>(FormsCombinedRecipe::new, PULVERIZER_T::get, 1, 4));
         COMPRESSOR_S = SERIALIZERS.register("compressor", () -> new FormsCombinedRecipeSerializer<>(FormsCombinedRecipe::new, COMPRESSOR_T::get, 2, 1));
@@ -54,6 +52,7 @@ public class TENRecipeTypes {
         DISTILLATOR_S = SERIALIZERS.register("distillator", () -> new FormsCombinedRecipeSerializer<>(FormsCombinedRecipe::new, DISTILLATOR_T::get, 1, 4));
 
         ENGINE_FUEL_S = SERIALIZERS.register("engine_fuel", EngineFuelRecipeSerializer::new);
+        ENGINE_FLUID_FUEL_S = SERIALIZERS.register("engine_fluid_fuel", EngineFluidFuelRecipeSerializer::new);
     }
 
     public static void init() {}

@@ -1,0 +1,11 @@
+{
+  "type": "kenergyengineering:engine_fluid_fuel",
+  "duration": 70,
+  "engines": [
+    "combustion"
+  ],
+  "ingredient": {
+    "fluid": "kenergyengineering:naphtha"
+  },
+  "rate_multiplier": 1.0
+}

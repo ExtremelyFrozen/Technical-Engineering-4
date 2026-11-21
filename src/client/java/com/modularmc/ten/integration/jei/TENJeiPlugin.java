@@ -101,13 +101,13 @@ public class TENJeiPlugin implements IModPlugin {
 
     private static ItemStack icon(String name) {
         var item = net.minecraft.core.registries.BuiltInRegistries.ITEM.get(TEN.id(name));
-        return item != null ? new ItemStack(item) : new ItemStack(Items.FURNACE);
+        return new ItemStack(item);
     }
 
     private static ItemStack engineIcon(String engineName) {
         String blockId = "engine_" + engineName;
         var item = net.minecraft.core.registries.BuiltInRegistries.ITEM.get(TEN.id(blockId));
-        return item != null ? new ItemStack(item) : new ItemStack(Items.FURNACE);
+        return new ItemStack(item);
     }
 
     static ItemStack smelterIcon() { return icon("machine_smelter"); }
@@ -157,19 +157,19 @@ public class TENJeiPlugin implements IModPlugin {
         return List.of(
                 new MachineTypeDef(
                         new mezz.jei.api.recipe.RecipeType<>(TEN.id("pulverizer"), FormsCombinedRecipe.class),
-                        TENRecipeTypes.PULVERIZER_T::get),
+                    TENRecipeTypes.PULVERIZER_T),
                 new MachineTypeDef(
                         new mezz.jei.api.recipe.RecipeType<>(TEN.id("compressor"), FormsCombinedRecipe.class),
-                        TENRecipeTypes.COMPRESSOR_T::get),
+                    TENRecipeTypes.COMPRESSOR_T),
                 new MachineTypeDef(
                         new mezz.jei.api.recipe.RecipeType<>(TEN.id("refiner"), FormsCombinedRecipe.class),
-                        TENRecipeTypes.REFINER_T::get),
+                    TENRecipeTypes.REFINER_T),
                 new MachineTypeDef(
                         new mezz.jei.api.recipe.RecipeType<>(TEN.id("induction_furnace"), FormsCombinedRecipe.class),
-                        TENRecipeTypes.INDUCTION_FURNACE_T::get),
+                    TENRecipeTypes.INDUCTION_FURNACE_T),
                 new MachineTypeDef(
                         new mezz.jei.api.recipe.RecipeType<>(TEN.id("psionicant"), FormsCombinedRecipe.class),
-                        TENRecipeTypes.PSIONICANT_T::get)
+                    TENRecipeTypes.PSIONICANT_T)
         );
     }
 
@@ -200,14 +200,14 @@ public class TENJeiPlugin implements IModPlugin {
     @Override
     public void registerRecipes(IRecipeRegistration registration) {
         var ingredientManager = registration.getIngredientManager();
-        if (ingredientManager == null) return;
 
         var allStacks = ingredientManager.getAllItemStacks();
-        if (allStacks == null) return;
 
         List<EngineFuelDisplay> extractorRecipes = new ArrayList<>();
         List<EngineFuelDisplay> metalizerRecipes = new ArrayList<>();
         List<EngineFuelDisplay> biomassRecipes = new ArrayList<>();
+
+       // List<EngineFluidFuelDisplay> combustionRecipes = new ArrayList<>();
         List<CoolantRecipe> coolantRecipes = new ArrayList<>();
 
         // 燃料表来自数据包 engine_fuel 配方；未收录的物品走原版燃烧时间兜底。
@@ -242,9 +242,9 @@ public class TENJeiPlugin implements IModPlugin {
         }
 
         Comparator<EngineFuelDisplay> byItemIdThenComponents = Comparator.comparing(
-                (EngineFuelDisplay r) -> r.ingredients().get(0).getItem().toString());
+                (EngineFuelDisplay r) -> r.ingredients().getFirst().getItem().toString());
         Comparator<CoolantRecipe> coolantSortKey = Comparator.comparing(
-                (CoolantRecipe r) -> r.ingredients().get(0).getItem().toString());
+                (CoolantRecipe r) -> r.ingredients().getFirst().getItem().toString());
 
         registration.addRecipes(EXTRACTOR_FUEL, dedupSorted(extractorRecipes, byItemIdThenComponents, EngineFuelDisplay::ingredients));
         registration.addRecipes(METALIZER_FUEL, dedupSorted(metalizerRecipes, byItemIdThenComponents, EngineFuelDisplay::ingredients));
@@ -365,8 +365,8 @@ public class TENJeiPlugin implements IModPlugin {
         return allRecipes.stream()
                 .map(RecipeHolder::value)
                 .map(recipe -> {
-                    var ingredient = recipe.getIngredients().get(0);
-                    if (ingredient == null || ingredient.isEmpty()) return null;
+                    var ingredient = recipe.getIngredients().getFirst();
+                    if (ingredient.isEmpty()) return null;
                     ItemStack output = recipe.getResultItem(registryAccess);
                     if (output.isEmpty()) return null;
                     return SmelterJeiCategory.Recipe.of(ingredient, output, recipe.getCookingTime());
@@ -381,10 +381,10 @@ public class TENJeiPlugin implements IModPlugin {
         List<T> sorted = new ArrayList<>(recipes);
         sorted.sort(sortKey);
         List<T> result = new ArrayList<>();
-        result.add(sorted.get(0));
+        result.add(sorted.getFirst());
         for (int i = 1; i < sorted.size(); i++) {
-            ItemStack current = ingredientsOf.apply(sorted.get(i)).get(0);
-            ItemStack last = ingredientsOf.apply(result.get(result.size() - 1)).get(0);
+            ItemStack current = ingredientsOf.apply(sorted.get(i)).getFirst();
+            ItemStack last = ingredientsOf.apply(result.getLast()).getFirst();
             if (!ItemStack.isSameItemSameComponents(current, last)) {
                 result.add(sorted.get(i));
             }
@@ -396,7 +396,7 @@ public class TENJeiPlugin implements IModPlugin {
     @Override
     public void registerRecipeCatalysts(IRecipeCatalystRegistration registration) {
         for (var data : buildCategories()) {
-            var type = new mezz.jei.api.recipe.RecipeType<FormsCombinedRecipe>(data.id, FormsCombinedRecipe.class);
+            var type = new mezz.jei.api.recipe.RecipeType<>(data.id, FormsCombinedRecipe.class);
             registration.addRecipeCatalyst(data.icon, type);
         }
 
