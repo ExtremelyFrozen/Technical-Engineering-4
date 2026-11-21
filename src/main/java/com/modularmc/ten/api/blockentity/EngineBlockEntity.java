@@ -170,4 +170,5 @@ public abstract class EngineBlockEntity extends CmMachineBlockEntity {
     public FuelProfile fuelProfile(ItemStack stack) {
         return EngineFuels.profile(level, fuelEngineId(), initialEfficientIn, stack, recipe, this);
     }
+
 }

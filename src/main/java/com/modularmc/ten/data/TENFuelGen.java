@@ -27,7 +27,7 @@ import java.util.concurrent.CompletableFuture;
  * 这里的耗时按旧口径 {@code ceil(能量密度 × 原版燃烧 tick ÷ 引擎额定)} 反向排出，
  * 因此迁移后玩家可见的能量总量与持续时间逐位不变。
  */
-public class TENFuelGen implements DataProvider {
+public record TENFuelGen(PackOutput output) implements DataProvider {
 
     // 引擎额定功率（与各 BlockEntity 的 BASE_GENERATION_RATE 一致）
     private static final int EXTRACTOR_RATE = 30;
@@ -39,13 +39,18 @@ public class TENFuelGen implements DataProvider {
     private static final int METAL_DENSITY = 20;
     private static final int BIOMASS_DENSITY = 60;
 
-    /** 一条燃料定义：kind = item / tag，burnTicks = 折算用的原版燃烧时间。 */
-    private record Fuel(String engine, String kind, String id, int burnTicks) {}
+    /**
+     * 一条燃料定义：kind = item / tag，burnTicks = 折算用的原版燃烧时间。
+     */
+    private record Fuel(String engine, String kind, String id, int burnTicks, float rate) {
+    }
 
-    private final PackOutput output;
+    private static Fuel createFuel(String engine, String kind, String id, int burnTicks){
+        return new Fuel(engine, kind, id, burnTicks, 1.0f);
+    }
 
-    public TENFuelGen(PackOutput output) {
-        this.output = output;
+    private static Fuel createFuel(String engine, String kind, String id, int burnTicks, float rate){
+        return new Fuel(engine, kind, id, burnTicks, rate);
     }
 
     @Override
@@ -58,6 +63,13 @@ public class TENFuelGen implements DataProvider {
             int density = densityOf(fuel.engine());
             int duration = durationOf(density, fuel.burnTicks(), rate);
             futures.add(DataProvider.saveStable(cache, json(fuel, duration), path(dir, fuel)));
+        }
+        for (Fuel fuel : fluidFuels()) {
+            int rate = rateOf(fuel.engine());
+            int density = densityOf(fuel.engine());
+            int duration = durationOf(density, fuel.burnTicks(), rate);
+            float multiplier = fuel.rate;
+            futures.add(DataProvider.saveStable(cache, fluidJson(fuel, duration, multiplier), path(dir, fuel)));
         }
         return CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new));
     }
@@ -84,6 +96,22 @@ public class TENFuelGen implements DataProvider {
         return root;
     }
 
+    private static JsonObject fluidJson(Fuel fuel, int duration, float multiplier) {
+        JsonObject ingredient = new JsonObject();
+        ingredient.addProperty(fuel.kind(), fuel.id());
+
+        JsonArray engines = new JsonArray();
+        engines.add(fuel.engine());
+
+        JsonObject root = new JsonObject();
+        root.addProperty("type", TEN.MOD_ID + ":engine_fluid_fuel");
+        root.add("ingredient", ingredient);
+        root.add("engines", engines);
+        root.addProperty("duration", duration);
+        root.addProperty("rate_multiplier", multiplier);
+        return root;
+    }
+
     private static int rateOf(String engine) {
         return switch (engine) {
             case "extractor" -> EXTRACTOR_RATE;
@@ -100,7 +128,9 @@ public class TENFuelGen implements DataProvider {
         };
     }
 
-    /** 持续时间 = ceil(能量密度 × 燃烧 tick ÷ 引擎额定)，与旧版 FuelProfile 的换算逐位一致。 */
+    /**
+     * 持续时间 = ceil(能量密度 × 燃烧 tick ÷ 引擎额定)，与旧版 FuelProfile 的换算逐位一致。
+     */
     private static int durationOf(int density, int burnTicks, int rate) {
         int budget = density * burnTicks;
         return Math.max(1, (budget + rate - 1) / rate);
@@ -184,12 +214,28 @@ public class TENFuelGen implements DataProvider {
         return list;
     }
 
+    private static List<Fuel> fluidFuels() {
+        List<Fuel> list = new ArrayList<>();
+        tag(list, "combustion", "c:crude_oil", 90, 1.5f);
+        tag(list, "combustion", "c:naphtha", 70, 2.0f);
+        tag(list, "combustion", "c:kerosene", 160, 1.0f);
+        return list;
+    }
+
     private static void item(List<Fuel> list, String engine, String id, int burnTicks) {
-        list.add(new Fuel(engine, "item", id, burnTicks));
+        list.add(createFuel(engine, "item", id, burnTicks));
     }
 
     private static void tag(List<Fuel> list, String engine, String id, int burnTicks) {
-        list.add(new Fuel(engine, "tag", id, burnTicks));
+        list.add(createFuel(engine, "tag", id, burnTicks));
+    }
+
+    private static void fluid(List<Fuel> list, String engine, String id, int burnTicks, float rate) {
+        list.add(createFuel(engine, "fluid", id, burnTicks, rate));
+    }
+
+    private static void tag(List<Fuel> list, String engine, String id, int burnTicks, float rate) {
+        list.add(createFuel(engine, "tag", id, burnTicks));
     }
 
     @Override
