@@ -46,7 +46,7 @@ public class RecyclerBlockEntity extends EngineBlockEntity {
 
     @Override
     public int initialFaceModeFluid() {
-        return FaceOption.IN;
+        return FaceOption.BE_IN;
     }
 
     @Override

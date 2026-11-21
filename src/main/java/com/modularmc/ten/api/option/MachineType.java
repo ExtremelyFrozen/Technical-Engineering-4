@@ -38,6 +38,7 @@ public enum MachineType implements IMachineType{
     ENGINE_METAL     (Category.GENERATOR, EnergyFlow.OUTPUT, EnergyDemand.NOT_FULL),
     ENGINE_BIOMASS   (Category.GENERATOR, EnergyFlow.OUTPUT, EnergyDemand.NOT_FULL),
     ENGINE_RECYCLER  (Category.GENERATOR, EnergyFlow.OUTPUT, EnergyDemand.ALWAYS),
+    ENGINE_COMBUSTION(Category.GENERATOR, EnergyFlow.OUTPUT, EnergyDemand.NOT_FULL),
 
     // Storage
     CELL         (Category.STORAGE, EnergyFlow.BOTH, EnergyDemand.ALWAYS),

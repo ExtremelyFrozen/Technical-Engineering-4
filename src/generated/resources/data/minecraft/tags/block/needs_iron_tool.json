@@ -9,6 +9,9 @@
     "kenergyengineering:powered_tin_block",
     "kenergyengineering:chlorium_block",
     "kenergyengineering:raw_tin_block",
-    "kenergyengineering:raw_nickel_block"
+    "kenergyengineering:raw_nickel_block",
+    "kenergyengineering:paraffin_block",
+    "kenergyengineering:bitumen_block",
+    "kenergyengineering:bitumen_road"
   ]
 }

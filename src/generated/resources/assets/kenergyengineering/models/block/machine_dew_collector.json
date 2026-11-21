@@ -6,7 +6,7 @@
     "north": "kenergyengineering:block/machine_dew_collector",
     "particle": "kenergyengineering:block/machine_side",
     "south": "kenergyengineering:block/machine_side",
-    "up": "kenergyengineering:block/machine_dew_collector_top",
+    "up": "kenergyengineering:block/machine_top",
     "west": "kenergyengineering:block/machine_side_connection_flipped"
   }
 }

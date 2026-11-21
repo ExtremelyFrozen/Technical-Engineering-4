@@ -78,11 +78,12 @@ public class TENBlocks {
     public static final BlockEntry<HorizontalMachineBlock> MACHINE_DISTILLATOR = topMachine("machine_distillator", "Distillator", "分馏器", TEN.id("block/machine_distillator_top"));
 
     // === Engines ===
-    public static final BlockEntry<HorizontalMachineBlock> ENGINE_RECYCLER = engine("engine_recycler", "Recycler Engine", "回收引擎");
     public static final BlockEntry<HorizontalMachineBlock> ENGINE_EXTRACTION = engine("engine_extraction", "Extraction Engine", "萃取引擎");
     public static final BlockEntry<HorizontalMachineBlock> ENGINE_METAL = engine("engine_metal", "Metal Engine", "金属引擎");
     public static final BlockEntry<HorizontalMachineBlock> ENGINE_BIOMASS = engine("engine_biomass", "Biomass Engine", "生物质引擎");
     public static final BlockEntry<HorizontalMachineBlock> ENGINE_SOLAR = engine("engine_solar", "Solar Engine", "光合引擎");
+    public static final BlockEntry<HorizontalMachineBlock> ENGINE_RECYCLER = engine("engine_recycler", "Recycler Engine", "回收引擎");
+    public static final BlockEntry<HorizontalMachineBlock> ENGINE_COMBUSTION = engine("engine_combustion", "Combustion Engine", "内燃引擎");
 
     // === Cables ===
     public static final BlockEntry<CableBased> CABLE = cable("cable", "Glass Energy Cable", "玻璃能量线缆", 1_000, 200);
@@ -267,7 +268,7 @@ public class TENBlocks {
         return REGISTRATE.block(n, (p) -> new SpringBlock(p, fluid))
             .lang(englishName)
             //.properties(func)
-            .blockstate((ctx, prov) -> TENModels.cellBlockstate(prov, ctx.getEntry(), n))
+            .blockstate((ctx, prov) -> TENModels.cubeTop(prov, n))
             .item().model((ctx, prov) -> prov.blockItem(ctx::getEntry)).build().register();
     }
 

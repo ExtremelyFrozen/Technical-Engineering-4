@@ -130,10 +130,13 @@ public class TENBlockEntities {
             .blockEntity("engine_metal", MetalizerBlockEntity::new)
             .validBlocks(TENBlocks.ENGINE_METAL)
             .register();
-
     public static final BlockEntityEntry<RecyclerBlockEntity> RECYCLER = REGISTRATE
            .blockEntity("engine_recycler", RecyclerBlockEntity::new)
            .validBlocks(TENBlocks.ENGINE_RECYCLER)
+           .register();
+    public static final BlockEntityEntry<CombustionBlockEntity> COMBUSTION = REGISTRATE
+           .blockEntity("engine_combustion", CombustionBlockEntity::new)
+           .validBlocks(TENBlocks.ENGINE_COMBUSTION)
            .register();
 
     public static final BlockEntityEntry<CellBlockEntity> CELL = REGISTRATE

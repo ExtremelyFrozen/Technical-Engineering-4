@@ -39,9 +39,11 @@ public class TENFluids {
         "crude_oil", "Crude Oil", "Crude Oil Bucket", "原油", "原桶", 100000, 0, 300, 1000, 2, 5000.0f, 4,
         TENTags.CRUDE_OIL);
     public static final FluidEntry<BaseFlowingFluid.Flowing> NAPHTHA = fluid(
-        "naphtha", "Naphtha", "Naphtha Bucket", "石脑油", "石脑油桶", 100000, 0, 300, 1000, 2, 5000.0f, 4);
+        "naphtha", "Naphtha", "Naphtha Bucket", "石脑油", "石脑油桶", 100000, 0, 300, 1000, 2, 5000.0f, 4,
+        TENTags.NAPHTHA);
     public static final FluidEntry<BaseFlowingFluid.Flowing> KEROSENE = fluid(
-        "kerosene", "Kerosene", "Crude Oil Bucket", "石油", "石油桶", 100000, 0, 300, 1000, 2, 5000.0f, 4);
+        "kerosene", "Kerosene", "Kerosene Bucket", "煤油", "煤油桶", 100000, 0, 300, 1000, 2, 5000.0f, 4,
+        TENTags.KEROSENE);
 
     public static final FluidEntry<BaseFlowingFluid.Flowing> POWDER_SNOW = snowfluid("powder_snow", "Powder Snow", "细雪");
 

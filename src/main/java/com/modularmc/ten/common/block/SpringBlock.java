@@ -10,6 +10,7 @@ import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.EntityBlock;
+import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -48,6 +49,11 @@ public class SpringBlock extends Block implements EntityBlock {
 
     private static BlockState validBlockState(BlockState state, LevelReader level, BlockPos pos) {
         return state.setValue(FACING_AIR, level.getBlockState(pos.above()).isEmpty());
+    }
+
+    @Override
+    public RenderShape getRenderShape(BlockState state) {
+        return RenderShape.MODEL;
     }
 
     @Override
