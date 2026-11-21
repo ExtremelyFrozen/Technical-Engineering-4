@@ -82,9 +82,7 @@ public abstract class EngineBlockEntity extends CmMachineBlockEntity {
 
     @Override
     public ModularUI createUI(BlockUIMenuType.BlockUIHolder holder) {
-        return buildMachineUI(holder, TENMachineBlockUIFactory.backgroundFor(machineType()), root -> {
-            root.addChild(TENMachineBlockUIFactory.machineSlotModular(this, 0, 43, 36));
-        }, root -> {
+        return buildMachineUI(holder, TENMachineBlockUIFactory.backgroundFor(machineType()), root -> root.addChild(TENMachineBlockUIFactory.machineSlotModular(this, 0, 43, 36)), root -> {
             root.addChild(TENMachineBlockUIFactory.energyGaugeModular(this, 117, 22, true));
             root.addChild(TENMachineBlockUIFactory.fuelGaugeModular(this, 81, 39, false));
         });

@@ -18,7 +18,6 @@ import com.modularmc.ten.network.JeiSyncState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.neoforged.neoforge.client.event.RecipesUpdatedEvent;
@@ -184,7 +183,7 @@ public class TENJeiPlugin implements IModPlugin {
         IGuiHelper helper = registration.getJeiHelpers().getGuiHelper();
 
         for (var data : buildCategories()) {
-            var type = new mezz.jei.api.recipe.RecipeType<FormsCombinedRecipe>(data.id, FormsCombinedRecipe.class);
+            var type = new mezz.jei.api.recipe.RecipeType<>(data.id, FormsCombinedRecipe.class);
             registration.addRecipeCategories(new TENJeiCategory(helper, data.id, type, data.icon));
         }
 
@@ -361,7 +360,7 @@ public class TENJeiPlugin implements IModPlugin {
         var registryAccess = level.registryAccess();
         @SuppressWarnings({"rawtypes", "unchecked"})
         List<RecipeHolder<net.minecraft.world.item.crafting.AbstractCookingRecipe>> allRecipes =
-                (List<RecipeHolder<net.minecraft.world.item.crafting.AbstractCookingRecipe>>) (List) level.getRecipeManager().getAllRecipesFor((net.minecraft.world.item.crafting.RecipeType) builtinType);
+                (List<RecipeHolder<net.minecraft.world.item.crafting.AbstractCookingRecipe>>) level.getRecipeManager().getAllRecipesFor((RecipeType) builtinType);
         return allRecipes.stream()
                 .map(RecipeHolder::value)
                 .map(recipe -> {
