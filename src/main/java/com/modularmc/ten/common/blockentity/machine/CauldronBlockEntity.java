@@ -45,7 +45,7 @@ public class CauldronBlockEntity extends ProcessingMachineBlockEntity {
     }
 
     public int initialFaceModeFluid() {
-        return FaceOption.BE_OUT;
+        return FaceOption.OUT;
     }
 
     @Override

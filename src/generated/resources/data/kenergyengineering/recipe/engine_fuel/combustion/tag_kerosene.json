@@ -1,0 +1,11 @@
+{
+  "type": "kenergyengineering:engine_fluid_fuel",
+  "duration": 40,
+  "engines": [
+    "combustion"
+  ],
+  "ingredient": {
+    "tag": "c:kerosene"
+  },
+  "rate_multiplier": 1.0
+}

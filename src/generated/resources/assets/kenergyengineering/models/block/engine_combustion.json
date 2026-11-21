@@ -1,0 +1,9 @@
+{
+  "parent": "minecraft:block/cube_bottom_top",
+  "textures": {
+    "bottom": "kenergyengineering:block/engine_combustion",
+    "particle": "kenergyengineering:block/engine_combustion",
+    "side": "kenergyengineering:block/engine_combustion",
+    "top": "kenergyengineering:block/engine_combustion_bottom"
+  }
+}

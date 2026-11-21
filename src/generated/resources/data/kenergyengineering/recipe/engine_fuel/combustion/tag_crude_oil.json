@@ -1,0 +1,11 @@
+{
+  "type": "kenergyengineering:engine_fluid_fuel",
+  "duration": 23,
+  "engines": [
+    "combustion"
+  ],
+  "ingredient": {
+    "tag": "c:crude_oil"
+  },
+  "rate_multiplier": 1.0
+}

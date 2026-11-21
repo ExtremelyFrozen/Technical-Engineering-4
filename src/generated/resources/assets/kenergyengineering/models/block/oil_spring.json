@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/cube_top",
+  "textures": {
+    "side": "kenergyengineering:block/oil_spring",
+    "top": "kenergyengineering:block/oil_spring_top"
+  }
+}

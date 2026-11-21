@@ -1,0 +1,11 @@
+{
+  "type": "kenergyengineering:engine_fuel",
+  "duration": 225,
+  "engines": [
+    "biomass"
+  ],
+  "ingredient": {
+    "item": "minecraft:sculk"
+  },
+  "rate_multiplier": 1.0
+}
