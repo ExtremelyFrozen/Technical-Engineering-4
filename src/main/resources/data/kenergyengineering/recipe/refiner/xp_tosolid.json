@@ -3,8 +3,8 @@
 	"inputs": [
 		{
 			"form": "fluid",
-			"type": "static",
-			"key": "kenergyengineering:liquid_xp",
+			"type": "tag",
+			"key": "c:liquid_xp",
 			"amount": 250
 		},
 		{

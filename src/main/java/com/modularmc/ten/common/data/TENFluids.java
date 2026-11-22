@@ -16,12 +16,14 @@ import net.neoforged.neoforge.fluids.BaseFlowingFluid;
 
 import com.tterrag.registrate.util.entry.FluidEntry;
 
+import java.util.LinkedHashMap;
+
 import static com.modularmc.ten.common.registry.Registration.REGISTRATE;
 
 public class TENFluids {
 
-    public static final java.util.LinkedHashMap<String, String> ZH_NAMES = new java.util.LinkedHashMap<>();
-    public static final java.util.LinkedHashMap<String, String> ZH_FLUID_KEYS = new java.util.LinkedHashMap<>();
+    public static final LinkedHashMap<String, String> ZH_NAMES = new LinkedHashMap<>();
+    public static final LinkedHashMap<String, String> ZH_FLUID_KEYS = new LinkedHashMap<>();
 
     public static final FluidEntry<BaseFlowingFluid.Flowing> LIQUID_ROYAL_JELLY = fluid(
             "liquid_royal_jelly", "Liquid Royal Jelly", "Liquid Royal Jelly Bucket", "蜂王浆", "蜂王浆桶", 1200, 4, 300, 2000, 2, 100.0f, 4);

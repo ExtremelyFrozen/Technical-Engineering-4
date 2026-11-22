@@ -1,0 +1,24 @@
+{
+	"type": "kenergyengineering:refiner",
+	"inputs": [
+		{
+			"form": "fluid",
+			"type": "tag",
+			"key": "c:honey",
+			"amount": 250
+		},
+		{
+			"form": "item",
+			"type": "static",
+			"key": "minecraft:glass_bottle"
+		}
+	],
+	"outputs": [
+		{
+			"form": "item",
+			"type": "static",
+			"key": "minecraft:honey_bottle"
+		}
+	],
+	"time": 50
+}
