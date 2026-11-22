@@ -24,13 +24,13 @@
 			"form": "fluid",
 			"type": "static",
 			"key": "kenergyengineering:naphtha",
-			"amount": 200
+			"amount": 100
 		},
     {
       "form": "fluid",
       "type": "static",
       "key": "kenergyengineering:kerosene",
-      "amount": 200
+      "amount": 100
     }
 	],
 	"time": 75

@@ -1,0 +1,11 @@
+{
+  "type": "kenergyengineering:engine_fluid_fuel",
+  "duration": 100,
+  "engines": [
+    "combustion"
+  ],
+  "ingredient": {
+    "tag": "c:lava"
+  },
+  "rate_multiplier": 1.0
+}

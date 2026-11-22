@@ -51,6 +51,7 @@ public class TENTags {
     public static final TagKey<Fluid> CRUDE_OIL = cFluidTag("crude_oil");
     public static final TagKey<Fluid> NAPHTHA = cFluidTag("naphtha");
     public static final TagKey<Fluid> KEROSENE = cFluidTag("kerosene");
+    public static final TagKey<Fluid> SYRUP = cFluidTag("syrup");
     //不知道匠魂为什么要用加-ed的标签和注册名，先留着
     public static final TagKey<Fluid> POWDERED_SNOW = cFluidTag("powdered_snow");
     public static final TagKey<Fluid> POWDER_SNOW = cFluidTag("powder_snow");

@@ -20,12 +20,13 @@ import net.neoforged.neoforge.fluids.FluidStack;
 
 public class CombustionBlockEntity extends EngineBlockEntity {
 
-    private static final int AMOUNT_PER_TIME = 50;
+    public static final int BASE_GENERATION_RATE = 100;
+    private static final int AMOUNT_PER_TIME = 100;
 
     public CombustionBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
-        setCapacity(kFE(80));
-        setEfficiency(5);
+        setCapacity(kFE(160));
+        setEfficiency(BASE_GENERATION_RATE);
         tanks.add(new MachineFluidTank(8000));
     }
 
@@ -88,7 +89,6 @@ public class CombustionBlockEntity extends EngineBlockEntity {
             fuelStack = tanks.getFirst().getFluid();
         }
 
-        int amount = 50;
         MatchFuel.FuelProfile profile = fluidFuelProfile(fuelStack);
         if (profile.isEmpty()) {
             // 燃料烧完且没有下一份：修正倍率归位，面板回到引擎额定功率；

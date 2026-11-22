@@ -44,7 +44,17 @@ public class TENFluids {
     public static final FluidEntry<BaseFlowingFluid.Flowing> KEROSENE = fluid(
         "kerosene", "Kerosene", "Kerosene Bucket", "煤油", "煤油桶", 100000, 0, 300, 1000, 2, 5000.0f, 4,
         TENTags.KEROSENE);
-
+    public static final FluidEntry<BaseFlowingFluid.Flowing> NUTRIENT_SOLUTION = fluid(
+        "nutrient_solution", "Nutrient Solution", "Nutrient Solution Bucket", "营养液", "营养液桶", 100000, 0, 300, 1000, 2, 5000.0f, 4);
+    public static final FluidEntry<BaseFlowingFluid.Flowing> HEATED_REDSTONE = fluid(
+        "heated_redstone", "Heated Redstone", "Heated Redstone Bucket", "高热红石", "高热红石桶", 100000, 15, 1500, 1000, 2, 5000.0f, 4);
+    public static final FluidEntry<BaseFlowingFluid.Flowing> SYRUP = fluid(
+        "syrup", "Syrup", "Syrup Bucket", "糖浆", "糖浆桶", 100000, 0, 300, 1000, 2, 5000.0f, 4,
+        TENTags.SYRUP);
+    public static final FluidEntry<BaseFlowingFluid.Flowing> WASTE = fluid(
+        "waste", "Waste", "Waste Bucket", "废液", "废液桶", 100000, 0, 300, 1000, 2, 5000.0f, 4);
+    public static final FluidEntry<BaseFlowingFluid.Flowing> TORAN_CONCENTRATE = fluid(
+        "toran_concentrate", "Toran Concentrate", "Toran Concentrate Bucket", "托兰原液", "托兰原液桶", 100000, 15, -100, 1000, 2, 5000.0f, 4);
     public static final FluidEntry<BaseFlowingFluid.Flowing> POWDER_SNOW = snowfluid("powder_snow", "Powder Snow", "细雪");
 
 

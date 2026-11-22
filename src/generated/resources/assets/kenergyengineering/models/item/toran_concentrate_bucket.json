@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "kenergyengineering:block/toran_concentrate_bucket"
+  }
+}

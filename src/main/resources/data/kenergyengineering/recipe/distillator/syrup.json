@@ -1,0 +1,31 @@
+{
+	"type": "kenergyengineering:distillator",
+	"inputs": [
+		{
+			"form": "fluid",
+			"type": "tag",
+			"key": "c:syrup",
+      "amount": 200
+		}
+	],
+	"outputs": [
+    {
+      "form": "item",
+      "type": "static",
+      "key": "minecraft:sugar"
+    },
+		{
+			"form": "fluid",
+			"type": "static",
+			"key": "minecraft:water",
+			"amount": 100
+		},
+    {
+      "form": "fluid",
+      "type": "static",
+      "key": "kenergyengineering:waste",
+      "amount": 100
+    }
+	],
+	"time": 150
+}

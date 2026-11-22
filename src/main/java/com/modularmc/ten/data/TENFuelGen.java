@@ -33,12 +33,13 @@ public record TENFuelGen(PackOutput output) implements DataProvider {
     private static final int EXTRACTOR_RATE = 30;
     private static final int METAL_RATE = 80;
     private static final int BIOMASS_RATE = 80;
+    private static final int COMBUSTION_RATE = 100;
 
     // 能量密度（FE / 原版燃烧 tick），只用于把旧数值折算成持续时间
     private static final int EXTRACTOR_DENSITY = 20;
     private static final int METAL_DENSITY = 20;
     private static final int BIOMASS_DENSITY = 60;
-
+    private static final int COMBUSTION_DENSITY = 100;
     /**
      * 一条燃料定义：kind = item / tag，burnTicks = 折算用的原版燃烧时间。
      */
@@ -116,6 +117,7 @@ public record TENFuelGen(PackOutput output) implements DataProvider {
         return switch (engine) {
             case "extractor" -> EXTRACTOR_RATE;
             case "biomass" -> BIOMASS_RATE;
+            case "combustion" -> COMBUSTION_RATE;
             default -> METAL_RATE;
         };
     }
@@ -124,6 +126,7 @@ public record TENFuelGen(PackOutput output) implements DataProvider {
         return switch (engine) {
             case "extractor" -> EXTRACTOR_DENSITY;
             case "biomass" -> BIOMASS_DENSITY;
+            case "combustion" -> COMBUSTION_DENSITY;
             default -> METAL_DENSITY;
         };
     }
@@ -210,13 +213,16 @@ public record TENFuelGen(PackOutput output) implements DataProvider {
         tag(list, "biomass", "minecraft:saplings", 15);
         tag(list, "biomass", "c:seeds", 15);
         item(list, "biomass", "minecraft:moss_block", 20);
+        item(list, "biomass", "minecraft:sugar", 100);
         item(list, "biomass", "minecraft:sculk", 300);
         return list;
     }
 
     private static List<Fuel> fluidFuels() {
         List<Fuel> list = new ArrayList<>();
-        tag(list, "combustion", "c:crude_oil", 90, 1.5f);
+        tag(list, "combustion", "c:lava", 100, 1.0f);
+        fluid(list, "combustion", "kenergyengineering:redstone", 80, 1.5f);
+        tag(list, "combustion", "c:crude_oil", 90, 1.0f);
         tag(list, "combustion", "c:naphtha", 70, 2.0f);
         tag(list, "combustion", "c:kerosene", 160, 1.0f);
         return list;
@@ -235,7 +241,7 @@ public record TENFuelGen(PackOutput output) implements DataProvider {
     }
 
     private static void tag(List<Fuel> list, String engine, String id, int burnTicks, float rate) {
-        list.add(createFuel(engine, "tag", id, burnTicks));
+        list.add(createFuel(engine, "tag", id, burnTicks, rate));
     }
 
     @Override

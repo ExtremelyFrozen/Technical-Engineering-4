@@ -1,6 +1,6 @@
 {
   "type": "kenergyengineering:engine_fluid_fuel",
-  "duration": 40,
+  "duration": 160,
   "engines": [
     "combustion"
   ],

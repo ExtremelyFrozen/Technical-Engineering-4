@@ -1,0 +1,11 @@
+{
+  "type": "kenergyengineering:engine_fuel",
+  "duration": 75,
+  "engines": [
+    "biomass"
+  ],
+  "ingredient": {
+    "item": "minecraft:sugar"
+  },
+  "rate_multiplier": 1.0
+}

@@ -1,11 +1,11 @@
 {
   "type": "kenergyengineering:engine_fluid_fuel",
-  "duration": 70,
+  "duration": 80,
   "engines": [
     "combustion"
   ],
   "ingredient": {
-    "fluid": "kenergyengineering:naphtha"
+    "fluid": "kenergyengineering:redstone"
   },
-  "rate_multiplier": 1.0
+  "rate_multiplier": 1.5
 }

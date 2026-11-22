@@ -1,0 +1,36 @@
+{
+	"type": "kenergyengineering:distillator",
+	"inputs": [
+		{
+			"form": "fluid",
+			"type": "static",
+			"key": "kenergyengineering:liquid_bizarrerie",
+      "amount": 200
+		}
+	],
+	"outputs": [
+    {
+      "form": "item",
+      "type": "static",
+      "key": "minecraft:dirt"
+    },
+    {
+      "form": "item",
+      "type": "static",
+      "key": "minecraft:apple"
+    },
+		{
+			"form": "fluid",
+			"type": "static",
+			"key": "kenergyengineering:toran_concentrate",
+			"amount": 50
+		},
+    {
+      "form": "fluid",
+      "type": "static",
+      "key": "kenergyengineering:waste",
+      "amount": 200
+    }
+	],
+	"time": 150
+}

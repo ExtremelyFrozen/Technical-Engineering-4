@@ -1,0 +1,31 @@
+{
+	"type": "kenergyengineering:distillator",
+	"inputs": [
+		{
+			"form": "fluid",
+			"type": "tag",
+			"key": "c:honey",
+      "amount": 200
+		}
+	],
+	"outputs": [
+    {
+      "form": "item",
+      "type": "static",
+      "key": "minecraft:honeycomb"
+    },
+		{
+			"form": "fluid",
+			"type": "static",
+			"key": "kenergyengineering:liquid_royal_jelly",
+			"amount": 25
+		},
+    {
+      "form": "fluid",
+      "type": "static",
+      "key": "kenergyengineering:syrup",
+      "amount": 200
+    }
+	],
+	"time": 150
+}

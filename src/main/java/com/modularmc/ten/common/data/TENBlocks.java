@@ -268,8 +268,8 @@ public class TENBlocks {
         return REGISTRATE.block(n, (p) -> new SpringBlock(p, fluid))
             .lang(englishName)
             //.properties(func)
-            .blockstate((ctx, prov) -> TENModels.cubeTop(prov, n))
-            .item().model((ctx, prov) -> prov.blockItem(ctx::getEntry)).build().register();
+            .blockstate((ctx, prov) -> prov.simpleBlock(ctx.getEntry(), TENModels.cubeTop(prov, n)))
+            .simpleItem().register();
     }
 
     public static void init() {}

@@ -1,0 +1,25 @@
+{
+	"type": "kenergyengineering:refiner",
+	"inputs": [
+		{
+			"form": "item",
+			"type": "tag",
+			"key": "c:dusts/redstone"
+		},
+		{
+			"form": "fluid",
+			"type": "static",
+			"key": "minecraft:lava",
+			"amount": 250
+		}
+	],
+	"outputs": [
+		{
+			"form": "fluid",
+			"type": "static",
+			"key": "kenergyengineering:heated_redstone",
+			"amount": 250
+		}
+	],
+	"time": 100
+}
