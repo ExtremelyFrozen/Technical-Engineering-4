@@ -15,6 +15,7 @@ import net.neoforged.neoforge.fluids.FluidStack;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 public final class TENRecipeWidget {
 
@@ -152,7 +153,18 @@ public final class TENRecipeWidget {
                                 SlotSpec.item(SlotRole.INPUT, 1, 41, 16),
                                 SlotSpec.item(SlotRole.OUTPUT, 0, 109, 16)),
                         List.of(
-                                DecorationSpec.progress(73, 17, TENConstants.PROGRESS_ARROW_PSIONICANT_BG, TENConstants.PROGRESS_ARROW_PSIONICANT_FILL))));
+                                DecorationSpec.progress(73, 17, TENConstants.PROGRESS_ARROW_PSIONICANT_BG, TENConstants.PROGRESS_ARROW_PSIONICANT_FILL))),
+                "distillator", new Layout(
+                        TENConstants.JEI_RECIPE_BG, 0, 0, 150, 50,
+                        List.of(
+                            SlotSpec.fluid(SlotRole.INPUT, 0, 18, 0),
+                            SlotSpec.item(SlotRole.OUTPUT, 0, 96, 8),
+                            SlotSpec.item(SlotRole.OUTPUT, 1, 96, 24),
+                            SlotSpec.fluid(SlotRole.OUTPUT, 0, 116, 0),
+                            SlotSpec.fluid(SlotRole.OUTPUT, 1, 134, 0)),
+                        List.of(
+                            DecorationSpec.progress(64, 17, TENConstants.PROGRESS_ARROW_PSIONICANT_BG, TENConstants.PROGRESS_ARROW_PSIONICANT_FILL)))
+        );
     }
 
     private TENRecipeWidget() {}
@@ -231,8 +243,8 @@ public final class TENRecipeWidget {
 
     public static void drawDecorations(GuiGraphics graphics, Layout layout) {
         for (var decoration : layout.decorations()) {
-            switch (decoration.kind()) {
-                case PROGRESS -> drawProgressDecoration(graphics, decoration, progressPercent());
+            if (Objects.requireNonNull(decoration.kind()) == DecorationKind.PROGRESS) {
+                drawProgressDecoration(graphics, decoration, progressPercent());
             }
         }
     }
@@ -243,11 +255,9 @@ public final class TENRecipeWidget {
             if (!contains(decoration.x(), decoration.y(), decoration.width(), decoration.height(), mouseX, mouseY)) {
                 continue;
             }
-            switch (decoration.kind()) {
-                case PROGRESS -> {
-                    tooltips.add(Component.literal((int) (progressPercent() * 100.0d) + "%"));
-                    tooltips.add(Component.translatable("kenergyengineering.jei.duration_short", recipe.time()));
-                }
+            if (Objects.requireNonNull(decoration.kind()) == DecorationKind.PROGRESS) {
+                tooltips.add(Component.literal((int) (progressPercent() * 100.0d) + "%"));
+                tooltips.add(Component.translatable("kenergyengineering.jei.duration_short", recipe.time()));
             }
         }
         return tooltips;

@@ -59,7 +59,6 @@ public class TENFluids {
         "toran_concentrate", "Toran Concentrate", "Toran Concentrate Bucket", "托兰原液", "托兰原液桶", 100000, 15, -100, 1000, 2, 5000.0f, 4);
     public static final FluidEntry<BaseFlowingFluid.Flowing> POWDER_SNOW = snowfluid("powder_snow", "Powder Snow", "细雪");
 
-
     @SafeVarargs
     private static FluidEntry<BaseFlowingFluid.Flowing> fluid(
         String name, String fluidLang, String bucketLang, String fluidCn, String bucketCn, int density, int light, int temperature, int viscosity,

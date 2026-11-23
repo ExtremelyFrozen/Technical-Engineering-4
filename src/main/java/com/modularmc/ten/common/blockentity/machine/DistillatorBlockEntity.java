@@ -68,7 +68,7 @@ public class DistillatorBlockEntity extends RecipeMachineBlockEntity {
             root.addChild(TENMachineBlockUIFactory.progressGaugeModular(this, 85, 33, true));
             root.addChild(TENMachineBlockUIFactory.fluidGaugeModular(this, 31, 17, 18, 50, 0));
             root.addChild(TENMachineBlockUIFactory.fluidGaugeModular(this, 133, 17, 18, 50, 1));
-            root.addChild(TENMachineBlockUIFactory.fluidGaugeModular(this, 151, 17, 18, 50, 2));
+            root.addChild(TENMachineBlockUIFactory.fluidGaugeModular(this, 153, 17, 18, 50, 2));
         });
     }
 

@@ -123,11 +123,12 @@ public class TENJeiPlugin implements IModPlugin {
 
     private List<CategoryDef> buildCategories() {
         return List.of(
-                new CategoryDef("Pulverizer", TEN.id("pulverizer"), icon("machine_pulverizer")),
-                new CategoryDef("Compressor", TEN.id("compressor"), icon("machine_compressor")),
-                new CategoryDef("Refiner", TEN.id("refiner"), icon("machine_refiner")),
-                new CategoryDef("Induction Furnace", TEN.id("induction_furnace"), icon("machine_induction_furnace")),
-                new CategoryDef("Psionicant", TEN.id("psionicant"), icon("machine_psionicant")));
+                new CategoryDef("Pulverizer", TEN.id("pulverizer"), TENBlocks.MACHINE_PULVERIZER.asStack()),
+                new CategoryDef("Compressor", TEN.id("compressor"), TENBlocks.MACHINE_COMPRESSOR.asStack()),
+                new CategoryDef("Refiner", TEN.id("refiner"), TENBlocks.MACHINE_REFINER.asStack()),
+                new CategoryDef("Induction Furnace", TEN.id("induction_furnace"), TENBlocks.MACHINE_INDUCTION_FURNACE.asStack()),
+                new CategoryDef("Psionicant", TEN.id("psionicant"), TENBlocks.MACHINE_PSIONICANT.asStack()),
+                new CategoryDef("Distillator", TEN.id("distillator"), TENBlocks.MACHINE_DISTILLATOR.asStack()));
     }
 
     private List<AuxDef> buildAuxCategories() {
@@ -168,7 +169,10 @@ public class TENJeiPlugin implements IModPlugin {
                     TENRecipeTypes.INDUCTION_FURNACE_T),
                 new MachineTypeDef(
                         new mezz.jei.api.recipe.RecipeType<>(TEN.id("psionicant"), FormsCombinedRecipe.class),
-                    TENRecipeTypes.PSIONICANT_T)
+                    TENRecipeTypes.PSIONICANT_T),
+                new MachineTypeDef(
+                    new mezz.jei.api.recipe.RecipeType<>(TEN.id("distillator"), FormsCombinedRecipe.class),
+                    TENRecipeTypes.DISTILLATOR_T)
         );
     }
 

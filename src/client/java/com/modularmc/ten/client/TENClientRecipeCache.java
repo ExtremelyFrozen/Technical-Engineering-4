@@ -35,13 +35,13 @@ public final class TENClientRecipeCache {
 
     private TENClientRecipeCache() {}
 
-    @SuppressWarnings("unchecked")
     private static final List<RecipeType<? extends FormsCombinedRecipe>> TARGET_TYPES = List.of(
-            (RecipeType<? extends FormsCombinedRecipe>) TENRecipeTypes.PULVERIZER_T.get(),
-            (RecipeType<? extends FormsCombinedRecipe>) TENRecipeTypes.COMPRESSOR_T.get(),
-            (RecipeType<? extends FormsCombinedRecipe>) TENRecipeTypes.REFINER_T.get(),
-            (RecipeType<? extends FormsCombinedRecipe>) TENRecipeTypes.INDUCTION_FURNACE_T.get(),
-            (RecipeType<? extends FormsCombinedRecipe>) TENRecipeTypes.PSIONICANT_T.get()
+        TENRecipeTypes.PULVERIZER_T.get(),
+        TENRecipeTypes.COMPRESSOR_T.get(),
+        TENRecipeTypes.REFINER_T.get(),
+        TENRecipeTypes.INDUCTION_FURNACE_T.get(),
+        TENRecipeTypes.PSIONICANT_T.get(),
+        TENRecipeTypes.DISTILLATOR_T.get()
     );
 
     public static void init() {
@@ -79,12 +79,11 @@ public final class TENClientRecipeCache {
         if (!STATE.isSessionAccepting()) return;
 
         RecipeManager recipeManager = event.getRecipeManager();
-        if (recipeManager == null) return;
 
         // 1.21.1 适配：逐类型检查完整性（无 getRecipeTypes）
         for (var type : TARGET_TYPES) {
             var recipes = recipeManager.getAllRecipesFor((RecipeType) type);
-            if (recipes == null || recipes.isEmpty()) {
+            if (recipes.isEmpty()) {
                 TEN.LOGGER.debug("TENClientRecipeCache: type {} not yet received — not marking snapshot complete", type);
                 return;
             }
@@ -138,7 +137,7 @@ public final class TENClientRecipeCache {
     private static <T extends FormsCombinedRecipe> List<FormsCombinedRecipe> collectRecipes(
             RecipeManager recipeManager, RecipeType<? extends FormsCombinedRecipe> targetType) {
         var holders = recipeManager.getAllRecipesFor((RecipeType<T>) targetType);
-        if (holders == null || holders.isEmpty()) return List.of();
+        if (holders.isEmpty()) return List.of();
         List<FormsCombinedRecipe> result = new ArrayList<>();
         for (var holder : holders) {
             result.add(holder.value());

@@ -43,7 +43,9 @@ public class TENEmiPlugin implements EmiPlugin {
             new CategoryDef(TEN.id("compressor"), TENRecipeTypes.COMPRESSOR_T, TENBlocks.MACHINE_COMPRESSOR::asStack),
             new CategoryDef(TEN.id("refiner"), TENRecipeTypes.REFINER_T, TENBlocks.MACHINE_REFINER::asStack),
             new CategoryDef(TEN.id("induction_furnace"), TENRecipeTypes.INDUCTION_FURNACE_T, TENBlocks.MACHINE_INDUCTION_FURNACE::asStack),
-            new CategoryDef(TEN.id("psionicant"), TENRecipeTypes.PSIONICANT_T, TENBlocks.MACHINE_PSIONICANT::asStack));
+            new CategoryDef(TEN.id("psionicant"), TENRecipeTypes.PSIONICANT_T, TENBlocks.MACHINE_PSIONICANT::asStack),
+            new CategoryDef(TEN.id("distillator"), TENRecipeTypes.DISTILLATOR_T, TENBlocks.MACHINE_DISTILLATOR::asStack));
+
 
     private static final class TENEmiCategory extends EmiRecipeCategory {
 
@@ -210,13 +212,13 @@ public class TENEmiPlugin implements EmiPlugin {
                     recipes.add(new com.modularmc.ten.common.blockentity.EngineFuelDisplay(stack, profile, def.baseRate()));
                 }
             }
-            recipes.sort(java.util.Comparator.comparing(r -> r.ingredients().get(0).getItem().toString()));
+            recipes.sort(java.util.Comparator.comparing(r -> r.ingredients().getFirst().getItem().toString()));
 
             int index = 0;
             com.modularmc.ten.common.blockentity.EngineFuelDisplay last = null;
             for (var r : recipes) {
                 if (last != null && net.minecraft.world.item.ItemStack.isSameItemSameComponents(
-                        r.ingredients().get(0), last.ingredients().get(0)))
+                        r.ingredients().getFirst(), last.ingredients().getFirst()))
                     continue;
                 registry.addRecipe(new EngineFuelEmiRecipe(category, recipeId(def.id(), index++), r));
                 last = r;
@@ -236,8 +238,8 @@ public class TENEmiPlugin implements EmiPlugin {
         return all.stream()
                 .map(net.minecraft.world.item.crafting.RecipeHolder::value)
                 .map(r -> {
-                    var ingredient = r.getIngredients().get(0);
-                    if (ingredient == null || ingredient.isEmpty()) return null;
+                    var ingredient = r.getIngredients().getFirst();
+                    if (ingredient.isEmpty()) return null;
                     ItemStack output = r.getResultItem(registryAccess);
                     if (output.isEmpty()) return null;
                     return new SmelterEmiRecipe.RecipeData(
@@ -252,7 +254,7 @@ public class TENEmiPlugin implements EmiPlugin {
     private static ItemStack engineIcon(String engineName) {
         String blockId = "engine_" + engineName;
         var item = net.minecraft.core.registries.BuiltInRegistries.ITEM.get(TEN.id(blockId));
-        return item != null ? new net.minecraft.world.item.ItemStack(item) : new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.FURNACE);
+        return new ItemStack(item);
     }
 
     private static ResourceLocation recipeId(ResourceLocation categoryId, int index) {
