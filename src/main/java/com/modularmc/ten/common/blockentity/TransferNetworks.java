@@ -2,6 +2,7 @@ package com.modularmc.ten.common.blockentity;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.Vec3i;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.capabilities.Capabilities;
@@ -22,8 +23,8 @@ public final class TransferNetworks {
 
     private static final Comparator<BlockPos> POS_COMPARATOR = Comparator
             .comparingInt((BlockPos pos) -> pos.getX())
-            .thenComparingInt(pos -> pos.getY())
-            .thenComparingInt(pos -> pos.getZ());
+            .thenComparingInt(Vec3i::getY)
+            .thenComparingInt(Vec3i::getZ);
 
     private TransferNetworks() {}
 

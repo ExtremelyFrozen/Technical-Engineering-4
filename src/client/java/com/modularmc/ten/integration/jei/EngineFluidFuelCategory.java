@@ -1,0 +1,125 @@
+package com.modularmc.ten.integration.jei;
+
+import com.modularmc.ten.TENConstants;
+import com.modularmc.ten.common.blockentity.EngineFluidFuelDisplay;
+import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
+import mezz.jei.api.gui.drawable.IDrawable;
+import mezz.jei.api.gui.ingredient.IRecipeSlotsView;
+import mezz.jei.api.helpers.IGuiHelper;
+import mezz.jei.api.recipe.IFocusGroup;
+import mezz.jei.api.recipe.RecipeIngredientRole;
+import mezz.jei.api.recipe.RecipeType;
+import mezz.jei.api.recipe.category.IRecipeCategory;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.ItemStack;
+import net.neoforged.neoforge.fluids.FluidStack;
+
+/**
+ * JEI category for engine fuel recipes (Extractor, Metalizer, Biomass).
+ * <p>
+ * 1.21.1 适配：GuiGraphics 替代 GuiGraphicsExtractor，ResourceLocation 替代 Identifier。
+ */
+public class EngineFluidFuelCategory implements IRecipeCategory<EngineFluidFuelDisplay> {
+
+    private static final int WIDTH = 150;
+    private static final int HEIGHT = 50;
+
+    private static final int INPUT_SLOT_X = 10;
+    private static final int INPUT_SLOT_Y = 1;
+    private static final int FUEL_GAUGE_X = 37;
+    private static final int FUEL_GAUGE_Y = 19;
+    private static final int FUEL_GAUGE_W = 13;
+    private static final int FUEL_GAUGE_H = 13;
+    private static final int FUEL_GAUGE_U = 0;
+    private static final int FUEL_GAUGE_V = 0;
+
+    private static final int TEXT_X = 58;
+    private static final int TEXT_LINE1_Y = 8;
+    private static final int TEXT_LINE2_Y = 21;
+    private static final int TEXT_LINE3_Y = 34;
+
+    private final RecipeType<EngineFluidFuelDisplay> recipeType;
+    private final Component title;
+    private final IDrawable icon;
+    private final IDrawable background;
+    private final IDrawable inputSlot;
+    private final IDrawable fuelGaugeBg;
+    private final IDrawable fuelGaugeFill;
+    private final IDrawable fluidSlotOverlay;
+
+    public EngineFluidFuelCategory(IGuiHelper helper, ResourceLocation categoryId,
+                                   RecipeType<EngineFluidFuelDisplay> type, ItemStack iconStack,
+                                   Component title) {
+        this.recipeType = type;
+        this.title = title;
+        this.icon = helper.createDrawableItemStack(iconStack);
+        this.background = helper.createDrawable(TENConstants.JEI_RECIPE_BG, 0, 0, WIDTH, HEIGHT);
+        this.inputSlot = helper.drawableBuilder(TENConstants.FLUID_SLOT, 0, 0, 18, 50).setTextureSize(18, 50).build();
+        this.fuelGaugeBg = helper.drawableBuilder(TENConstants.FUEL_GAUGE_BG, FUEL_GAUGE_U, FUEL_GAUGE_V, FUEL_GAUGE_W, FUEL_GAUGE_H).setTextureSize(FUEL_GAUGE_W, FUEL_GAUGE_H).build();
+        this.fuelGaugeFill = helper.drawableBuilder(TENConstants.FUEL_GAUGE_FILL, FUEL_GAUGE_U, FUEL_GAUGE_V, FUEL_GAUGE_W, FUEL_GAUGE_H).setTextureSize(FUEL_GAUGE_W, FUEL_GAUGE_H).build();
+        this.fluidSlotOverlay = helper.drawableBuilder(TENConstants.FLUID_SLOT_OVERLAY, 0, 0, 18, 50).setTextureSize(18, 50).build();
+
+    }
+
+    @Override
+    public RecipeType<EngineFluidFuelDisplay> getRecipeType() { return recipeType; }
+
+    @Override
+    public Component getTitle() { return title; }
+
+    @Override
+    public int getWidth() { return WIDTH; }
+
+    @Override
+    public int getHeight() { return HEIGHT; }
+
+    @Override
+    public IDrawable getIcon() { return icon; }
+
+    @Override
+    public void setRecipe(IRecipeLayoutBuilder builder, EngineFluidFuelDisplay recipe, IFocusGroup focuses) {
+        FluidStack fluid = recipe.ingredients().getFirst();
+        var slot = builder.addSlot(RecipeIngredientRole.INPUT, INPUT_SLOT_X, INPUT_SLOT_Y)
+                .setBackground(inputSlot, -1, -1)
+                .setOverlay(fluidSlotOverlay, -1, -1)
+                .setFluidRenderer(1000, true, 16, 48)
+                .addFluidStack(fluid.getFluid(), 100);
+
+        slot.addRichTooltipCallback((view, tooltip) -> {
+            tooltip.add(Component.translatable("kenergyengineering.jei.base_rate", recipe.rate()));
+            tooltip.add(Component.translatable("kenergyengineering.jei.engine_rate", recipe.baseRate()));
+            tooltip.add(Component.translatable("kenergyengineering.jei.rate_multiplier", formatMultiplier(recipe.rateMultiplier())));
+            tooltip.add(Component.translatable("kenergyengineering.jei.duration_ticks", recipe.durationTicks()));
+            tooltip.add(Component.translatable("kenergyengineering.jei.total_energy", recipe.baseGeneratedEnergy()));
+        });
+    }
+
+    /** 倍率显示：整数不补小数位，其余保留两位并去掉尾随 0。 */
+    private static String formatMultiplier(double multiplier) {
+        if (Math.abs(multiplier - Math.rint(multiplier)) < 1.0E-6) {
+            return String.valueOf((long) Math.rint(multiplier));
+        }
+        return String.format(java.util.Locale.ROOT, "%.2f", multiplier).replaceAll("0+$", "").replaceAll("\\.$", "");
+    }
+
+    @Override
+    public void draw(EngineFluidFuelDisplay recipe, IRecipeSlotsView slotsView, GuiGraphics graphics, double mouseX, double mouseY) {
+        background.draw(graphics);
+
+        fuelGaugeBg.draw(graphics, FUEL_GAUGE_X, FUEL_GAUGE_Y);
+        fuelGaugeFill.draw(graphics, FUEL_GAUGE_X, FUEL_GAUGE_Y);
+
+        var font = Minecraft.getInstance().font;
+        int textColor = 0xFF404040;
+
+        graphics.drawString(font, Component.translatable("kenergyengineering.jei.base_rate_short", recipe.rate()),
+                TEXT_X, TEXT_LINE1_Y, textColor, false);
+        graphics.drawString(font, Component.translatable("kenergyengineering.jei.duration_short", recipe.durationTicks()),
+                TEXT_X, TEXT_LINE2_Y, textColor, false);
+        graphics.drawString(font, Component.translatable("kenergyengineering.jei.total_short", recipe.baseGeneratedEnergy()),
+                TEXT_X, TEXT_LINE3_Y, textColor, false);
+    }
+}

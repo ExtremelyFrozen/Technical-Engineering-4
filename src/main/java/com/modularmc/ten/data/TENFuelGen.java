@@ -221,7 +221,7 @@ public record TENFuelGen(PackOutput output) implements DataProvider {
     private static List<Fuel> fluidFuels() {
         List<Fuel> list = new ArrayList<>();
         tag(list, "combustion", "c:lava", 100, 1.0f);
-        fluid(list, "combustion", "kenergyengineering:redstone", 80, 1.5f);
+        fluid(list, "combustion", "kenergyengineering:heated_redstone", 80, 1.5f);
         tag(list, "combustion", "c:crude_oil", 90, 1.0f);
         tag(list, "combustion", "c:naphtha", 70, 2.0f);
         tag(list, "combustion", "c:kerosene", 160, 1.0f);

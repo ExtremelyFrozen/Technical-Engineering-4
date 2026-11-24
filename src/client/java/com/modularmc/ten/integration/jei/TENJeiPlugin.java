@@ -5,6 +5,8 @@ import com.modularmc.ten.api.option.CoolantRecipe;
 import com.modularmc.ten.api.option.Coolants;
 import com.modularmc.ten.api.recipe.FormsCombinedRecipe;
 import com.modularmc.ten.client.TENClientRecipeCache;
+import com.modularmc.ten.common.blockentity.EngineFluidFuelDisplay;
+import com.modularmc.ten.common.blockentity.machine.CombustionBlockEntity;
 import com.modularmc.ten.common.gui.MachineProgressShortcut;
 import com.modularmc.ten.common.blockentity.EngineFuelDisplay;
 import com.modularmc.ten.common.blockentity.EngineFuels;
@@ -15,6 +17,8 @@ import com.modularmc.ten.common.data.TENBlocks;
 import com.modularmc.ten.common.data.TENRecipeTypes;
 import com.modularmc.ten.network.JeiSyncState;
 
+import mezz.jei.api.constants.VanillaTypes;
+import mezz.jei.api.neoforge.NeoForgeTypes;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
@@ -35,6 +39,7 @@ import mezz.jei.api.registration.IGuiHandlerRegistration;
 import mezz.jei.api.registration.IRecipeCatalystRegistration;
 import mezz.jei.api.registration.IRecipeCategoryRegistration;
 import mezz.jei.api.registration.IRecipeRegistration;
+import net.neoforged.neoforge.fluids.FluidStack;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -82,7 +87,8 @@ public class TENJeiPlugin implements IModPlugin {
             new mezz.jei.api.recipe.RecipeType<>(TEN.id("metalizer_fuel"), EngineFuelDisplay.class);
     public static final mezz.jei.api.recipe.RecipeType<EngineFuelDisplay> BIOMASS_FUEL =
             new mezz.jei.api.recipe.RecipeType<>(TEN.id("biomass_fuel"), EngineFuelDisplay.class);
-
+    public static final mezz.jei.api.recipe.RecipeType<EngineFluidFuelDisplay> COMBUSTION_FUEL =
+        new mezz.jei.api.recipe.RecipeType<>(TEN.id("combustion_fuel"), EngineFluidFuelDisplay.class);
     // ── Cooler coolant recipe type ───────────────────────────────────
     public static final mezz.jei.api.recipe.RecipeType<CoolantRecipe> COOLER_COOLANT =
             new mezz.jei.api.recipe.RecipeType<>(TEN.id("cooler_coolant"), CoolantRecipe.class);
@@ -148,6 +154,9 @@ public class TENJeiPlugin implements IModPlugin {
                 new AuxDef(engineIcon("biomass"), BIOMASS_FUEL,
                         h -> new EngineFuelCategory(h, TEN.id("biomass_fuel"), BIOMASS_FUEL,
                                 engineIcon("biomass"), TENBlocks.ENGINE_BIOMASS.get().getName())),
+                new AuxDef(engineIcon("combustion"), COMBUSTION_FUEL,
+                        h -> new EngineFluidFuelCategory(h, TEN.id("combustion_fuel"), COMBUSTION_FUEL,
+                                engineIcon("combustion"), TENBlocks.ENGINE_COMBUSTION.get().getName())),
                 new AuxDef(icon("machine_cooler"), COOLER_COOLANT,
                         h -> new CoolantJeiCategory(h, TEN.id("cooler_coolant"), COOLER_COOLANT,
                                 icon("machine_cooler"), TENBlocks.MACHINE_COOLER.get().getName())));
@@ -205,12 +214,13 @@ public class TENJeiPlugin implements IModPlugin {
         var ingredientManager = registration.getIngredientManager();
 
         var allStacks = ingredientManager.getAllItemStacks();
+        var allFluidStacks = ingredientManager.getAllIngredients(NeoForgeTypes.FLUID_STACK);
 
         List<EngineFuelDisplay> extractorRecipes = new ArrayList<>();
         List<EngineFuelDisplay> metalizerRecipes = new ArrayList<>();
         List<EngineFuelDisplay> biomassRecipes = new ArrayList<>();
+        List<EngineFluidFuelDisplay> combustionRecipes = new ArrayList<>();
 
-       // List<EngineFluidFuelDisplay> combustionRecipes = new ArrayList<>();
         List<CoolantRecipe> coolantRecipes = new ArrayList<>();
 
         // 燃料表来自数据包 engine_fuel 配方；未收录的物品走原版燃烧时间兜底。
@@ -244,14 +254,25 @@ public class TENJeiPlugin implements IModPlugin {
             }
         }
 
+        for (FluidStack stack : allFluidStacks) {
+            int combustionRate = CombustionBlockEntity.BASE_GENERATION_RATE;
+            var combustionProfile = EngineFuels.fluidProfile(fuelManager, EngineFuels.COMBUSTION, combustionRate, stack);
+            if (!combustionProfile.isEmpty()) {
+                combustionRecipes.add(new EngineFluidFuelDisplay(stack, combustionProfile, combustionRate));
+            }
+        }
+
         Comparator<EngineFuelDisplay> byItemIdThenComponents = Comparator.comparing(
                 (EngineFuelDisplay r) -> r.ingredients().getFirst().getItem().toString());
+        Comparator<EngineFluidFuelDisplay> byFluidIdThenComponents = Comparator.comparing(
+            (EngineFluidFuelDisplay r) -> r.ingredients().getFirst().getFluid().toString());
         Comparator<CoolantRecipe> coolantSortKey = Comparator.comparing(
                 (CoolantRecipe r) -> r.ingredients().getFirst().getItem().toString());
 
         registration.addRecipes(EXTRACTOR_FUEL, dedupSorted(extractorRecipes, byItemIdThenComponents, EngineFuelDisplay::ingredients));
         registration.addRecipes(METALIZER_FUEL, dedupSorted(metalizerRecipes, byItemIdThenComponents, EngineFuelDisplay::ingredients));
         registration.addRecipes(BIOMASS_FUEL, dedupSorted(biomassRecipes, byItemIdThenComponents, EngineFuelDisplay::ingredients));
+        registration.addRecipes(COMBUSTION_FUEL, dedupFluidSorted(combustionRecipes, byFluidIdThenComponents, EngineFluidFuelDisplay::ingredients));
         registration.addRecipes(COOLER_COOLANT, dedupSorted(coolantRecipes, coolantSortKey, CoolantRecipe::ingredients));
     }
 
@@ -389,6 +410,23 @@ public class TENJeiPlugin implements IModPlugin {
             ItemStack current = ingredientsOf.apply(sorted.get(i)).getFirst();
             ItemStack last = ingredientsOf.apply(result.getLast()).getFirst();
             if (!ItemStack.isSameItemSameComponents(current, last)) {
+                result.add(sorted.get(i));
+            }
+        }
+        return result;
+    }
+
+    private static <T> List<T> dedupFluidSorted(List<T> recipes, Comparator<T> sortKey,
+                                           java.util.function.Function<T, List<FluidStack>> ingredientsOf) {
+        if (recipes.isEmpty()) return List.of();
+        List<T> sorted = new ArrayList<>(recipes);
+        sorted.sort(sortKey);
+        List<T> result = new ArrayList<>();
+        result.add(sorted.getFirst());
+        for (int i = 1; i < sorted.size(); i++) {
+            FluidStack current = ingredientsOf.apply(sorted.get(i)).getFirst();
+            FluidStack last = ingredientsOf.apply(result.getLast()).getFirst();
+            if (!FluidStack.isSameFluidSameComponents(current, last)) {
                 result.add(sorted.get(i));
             }
         }

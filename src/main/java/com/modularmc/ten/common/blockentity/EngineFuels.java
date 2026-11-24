@@ -35,6 +35,7 @@ public final class EngineFuels {
     public static final String EXTRACTOR = "extractor";
     public static final String METALIZER = "metalizer";
     public static final String BIOMASS = "biomass";
+    public static final String COMBUSTION = "combustion";
     public static final String SOLAR = "solar";
 
     /** 兜底口径的能量密度（FE / 燃烧 tick），与旧版萃取引擎一致。 */
