@@ -97,6 +97,7 @@ public class TENItems {
                 .register();
     }
 
+    public static final ItemEntry<Item> MOULD_BLANK = mould("mould_blank", "Blank Mould", "空白模具", "item/mold/blank");
     public static final ItemEntry<Item> MOULD_GEAR = mould("mould_gear", "Gear Mould", "齿轮模具", "item/mold/model_gear");
     public static final ItemEntry<Item> MOULD_PLATE = mould("mould_plate", "Plate Mould", "板模具", "item/mold/model_plate");
     public static final ItemEntry<Item> MOULD_ROD = mould("mould_rod", "Rod Mould", "杆模具", "item/mold/model_rod");

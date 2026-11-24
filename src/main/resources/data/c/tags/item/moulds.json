@@ -1,6 +1,7 @@
 {
 	"replace": false,
 	"values": [
+		"kenergyengineering:mould_blank",
 		"kenergyengineering:mould_gear",
 		"kenergyengineering:mould_plate",
 		"kenergyengineering:mould_rod",
