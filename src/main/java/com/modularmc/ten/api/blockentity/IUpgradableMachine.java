@@ -81,6 +81,14 @@ public interface IUpgradableMachine {
     }
 
     /**
+     * 该机器是否接入范围调节面板（面板的 XYZ 盒就是它的工作区）。
+     * 范围升级以它作为安装门禁：接面板的机器装得上，其余机器（半径已不驱动工作区）装不上。
+     */
+    default boolean supportsRangeAdjust() {
+        return false;
+    }
+
+    /**
      * Mark that a Photosynthetic Suppressor (LevelupSyn) is installed.
      * Duplicate calls are silently ignored (safe idempotency).
      * <p>

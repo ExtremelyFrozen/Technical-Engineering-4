@@ -3,8 +3,11 @@ package com.modularmc.ten.common.data;
 import com.modularmc.ten.TEN;
 import com.modularmc.ten.common.item.TENBucketItem;
 
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.material.Fluid;
 import net.neoforged.neoforge.common.SoundActions;
 import net.neoforged.neoforge.fluids.BaseFlowingFluid;
@@ -69,6 +72,15 @@ public class TENFluids {
 
     public static Fluid LIQUID_BIZARRERIE_FLOWING() {
         return LIQUID_BIZARRERIE.get();
+    }
+
+    /**
+     * 流体桶的物品栈：桶由 Registrate 在 {@code fluid(...).bucket(...)} 里生成，没有静态 ItemEntry
+     * 可以直接引用，只能按 {@code <流体名>_bucket} 反查。查不到时返回空栈。
+     */
+    public static ItemStack bucketOf(String fluidName) {
+        var item = BuiltInRegistries.ITEM.get(TEN.id(fluidName + "_bucket"));
+        return item == null || item == Items.AIR ? ItemStack.EMPTY : new ItemStack(item);
     }
 
     public static void init() {}

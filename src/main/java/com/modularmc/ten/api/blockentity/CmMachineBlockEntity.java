@@ -114,8 +114,9 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
 
     // ───── 范围调节面板：设备的 XYZ 半径与 XYZ 相对偏移（服务端权威）─────
     /**
-     * 三轴半径，以 0.5 方块为单位：1 = 0.5 半径 = 每轴 1 方块，2 = 1.0 半径 = 每轴 2 方块。
-     * 默认 1（0.5 半径）；面板第 0..2 行，每次点击 ±1，即 ±0.5 方块半径。
+     * 三轴工作范围跨度，以 0.5 方块为单位：1 = 每轴 1 方块（0.5 半径），16 = 每轴 16 方块（半径 8）。
+     * 面板第 0..2 行，每次点击 ±1，即 ±0.5 方块半径。初始值由机型自己的
+     * {@code setDefaultRange} 写入，偏移中心默认是机器自身。
      */
     @Persisted
     @DescSynced
@@ -126,7 +127,11 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
     @Persisted
     @DescSynced
     public int rangeZ = 1;
-    /** 三轴相对偏移（整数格，-64..64）：面板第 3..5 行，每次点击 ±1 格。 */
+    /**
+     * 三轴相对偏移（整数格）：面板第 3..5 行，每次点击 ±1 格。
+     * 上限跟着**同一轴的范围半径**走：2×半径 = 该轴跨度，即最多把工作盒挪出自身一个身位
+     * （见 {@link #adjustOffsetCap(int)}），硬上限 {@link #ADJUST_RANGE_MAX}。
+     */
     @Persisted
     @DescSynced
     public int offsetX = 0;
@@ -136,9 +141,21 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
     @Persisted
     @DescSynced
     public int offsetZ = 0;
-    /** 当前可调节半径上限：范围升级按倍率抬高，硬上限 {@link #ADJUST_RANGE_MAX}；每 tick 重算。 */
+    /**
+     * 当前可调节半径上限（半单位）：{@link #baseRangeCap()} 打底、范围升级每张 ×2，
+     * 硬上限 {@link #ADJUST_RANGE_MAX}；由 {@code resetUpgradeEffects() + applyUpgradeEffects()} 每 tick 重算。
+     */
     @DescSynced
-    public int adjustRangeCap = 64;
+    public int adjustRangeCap = ADJUST_RANGE_MAX;
+
+    // ───── 自动 Y 轴：探测结果（不持久化、不同步，两侧各按本地区块计算）─────
+    /** 最近一次探测到的世界内容底 / 顶（含端点）。 */
+    private int autoExtentMinY;
+    private int autoExtentMaxY;
+    /** 探测结果是否可用；false 时退回维度声明高度兜底。 */
+    private boolean autoExtentValid;
+    /** 下一次允许探测的 gameTime，用于刷新周期与失败重试。 */
+    private long autoExtentNextProbe;
 
     /**
      * 应用工具/武器附魔开关（采矿场/破坏器/啂噬者）：默认开启，经 rpcToggleUseEnchantments 切换。
@@ -382,9 +399,11 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
     }
 
     /**
-     * 是否注册右侧「范围调节」tab 与展开面板：目前只有方块破坏器/方块成型器接入，
-     * 其余机器即便存了 rangeX/Y/Z 也不显示该入口。
+     * 是否注册右侧「范围调节」tab 与展开面板：默认不注册，
+     * 由带范围的机型覆写（{@link RadiusMachineBlockEntity} 全部为 true，
+     * 破坏器 / 成型器各自覆写 true）。
      */
+    @Override
     public boolean supportsRangeAdjust() {
         return false;
     }
@@ -961,14 +980,13 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
 
     /** 范围调节面板六行对应的同步字段名：0..2 = 范围 XYZ，3..5 = 偏移 XYZ。 */
     public static final String[] ADJUST_FIELDS = { "rangeX", "rangeY", "rangeZ", "offsetX", "offsetY", "offsetZ" };
-    /** 半径/偏移硬上限：半径以 0.5 方块为单位（64 = 32 半径 = 每轴 64 方块），偏移为整数格 ±64。 */
+    /** Y 半径行下标：{@link #autoYRange()} 的机型把它锁成只读。 */
+    public static final int ADJUST_ROW_RANGE_Y = 1;
+    /** Y 偏移行下标：同上。 */
+    public static final int ADJUST_ROW_OFFSET_Y = 4;
+    /** 半径/偏移硬上限：半径以 0.5 方块为单位（64 = 32 半径 = 每轴 64 方块）。 */
     public static final int ADJUST_RANGE_MAX = 64;
-    /**
-     * 接入范围调节的机器，其可调节半径上限的起点：1 半单位 = 0.5 半径 = 1×1×1 方块。
-     * 与 {@code rangeX/Y/Z} 默认值一致，故初始作用范围与未装升级时的上限都是 1×1×1；
-     * 旧档里按旧语义存下的较大值也会被 {@code doBaseData()} 的钳位收回 1。
-     * 每件范围升级 ×2（1→2→4→8→16→32→64 半单位），硬上限 {@link #ADJUST_RANGE_MAX}。
-     */
+    /** 可设半径上限的兜底起点（1 半单位 = 1×1×1）：机型不覆写 {@link #baseRangeCap()} 时用它。 */
     public static final int ADJUST_BASE_CAP = 1;
     /** 单次遍历方块的硬上限：超大范围时截断扫描，避免每 tick 卡顿。 */
     public static final int ADJUST_SCAN_LIMIT = 4096;
@@ -976,20 +994,162 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
     /** 工作盒的方块坐标闭区间（含端点）。 */
     public record AdjustBounds(BlockPos min, BlockPos max) {}
 
+    /** 无升级时每轴可设上限（半单位）：机型按自己的初始跨度覆写，范围升级每张再 ×2。 */
+    protected int baseRangeCap() {
+        return ADJUST_BASE_CAP;
+    }
+
     /**
-     * 范围调节面板驱动的工作盒：中心 = 机器位置 + XYZ 相对偏移。
+     * Y 轴是否由设备自动接管（采矿场 / 模拟信标为 true）。为 true 时面板的 Y 半径 / Y 偏移两行
+     * 只读，{@link #adjustedBounds()} 直接用 {@link #autoRangeMinY()} / {@link #autoRangeMaxY()}——
+     * 这两个端点是设备自己探测出来的世界内容范围，不是维度声明高度。
+     */
+    public boolean autoYRange() {
+        return false;
+    }
+
+    /** 指定行是否只读：Y 轴自动的设备锁住 Y 半径与 Y 偏移两行。 */
+    public boolean isAdjustRowLocked(int row) {
+        return autoYRange() && (row == ADJUST_ROW_RANGE_Y || row == ADJUST_ROW_OFFSET_Y);
+    }
+
+    /**
+     * 指定行是否把加减按钮从面板上摘掉。默认跟随 {@link #isAdjustRowLocked(int)}；
+     * 希望「按钮留在原位、点了没反应」的机型覆写为 false（服务端仍按只读行拒绝改值）。
+     */
+    public boolean hidesAdjustRowButton(int row) {
+        return isAdjustRowLocked(row);
+    }
+
+    /** 自动 Y 下界（含）：设备自主探测到的世界内容底。 */
+    public int autoRangeMinY() {
+        return autoExtentValid ? autoExtentMinY : declaredMinY();
+    }
+
+    /** 自动 Y 上界（含）：设备自主探测到的世界内容顶。 */
+    public int autoRangeMaxY() {
+        return autoExtentValid ? autoExtentMaxY : declaredMaxY();
+    }
+
+    /** 首次探测出结果前的兜底下界：维度声明的最低构建高度。 */
+    private int declaredMinY() {
+        return level == null ? -64 : level.getMinBuildHeight();
+    }
+
+    /** 首次探测出结果前的兜底上界：维度声明的最高构建高度。 */
+    private int declaredMaxY() {
+        return level == null ? 319 : level.getMaxBuildHeight() - 1;
+    }
+
+    /**
+     * 重探自动 Y 轴的范围：只对 {@link #autoYRange()} 为 true 的机型生效，服务端与客户端各自
+     * 按本地已加载区块计算（不加载区块、不加网络通道）。内容范围会随玩家挖 / 建变化，故按
+     * {@link VerticalExtent#REFRESH_TICKS} 周期刷新；采样区没加载好时 {@link VerticalExtent#RETRY_TICKS} 后重试。
+     */
+    private void refreshAutoYExtent() {
+        if (level == null || !autoYRange()) {
+            return;
+        }
+        long now = level.getGameTime();
+        if (now < autoExtentNextProbe) {
+            return;
+        }
+        // 以工作盒中心取样：面板偏移可以把盒子挪出自身好几个区块，按机器位置取样会漏掉盒下方的地形
+        BlockPos center = new BlockPos(adjustCenterX(), worldPosition.getY(), adjustCenterZ());
+        VerticalExtent.Extent probed = VerticalExtent.probe(level, center, autoExtentChunkRadius());
+        autoExtentNextProbe = now + (probed == null ? VerticalExtent.RETRY_TICKS : VerticalExtent.REFRESH_TICKS);
+        if (probed != null) {
+            autoExtentValid = true;
+            autoExtentMinY = probed.minY();
+            autoExtentMaxY = probed.maxY();
+        }
+    }
+
+    /** 探测采样半径（区块）：按工作盒宽度给，保证采样区盖住设备真正会碰到的区块。 */
+    private int autoExtentChunkRadius() {
+        return (Math.max(adjustSpanX(), adjustSpanZ()) / 2) / 16;
+    }
+
+    /** 工作盒中心 X：机器自身 + X 偏移（偏移默认 0 → 自身即 0 点）。 */
+    public int adjustCenterX() {
+        return worldPosition.getX() + offsetX;
+    }
+
+    public int adjustCenterZ() {
+        return worldPosition.getZ() + offsetZ;
+    }
+
+    /** 每轴跨度（方块数）= range 半单位值；range=1 只有 1 格，range=16 为 16 格。 */
+    public int adjustSpanX() {
+        return Math.max(1, rangeX);
+    }
+
+    public int adjustSpanY() {
+        return Math.max(1, rangeY);
+    }
+
+    public int adjustSpanZ() {
+        return Math.max(1, rangeZ);
+    }
+
+    /** 盒边界（闭区间）：以中心向正负对称取整展开，奇数跨度时西/北/下层少一格。 */
+    public int adjustMinX() {
+        return adjustCenterX() - (adjustSpanX() - 1) / 2;
+    }
+
+    public int adjustMaxX() {
+        return adjustMinX() + adjustSpanX() - 1;
+    }
+
+    public int adjustMinZ() {
+        return adjustCenterZ() - (adjustSpanZ() - 1) / 2;
+    }
+
+    public int adjustMaxZ() {
+        return adjustMinZ() + adjustSpanZ() - 1;
+    }
+
+    public int adjustMinY() {
+        if (autoYRange()) {
+            return autoRangeMinY();
+        }
+        int cy = worldPosition.getY() + offsetY;
+        return cy - (adjustSpanY() - 1) / 2;
+    }
+
+    public int adjustMaxY() {
+        if (autoYRange()) {
+            return Math.max(autoRangeMinY(), autoRangeMaxY());
+        }
+        return adjustMinY() + adjustSpanY() - 1;
+    }
+
+    /**
+     * 指定偏移行的可设上限（格）：等于**同一轴的范围跨度** = 2×范围半径
+     * （范围 1 半单位 = 0.5 半径 → 上限 1 格；范围 16 = 半径 8 → 上限 16 格），
+     * 最多把工作盒挪出自身一个身位，硬上限 {@link #ADJUST_RANGE_MAX}。
+     */
+    public int adjustOffsetCap(int row) {
+        int range = switch (row) {
+            case 3 -> adjustSpanX();
+            case 4 -> adjustSpanY();
+            case 5 -> adjustSpanZ();
+            default -> ADJUST_RANGE_MAX;
+        };
+        return Math.min(ADJUST_RANGE_MAX, Math.max(1, range));
+    }
+
+    /**
+     * 范围调节面板驱动的工作盒：中心 = 机器位置 + XYZ 相对偏移（偏移默认 0，即设备自身为 0 点）。
      * 半径 = range/2 方块 → 每轴方块数 = 2×半径 = range，以中心向正负对称取整展开
      * （range=1 只有中心 1 格，range=2 为 2 格，range=3 为 3 格……）。
+     * Y 轴自动接管的机型（采矿场 / 模拟信标）忽略 rangeY 与 offsetY。
      * 调用方需跳过机器自身所在格，并用 {@link #ADJUST_SCAN_LIMIT} 截断遍历。
      */
     public AdjustBounds adjustedBounds() {
-        int cx = worldPosition.getX() + offsetX;
-        int cy = worldPosition.getY() + offsetY;
-        int cz = worldPosition.getZ() + offsetZ;
-        int rx = Math.max(1, rangeX), ry = Math.max(1, rangeY), rz = Math.max(1, rangeZ);
         return new AdjustBounds(
-                new BlockPos(cx - (rx - 1) / 2, cy - (ry - 1) / 2, cz - (rz - 1) / 2),
-                new BlockPos(cx + rx / 2, cy + ry / 2, cz + rz / 2));
+                new BlockPos(adjustMinX(), adjustMinY(), adjustMinZ()),
+                new BlockPos(adjustMaxX(), adjustMaxY(), adjustMaxZ()));
     }
 
     /** 工作盒的世界绝对坐标 AABB（方块边界），供范围线框预览；与实际遍历逐格一致。 */
@@ -998,6 +1158,43 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         return new net.minecraft.world.phys.AABB(
                 bounds.min().getX(), bounds.min().getY(), bounds.min().getZ(),
                 bounds.max().getX() + 1, bounds.max().getY() + 1, bounds.max().getZ() + 1);
+    }
+
+    /**
+     * 收尾钳位：范围钳 1..{@link #adjustRangeCap}，偏移按同轴上上限 {@link #adjustOffsetCap(int)} 收回。
+     * 只在越界时写字段并推送，避免每 tick 产生同步流量；Y 自动接管的机型不动 rangeY / offsetY。
+     */
+    protected void clampAdjustFields() {
+        int cap = Math.max(1, Math.min(ADJUST_RANGE_MAX, adjustRangeCap));
+        if (rangeX < 1 || rangeX > cap) {
+            rangeX = Math.max(1, Math.min(rangeX, cap));
+            markDirty("rangeX");
+        }
+        if (rangeZ < 1 || rangeZ > cap) {
+            rangeZ = Math.max(1, Math.min(rangeZ, cap));
+            markDirty("rangeZ");
+        }
+        if (!autoYRange() && (rangeY < 1 || rangeY > cap)) {
+            rangeY = Math.max(1, Math.min(rangeY, cap));
+            markDirty("rangeY");
+        }
+        int capX = adjustOffsetCap(3);
+        if (offsetX < -capX || offsetX > capX) {
+            offsetX = Math.max(-capX, Math.min(offsetX, capX));
+            markDirty("offsetX");
+        }
+        if (!autoYRange()) {
+            int capY = adjustOffsetCap(4);
+            if (offsetY < -capY || offsetY > capY) {
+                offsetY = Math.max(-capY, Math.min(offsetY, capY));
+                markDirty("offsetY");
+            }
+        }
+        int capZ = adjustOffsetCap(5);
+        if (offsetZ < -capZ || offsetZ > capZ) {
+            offsetZ = Math.max(-capZ, Math.min(offsetZ, capZ));
+            markDirty("offsetZ");
+        }
     }
 
     /** 范围升级：把可调节半径上限按倍率放大，钳在硬上限内。 */
@@ -1028,18 +1225,20 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
 
     /**
      * C→S：范围调节面板加/减按钮。row 对应 {@link #ADJUST_FIELDS}，delta 只允许 ±1；
-     * mode：0 步进 ±1（即半径 ±0.5）、1 按住 Shift 直接调到最大、-1 按住 Alt 直接调到最小。
-     * 半径钳 1..{@code adjustRangeCap}（范围升级抬高），偏移钳 ±{@link #ADJUST_RANGE_MAX}。
+     * mode：0 步进 ±1（即半径 ±0.5）、1 按住 Shift 直接到最大（加号）、-1 直接到最小（减号）。
+     * 半径钳 1..{@code adjustRangeCap}（范围升级抬高）；偏移按同轴范围推导，钳 ±{@link #adjustOffsetCap(int)}；
+     * 只读行（{@link #isAdjustRowLocked(int)}）直接拒绝。
      * 改值后显式推送对应 @DescSynced 字段。
      */
     @RPCMethod
     public void rpcAdjustRange(RPCSender sender, int row, int delta, int mode) {
         if (!sender.isRemote()) return;
         if (row < 0 || row >= ADJUST_FIELDS.length || (delta != 1 && delta != -1)) return;
+        if (isAdjustRowLocked(row)) return;
         int current = adjustValue(row);
         boolean isRange = row < 3;
-        int min = isRange ? 1 : -ADJUST_RANGE_MAX;
-        int max = isRange ? adjustRangeCap : ADJUST_RANGE_MAX;
+        int min = isRange ? 1 : -adjustOffsetCap(row);
+        int max = isRange ? adjustRangeCap : adjustOffsetCap(row);
         int next = switch (mode) {
             case 1 -> max;
             case -1 -> min;
@@ -1141,6 +1340,8 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
 
     public void doBaseData() {
         initMachine();
+        // 放在 energyStorage 早退之前：自动 Y 轴是工作区事实，与能量是否就绪无关
+        refreshAutoYExtent();
         if (energyStorage == null) return;
         resetUpgradeEffects();
         // ── 单次 apply：每 doBaseData 周期重置后仅应用一次（旧版双重 apply
@@ -1195,15 +1396,8 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         doActiveFluidIo();
         doActiveEnergyIo();
 
-        // 范围升级卸下后 cap 变小、或旧档半径低于 1：收回合法区间（仅越界时写，避免每 tick 推同步）
-        if (rangeX < 1 || rangeY < 1 || rangeZ < 1 || rangeX > adjustRangeCap || rangeY > adjustRangeCap || rangeZ > adjustRangeCap) {
-            rangeX = Math.max(1, Math.min(rangeX, adjustRangeCap));
-            rangeY = Math.max(1, Math.min(rangeY, adjustRangeCap));
-            rangeZ = Math.max(1, Math.min(rangeZ, adjustRangeCap));
-            markDirty("rangeX");
-            markDirty("rangeY");
-            markDirty("rangeZ");
-        }
+        // 范围升级卸下后 cap 变小、旧档半径低于 1、偏移超出同轴范围：收回合法区间
+        clampAdjustFields();
         markDirty("adjustRangeCap");
 
         // ── Sync face maps to arrays for client (server-authoritative mirror) ──
@@ -1333,7 +1527,8 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         runSpeed = 1;
         batchMultiplier = 1.0;
         batch = 0;
-        adjustRangeCap = ADJUST_RANGE_MAX;
+        // 上限先回到设备自己的基础上限，再由范围升级逐张 ×2 抬高；写死硬上限会让升级失效。
+        adjustRangeCap = Math.max(1, Math.min(ADJUST_RANGE_MAX, baseRangeCap()));
         photosynInstalled = false;
         recipeMode = IUpgradableMachine.RECIPE_MODE_SMELTING;
         unlimitedEnergyTransfer = false;
@@ -2291,10 +2486,8 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         inventoryBuilder.accept(root);
         TENMachineBlockUIFactory.addPlayerInventory(root);
         TENMachineBlockUIFactory.addCommonSidebar(root, holder, this, uiState);
-        // 打开 GUI 时面配置初始同步：改为客户端请求 → 服务端 rpcToPlayer 单播（对齐升级槽/过滤槽模式）。
-        // 原 buildMachineUI 构建时 syncAllFacesToClients()（rpcToTracking）在 tracking 注册前调用
-        // 推送丢失，客户端面按钮以默认值起跳；rpcToServer 需客户端守卫（专用服务器上服务端 createUI
-        // 也执行，PacketDistributor.sendToServer 会抛 IllegalStateException）
+        // 打开 GUI 时面配置初始同步：客户端主动请求，服务端 rpcToPlayer 单播（对齐升级槽模式）。
+        // 必须在客户端守卫内——专用服务器上服务端 createUI 也执行，sendToServer 会抛异常。
         if (holder.player.level().isClientSide()) {
             rpcToServer("rpcRequestFaceSync");
         }

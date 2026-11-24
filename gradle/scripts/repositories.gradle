@@ -51,6 +51,18 @@ repositories {
         forRepository { maven { url = "https://maven.gegy.dev/releases/" } }
         filter { includeGroup("com.tterrag.registrate") }
     }
+    exclusiveContent { // HellFirePvP - 星辉魔法与 ObserverLib
+        forRepository {
+            maven {
+                name = "HellFirePvP Maven"
+                url = "https://maven.hellfiredev.net/"
+            }
+        }
+        filter {
+            includeGroup("hellfirepvp.astralsorcery")
+            includeGroup("hellfirepvp.observerlib")
+        }
+    }
     exclusiveContent { // terraformers - EMI
         forRepository { maven { url = "https://maven.terraformersmc.com/releases/" } }
         filter { includeGroup("dev.emi") }

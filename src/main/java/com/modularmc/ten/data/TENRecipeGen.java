@@ -92,9 +92,11 @@ public class TENRecipeGen implements DataProvider {
         }
         buildAlloys(futures, cache, recipeDir);
 
-        // Moulds
-        for (var m : MOULDS)
-            futures.add(saveJson(cache, recipeDir.resolve("vanilla/" + m.id + ".json"), buildMould(m)));
+        // Moulds：空白模具两种工作台来源，具体模具一律走切石机
+        futures.add(saveJson(cache, recipeDir.resolve("vanilla/mould_blank_ingots.json"), buildBlankMould(false)));
+        futures.add(saveJson(cache, recipeDir.resolve("vanilla/mould_blank_plates.json"), buildBlankMould(true)));
+        for (var id : MOULDS)
+            futures.add(saveJson(cache, recipeDir.resolve("vanilla/" + id + ".json"), buildMould(id)));
 
         return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
     }
@@ -251,13 +253,14 @@ public class TENRecipeGen implements DataProvider {
             new PackFmt("nugget", "ingot"),
             new PackFmt("raw", "raw_block"));
 
-    private record MouldFmt(String id, String[] pattern) {}
-
-    private static final List<MouldFmt> MOULDS = List.of(
-            new MouldFmt("mould_gear", new String[] { "A A", " A ", "A A" }),
-            new MouldFmt("mould_plate", new String[] { "A A", "   ", "A A" }),
-            new MouldFmt("mould_rod", new String[] { "A A", "A A", "A A" }),
-            new MouldFmt("mould_string", new String[] { "AA ", " AA", "AA " }));
+    /**
+     * 模具统一来源：先做空白模具，再用切石机切成具体形状。
+     * 原有四种「锡锭摆形状」的工作台配方全部移除，避免同一模具两条来源。
+     */
+    private static final List<String> MOULDS = List.of(
+            "mould_gear", "mould_plate", "mould_rod", "mould_string",
+            "mould_compressed_small", "mould_compressed_large", "mould_split",
+            "mould_coin", "mould_dense_plate");
 
     // ══════════════════════════════════════════════════════════════════
     // Conditions
@@ -547,12 +550,27 @@ public class TENRecipeGen implements DataProvider {
         futures.add(saveJson(cache, recipeDir.resolve(subdir + "/rb_" + mat.id + suffix + ".json"), unpack));
     }
 
-    private JsonObject buildMould(MouldFmt m) {
+    /** 空白模具两种等价工作台来源：8 铁锭围圈，或 4 铁板摆成空心十字。 */
+    private JsonObject buildBlankMould(boolean plates) {
         var j = new JsonObject();
         j.addProperty("type", "minecraft:crafting_shaped");
-        j.add("pattern", arr((Object[]) m.pattern));
-        j.add("key", obj("A", ref("kenergyengineering:tin_ingot")));
-        j.add("result", obj("id", TEN.MOD_ID + ":" + m.id));
+        if (plates) {
+            j.add("pattern", arr(" A ", "A A", " A "));
+            j.add("key", obj("A", ref("kenergyengineering:iron_plate")));
+        } else {
+            j.add("pattern", arr("AAA", "A A", "AAA"));
+            j.add("key", obj("A", ref("minecraft:iron_ingot")));
+        }
+        j.add("result", obj("id", TEN.MOD_ID + ":mould_blank"));
+        return j;
+    }
+
+    /** 具体模具一律由空白模具切石得到，1:1 不消耗其它材料。 */
+    private JsonObject buildMould(String id) {
+        var j = new JsonObject();
+        j.addProperty("type", "minecraft:stonecutting");
+        j.add("ingredient", ref(TEN.MOD_ID + ":mould_blank"));
+        j.add("result", obj("id", TEN.MOD_ID + ":" + id, "count", 1));
         return j;
     }
 

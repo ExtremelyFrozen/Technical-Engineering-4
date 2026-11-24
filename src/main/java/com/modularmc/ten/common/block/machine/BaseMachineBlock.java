@@ -44,7 +44,8 @@ public class BaseMachineBlock extends Block implements EntityBlock, BlockUIMenuT
     public BaseMachineBlock() {
         this(Properties.of()
                 .mapColor(MapColor.METAL)
-                .strength(3, 5)
+                // 与铁块同硬度：机器不该被随手挖掉，线缆/管道在 CableBased 里另设低硬度
+                .strength(5, 6)
                 .requiresCorrectToolForDrops()
                 .sound(SoundType.STONE)
                 .lightLevel(state -> state.getValue(ACTIVE) ? 6 : 0));

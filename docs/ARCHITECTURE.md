@@ -155,6 +155,22 @@ CmBlockEntity (implements ISyncPersistRPCBlockEntity)
 - 采矿场另有「等工具」态：一轮扫到维度底却空手、且过程中有方块被当前工具挡下（`canBreak` 为 false 或无掉落），
   判为暂无可用工具而不是挖尽——游标回到本轮起点 `passStartY`、`conditionStart()` 转 false（不耗能、位置不动），
   工具特征（物品或耐久）一变即从该点续扫。判定表在 `QuarryScanDecision.decide()`，与方块实体解耦以便脱机单测。
+- ATM 三种特色矿石（含板岩/次级变种）只豁免 `destroyTime = -1` 这道机器挖掘门禁；
+  **工具等级不豁免**：仍由 `ItemStack.isCorrectToolForDrops` 按工具的 `TOOL` 组件与
+  `c:needs_*_tool` 标签链判定，不限定 ATM 自家镐——别的模组只要声明了覆盖这些标签的
+  correct/incorrect 规则就能通过（下界合金 → allthemodium → vibranium → unobtainium）。
+  掉落走各自数据包表（粗矿 + 时运），
+  移除方块走 `removeBlock` 而非 `destroyBlock`，避开 ATM 的 `canEntityDestroy` 拒绝。
+  用字符串而非类引用，缺模组时照常加载。
+- 极速跳层 `findNextNonAirLayer` 每层只采 5 个点：工作盒中心列与盒子四角的列（用户 2026-11-24 定）。
+  5 点全空即整层跳过，任一非空即停在该层由正常扫描逐格处理；只落在采样列之外的孤立方块会被跳过，
+  这是急速模式「以速度为先」的取舍。单次最多探 `MAX_LAYER_SKIP`（32）层，**不提供不限步版本**：
+  机器悬空时那会让第一 tick 就跳到几十层以下。游标起点另有一条硬规矩——`initScanCursor()` 一律取
+  `机器 Y - 1`，既不信任存档 `scanY`（新机器默认 0，机器放得低时它正好落在合法区间，
+  扫描会从 y=0 开始），也不在起手做跳层。
+- 采矿场的可挖下界 `minScanY()` 等于设备探测出的世界内容底（见 §6.1 自动 Y 轴），
+  既不写死 `TENConstants.WORLD_MIN`，也不只信维度声明高度：主世界 -64、下界 -128、末地 0，
+  而模组维度常把声明值放得比实际地形宽松几十层，两者都会让采矿场在虚空里空转或在深层提前判挖尽。
 
 **熔炼机是三路并行，不走上面的单流水线循环**：`FurnaceBlockEntity` 覆写 `tick()` 自己逐 lane 推进，
 不调用 `ProcessingMachineBlockEntity.process()`。槽位 `0..2` 是输入、`3..5` 是输出，lane i 独占输入槽 i、
@@ -457,13 +473,14 @@ tooltip 由 `UpgradeTooltipFormatter` 生成，只写升级组件自身带来的
 - 农场的催生按固定生长阶段推进（不消耗骨粉、不产生掉落）；复种不消耗种子槽物品，
   只铺到四邻的空耕地。两张卡都只写 marker，收获路径通过 `hasUpgrade(Class)` 查询。
 - 「升级：星辉能量传输」归增益组件但 `modifiers()` 为空，能量限速取消后暂无可观察效果，二期接入缓冲 / 传输维度。
-- 范围类机器仍以 `getCurrentRadius() > 0` 作为「升级：作用范围扩展」的安装门禁。
-  例外是**方块破坏器与方块成型器**：工作范围已改由面板 XYZ 决定，`LevelupRg` 不再
-  `setCurrentRadius`，改为 `applyAdjustRangeCapMultiplier(2)` 把可调节半径上限翻倍
-  （基础 `ADJUST_BASE_CAP=1` 半单位 = 0.5 半径 = 1×1×1，即设备初始作用范围；每件 ×2 得
-  1→2→4→8→16→32→64 半单位，硬上限 64）；`resetUpgradeEffects()` 每 tick 重算该上限，
-  `doBaseData()` 把越界值（含旧档按旧语义存下的大值）钳回上限，旧档因此也归位到 1×1×1。
-  未装范围升级时上下限都是 0.5，加减按钮不改变数值。其它范围机器仍走原公式。
+- 所有带范围的机器统一接范围调节面板，`LevelupRg.canApply` 改以 `supportsRangeAdjust()` 为门禁
+  （`RadiusMachineBlockEntity` 全线 true，破坏器 / 成型器各自覆写 true，其余机型 false）。
+  `LevelupRg` 不再 `setCurrentRadius`，只调用 `applyAdjustRangeCapMultiplier(2)`：每张把面板的
+  **可设上限**翻倍，实际范围始终由面板决定。上限底数由 `baseRangeCap()` 给出——采矿场 16、
+  模拟信标 48、农场与生物粉碎器 9、破坏器与成型器 `ADJUST_BASE_CAP=1`（半单位），硬上限 64；
+  `resetUpgradeEffects()` 每 tick 重新打底再叠升级，`doBaseData()` 把越界的范围与偏移收回。
+  旧档里 `rangeX/Y/Z` 是未接面板时的占位值 1，`RadiusMachineBlockEntity` 用 `@Persisted rangeMigrated`
+  哨兵在首次 tick 把设备默认跨度写回，破坏器 / 成型器不迁移（它们本来就在用面板）。
 
 ### 2.8 引擎燃料（数据包）
 
@@ -718,6 +735,8 @@ NeoForge 自带这套配置界面，FML 的 Mods 面板与 Mod Menu 读的都是
 不再有 `c:moulds/shape` 那类功能子标签（成员直接列在 `c:moulds` 里，`TENTagLangGen` 也不再为子标签出语言键）；
 具体用哪种模具由配方自己写明 `kenergyengineering:mould_*` 的静态输入（`chance: 0` = 催化位，不消耗、不随并行运行数倍增），
 分类标签对匹配没有任何作用，留着只会让人以为删掉某个子标签会改变行为。
+全部模具（含空白模具本身）先由 8 铁锭围圈或 4 铁板空心十字合成空白模具，再经切石机一对一切成具体模具；
+旧的「锡锭摆形状」工作台配方已删，新增模具只需往 `TENRecipeGen.MOULDS` 加 id 并补材质。
 `FormsCombinedIngredient#itemMembers`/`fluidMembers` 的惰性解析只服务于标签输入的判定与展示，
 不是允许标签输出的理由。
 
@@ -809,6 +828,19 @@ GUI 走「末影箱模式」：频道目录、创建、接入、退出、删除�
 - `RevealProgressBar`：渐显进度条，按 UV 裁切显示能量/燃料/进度。
 - `TENFluidSlot`：流体槽。
 - `TransferModeButtonState`：面配置按钮状态。
+- 机器界面的三个切换（扫描模式 / 范围显示 / 应用附魔）已由 44×16 文字长按钮改为
+  `TENMachineBlockUIFactory.smallIconToggleButton`：12×12、`Button.noText()`、
+  `GuiTextureGroup.of(底盘, 图标)` 叠加——底盘取 LDLib2 的 `ldlib2:textures/gui/button.png`（32×32，1px 描边 + 1px 斜面），
+  用 `SpriteTexture#setBorder(2)` 做九宫格伸缩（与侧边展开面板同一策略：框角按源像素钉住、边与心拉伸），
+  12×12 下描边仍是 1px 实线；**不可整体等比缩放**，32→12 会把那圈 1px 边框压成亚像素糊成灰边。
+  图标按 `TOGGLE_ICON_SCALE`（0.65）等比内缩居中（图标是图形，仍走等比），1px 斜面边框不被盖住；
+  三态只改色调（底盘 `DEFAULT/HOVERED/PRESSED` 用 `Button#getState()`，图标按开关态 + hover），
+  由 `IGuiTexture.dynamic(Supplier)` 每帧求值，不需要 hover / pressed 专用贴图，信息只靠 tooltip。
+  切换按钮统一落在背包栏（y=83）上方的 y=69 空带：左缘按钮从 x=7 起（扫描、附魔），
+  范围显示按用户要求放右缘 `TOGGLE_RIGHT_X = 176-7-12 = 157`。
+- **GUI 四边 7px 内缩是硬约束**：`0..6` 与 `169..175` 两条竖带、`0..6` 与 `159..165` 两条横带
+  不得被元素遮盖，只有顶栏标题可以越界。`addPlayerInventory` 的 `(7,83,162,58)` 就是照此对齐的，
+  新增按钮/图标时先按 `TOGGLE_LEFT_X` / `TOGGLE_RIGHT_X` 取横向落点，别写 `x=2` 这类贴边值。
 - `RangeDisplayBER`（客户端源集）：范围机器的工作区线框。
 - 配置面板与升级槽面板由 LDLib2 的 `ModularUI` 组装；面板底图与钮槽坐标要按纹理实测，不要凭感觉改。
 - **服务端 UI 树不跑样式计算**：`StyleEngine` 只在客户端 `init()` 时把 `SlotStyle` 的声明值算进
@@ -829,31 +861,45 @@ GUI 走「末影箱模式」：频道目录、创建、接入、退出、删除�
   `JeiProgressShortcutBinder`（client 源集）与 `EmiProgressShortcutBinder`（main 源集）在各自插件
   初始化时注册，缺邻居时绑定表为空、`bind()` 是空操作。没有配方类别的机器按用途键只会看到该方块
   自身的用途，这是正常边界，不要为此伪造类别。
-- **第三个右侧 tab 与范围调节面板**：只有 `supportsRangeAdjust()` 为 true 的机器注册该入口，
-  目前是方块破坏器与方块成型器（基类默认 false）；`addCommonSidebar` 按钩子调用 `addAdjustTab`，
+- **第三个右侧 tab 与范围调节面板**：只有 `supportsRangeAdjust()` 为 true 的机器注册该入口
+  （基类默认 false；`RadiusMachineBlockEntity` 作为整体覆写 true，破坏器 / 成型器各自覆写 true）；`addCommonSidebar` 按钩子调用 `addAdjustTab`，
   tab 在 y=54（图标 `adjust.png`），展开 80×106 面板（64×90 附加底图贴 (8,8)），
   6 行 12×12 加减按钮按底图实测坐标贴（左列 x=5 加、
   右列 x=47 减、行 y=4+14i）。中间 30px 拆成两个文本：名称占左 18px（`Vertical.CENTER` +
   `Horizontal.LEFT`），数值占右 12px（`Vertical.CENTER` + `Horizontal.RIGHT`）——名称相对
-  12px 按钮上下居中且靠左，数字不参与左对齐；12 个加减钮与关闭钮不带 tooltip，
+  12px 按钮上下居中且靠左，数字不参与左对齐；加减钮与关闭钮不带 tooltip，
   只有 y=54 的大按钮有本地化 tooltip「范围调节」（键 `info.adjust.tab`）。
-  七个键 `info.adjust.tab`、`info.adjust.range_x/y/z`、`info.adjust.offset_x/y/z` 由 `TENLangHandler`
-  生成，中文为「范围调节」与「X半径 / Y半径 / Z半径 / X偏移 / Y偏移 / Z偏移」，改文案要改生成器再跑 `runData`。
-  数据是 `CmMachineBlockEntity` 上的 `@Persisted @DescSynced` 字段：`rangeX/Y/Z` 以 0.5 方块半径
-  为单位（默认 1 = 0.5 半径 = 每轴 1 方块，每点击 ±1 即 ±0.5 半径，钳 1..`adjustRangeCap`），
-  `offsetX/Y/Z` 是整数格（默认 0，钳 ±64）。`rpcAdjustRange(row, delta, mode)` 在服务端改写并
-  `markDirty` 推送：mode 0 步进、1 为按住 Shift 直接调到最大、-1 为按住 Alt 直接调到最小，
-  修饰键由客户端 `UIEvents.MOUSE_DOWN` 的 `event.isShiftDown()/isAltDown()` 读取。
+  八个键 `info.adjust.tab`、`info.adjust.range_x/y/z`、`info.adjust.offset_x/y/z`、`info.adjust.auto`
+  由 `TENLangHandler` 生成，中文为「范围调节」「X半径 / Y半径 / Z半径 / X偏移 / Y偏移 / Z偏移」与「自动」，
+  改文案要改生成器再跑 `runData`。
+  数据是 `CmMachineBlockEntity` 上的 `@Persisted @DescSynced` 字段：`rangeX/Y/Z` 以 0.5 方块
+  跨度为单位（1 = 每轴 1 方块 = 0.5 半径；16 = 每轴 16 方块 = 半径 8），钳 1..`adjustRangeCap`；
+  `offsetX/Y/Z` 是整数格，上限**跟着同一轴的范围跨度走**（`adjustOffsetCap` = 2×范围半径，
+  即最多把盒子挪出自身一个身位），硬上限 64。`rpcAdjustRange(row, delta, mode)` 在服务端改写并
+  `markDirty` 推送：mode 0 步进、1 为 Shift+加号直接到最大、-1 为 Shift+减号直接到最小；
+  只有 Shift 一个修饰键（加减两个按钮已能表达两端，Alt 属重复，已删）。
+  **所有带范围的机器都已接入**（采矿场 / 模拟信标 / 农场管理器 / 生物粉碎器 / 破坏器 / 成型器），
+  工作区数据源统一为 `adjustedBounds()`：中心 = 机器自身 + XYZ 偏移（偏移默认 0 → 自身即 0 点），
+  每轴方块数 = `range`，对称取整展开。Y 轴有两处特例，`autoYRange()` 为 true 时面板的
+  Y 半径 / Y 偏移两行只读（数值位显示「自动」）：采矿场「探测到的世界内容底 → 自身下方一格」，
+  模拟信标「探测到的世界内容底 → 内容顶」，两者都忽略 `rangeY` / `offsetY`。只读行的按钮分两种处理：
+  `hidesAdjustRowButton` 默认跟随 `isAdjustRowLocked`，采矿场因此把加减钮摘掉；
+  模拟信标覆写成 false，按钮留在原位但点击无效（客户端 `MOUSE_DOWN` 直接 return，
+  服务端 `rpcAdjustRange` 另有一道只读行拒绝）。农场与生物粉碎器已从原来的
+  「背面矩形」改为以自身为中心的对称盒（朝向只决定外观）；生物粉碎器 Y 默认 3 层，其余默认 1 层。
+  自动 Y 轴的两个端点是**设备自己探出来的，不是维度声明值**：`VerticalExtent.probe` 用
+  `ChunkSource#getChunkNow`（只取已加载区块，绝不为探测拉加载）扫工作盒覆盖的 3×3~5×5 区块，
+  从生态段两端各找首个 `!hasOnlyAir()` 的段，反推最低 / 最高有方块的层。维度声明的构建高度只在
+  「第一 tick 还没探出来」与结果钳位两处出现——模组维度常把 min / max 声明得比实际地形宽松几十层，
+  照声明画框会在虚空里空转、扫描会白走空气层。探测结果不持久化也不同步，服务端与客户端各按本地
+  已加载区块计算（内容会随玩家挖 / 建变化，`REFRESH_TICKS` = 100 tick 重探；采样区没加载好时
+  `RETRY_TICKS` = 10 tick 后重试，失败则继续用上一次结果）。
+  遍历用 `ADJUST_SCAN_LIMIT` 截断防卡顿，输出满判定也不再看 B。冷却器的范围是固定的前方一格，
+  没有半径可调，因此不注册该入口。
   `UIState` 三个 setter 在展开时互相关闭并写回快照，保证三选一互斥。
   素材 `adjust.png` / `panel_adjust.png` / `adjust_buttons.png` 由三张副本直接改名而来，原有
   `upgrade.png` / `panel_config_legacy.png` / `config_mode_buttons.png` 保留不动（尺寸不同，
   覆盖会破坏现有配置面板）。
-  **目前只有方块破坏器与方块成型器接入**：`adjustedBounds()` 给出世界轴向三轴盒子
-  （中心 = 机器位置 + XYZ 偏移，半径 = range/2 方块，每轴方块数 = range，向正负对称取整展开：
-  range=1 只有中心 1 格、range=2 为 2 格……），两台机器的 `getRangeBoxes()`、
-  `applyEffect()`、`conditionStart()` 都遍历这个盒子并跳过自身格，并行运行 B 不再决定深度；
-  遍历用 `ADJUST_SCAN_LIMIT` 截断防卡顿，输出满判定也不再看 B。其余机器的面板数值只保存与显示，
-  工作范围仍按原有 `radius` / `getRangeBoxes()` 语义。
 - **侧栏主按钮 tooltip**：6 个 `info.bar_*` 标题键（`bar_mode/ideas/redstone/control/energy/upgrade`）
   文案不带冒号，只留尾空格给拼接用（如「面配置 能量」）。红石按钮 `redstoneTooltips` 分两行：
   第一行金色标题「红石控制」，第二行是 `info.off/low/high` 三选一的当前类型；
@@ -894,18 +940,24 @@ GUI 走「末影箱模式」：频道目录、创建、接入、退出、删除�
 | Sodium / Iris / ModernFix | 编译期可选 | 开发期依赖，仓库暂无直接引用 |
 
 硬前置分两种分发方式：LDLib2 是活动前置，由 `neoforge.mods.toml` 声明 `required`，
-玩家自行安装，不再 `jarJar` 内嵌；Registrate、taffy 仍由 `jarJar` 分发，玩家无需另装。
-taffy 被 7 个类直接引用（5 个核心 BE 加 2 个 GUI 类），原先只靠 LDLib2 的二次嵌套传递，
-现已自行内嵌，避免玩家自装更高版本 LDLib2 时上游改包名或去掉内嵌导致核心 BE 加载失败。
-`jarJar(api(...))` 会把依赖暴露到编译期类路径，taffy 不再单独声明 `compileOnly`。
+玩家自行安装，不再 `jarJar` 内嵌；Registrate 仍由 `jarJar` 分发，玩家无需另装。
+taffy / yoga 由 LDLib2 2.2.44 自动传递，仓库不再声明它们的坐标或 `compileOnly`。
+`ldlib2` 在 `dependencies.gradle` 用 `api(...)` 暴露给编译期；`jarJar(api(...))`
+只用于仍需内嵌的 Registrate，会把依赖暴露到编译期类路径。
 `neoforge.mods.toml` 里 `ldlib2` 的 `required` 版本下限与 `gradle/forge.versions.toml`
-的 ldlib2 条目（CurseForge 文件 id）必须同步升级；该版本范围参与 FML 校验。
+的 Maven 版本必须同步升级；该版本范围参与 FML 校验。
 
 集成红线：
 
 - 按 mod id 门禁，门禁类与带类型的桥分开写。
 - 编译期可选类型不得出现在总是加载的类里；缺邻居时整包要能启动。
 - 开发运行期的 localRuntime 只用于实测，不构成玩家侧硬依赖。
+- **没有配方类型的机器靠「信息页」补链路，不伪造配方**：物质结晶器是纯流程产出
+  （催化剂 + FE → 液态奇异物质），配方查看器里本来没有任何入口。做法是把
+  `CondenserBlockEntity.infoPages()`（读 `info.matter_condenser.N`，与机器「想法」页同一组键）
+  同时挂给 JEI 的 `addIngredientInfo` / `addItemStackInfo` 与 EMI 的 `EmiInfoRecipe`，
+  覆盖机器方块、奇异物质、液态奇异物质桶与流体本体。新增同类机器照这个模式补，
+  新增语言行只改 `TENLangHandler` 并跑 `runData`。
 
 ---
 
@@ -980,3 +1032,6 @@ blockstate 占位核心模型与 `src/main/resources` 下的零件模型（见 5
 - **版本目录**：新增依赖优先走 `gradle/libs.versions.toml` 与 `gradle/forge.versions.toml`；
   现有硬编码坐标（Lombok、Curios、开发运行期模组、Kotlin 插件）暂按现状，迁移时再收编。
 - **更新日志**：玩家可见的改动写 `CHANGELOG_UNRELEASED.md`，体例见 `CHANGELOG_STYLE.md`；不要直接改已封版段落。
+- **源码注释只写当前契约**：单位、取值范围、调用前提、反直觉约束（「必须九宫格不能等比压」
+  「这段代码不能挪到客户端」）留在注释里；**为什么改、改过什么、哪次迭代纠正了什么**写进本文档、
+  更新日志或提交说明，不进源码。注释越堆越长的根因是把沿革当契约，后来的人分不清哪句还有效。

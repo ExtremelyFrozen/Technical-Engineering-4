@@ -8,7 +8,6 @@ import com.modularmc.ten.utils.ItemNBTHelper;
 import com.modularmc.ten.utils.SafeOperationHelper;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.server.level.ServerLevel;
@@ -35,12 +34,21 @@ import java.util.List;
 
 public class MobRipBlockEntity extends RadiusMachineBlockEntity {
 
+    /** 初始 XZ 半径 4.5 → 面板跨度 9 半单位；Y 默认 3 层。 */
+    public static final int BASE_XZ_RANGE = 9;
+
     public MobRipBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
         setCapacity(kFE(20));
         setEfficiency(15);
-        initialRadius = 4; // 9x9 基础（同种植站），radius 升级在此基础上扩展
+        initialRadius = 4;
         radius = 4;
+        setDefaultRange(BASE_XZ_RANGE, 3, BASE_XZ_RANGE);
+    }
+
+    @Override
+    protected int baseRangeCap() {
+        return BASE_XZ_RANGE;
     }
 
     @Override
@@ -101,63 +109,19 @@ public class MobRipBlockEntity extends RadiusMachineBlockEntity {
             root.addChild(TENMachineBlockUIFactory.energyGaugeModular(this, 8, 18, true));
             // 输出网格底 y=70，进度条 y=74（间距 4）避免贴边；中心 x=88 与输出列中心对齐
             root.addChild(TENMachineBlockUIFactory.progressGaugeWide(this, 48, 74, true));
+            root.addChild(TENMachineBlockUIFactory.useEnchantmentsToggleButton(this,
+                    TENMachineBlockUIFactory.TOGGLE_LEFT_X, TENMachineBlockUIFactory.TOGGLE_Y));
             root.addChild(TENMachineBlockUIFactory.rangeDisplayToggleButton(this));
-            root.addChild(TENMachineBlockUIFactory.useEnchantmentsToggleButton(this, 48, 48));
         });
     }
 
     /**
-     * 生效范围：同农场背面方形（宽轴 ±radius、深轴 2*radius+1，
-     * 机器位于工作区边缘中点、不含机器本身），差异点：Y = 机器层向上额外 2 格
-     * （[my, my+3)，3 层，用户设定）。
-     * 与 applyEffect 查询框 mobRipRangeAABB 一致。
+     * 生效范围：范围面板的工作盒，以机器自身为 0 点、XYZ 三轴对称展开；朝向只决定外观。
+     * 与实际伤害查询框同源，改这里不需要再同步别处。
      */
     @Override
     public List<net.minecraft.world.phys.AABB> getRangeBoxes() {
-        // 预览用 previewRadius（服务端权威镜像 @DescSynced，旧存档 initialRadius 毒化由
-        // 去 @Persisted + 每 tick 重置自愈解决）——见 RadiusMachineBlockEntity.displayRadius
-        return List.of(mobRipRangeAABB(previewRadius()));
-    }
-
-    /**
-     * 生物啃噬者工作范围 AABB：同农场背面方形（宽轴 ±radius、深轴 2*radius+1，
-     * 机器位于边缘中点），Y = 机器层向上额外 2 格（[my, my+3)，共 3 层）——
-     * 覆盖作物层与地表生物身高（用户设定，非 26.1.2 的 7 层语义）。
-     */
-    /** @param radiusValue 半径数据源：服务端实际伤害用 {@code radius}，预览线框用 {@code previewRadius()} */
-    private AABB mobRipRangeAABB(int radiusValue) {
-        Direction facing = getFacing();
-        int mx = worldPosition.getX(), my = worldPosition.getY(), mz = worldPosition.getZ();
-        int r = Math.max(0, radiusValue);
-        int depth = 2 * r + 1;
-        int minX, maxX, minZ, maxZ;
-        switch (facing) {
-            case NORTH -> {
-                minX = mx - r;
-                maxX = mx + r + 1;
-                minZ = mz + 1;
-                maxZ = mz + 1 + depth;
-            }
-            case SOUTH -> {
-                minX = mx - r;
-                maxX = mx + r + 1;
-                minZ = mz - depth;
-                maxZ = mz;
-            }
-            case EAST -> {
-                minX = mx - depth;
-                maxX = mx;
-                minZ = mz - r;
-                maxZ = mz + r + 1;
-            }
-            default -> {
-                minX = mx + 1;
-                maxX = mx + 1 + depth;
-                minZ = mz - r;
-                maxZ = mz + r + 1;
-            }
-        }
-        return new AABB(minX, my, minZ, maxX, my + 3, maxZ);
+        return List.of(adjustedRangeBox());
     }
 
     @Override
@@ -192,7 +156,7 @@ public class MobRipBlockEntity extends RadiusMachineBlockEntity {
      */
     private boolean tryHurtOneEntity() {
         if (level == null) return false;
-        AABB box = mobRipRangeAABB(radius); // 服务端实际伤害范围：真实 radius（含 Rg 加成）
+        AABB box = adjustedRangeBox(); // 与范围线框 / 面板完全同源
         List<LivingEntity> entities = level.getEntitiesOfClass(LivingEntity.class, box);
         // 过滤死亡实体与创造模式玩家
         entities.removeIf(e -> !e.isAlive() || (e instanceof Player p && p.isCreative()));

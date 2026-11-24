@@ -3,7 +3,6 @@ package com.modularmc.ten.common.blockentity.machine;
 import com.modularmc.ten.api.blockentity.RadiusMachineBlockEntity;
 import com.modularmc.ten.api.option.IngredientType;
 import com.modularmc.ten.api.option.MachineType;
-import com.modularmc.ten.common.block.machine.HorizontalMachineBlock;
 import com.modularmc.ten.common.gui.TENMachineBlockUIFactory;
 import com.modularmc.ten.common.item.upgrades.LevelupOddGrowth;
 import com.modularmc.ten.common.item.upgrades.LevelupReseed;
@@ -12,7 +11,6 @@ import com.modularmc.ten.config.ConfigHolder;
 import com.modularmc.ten.utils.WorkingHelper;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
@@ -36,12 +34,21 @@ import java.util.List;
 
 public class FarmBlockEntity extends RadiusMachineBlockEntity {
 
+    /** 初始 XZ 半径 4.5 → 面板跨度 9 半单位。 */
+    public static final int BASE_XZ_RANGE = 9;
+
     public FarmBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
         setCapacity(kFE(20));
         setEfficiency(10);
         initialRadius = 4;
         radius = 4;
+        setDefaultRange(BASE_XZ_RANGE, 1, BASE_XZ_RANGE);
+    }
+
+    @Override
+    protected int baseRangeCap() {
+        return BASE_XZ_RANGE;
     }
 
     @Persisted
@@ -55,6 +62,10 @@ public class FarmBlockEntity extends RadiusMachineBlockEntity {
     @Persisted
     @DescSynced
     public int[] xRowMaturity = new int[0];
+
+    /** 上次建表时用的 X 原点（相对机器），面板偏移改了就重建行序，避免在旧列上重复扫描。 */
+    @Persisted
+    public int xRowMinOffset = Integer.MIN_VALUE;
 
     @Override
     public int machineType() {
@@ -130,58 +141,26 @@ public class FarmBlockEntity extends RadiusMachineBlockEntity {
         return units < 2L * B;
     }
 
-    /**
-     * 生效范围：机器背面（2*radius+1)²（宽轴 ±radius、深轴从背面第一格起，
-     * Y=自身一层），与 buildXOffsets/scanRow 的动态列数 × 动态深度一致。
-     */
+    /** 生效范围：范围面板的工作盒，以机器自身为 0 点、XYZ 三轴对称展开；朝向只决定外观。 */
     @Override
     public List<net.minecraft.world.phys.AABB> getRangeBoxes() {
-        int r = Math.max(0, radius);
-        Direction facing = getFacing();
-        int mx = worldPosition.getX(), my = worldPosition.getY(), mz = worldPosition.getZ();
-        int depth = 2 * r + 1;
-        int minX, maxX, minZ, maxZ;
-        switch (facing) {
-            case NORTH -> {
-                minX = mx - r;
-                maxX = mx + r + 1;
-                minZ = mz + 1;
-                maxZ = mz + 1 + depth;
-            } // 背面=+Z
-            case SOUTH -> {
-                minX = mx - r;
-                maxX = mx + r + 1;
-                minZ = mz - depth;
-                maxZ = mz;
-            }      // 背面=-Z
-            case EAST -> {
-                minX = mx - depth;
-                maxX = mx;
-                minZ = mz - r;
-                maxZ = mz + r + 1;
-            }      // 背面=-X
-            default -> {
-                minX = mx + 1;
-                maxX = mx + 1 + depth;
-                minZ = mz - r;
-                maxZ = mz + r + 1;
-            } // 背面=+X (WEST)
-        }
-        return List.of(new net.minecraft.world.phys.AABB(minX, my, minZ, maxX, my + 1, maxZ));
+        return List.of(adjustedRangeBox());
     }
 
     @Override
     public void applyEffect() {
         if (level == null) return;
 
-        // Build X offsets for current radius
+        // 按面板 X 跨度生成列偏移
         int[] allOffsets = buildXOffsets();
         if (allOffsets.length == 0) return;
 
-        // Validate or rebuild row order if radius changed
-        if (xRowOrder.length != allOffsets.length) {
+        // 列数或 X 原点变化（面板范围 / 偏移改了）时重建行序与成熟度缓存
+        int minOffset = adjustMinX() - worldPosition.getX();
+        if (xRowOrder.length != allOffsets.length || xRowMinOffset != minOffset) {
             xRowOrder = allOffsets;
             xRowMaturity = new int[allOffsets.length];
+            xRowMinOffset = minOffset;
             currentRowIndex = 0;
         }
 
@@ -207,11 +186,12 @@ public class FarmBlockEntity extends RadiusMachineBlockEntity {
     }
 
     private int[] buildXOffsets() {
-        // 动态方形：宽度轴 2*radius+1 列（-radius..+radius），随范围升级（LevelupRg）扩展
-        int size = 2 * radius + 1;
+        // 工作盒的世界 X 轴逐列（长度 = 面板 X 跨度），行调度只关心列序
+        int size = adjustSpanX();
         int[] offsets = new int[size];
+        int minOffset = adjustMinX() - worldPosition.getX();
         for (int i = 0; i < size; i++) {
-            offsets[i] = -radius + i;
+            offsets[i] = minOffset + i;
         }
         return offsets;
     }
@@ -231,108 +211,86 @@ public class FarmBlockEntity extends RadiusMachineBlockEntity {
         xRowMaturity = newMaturity;
     }
 
-    private int scanRow(int widthOffset) {
+    /**
+     * 扫描工作盒的一列（X 固定）：盒内逐 Y、逐 Z 走一遍，收获成熟作物、给空耕地补种。
+     * 行调度只管列，盒的形状完全由范围面板决定。
+     */
+    private int scanRow(int xOffset) {
         if (level == null) return 0;
 
-        BlockState state = getBlockState();
-        Direction facing = state.getValue(HorizontalMachineBlock.FACING);
-
-        int mx = worldPosition.getX();
-        int my = worldPosition.getY();
-        int mz = worldPosition.getZ();
+        int x = worldPosition.getX() + xOffset;
+        int minY = adjustMinY();
+        int maxY = adjustMaxY();
+        int minZ = adjustMinZ();
+        int maxZ = adjustMaxZ();
         int maturity = 0;
 
-        // 背面方形：深轴从背面第一格起 2*radius+1 格（不含机器所在行）
-        int depth = 2 * radius + 1;
-        for (int d = 1; d <= depth; d++) {
-            int dx, dz;
-            // widthOffset: axis perpendicular to facing
-            // d: depth axis (opposite of facing = behind)
-            switch (facing) {
-                case NORTH -> {
-                    dx = widthOffset;
-                    dz = d;
-                }
-                case SOUTH -> {
-                    dx = widthOffset;
-                    dz = -d;
-                }
-                case EAST -> {
-                    dx = -d;
-                    dz = widthOffset;
-                }
-                case WEST -> {
-                    dx = d;
-                    dz = widthOffset;
-                }
-                default -> {
-                    dx = widthOffset;
-                    dz = d;
-                }
-            }
-            BlockPos pos = new BlockPos(mx + dx, my, mz + dz);
-            if (pos.equals(worldPosition)) continue;
-            BlockState scanState = level.getBlockState(pos);
-            BlockPos below = pos.below();
-            BlockState belowState = level.getBlockState(below);
-            var ageProp = findAgeProperty(scanState);
+        for (int y = minY; y <= maxY; y++) {
+            for (int z = minZ; z <= maxZ; z++) {
+                BlockPos pos = new BlockPos(x, y, z);
+                if (pos.equals(worldPosition)) continue;
+                BlockState scanState = level.getBlockState(pos);
+                BlockPos below = pos.below();
+                BlockState belowState = level.getBlockState(below);
+                var ageProp = findAgeProperty(scanState);
 
-            // Tier 1: Standard CropBlock
-            if (scanState.getBlock() instanceof CropBlock crop) {
-                int age = scanState.getValue(CropBlock.AGE);
-                int maxAge = crop.getMaxAge();
-                if (age >= maxAge) {
+                // Tier 1: Standard CropBlock
+                if (scanState.getBlock() instanceof CropBlock crop) {
+                    int age = scanState.getValue(CropBlock.AGE);
+                    int maxAge = crop.getMaxAge();
+                    if (age >= maxAge) {
+                        var lootBuilder = WorkingHelper.getLootBuilder(level, worldPosition, ItemStack.EMPTY);
+                        List<ItemStack> drops = scanState.getDrops(lootBuilder);
+                        if (canFitAll(drops)) {
+                            fitAll(drops);
+                            level.setBlock(pos, scanState.setValue(CropBlock.AGE, 1), 3);
+                            afterHarvest(pos);
+                        }
+                    } else if (age >= maxAge - 1) {
+                        maturity++;
+                    }
+                    continue;
+                }
+
+                // Tier 2: Bush/regrowable crops
+                if (ageProp != null && !(scanState.getBlock() instanceof StemBlock)) {
+                    int age = scanState.getValue(ageProp);
+                    int maxAge = ageProp.getPossibleValues().stream().max(Integer::compare).orElse(0);
+                    if (age >= maxAge) {
+                        var lootBuilder = WorkingHelper.getLootBuilder(level, worldPosition, ItemStack.EMPTY);
+                        List<ItemStack> drops = scanState.getDrops(lootBuilder);
+                        if (canFitAll(drops)) {
+                            fitAll(drops);
+                            level.setBlock(pos, scanState.setValue(ageProp, Math.max(0, maxAge - 1)), 3);
+                            afterHarvest(pos);
+                        }
+                    } else if (age >= maxAge - 1) {
+                        maturity++;
+                    }
+                    continue;
+                }
+
+                // Tier 3: Config list override
+                if (ageProp == null && isBushCrop(scanState)) {
                     var lootBuilder = WorkingHelper.getLootBuilder(level, worldPosition, ItemStack.EMPTY);
                     List<ItemStack> drops = scanState.getDrops(lootBuilder);
                     if (canFitAll(drops)) {
                         fitAll(drops);
-                        level.setBlock(pos, scanState.setValue(CropBlock.AGE, 1), 3);
+                        level.destroyBlock(pos, false);
                         afterHarvest(pos);
                     }
-                } else if (age >= maxAge - 1) {
-                    maturity++;
+                    continue;
                 }
-                continue;
-            }
 
-            // Tier 2: Bush/regrowable crops
-            if (ageProp != null && !(scanState.getBlock() instanceof StemBlock)) {
-                int age = scanState.getValue(ageProp);
-                int maxAge = ageProp.getPossibleValues().stream().max(Integer::compare).orElse(0);
-                if (age >= maxAge) {
-                    var lootBuilder = WorkingHelper.getLootBuilder(level, worldPosition, ItemStack.EMPTY);
-                    List<ItemStack> drops = scanState.getDrops(lootBuilder);
-                    if (canFitAll(drops)) {
-                        fitAll(drops);
-                        level.setBlock(pos, scanState.setValue(ageProp, Math.max(0, maxAge - 1)), 3);
-                        afterHarvest(pos);
-                    }
-                } else if (age >= maxAge - 1) {
-                    maturity++;
-                }
-                continue;
-            }
-
-            // Tier 3: Config list override
-            if (ageProp == null && isBushCrop(scanState)) {
-                var lootBuilder = WorkingHelper.getLootBuilder(level, worldPosition, ItemStack.EMPTY);
-                List<ItemStack> drops = scanState.getDrops(lootBuilder);
-                if (canFitAll(drops)) {
-                    fitAll(drops);
-                    level.destroyBlock(pos, false);
-                    afterHarvest(pos);
-                }
-                continue;
-            }
-
-            // Auto-plant on empty farmland from seed slots
-            if (belowState.is(Blocks.FARMLAND) && scanState.isAir()) {
-                ItemStack seed = getSeed();
-                if (!seed.isEmpty() && seed.getItem() instanceof BlockItem bi) {
-                    Block plantBlock = bi.getBlock();
-                    if (plantBlock instanceof CropBlock) {
-                        level.setBlock(pos, plantBlock.defaultBlockState(), 3);
-                        seed.shrink(1);
+                // Auto-plant on empty farmland from seed slots
+                if (belowState.is(Blocks.FARMLAND) && scanState.isAir()) {
+                    ItemStack seed = getSeed();
+                    if (!seed.isEmpty() && seed.getItem() instanceof BlockItem bi) {
+                        Block plantBlock = bi.getBlock();
+                        if (plantBlock instanceof CropBlock) {
+                            level.setBlock(pos, plantBlock.defaultBlockState(), 3);
+                            seed.shrink(1);
+                        }
                     }
                 }
             }

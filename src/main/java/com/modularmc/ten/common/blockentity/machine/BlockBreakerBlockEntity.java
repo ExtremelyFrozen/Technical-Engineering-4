@@ -103,8 +103,9 @@ public class BlockBreakerBlockEntity extends RadiusMachineBlockEntity {
         }, root -> {
             root.addChild(TENMachineBlockUIFactory.energyGaugeModular(this, 8, 18, true));
             root.addChild(TENMachineBlockUIFactory.progressGaugeWide(this, 48, 74, true));
+            root.addChild(TENMachineBlockUIFactory.useEnchantmentsToggleButton(this,
+                    TENMachineBlockUIFactory.TOGGLE_LEFT_X, TENMachineBlockUIFactory.TOGGLE_Y));
             root.addChild(TENMachineBlockUIFactory.rangeDisplayToggleButton(this));
-            root.addChild(TENMachineBlockUIFactory.useEnchantmentsToggleButton(this, 48, 48));
         });
     }
 

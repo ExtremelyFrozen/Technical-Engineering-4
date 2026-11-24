@@ -1,5 +1,5 @@
 [versions]
-ldlib2 = "2.2.45" # LDLib2 2.2.44 (CurseForge)
+ldlib2 = "2.2.44" # LDLib2 2.2.44（ECO 21.2.18 的 AsyncThreadData mixin 仍按此版本的 CopyOnWriteArrayList 写；2.2.45 起改为 Map，注入会静默跳过）
 taffy = "1.1.5"
 yoga = "1.0.0"
 registrate = "MC1.21.1-1.4.8"
@@ -20,7 +20,7 @@ ae2patterndisk = "9384288" # AE2 Pattern Disk 0.9.8
 ae2wtlib = "8450398" # AE2WTLib 19.5.1
 ftblibrary = "9350706" # FTB Library 2101.1.39
 architectury = "8492726" # Architectury 13.0.11
-neoecoae = "9374075" # NEO ECO AE Extension 21.2.13
+neoecoae = "9651586" # NEO ECO AE Extension 21.2.18（旧 21.2.13 的 LDLib2 mixin 与 2.2.45 不兼容）
 enderio = "8832691" # Ender IO 8.2.12-beta（内嵌 EnderCore 8.2.12-beta）
 enderioevolution = "8808232" # Ender IO: Evolution 3.1.5-NeoForge-1.21.1
 enderioconduitopt = "8877336" # Ender IO: Conduit Optimizer 1.1.6-1.21.1
@@ -30,6 +30,12 @@ alltheores = "7825464" # ATO - All the Ores 3.2.0_neoforge_1.21.1（mod id allth
 allthemodium = "9143638" # Allthemodium 3.2.1（ATM 顶级金属）
 geckolib = "8893490" # GeckoLib 4.9.3（Allthemodium 硬前置 ≥4.7.5.1）
 modmenu = "7312908" # Mod Menu (NeoForge Edition) 1.21.1-1.0.2（Raguto 移植，非 terraformers 官方）
+uselessmod = "9454907" # Useless Mod 1.21.1-2.4.6.5（万象担架硬前置）
+uselessstretcher = "9451528" # 万象担架 / Useless Stretcher 1.21.1-1.6.3
+
+## hellfire maven（星辉魔法）##
+astralsorcery = "2.0.3.63" # Astral Sorcery 2.0.3（NeoForge 1.21.1）
+observerlib = "1.10.3.31" # ObserverLib（星辉魔法硬前置）
 
 ## latvian maven（KubeJS 配方脚本，可选集成）##
 kubejs = "2101.7.2-build.381" # KubeJS 2101.7.2（1.21.1 线）
@@ -74,6 +80,10 @@ immersiveengineering = { module = "curse.maven:immersive-engineering-231951", ve
 alltheores          = { module = "curse.maven:ato-405593", version.ref = "alltheores" }
 allthemodium        = { module = "curse.maven:allthemodium-364466", version.ref = "allthemodium" }
 geckolib            = { module = "curse.maven:geckolib-388172", version.ref = "geckolib" }
+uselessmod          = { module = "curse.maven:some-useless-things-1401600", version.ref = "uselessmod" }
+uselessstretcher    = { module = "curse.maven:useless-stretcher-1690885", version.ref = "uselessstretcher" }
+astralsorcery       = { module = "hellfirepvp.astralsorcery:AstralSorcery", version.ref = "astralsorcery" }
+observerlib         = { module = "hellfirepvp.observerlib:ObserverLib", version.ref = "observerlib" }
 
 kubejs              = { module = "dev.latvian.mods:kubejs-neoforge", version.ref = "kubejs" }
 rhino               = { module = "dev.latvian.mods:rhino", version.ref = "rhino" }

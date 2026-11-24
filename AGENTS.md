@@ -44,6 +44,9 @@ Kenergy Engineering Retechnicalized（KER），Minecraft 1.21.1 / NeoForge 科�
   现有硬编码坐标（Lombok、Curios、开发运行期模组、Kotlin 插件）暂按现状，迁移时再收编。
 - **验证**：代码改动至少跑 `./gradlew build` 与 `./gradlew spotlessCheck`；GameTest 用 `./gradlew runGameTestServer`。
   界面、时序与实机交互仍要 `runClient` 手验。
+- **注释写当前契约，不写沿革**：源码注释只留单位、取值范围、调用前提与反直觉约束；
+  「为什么改成这样」「哪次迭代纠了什么」写进 `docs/ARCHITECTURE.md`、更新日志或提交说明。
+  同一段注释反复追加「原来…现在…」，说明该结论已经属于文档而不是注释。
 
 ## 三、常用命令
 

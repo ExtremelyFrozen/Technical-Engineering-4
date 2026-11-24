@@ -76,7 +76,7 @@ public final class UpgradeTooltipFormatter {
             addPureText(lines, path, 4);
 
         } else if (item instanceof LevelupRg) {
-            addRangeFraction(lines, UpgradeConstants.RG_RANGE_FRACTION);
+            addRangeMultiplier(lines, UpgradeConstants.RG_CAP_MULTIPLIER);
 
         } else if (item instanceof LevelupPotion) {
             addAmplifier(lines, UpgradeConstants.POTION_AMPLIFIER);
@@ -199,9 +199,9 @@ public final class UpgradeTooltipFormatter {
                 .withStyle(ChatFormatting.GOLD));
     }
 
-    private static void addRangeFraction(List<Component> lines, double fraction) {
-        int pct = (int) Math.round(fraction * 100.0);
-        lines.add(Component.translatable(TEN.MOD_ID + ".upgrade_tip.range.add", formatSignedInt(pct))
+    /** 范围升级卡面：整数倍率写 {@code xN}（与超频等倍率口径一致）。 */
+    private static void addRangeMultiplier(List<Component> lines, int factor) {
+        lines.add(Component.translatable(TEN.MOD_ID + ".upgrade_tip.range.mult", factor)
                 .withStyle(ChatFormatting.GOLD));
     }
 

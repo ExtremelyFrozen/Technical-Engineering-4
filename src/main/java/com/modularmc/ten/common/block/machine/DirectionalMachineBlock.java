@@ -30,7 +30,8 @@ public class DirectionalMachineBlock extends BaseMachineBlock {
     public DirectionalMachineBlock() {
         super(Properties.of()
                 .mapColor(MapColor.METAL)
-                .strength(3, 5)
+                // 与 BaseMachineBlock 同口径：铁块硬度，避免机器被轻易破坏
+                .strength(5, 6)
                 .requiresCorrectToolForDrops()
                 .sound(SoundType.STONE)
                 .lightLevel(state -> state.getValue(ACTIVE) ? 6 : 0)

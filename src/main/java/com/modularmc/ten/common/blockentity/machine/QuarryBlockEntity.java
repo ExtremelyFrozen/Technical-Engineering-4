@@ -1,6 +1,5 @@
 package com.modularmc.ten.common.blockentity.machine;
 
-import com.modularmc.ten.TENConstants;
 import com.modularmc.ten.api.blockentity.RadiusMachineBlockEntity;
 import com.modularmc.ten.api.option.IngredientType;
 import com.modularmc.ten.api.option.MachineType;
@@ -8,7 +7,6 @@ import com.modularmc.ten.common.gui.TENMachineBlockUIFactory;
 import com.modularmc.ten.common.item.upgrades.LevelupIce;
 import com.modularmc.ten.common.item.upgrades.LevelupMagma;
 import com.modularmc.ten.common.item.upgrades.LevelupMineral;
-import com.modularmc.ten.utils.ComponentHelper;
 import com.modularmc.ten.utils.ItemNBTHelper;
 import com.modularmc.ten.utils.TagHelper;
 import com.modularmc.ten.utils.WorkingHelper;
@@ -17,28 +15,31 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.status.ChunkStatus;
+import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.common.util.FakePlayer;
+import net.neoforged.neoforge.common.util.FakePlayerFactory;
 import net.neoforged.neoforge.fluids.FluidStack;
 
 import com.lowdragmc.lowdraglib2.gui.factory.BlockUIMenuType;
 import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
-import com.lowdragmc.lowdraglib2.gui.ui.elements.Button;
-import com.lowdragmc.lowdraglib2.gui.ui.event.HoverTooltips;
-import com.lowdragmc.lowdraglib2.gui.ui.event.UIEvents;
 import com.lowdragmc.lowdraglib2.syncdata.annotation.DescSynced;
 import com.lowdragmc.lowdraglib2.syncdata.annotation.Persisted;
 import com.lowdragmc.lowdraglib2.syncdata.annotation.RPCMethod;
 import com.lowdragmc.lowdraglib2.syncdata.rpc.RPCSender;
-import dev.vfyjxf.taffy.style.TaffyPosition;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class QuarryBlockEntity extends RadiusMachineBlockEntity {
 
@@ -54,7 +55,7 @@ public class QuarryBlockEntity extends RadiusMachineBlockEntity {
     @Persisted
     public int scanZ;
 
-    /** 当前扫描层 Y（machineY-1 起向下递减，到世界底 -64 视为挖尽，用户裁决启用深层）。 */
+    /** 当前扫描层 Y（machineY-1 起向下递减，低于可挖下界即视为挖尽）。 */
     @Persisted
     public int scanY;
 
@@ -71,7 +72,7 @@ public class QuarryBlockEntity extends RadiusMachineBlockEntity {
     private int lastMode = -1;
 
     /**
-     * 游标是否已初始化。防止挖尽（scanY < WORLD_MIN）后重复初始化重扫空气层空转。
+     * 游标是否已初始化。防止挖尽（scanY 低于可挖下界）后重复初始化重扫空气层空转。
      * 持久化：重启后挖尽停机状态跨重启保持。
      */
     @Persisted
@@ -104,11 +105,12 @@ public class QuarryBlockEntity extends RadiusMachineBlockEntity {
     private String lastToolSignature = "";
 
     /**
-     * 本维度可挖下界。原来固定用 {@code TENConstants.WORLD_MIN}（主世界 -64），
-     * 下界实际到 -128、末地底在 0，按维度取值才不会提前判挖尽、也不会画到虚空层。
+     * 本维度可挖下界：设备自主探测到的世界内容底（{@link #autoRangeMinY()}）。
+     * 不能写死 {@code TENConstants.WORLD_MIN}，也不能只信维度声明的高度——模组维度两者都可能
+     * 与真实地形相差几十层。
      */
     private int minScanY() {
-        return level == null ? TENConstants.WORLD_MIN : level.getMinBuildHeight();
+        return autoRangeMinY();
     }
 
     /**
@@ -121,12 +123,32 @@ public class QuarryBlockEntity extends RadiusMachineBlockEntity {
         return scanFast;
     }
 
+    /** 初始 XZ 半径 8 → 面板跨度 16 半单位；Y 轴由设备接管（世界底到自身下方一格）。 */
+    public static final int BASE_XZ_RANGE = 16;
+
     public QuarryBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
         setCapacity(kFE(20));
         setEfficiency(10);
-        initialRadius = 3;
-        radius = 3;
+        initialRadius = 8;
+        radius = 8;
+        setDefaultRange(BASE_XZ_RANGE, 1, BASE_XZ_RANGE);
+    }
+
+    @Override
+    protected int baseRangeCap() {
+        return BASE_XZ_RANGE;
+    }
+
+    /** Y 轴自动接管：从探测到的世界内容底到自身下方一格，忽略面板的 Y 半径与 Y 偏移两行。 */
+    @Override
+    public boolean autoYRange() {
+        return true;
+    }
+
+    @Override
+    public int autoRangeMaxY() {
+        return worldPosition.getY() - 1;
     }
 
     @Override
@@ -188,22 +210,12 @@ public class QuarryBlockEntity extends RadiusMachineBlockEntity {
     }
 
     /**
-     * 生效范围：以区块中心对称的正方形——基础为所属区块 16×16（基础半宽 8），
-     * 每件范围升级（LevelupRg）以区块中心向外扩 4 格（radius 超出 initialRadius 的
-     * 部分即外扩格数，由 {@link com.modularmc.ten.common.item.upgrades.LevelupRg} 累加）。
-     * 机器仅定位所属区块与 Y 高度，任意模式下都位于机器自身 Y 之下
-     * （从机器下方一格向下到世界底，1.21.1 为 -64，用户裁决启用深层）。
+     * 生效范围：范围面板的工作盒——XZ 以机器自身为 0 点对称展开，Y 从维度最低点到机器下方一格
+     * （Y 两行只读）。
      */
     @Override
     public List<net.minecraft.world.phys.AABB> getRangeBoxes() {
-        int top = worldPosition.getY() - 1; // 机器下方一格
-        int e = Math.max(0, radius - initialRadius); // 外扩格数（无 Rg 时 0 → 原区块）
-        int minX = (worldPosition.getX() & ~15) - e;      // 区块西边界外扩（含）
-        int minZ = (worldPosition.getZ() & ~15) - e;      // 区块北边界外扩（含）
-        int span = 16 + 2 * e;
-        return List.of(new net.minecraft.world.phys.AABB(
-                minX, minScanY(), minZ,
-                minX + span, Math.max(top, minScanY()) + 1, minZ + span));
+        return List.of(adjustedRangeBox());
     }
 
     @Override
@@ -228,41 +240,13 @@ public class QuarryBlockEntity extends RadiusMachineBlockEntity {
         }, root -> {
             root.addChild(TENMachineBlockUIFactory.energyGaugeModular(this, 8, 18, true));
             root.addChild(TENMachineBlockUIFactory.progressGaugeWide(this, 48, 74, true));
-            root.addChild(scanModeToggleButton());
-            // 范围显示按钮：Quarry 已有扫描按钮占用 (2,66)，范围按钮放 (2,48)
-            root.addChild(TENMachineBlockUIFactory.rangeDisplayToggleButton(this, 2, 48));
-            // 应用工具附魔切换按钮（右侧；原 (48,48) 与新增工具槽 2 (43,52) 重叠 13×12px，
-            // 移至顶部空带 (48,0)：y0..16 与工具槽 1/输出槽 3（y16 起）仅边界相切）
-            root.addChild(TENMachineBlockUIFactory.useEnchantmentsToggleButton(this, 48, 0));
+            // 扫描 / 附魔切换留在左缘 7px 内缩处，范围显隐按用户要求挪到右缘（右侧默认坐标）
+            root.addChild(TENMachineBlockUIFactory.scanModeToggleButton(this::isScanFast, () -> rpcToServer("rpcToggleScanFast"),
+                    TENMachineBlockUIFactory.TOGGLE_LEFT_X, TENMachineBlockUIFactory.TOGGLE_Y));
+            root.addChild(TENMachineBlockUIFactory.useEnchantmentsToggleButton(this,
+                    TENMachineBlockUIFactory.TOGGLE_LEFT_X + 14, TENMachineBlockUIFactory.TOGGLE_Y));
+            root.addChild(TENMachineBlockUIFactory.rangeDisplayToggleButton(this));
         });
-    }
-
-    /**
-     * 标准/极速扫描模式切换按钮（逐坐标）。
-     * 位置 (2,66) 44x16：能量条正下方空余带；与进度条 (48,74)、玩家物品栏 (7,83) 无重叠。
-     * 点击经 rpcToServer 显式发包，服务端执行 {@link #rpcToggleScanFast}。
-     */
-    private Button scanModeToggleButton() {
-        Button button = new Button();
-        button.textStyle(style -> style.textShadow(false));
-        button.setOnClick(event -> rpcToServer("rpcToggleScanFast"));
-        Runnable refresh = () -> button.setText(isScanFast() ? ComponentHelper.translated("kenergyengineering.info.quarry.scan_fast") : ComponentHelper.translated("kenergyengineering.info.quarry.scan_normal"));
-        refresh.run();
-        button.addEventListener(UIEvents.TICK, event -> refresh.run());
-        button.addEventListener(UIEvents.HOVER_TOOLTIPS, event -> event.hoverTooltips = new HoverTooltips(
-                List.of(
-                        ComponentHelper.translated(ComponentHelper.GOLD, "kenergyengineering.info.quarry.scan_mode"),
-                        isScanFast() ? ComponentHelper.translated("kenergyengineering.info.quarry.scan_fast_tip") : ComponentHelper.translated("kenergyengineering.info.quarry.scan_normal_tip"),
-                        ComponentHelper.translated("kenergyengineering.info.quarry.scan_click")),
-                null, null, null));
-        button.layout(layout -> {
-            layout.positionType(TaffyPosition.ABSOLUTE);
-            layout.left(2);
-            layout.top(66);
-            layout.width(44);
-            layout.height(16);
-        });
-        return button;
     }
 
     @Override
@@ -271,16 +255,14 @@ public class QuarryBlockEntity extends RadiusMachineBlockEntity {
         if (getAliveTime() % 10 == 0) {
             updateMode();
         }
-        // 挖尽停机后的恢复路径：升级半径/模式变化 → 复位游标重新扫描。
-        // 停机时探测 lastScanRadius/lastMode 变化；运行态持续跟踪 lastMode，
-        // 避免停机瞬间把既有状态误判为「变化」而误复位。
+        // 挖尽停机后的恢复路径：只有模式变化会复位游标重扫（范围改由面板越界防御兜底）。
+        // 运行态持续跟踪 lastMode，避免停机瞬间把既有状态误判为「变化」而误复位。
         if (scanCursorInitialized && scanExhausted()) {
-            // 恢复路径：模式变化 → 复位游标重扫（半径已退出范围计算，不再触发复位）
             if (lastMode != mode) {
                 lastMode = mode;
                 resetScanCursor();
             } else if (scanPassMined) {
-                // 到底且本轮确实挖到过方块 → 以机器自身为新起点再扫一轮（用户要求的循环采矿）。
+                // 到底且本轮确实挖到过方块 → 以机器自身为新起点再扫一轮。
                 // 空手到底的那轮不复位，否则会永远重扫空气层。
                 scanPassMined = false;
                 resetScanCursor();
@@ -398,7 +380,7 @@ public class QuarryBlockEntity extends RadiusMachineBlockEntity {
 
     /**
      * 游标栅格扫描挖掘（mode 0 常规 / mode 3 Mineral 矿石共用）。
-     * 从 machineY-1 层起栅格顺序扫描当前层（±radius 内），跳过空气/不可挖/空掉落，
+     * 从 machineY-1 层起栅格顺序扫描当前层（面板 XZ 盒内），跳过空气/不可挖/空掉落，
      * 挖第一个可挖方块；当前层扫完推进下一层。
      * <p>
      * 按层为单位：每调用只处理当前一层的栅格，层扫完推进/跳层后返回。
@@ -423,13 +405,13 @@ public class QuarryBlockEntity extends RadiusMachineBlockEntity {
             finishPass(); // 轮次收尾：挖尽 / 重扫一轮 / 等合规工具
             return false;
         }
-        // 扫描区锚定：以区块中心对称的正方形（基础区块 16×16，Rg 外扩 e 格）
-        int expand = Math.max(0, radius - initialRadius);
-        int minX = (worldPosition.getX() & ~15) - expand;
-        int minZ = (worldPosition.getZ() & ~15) - expand;
-        int span = 16 + 2 * expand;
-        // 游标越界防御：升级增减后范围收缩/旧存档游标超界时归位西北角，防死循环与漏扫
-        if (scanX < minX || scanX >= minX + span || scanZ < minZ || scanZ >= minZ + span) {
+        // 扫描区锚定：范围面板的 XZ 盒（以机器自身为 0 点、向四周对称展开）
+        int minX = adjustMinX();
+        int minZ = adjustMinZ();
+        int maxX = adjustMaxX();
+        int maxZ = adjustMaxZ();
+        // 游标越界防御：面板改小 / 旧存档游标超界时归位西北角，防死循环与漏扫
+        if (scanX < minX || scanX > maxX || scanZ < minZ || scanZ > maxZ) {
             scanX = minX;
             scanZ = minZ;
         }
@@ -437,7 +419,7 @@ public class QuarryBlockEntity extends RadiusMachineBlockEntity {
         Map<Long, ChunkAccess> chunkCache = new HashMap<>(2);
         boolean layerHasBlock = false; // 本层是否存在非空气方块（空气层跳层标志）
         // 单层栅格扫描（扫描区坐标序）：每调用只处理当前层，层扫完推进/跳层后返回
-        while (scanZ < minZ + span) {
+        while (scanZ <= maxZ) {
             int x = scanX;
             int z = scanZ;
             BlockState state = blockStateCached(chunkCache, x, scanY, z);
@@ -457,7 +439,7 @@ public class QuarryBlockEntity extends RadiusMachineBlockEntity {
                 advanceCursorInLayer();
                 continue;
             }
-            List<ItemStack> drops = state.getDrops(WorkingHelper.getLootBuilder(level, pos, effectiveToolForDrops(tool)));
+            List<ItemStack> drops = dropsFor(state, pos, effectiveToolForDrops(tool));
             if (drops.isEmpty()) {
                 passBlockedByTool = true;
                 advanceCursorInLayer();
@@ -468,7 +450,13 @@ public class QuarryBlockEntity extends RadiusMachineBlockEntity {
                 return false;
             }
             fitAll(drops);
-            level.destroyBlock(pos, false);
+            if (isAtmOre(state)) {
+                // ATM 矿石的 canEntityDestroy 会拒绝无玩家的机器挖掘；掉落已手动入库，
+                // 直接移除方块即可，不必走 destroyBlock 的破坏回调。
+                level.removeBlock(pos, false);
+            } else {
+                destroyAndCollectDrops(pos);
+            }
             scanPassMined = true; // 本轮有实际产出，允许到底后再以自身为起点重扫一轮
             ItemNBTHelper.damage(tool, level, 1);
             advanceCursorInLayer();
@@ -480,12 +468,12 @@ public class QuarryBlockEntity extends RadiusMachineBlockEntity {
         scanZ = minZ;
         if (scanFast || !layerHasBlock) {
             // 极速 或 本层全空气 → 跳过空气层直达下一非空气层（按层限步）
-            int next = findNextNonAirLayer(scanY - 1, MAX_LAYER_SKIP);
+            int next = findNextNonAirLayer(scanY - 1);
             if (next >= minScanY()) {
                 scanY = next;
             } else {
-                // 限步内未找到：推进 MAX_LAYER_SKIP 层继续；
-                // 钳位下界 = WORLD_MIN - 1，使 scanExhausted（scanY < WORLD_MIN）可触发停机
+                // 限步内未找到：推进 MAX_LAYER_SKIP 层继续，钳在可挖下界 - 1
+                // （低于下界即 1 层哨兵值，scanExhausted 据此停机）
                 scanY = Math.max(scanY - 1 - MAX_LAYER_SKIP, minScanY() - 1);
             }
         } else {
@@ -495,45 +483,94 @@ public class QuarryBlockEntity extends RadiusMachineBlockEntity {
     }
 
     /**
+     * 取方块掉落：常规上下文先算一次；空结果时用服务端虚构玩家再算一次。
+     * <p>
+     * 星辉魔法的水晶石矿石掉落表带 {@code astralsorcery:player_nearby} 条件，
+     * 且 {@code failIfNoPlayer=true}——机器挖掘没有 {@code THIS_ENTITY} 玩家时整条池落空，
+     * 于是采矿场误判为「工具挡下」而跳过矿石。虚构玩家只进掉落上下文，不参与破坏，
+     * 也不写世界，因此不影响其它方块与原版时运规则。
+     */
+    private List<ItemStack> dropsFor(BlockState state, BlockPos pos, ItemStack tool) {
+        List<ItemStack> drops = state.getDrops(WorkingHelper.getLootBuilder(level, pos, tool));
+        if (!drops.isEmpty() || !(level instanceof ServerLevel serverLevel)) {
+            return drops;
+        }
+        FakePlayer standIn = FakePlayerFactory.getMinecraft(serverLevel);
+        // 条件量的是「玩家到方块」的距离，不是方块到原点；虚构玩家必须站到目标格上。
+        standIn.setPos(Vec3.atCenterOf(pos));
+        var builder = WorkingHelper.getLootBuilder(level, pos, tool)
+                .withParameter(LootContextParams.THIS_ENTITY, standIn);
+        return state.getDrops(builder);
+    }
+
+    /**
+     * 破坏方块并兜底回收「额外」掉落物实体。
+     * <p>
+     * 常规掉落已由 {@link #fitAll(List)} 直接写入输出槽，不生成掉落物。第三方（如万象担架的
+     * 造化杖掉落吸收）有时会改写方块移除回调、把产物另起一个 item entity；这类实体留在
+     * 世界里的表现就是「物品变成掉落物而不是进入采矿场存储区」。这里只回收本次破坏在
+     * 该格新生成的实体，既不与周边已有掉落物抢，也不改变正常无掉落方块的行为。
+     */
+    private void destroyAndCollectDrops(BlockPos pos) {
+        AABB area = new AABB(pos).inflate(0.5D);
+        List<ItemEntity> before = level.getEntitiesOfClass(ItemEntity.class, area);
+        level.destroyBlock(pos, false);
+        for (ItemEntity entity : level.getEntitiesOfClass(ItemEntity.class, area)) {
+            if (before.contains(entity)) {
+                continue;
+            }
+            ItemStack stack = entity.getItem();
+            if (stack.isEmpty() || !canFit(stack)) {
+                continue;
+            }
+            fitAll(List.of(stack.copy()));
+            entity.discard();
+        }
+    }
+
+    /**
      * 层内栅格游标推进：scanX 沿扫描区 X 边界递增，越界后 scanZ 进一行。
-     * 边界 = 区块中心外扩后的扫描区（与 {@link #scanMine()} 的 minX/span 派生同源）。
+     * 边界 = 范围面板的 XZ 盒（与 {@link #scanMine()} 同源）。
      */
     private void advanceCursorInLayer() {
-        int expand = Math.max(0, radius - initialRadius);
-        int scanMinX = (worldPosition.getX() & ~15) - expand;
-        int span = 16 + 2 * expand;
+        int scanMinX = adjustMinX();
         scanX++;
-        if (scanX >= scanMinX + span) {
+        if (scanX > adjustMaxX()) {
             scanX = scanMinX;
             scanZ++;
         }
     }
 
     /**
-     * 极速模式辅助：从 fromY 起向下找最近的非空气层（层内 ±radius 存在非空气方块）。
+     * 极速跳层探测：从 fromY 起向下找最近的非空气层，每层只采 5 个点——工作盒中心 + 盒子四角的列。
+     * 5 点全空即整层跳过，任一非空即停在该层交给正常扫描逐格处理；代价是只落在采样列之外的
+     * 中空层会被跳过，这是急速模式「以速度为先」的取舍。
+     * <p>
+     * 单次最多探 {@link #MAX_LAYER_SKIP} 层，绝不不限步直扫到底——否则机器悬空时第一 tick 就会
+     * 把游标甩到几十层以下，看着像「起点不在自身下方」。
      *
-     * @param fromY     起始层（向下递减）
-     * @param maxLayers 每调用最多检查的层数（限步防单 tick 长循环）；≤0 表示不限步
-     * @return 非空气层的 Y；限步内或到世界底为止无可挖层时返回 {@code WORLD_MIN - 1}
-     *         （哨兵取合法域 [WORLD_MIN, …] 之外，避免与深层合法返回值碰撞）
+     * @param fromY 起始层（向下递减）
+     * @return 非空气层的 Y；限步内或到可挖下界为止无可挖层时返回 {@code minScanY() - 1}
      */
-    private int findNextNonAirLayer(int fromY, int maxLayers) {
+    private int findNextNonAirLayer(int fromY) {
         if (level == null) {
             return minScanY() - 1;
         }
-        int expand = Math.max(0, radius - initialRadius);
-        int minX = (worldPosition.getX() & ~15) - expand;
-        int minZ = (worldPosition.getZ() & ~15) - expand;
-        int span = 16 + 2 * expand;
+        int minX = adjustMinX();
+        int maxX = adjustMaxX();
+        int minZ = adjustMinZ();
+        int maxZ = adjustMaxZ();
+        int centerX = (minX + maxX) / 2;
+        int centerZ = (minZ + maxZ) / 2;
+        int[] probeX = { centerX, minX, maxX, minX, maxX };
+        int[] probeZ = { centerZ, minZ, minZ, maxZ, maxZ };
         Map<Long, ChunkAccess> cache = new HashMap<>(2);
-        int limit = (maxLayers <= 0) ? minScanY() : Math.max(fromY - maxLayers + 1, minScanY());
+        int limit = Math.max(fromY - MAX_LAYER_SKIP + 1, minScanY());
         for (int y = fromY; y >= limit; y--) {
-            for (int dx = 0; dx < span; dx++) {
-                for (int dz = 0; dz < span; dz++) {
-                    BlockState s = blockStateCached(cache, minX + dx, y, minZ + dz);
-                    if (s != null && !s.isAir()) {
-                        return y;
-                    }
+            for (int i = 0; i < probeX.length; i++) {
+                BlockState s = blockStateCached(cache, probeX[i], y, probeZ[i]);
+                if (s != null && !s.isAir()) {
+                    return y;
                 }
             }
         }
@@ -570,9 +607,8 @@ public class QuarryBlockEntity extends RadiusMachineBlockEntity {
                 awaitTool = true;
                 scanPassMined = false;
                 scanY = passStartY;
-                int expand = Math.max(0, radius - initialRadius);
-                scanX = (worldPosition.getX() & ~15) - expand;
-                scanZ = (worldPosition.getZ() & ~15) - expand;
+                scanX = adjustMinX();
+                scanZ = adjustMinZ();
             }
             case RESCAN_FROM_START -> {
                 scanPassMined = false;
@@ -585,40 +621,31 @@ public class QuarryBlockEntity extends RadiusMachineBlockEntity {
     }
 
     /**
-     * 复位游标（模式变化/挖尽后恢复）：从区块西北角、machineY-1 层起点重新扫描。
+     * 复位游标（模式变化/挖尽后恢复）：从工作盒西北角、machineY-1 层起点重新扫描。
      */
     private void resetScanCursor() {
-        int expand = Math.max(0, radius - initialRadius);
         scanY = worldPosition.getY() - 1;
         passStartY = scanY;
         passBlockedByTool = false;
-        scanX = (worldPosition.getX() & ~15) - expand;
-        scanZ = (worldPosition.getZ() & ~15) - expand;
+        scanX = adjustMinX();
+        scanZ = adjustMinZ();
     }
 
     /**
-     * 首次运行初始化游标：尊重存档中的 scanY（若在 [WORLD_MIN, machineY-1] 合法范围），
-     * 否则从 machineY-1 层开始；极速模式直接锁定最近的非空气层（全空气世界 → scanY=哨兵，
-     * 由 scanExhausted 判定停机）。
+     * 首次运行初始化游标：一律从自身下方一格起扫。
+     * <p>
+     * 两条都不能加回来：① 不信任存档里的 {@code scanY}——新机器的默认值是 0，机器放得低时
+     * 它恰好落在合法区间内，扫描会从 y=0 开始而不是自身下方；② 起手不做不限步跳层——
+     * 机器悬空（高塔、浮空平台）时那会一步甩到几十层以下的地面。空气层之后由
+     * {@link #advanceCursorInLayer()} 按 {@link #MAX_LAYER_SKIP} 限步跳过。
      */
     private void initScanCursor() {
-        int expand = Math.max(0, radius - initialRadius);
-        int startX = (worldPosition.getX() & ~15) - expand;
-        int startZ = (worldPosition.getZ() & ~15) - expand;
-        int startY = worldPosition.getY() - 1;
-        if (scanY < minScanY() || scanY > startY) {
-            scanY = startY;
-        }
+        scanY = worldPosition.getY() - 1;
         passStartY = scanY;
         passBlockedByTool = false;
-        if (scanFast) {
-            int y = findNextNonAirLayer(scanY, 0); // 首次初始化：不限步扫到底
-            // 哨兵（WORLD_MIN - 1）= 全空气世界 → scanY 置为哨兵值本身，scanExhausted 判定停机
-            scanY = y;
-        }
         // 游标水平位置一律回到扫描区西北角（防御旧存档游标越界：升级增减后范围可能变化）
-        scanX = startX;
-        scanZ = startZ;
+        scanX = adjustMinX();
+        scanZ = adjustMinZ();
     }
 
     /**
@@ -648,27 +675,48 @@ public class QuarryBlockEntity extends RadiusMachineBlockEntity {
     }
 
     /**
-     * 可挖判定。原来只有「无方块实体」这一道，基岩/屏障/结构空位/末地传送门框架
-     * 全靠它们恰好没有掉落表才没被挖走——那是巧合不是规则，任何带掉落表的不可破坏方块都会被挖穿。
-     * 现在先按 {@code destroyTime < 0}（原版不可破坏方块的统一标记，模组的也走这条）拦下。
+     * ATM 三种特色矿石及其变种。它们用 {@code destroyTime = -1} 阻止常规机器挖掘，
+     * 还在 {@code canEntityDestroy} 里拒绝 FakePlayer、要求 16 格内有真玩家；
+     * 但挖掘等级是真实门槛，不能绕过——等级判定完全交给工具的 {@code TOOL} 组件与
+     * {@code c:needs_*_tool} 标签链，不限定 ATM 自家镐：任何模组只要把工具的 correct/incorrect
+     * 规则声明到覆盖这些标签，就能通过（下界合金 → allthemodium → vibranium → unobtainium）。
+     * 这里只放行硬度门禁，等级仍走 {@code isCorrectToolForDrops}。
+     * 用字符串 id 判定方块，避免让可选模组类型进入总是加载的类。
+     */
+    private static final Set<String> ATM_ORES = Set.of(
+            "allthemodium_ore", "allthemodium_slate_ore",
+            "unobtainium_ore", "vibranium_ore", "other_vibranium_ore");
+
+    private boolean isAtmOre(BlockState state) {
+        var id = BuiltInRegistries.BLOCK.getKey(state.getBlock());
+        return "allthemodium".equals(id.getNamespace()) && ATM_ORES.contains(id.getPath());
+    }
+
+    /**
+     * 可挖判定。第一道是 {@code destroyTime < 0}（原版不可破坏方块的统一标记，模组的也走这条），
+     * 不靠「掉落表恰好为空」来兜底——任何带掉落表的不可破坏方块都会被挖穿。ATM 特色矿石是显式例外。
      */
     private boolean canBreak(BlockState state, BlockPos pos) {
         ItemStack tool = firstAvailableTool();
         if (tool.isEmpty()) {
             return false;
         }
-        if (level != null && state.getDestroySpeed(level, pos) < 0) {
+        boolean atmOre = isAtmOre(state);
+        if (!atmOre && level != null && state.getDestroySpeed(level, pos) < 0) {
             return false; // 基岩一类不可破坏方块：不靠掉落表为空来兜底
         }
         if (mode == 0) {
-            // 标准模式（用户调整）：仅跳过带方块实体（组件信息）的方块；
+            // 标准模式：仅跳过带方块实体（组件信息）的方块；
             // 挖掘等级受限于工具槽工具——需要正确工具的方块按工具 tier 判定，
             // 无等级要求的方块（泥土/沙等）任意工具可挖。极速模式仅寻路不同，共用本判定。
-            return !state.hasBlockEntity() && (!state.requiresCorrectToolForDrops() || tool.isCorrectToolForDrops(state));
+            if (state.hasBlockEntity()) {
+                return false;
+            }
+            return !state.requiresCorrectToolForDrops() || tool.isCorrectToolForDrops(state);
         }
         if (mode == 3) {
-            // Mineral 矿石扫描：限定 c:ores 标签 + 工具正确
-            return TagHelper.containsBlock(state.getBlock(), TagHelper.keyBlock("c:ores")) && tool.isCorrectToolForDrops(state);
+            // Mineral 矿石扫描：c:ores 标签或 ATM 白名单 + 工具正确；ATM 三矿同样要过工具等级
+            return (atmOre || TagHelper.containsBlock(state.getBlock(), TagHelper.keyBlock("c:ores"))) && tool.isCorrectToolForDrops(state);
         }
         return false;
     }

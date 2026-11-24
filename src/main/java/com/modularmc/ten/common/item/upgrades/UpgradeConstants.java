@@ -47,14 +47,11 @@ public final class UpgradeConstants {
     public static final int SYN_UNIQUE = 1;
 
     // ── 范围与药水 ──────────────────────────────────────────────────
-    /** Fraction of initial radius added per Range upgrade. */
-    public static final double RG_RANGE_FRACTION = 0.50;
-
     /**
-     * 采矿场范围升级外扩步长（格/件）：范围 = 所属区块 16×16 以区块中心对称外扩
-     * QUARRY_RANGE_STEP × Rg件数（等效半径 8×RG_RANGE_FRACTION 对齐信标 50% 规则）。
+     * 范围升级每张对「可设上限」的倍率（实际范围由面板设定，升级不改工作盒）。
+     * 必须取整数，卡面按 {@code xN} 书写。
      */
-    public static final int QUARRY_RANGE_STEP = 4;
+    public static final int RG_CAP_MULTIPLIER = 2;
 
     /** Potion effect amplifier boost. */
     public static final int POTION_AMPLIFIER = 1;
