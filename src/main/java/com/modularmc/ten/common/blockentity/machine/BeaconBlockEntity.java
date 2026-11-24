@@ -23,12 +23,36 @@ import java.util.List;
 
 public class BeaconBlockEntity extends RadiusMachineBlockEntity {
 
+    /** 初始 XZ 半径 24 → 面板跨度 48 半单位；Y 轴由设备接管（见 {@link #autoYRange()}）。 */
+    public static final int BASE_XZ_RANGE = 48;
+
     public BeaconBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
         setCapacity(kFE(20));
         setEfficiency(300);
-        initialRadius = 32;
-        radius = 32;
+        initialRadius = 24;
+        radius = 24;
+        setDefaultRange(BASE_XZ_RANGE, 1, BASE_XZ_RANGE);
+    }
+
+    @Override
+    protected int baseRangeCap() {
+        return BASE_XZ_RANGE;
+    }
+
+    /**
+     * Y 轴自动接管：探测到的世界内容底到内容顶，忽略面板的 Y 半径与 Y 偏移两行。
+     * 端点由基类自主探测（{@code VerticalExtent}），不读维度声明高度。
+     */
+    @Override
+    public boolean autoYRange() {
+        return true;
+    }
+
+    /** Y 两行的加减钮保留原样（点了无效），不像采矿场那样摘掉。 */
+    @Override
+    public boolean hidesAdjustRowButton(int row) {
+        return false;
     }
 
     @Override
@@ -74,16 +98,16 @@ public class BeaconBlockEntity extends RadiusMachineBlockEntity {
         });
     }
 
-    /** 生效范围：以自身为中心的 AABB 范围框（inflate(radius)，与 applyEffect 查询框一致）。 */
+    /** 生效范围：范围面板的工作盒（XZ 由面板定、Y 为维度全高），与 applyEffect 查询框一致。 */
     @Override
     public List<net.minecraft.world.phys.AABB> getRangeBoxes() {
-        return List.of(new net.minecraft.world.phys.AABB(worldPosition).inflate(radius));
+        return List.of(adjustedRangeBox());
     }
 
     @Override
     public void applyEffect() {
         if (level == null) return;
-        AABB box = (new AABB(worldPosition)).inflate(radius);
+        AABB box = adjustedRangeBox();
         List<Player> players = level.getEntitiesOfClass(Player.class, box);
         ItemStack stack = itemHandler.getStackInSlot(0);
         if (stack.isEmpty()) return;

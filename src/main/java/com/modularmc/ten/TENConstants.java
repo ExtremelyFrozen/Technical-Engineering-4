@@ -120,6 +120,14 @@ public class TENConstants {
     public static final SheetUV DISCONNECT_NORMAL = new SheetUV(48, 0, 12, 12);
     public static final SheetUV DISCONNECT_HOVER = new SheetUV(48, 12, 12, 12);
 
+    /**
+     * @deprecated 世界高度不是常数，模组维度各写各的。要用真实范围走
+     *             {@code VerticalExtent.probe}（设备自主探测），要用维度声明值走
+     *             {@code level.getMinBuildHeight()} / {@code getMaxBuildHeight()}。仅为旧脚本兼容保留。
+     */
+    @Deprecated
     public static int WORLD_MIN = -64;
+    /** @deprecated 同 {@link #WORLD_MIN}。 */
+    @Deprecated
     public static int WORLD_MAX = 256;
 }

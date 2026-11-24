@@ -19,6 +19,7 @@ import net.neoforged.neoforge.items.SlotItemHandler;
 
 import com.lowdragmc.lowdraglib2.gui.factory.BlockUIMenuType;
 import com.lowdragmc.lowdraglib2.gui.sync.bindings.impl.SupplierDataSource;
+import com.lowdragmc.lowdraglib2.gui.texture.GuiTextureGroup;
 import com.lowdragmc.lowdraglib2.gui.texture.IGuiTexture;
 import com.lowdragmc.lowdraglib2.gui.texture.SpriteTexture;
 import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
@@ -50,6 +51,44 @@ import java.util.function.ToDoubleFunction;
 public final class TENMachineBlockUIFactory {
 
     // 26 线旧图集（统一走 TENConstants.LEGACY_SHEET 注册，本类不再私持路径）
+
+    // LDLib2 内置图标：小按钮不再自持图集，直接引用通用组件资源。
+    private static final ResourceLocation LDLIB_EYE = ResourceLocation.fromNamespaceAndPath("ldlib2", "textures/gui/icon/eye.png");
+    private static final ResourceLocation LDLIB_EYE_OFF = ResourceLocation.fromNamespaceAndPath("ldlib2", "textures/gui/icon/eye_off.png");
+    private static final ResourceLocation LDLIB_EDIT_ON = ResourceLocation.fromNamespaceAndPath("ldlib2", "textures/gui/icon/edit_on.png");
+    private static final ResourceLocation LDLIB_EDIT_OFF = ResourceLocation.fromNamespaceAndPath("ldlib2", "textures/gui/icon/edit_off.png");
+    private static final ResourceLocation LDLIB_PLAY_FILL = ResourceLocation.fromNamespaceAndPath("ldlib2", "textures/gui/icon/play_fill.png");
+    private static final ResourceLocation LDLIB_PLAY_EMPTY = ResourceLocation.fromNamespaceAndPath("ldlib2", "textures/gui/icon/play_empty.png");
+
+    private static final int TOGGLE_ON_COLOR = 0xFF62E36A;
+    private static final int TOGGLE_ON_HOVER = 0xFFA3FFA8;
+    private static final int TOGGLE_OFF_COLOR = 0xFF9AA0A6;
+    private static final int TOGGLE_OFF_HOVER = 0xFFE0E4E8;
+
+    /** 小按钮底盘：LDLib2 通用方形按钮贴图（32×32，1px 描边 + 1px 斜面）。 */
+    private static final ResourceLocation TOGGLE_BG = ResourceLocation.fromNamespaceAndPath("ldlib2", "textures/gui/button.png");
+    /**
+     * 底盘走 {@link SpriteTexture#setBorder(int)} 九宫格伸缩，2px 描边/斜面按源像素 1:1 钉住。
+     * 不可整体等比压进 12×12——32→12 会把 1px 边框压成亚像素糊边。
+     */
+    private static final int TOGGLE_BG_BORDER = 2;
+    /** 底盘三态色调：常态略压暗、hover 全亮、按下再压暗，替代 hover 专用贴图。 */
+    private static final int TOGGLE_BG_COLOR = 0xFFD2D2D2;
+    private static final int TOGGLE_BG_HOVER = 0xFFFFFFFF;
+    private static final int TOGGLE_BG_PRESSED = 0xFFA8A8A8;
+    /** 图标相对按钮内缩比例：0.65 让 1px 斜面边框不被图标盖住。 */
+    private static final float TOGGLE_ICON_SCALE = 0.65f;
+
+    /** GUI 内容区 176×166；四边内缩 7px 不得遮盖（标题所在的顶栏除外）。 */
+    private static final int UI_SIDE_MARGIN = 7;
+    private static final int UI_WIDTH = 176;
+    private static final int TOGGLE_SIZE = 12;
+    /** 切换按钮统一所在空带：背包栏（y=83）之上、进度条（y=74..79）左侧/右侧。 */
+    public static final int TOGGLE_Y = 69;
+    /** 左侧按钮起始 x（贴 7px 边距）。 */
+    public static final int TOGGLE_LEFT_X = UI_SIDE_MARGIN;
+    /** 右侧按钮 x：右缘内缩 7px，占 157..168。 */
+    public static final int TOGGLE_RIGHT_X = UI_WIDTH - UI_SIDE_MARGIN - TOGGLE_SIZE;
 
     private TENMachineBlockUIFactory() {}
 
@@ -553,7 +592,8 @@ public final class TENMachineBlockUIFactory {
 
     /**
      * 范围调节 tab（右缘第三个，y=54）：展开 80×106 面板，6 行各一对 12×12 加减按钮，
-     * 分别调节设备的 XYZ 范围（0..64）与 XYZ 相对偏移（±64），点击经 rpcAdjustRange 发包。
+     * 分别调节 XYZ 跨度与 XYZ 相对偏移，点击经 rpcAdjustRange 发包。上下限由设备决定
+     * （{@code adjustRangeCap} / {@code adjustOffsetCap}），只读行不出按钮、数值位显示「自动」。
      * 与配置/升级面板三选一互斥，展开动画复用同一套九宫格与 panelHeightFor。
      */
     public static void addAdjustTab(UIElement root, CmMachineBlockEntity machine, UIState uiState) {
@@ -595,8 +635,16 @@ public final class TENMachineBlockUIFactory {
         for (int row = 0; row < ADJUST_ROWS; row++) {
             final int index = row;
             int y = originY + ADJUST_ROW_Y + row * ADJUST_ROW_STEP;
-            var plus = adjustValueButton(machine, index, 1, originX + ADJUST_PLUS_X, y);
-            var minus = adjustValueButton(machine, index, -1, originX + ADJUST_MINUS_X, y);
+            // 只读行（采矿场 / 信标的 Y 半径与 Y 偏移）：数值位显示「自动」；按钮摘不摘由机型决定
+            boolean locked = machine.isAdjustRowLocked(index);
+            if (!machine.hidesAdjustRowButton(index)) {
+                var plus = adjustValueButton(machine, index, 1, originX + ADJUST_PLUS_X, y);
+                var minus = adjustValueButton(machine, index, -1, originX + ADJUST_MINUS_X, y);
+                root.addChild(plus);
+                root.addChild(minus);
+                adjustContents.add(plus);
+                adjustContents.add(minus);
+            }
             // 名称与数字分开排：名称上下居中且靠左，数字单独靠右，不受左对齐约束。
             var name = new Label();
             name.textStyle(style -> style.textColor(0xFFB5B5B5).textShadow(false).fontSize(7)
@@ -608,19 +656,16 @@ public final class TENMachineBlockUIFactory {
             var value = new Label();
             value.textStyle(style -> style.textColor(0xFFB5B5B5).textShadow(false).fontSize(7)
                     .textAlignVertical(Vertical.CENTER).textAlignHorizontal(Horizontal.RIGHT));
-            Runnable refresh = () -> value.setText(Component.literal(machine.adjustDisplayValue(index)));
+            Runnable refresh = () -> value.setText(locked ? ComponentHelper.translated("kenergyengineering.info.adjust.auto") : Component.literal(machine.adjustDisplayValue(index)));
             refresh.run();
             value.addEventListener(UIEvents.TICK, event -> refresh.run());
-            absolute(value, originX + ADJUST_LABEL_X + ADJUST_NAME_W, y,
-                    ADJUST_LABEL_W - ADJUST_NAME_W, ADJUST_BUTTON_SIZE)
+            // 只读行没有加减钮，数值位左移并加宽，容得下「自动」两个字
+            absolute(value, originX + ADJUST_LABEL_X + (locked ? ADJUST_NAME_W - 6 : ADJUST_NAME_W), y,
+                    ADJUST_LABEL_W - ADJUST_NAME_W + (locked ? 6 : 0), ADJUST_BUTTON_SIZE)
                     .style(style -> style.zIndex(1));
 
-            root.addChild(plus);
-            root.addChild(minus);
             root.addChild(name);
             root.addChild(value);
-            adjustContents.add(plus);
-            adjustContents.add(minus);
             adjustContents.add(name);
             adjustContents.add(value);
         }
@@ -680,8 +725,10 @@ public final class TENMachineBlockUIFactory {
                 null, null, null, null).style(style -> style.zIndex(1));
         button.addEventListener(UIEvents.MOUSE_DOWN, event -> {
             if (event.button != 0) return;
-            // Shift 直接调到最大、Alt 直接调到最小，普通点击步进 ±1（半径 ±0.5 方块）。
-            int mode = event.isShiftDown() ? 1 : event.isAltDown() ? -1 : 0;
+            // 只读行（Y 轴自动）的按钮留在原位但点了没反应；服务端 rpcAdjustRange 另有同一条拒绝
+            if (machine.isAdjustRowLocked(row)) return;
+            // Shift 沿按钮方向直接打到端点：加号 → 最大、减号 → 最小；普通点击步进 ±1（半径 ±0.5）。
+            int mode = event.isShiftDown() ? delta : 0;
             machine.rpcToServer("rpcAdjustRange", row, delta, mode);
         });
         syncTexture(button, () -> sprite(TENConstants.ADJUST_BUTTONS,
@@ -962,58 +1009,89 @@ public final class TENMachineBlockUIFactory {
     }
 
     /**
-     * 范围显示切换按钮（默认位置 (2,66)）：点击经 rpcToServer 发包，服务端切换 rangeVisible。
-     * 需 BE 侧 rpcToggleRangeVisible 支持（未移植该 RPC 的机器误用会在服务端静默忽略）。
+     * LDLib2 通用小图标按钮：12×12、无文字，信息只挂在 tooltip。
+     * 底盘按 {@link #TOGGLE_BG_BORDER} 九宫格伸缩，图标以 {@link GuiTextureGroup} 叠在上面并按
+     * {@link #TOGGLE_ICON_SCALE} 内缩（图形保持等比），因此不需要自制按钮素材。
+     * 三态只用色调表达，图标颜色按开关态与 hover 每帧重算（{@link IGuiTexture#dynamic(Supplier)}）。
      */
-    public static Button rangeDisplayToggleButton(CmMachineBlockEntity machine) {
-        return rangeDisplayToggleButton(machine, 2, 66);
-    }
-
-    public static Button rangeDisplayToggleButton(CmMachineBlockEntity machine, int x, int y) {
+    public static Button smallIconToggleButton(Runnable onClick,
+                                               Supplier<List<Component>> tooltipSupplier,
+                                               ResourceLocation onIcon,
+                                               ResourceLocation offIcon,
+                                               int iconSize,
+                                               BooleanSupplier active,
+                                               int x, int y) {
         Button button = new Button();
-        button.textStyle(style -> style.textShadow(false));
-        button.setOnClick(event -> machine.rpcToServer("rpcToggleRangeVisible"));
-        Runnable refresh = () -> button.setText(machine.rangeVisible ? ComponentHelper.translated("kenergyengineering.info.range_display_on") : ComponentHelper.translated("kenergyengineering.info.range_display_off"));
-        refresh.run();
-        button.addEventListener(UIEvents.TICK, event -> refresh.run());
-        button.addEventListener(UIEvents.HOVER_TOOLTIPS, event -> event.hoverTooltips = new HoverTooltips(
-                List.of(
-                        ComponentHelper.translated(ComponentHelper.GOLD, "kenergyengineering.info.range_display"),
-                        machine.rangeVisible ? ComponentHelper.translated("kenergyengineering.info.range_display_on_tip") : ComponentHelper.translated("kenergyengineering.info.range_display_off_tip"),
-                        ComponentHelper.translated("kenergyengineering.info.range_display_click")),
-                null, null, null));
+        button.noText();
+        Supplier<IGuiTexture> texture = () -> {
+            boolean on = active.getAsBoolean();
+            Button.State state = button.getState();
+            boolean hover = state != Button.State.DEFAULT;
+            int bgTint = state == Button.State.PRESSED ? TOGGLE_BG_PRESSED : (hover ? TOGGLE_BG_HOVER : TOGGLE_BG_COLOR);
+            int iconColor = on ? (hover ? TOGGLE_ON_HOVER : TOGGLE_ON_COLOR) : (hover ? TOGGLE_OFF_HOVER : TOGGLE_OFF_COLOR);
+            return GuiTextureGroup.of(
+                    SpriteTexture.of(TOGGLE_BG).setSprite(0, 0, 32, 32).setBorder(TOGGLE_BG_BORDER).setColor(bgTint),
+                    SpriteTexture.of(on ? onIcon : offIcon).setSprite(0, 0, iconSize, iconSize).setColor(iconColor).scale(TOGGLE_ICON_SCALE));
+        };
+        IGuiTexture dynamic = IGuiTexture.dynamic(texture);
+        button.buttonStyle(style -> {
+            style.baseTexture(dynamic);
+            style.hoverTexture(dynamic);
+            style.pressedTexture(dynamic);
+        });
+        button.setOnClick(event -> onClick.run());
+        button.addEventListener(UIEvents.HOVER_TOOLTIPS, event -> event.hoverTooltips = new HoverTooltips(tooltipSupplier.get(), null, null, null));
         button.layout(layout -> {
             layout.positionType(TaffyPosition.ABSOLUTE);
             layout.left(x);
             layout.top(y);
-            layout.width(44);
-            layout.height(16);
+            layout.width(TOGGLE_SIZE);
+            layout.height(TOGGLE_SIZE);
         });
         return button;
+    }
+
+    /**
+     * 范围显示切换按钮（默认右缘：x=157、y=69，右/下均留 7px 边距）：点击经 rpcToServer 发包。
+     * 需 BE 侧 rpcToggleRangeVisible 支持（未移植该 RPC 的机器误用会在服务端静默忽略）。
+     */
+    public static Button rangeDisplayToggleButton(CmMachineBlockEntity machine) {
+        return rangeDisplayToggleButton(machine, TOGGLE_RIGHT_X, TOGGLE_Y);
+    }
+
+    public static Button rangeDisplayToggleButton(CmMachineBlockEntity machine, int x, int y) {
+        return smallIconToggleButton(
+                () -> machine.rpcToServer("rpcToggleRangeVisible"),
+                () -> List.of(
+                        ComponentHelper.translated(ComponentHelper.GOLD, "kenergyengineering.info.range_display"),
+                        machine.rangeVisible ? ComponentHelper.translated("kenergyengineering.info.range_display_on_tip") : ComponentHelper.translated("kenergyengineering.info.range_display_off_tip"),
+                        ComponentHelper.translated("kenergyengineering.info.range_display_click")),
+                LDLIB_EYE, LDLIB_EYE_OFF, 32,
+                () -> machine.rangeVisible, x, y);
     }
 
     /** 应用工具/武器附魔切换按钮：点击经 rpcToServer 发包，服务端切换 useEnchantments。 */
     public static Button useEnchantmentsToggleButton(CmMachineBlockEntity machine, int x, int y) {
-        Button button = new Button();
-        button.textStyle(style -> style.textShadow(false));
-        button.setOnClick(event -> machine.rpcToServer("rpcToggleUseEnchantments"));
-        Runnable refresh = () -> button.setText(machine.useEnchantments ? ComponentHelper.translated("kenergyengineering.info.use_enchantments_on") : ComponentHelper.translated("kenergyengineering.info.use_enchantments_off"));
-        refresh.run();
-        button.addEventListener(UIEvents.TICK, event -> refresh.run());
-        button.addEventListener(UIEvents.HOVER_TOOLTIPS, event -> event.hoverTooltips = new HoverTooltips(
-                List.of(
+        return smallIconToggleButton(
+                () -> machine.rpcToServer("rpcToggleUseEnchantments"),
+                () -> List.of(
                         ComponentHelper.translated(ComponentHelper.GOLD, "kenergyengineering.info.use_enchantments"),
                         machine.useEnchantments ? ComponentHelper.translated("kenergyengineering.info.use_enchantments_on_tip") : ComponentHelper.translated("kenergyengineering.info.use_enchantments_off_tip"),
                         ComponentHelper.translated("kenergyengineering.info.use_enchantments_click")),
-                null, null, null));
-        button.layout(layout -> {
-            layout.positionType(TaffyPosition.ABSOLUTE);
-            layout.left(x);
-            layout.top(y);
-            layout.width(44);
-            layout.height(16);
-        });
-        return button;
+                LDLIB_EDIT_ON, LDLIB_EDIT_OFF, 32,
+                () -> machine.useEnchantments, x, y);
+    }
+
+    /** 采矿场扫描模式小按钮：fast 用实心播放键，标准用空心播放键。 */
+    public static Button scanModeToggleButton(BooleanSupplier fast, Runnable onClick, int x, int y) {
+        return smallIconToggleButton(
+                onClick,
+                () -> List.of(
+                        ComponentHelper.translated(ComponentHelper.GOLD, "kenergyengineering.info.quarry.scan_mode"),
+                        fast.getAsBoolean() ? ComponentHelper.translated("kenergyengineering.info.quarry.scan_fast_tip") : ComponentHelper.translated("kenergyengineering.info.quarry.scan_normal_tip"),
+                        ComponentHelper.translated("kenergyengineering.info.quarry.scan_click")),
+                LDLIB_PLAY_FILL, LDLIB_PLAY_EMPTY, 64,
+                fast, x, y);
     }
 
     private static ProgressBar verticalGaugeModular(CmMachineBlockEntity machine,
