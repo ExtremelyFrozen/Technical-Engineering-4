@@ -95,11 +95,11 @@ dependencies {
     // FTB Library (dev testing); Architectury 13.0.11+ is required
     localRuntime(forge.ftblibrary)
 
-    // NEO ECO AE Extension —— dev 装不上，坐标留在 forge.versions.toml 的 neoecoae
-    // 它 jarJar 内嵌 Registrate MC1.21.1-1.4.8，与本模组的 MC1.21-1.3.0+67 在 dev 模块路径上
-    // 成了两个导出 com.tterrag.registrate* 的模块，任何读该包的模组都会触发
-    // ResolutionException（实测：带 powah 报 powah，摘掉 powah 改报 ae2wtlib_api）。
-    // KER 已对齐到 MC1.21.1-1.4.8，下面这行用于复测冲突是否随之消失。
+    // NEO ECO AE Extension —— 用 21.2.18。
+    // 21.2.13 的 ldlib.AsyncThreadDataMixin 按 LDLib2 2.2.44 的 CopyOnWriteArrayList.add
+    // 注入且 require 跟随 defaultRequire=1；2.2.45 改成 Map 后加载期直接 InjectionError。
+    // 当前仓库把 LDLib2 固定在 2.2.44，让该 mixin 真正生效而不是被 21.2.18 的 require=0 静默跳过；
+    // ECO jarJar 内嵌的 Registrate 已对齐 1.4.8，与本项目和 dev 模块路径不再冲突。
     localRuntime(forge.neoecoae)
 
     // Ender IO（EIO）+ EIO 进化（Ender IO: Evolution）—— dev 共存与配方/管道对照
@@ -139,4 +139,17 @@ dependencies {
     // Better ModList 未选：CF 上标到 1.21.1 的 fileId 无法核实，且其配置界面依赖额外的
     // config-screen 库；Mod Menu 该版本 MIT、无声明前置。
     localRuntime(forge.modmenu)
+
+    // 万象担架 + 硬前置无用之物：dev 侧复现掉落物吸收与通配模具兼容。
+    // 无用之物 2.4.6.5 与万象担架 1.6.3 配套；两者都要求 AE2 19.2+（dev 已就绪）。
+    localRuntime(forge.uselessmod)
+    localRuntime(forge.uselessstretcher)
+
+    // 星辉魔法（水晶石矿石的 player_nearby 掉落条件需要实机复现）。
+    // ObserverLib 是它的硬前置；Curios 已由上面的 forge.curios 提供，排除 POM 里的
+    // Maven 坐标以免 dev 类路径上出现两份 Curios。
+    localRuntime(forge.astralsorcery) {
+        exclude group: "top.theillusivec4.curios", module: "curios-neoforge"
+    }
+    localRuntime(forge.observerlib)
 }
