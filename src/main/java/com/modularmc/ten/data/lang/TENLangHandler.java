@@ -111,7 +111,7 @@ public final class TENLangHandler {
         // 数值写法：运行速度是自然数增量（+1 / +2 / +3），其余倍率是整数 xN 或百分比（+20% / -25%）。
         add(provider, "upgrade_tip.batch.add", "Parallel runs %s", "并行运行 %s");
         add(provider, "upgrade_tip.photosyn.fe", "Photosynthetic power %s FE/t.", "光合供能 %s FE/t");
-        add(provider, "upgrade_tip.range.add", "Range %s%%", "作用范围 %s%%");
+        add(provider, "upgrade_tip.range.mult", "Working radius x%s", "工作范围半径 x%s");
         add(provider, "upgrade_tip.potion.amplifier", "Potion effect level %s.", "药水效果等级 %s");
         add(provider, "upgrade_tip.unknown.0", "Unknown upgrade", "未知升级组件");
         add(provider, "upgrade_tip.global.multiply", "Global multiplier x%s", "全局倍率 x%s");
@@ -224,17 +224,13 @@ public final class TENLangHandler {
         add(provider, "info.bar_upgrade", "Upgrades ", "升级 ");
         add(provider, "info.bar_energy_use", "Current FE/t: ", "当前 FE/t: ");
         add(provider, "info.bar_energy_use_max", "Peak FE/t: ", "峰值 FE/t: ");
-        // 采石场扫描模式切换（GUI 按钮文案与 tooltip，供后续功能移植）
+        // 采石场扫描模式切换（小按钮无文字，仅 tooltip）
         add(provider, "info.quarry.scan_mode", "Scan Mode", "扫描模式");
-        add(provider, "info.quarry.scan_normal", "Normal", "标准");
-        add(provider, "info.quarry.scan_fast", "Fast", "极速");
         add(provider, "info.quarry.scan_normal_tip", "Digs layer by layer; stops automatically when the column is fully mined.", "逐层向下挖掘；整列挖尽后自动停机。");
-        add(provider, "info.quarry.scan_fast_tip", "Skips air layers to the nearest solid layer; faster progress.", "跳过空气层直达最近实心层，推进更快。");
+        add(provider, "info.quarry.scan_fast_tip", "Checks 5 sample points (center + four corners) to skip air layers; faster progress.", "按中心与四角共 5 个采样点跳过空气层，推进更快。");
         add(provider, "info.quarry.scan_click", "Click to toggle scan mode", "点击切换扫描模式");
         // 范围显示切换按钮（rangeDisplayToggleButton）
         add(provider, "info.range_display", "Range Display", "范围显示");
-        add(provider, "info.range_display_on", "Range: On", "范围: 显示");
-        add(provider, "info.range_display_off", "Range: Off", "范围: 隐藏");
         add(provider, "info.range_display_on_tip", "Showing the working range outline.", "正在显示工作范围线框。");
         add(provider, "info.range_display_off_tip", "Working range outline is hidden.", "工作范围线框已隐藏。");
         add(provider, "info.range_display_click", "Click to toggle range display", "点击切换范围显示");
@@ -246,10 +242,10 @@ public final class TENLangHandler {
         add(provider, "info.adjust.offset_x", "X Offset", "X偏移");
         add(provider, "info.adjust.offset_y", "Y Offset", "Y偏移");
         add(provider, "info.adjust.offset_z", "Z Offset", "Z偏移");
+        // 只读行的数值位：Y 由设备自动接管（采矿场到自身下方 / 信标全高）
+        add(provider, "info.adjust.auto", "Auto", "自动");
         // 应用工具/武器附魔切换按钮（useEnchantmentsToggleButton）
         add(provider, "info.use_enchantments", "Use Enchantments", "应用附魔");
-        add(provider, "info.use_enchantments_on", "Enchants: On", "附魔: 开启");
-        add(provider, "info.use_enchantments_off", "Enchants: Off", "附魔: 关闭");
         add(provider, "info.use_enchantments_on_tip", "Enchantments are applied.", "应用附魔。");
         add(provider, "info.use_enchantments_off_tip", "Enchantments are ignored.", "忽略附魔。");
         add(provider, "info.use_enchantments_click", "Click to toggle enchantment application", "点击切换附魔应用");
@@ -298,9 +294,11 @@ public final class TENLangHandler {
         add(provider, "info.enchantment_flusher.2", "Put in a book or a tool, then just wait.", "放本书，或者工具，然后只要等着就行了。");
         add(provider, "info.refiner.0", "Refines fluids into advanced materials.", "精炼流体以产出更高级的材料。");
         add(provider, "info.refiner.1", "If you want to progress further, this is essential.", "想在科技上走得更远，这是必不可少的。");
-        add(provider, "info.matter_condenser.0", "The Matter Condenser can condense Bizarrerie.", "物质结晶器可以凝聚出奇异物质。");
-        add(provider, "info.matter_condenser.1", "Insert catalysts to increase processing speed.", "放入各种催化剂提高凝聚速度。");
-        add(provider, "info.matter_condenser.2", "Where do those even come from?", "这些玩意从哪来的？");
+        add(provider, "info.matter_condenser.0", "The Matter Condenser condenses liquid Bizarrerie from energy and a catalyst.", "物质结晶器用能量和催化剂凝聚出液态奇异物质。");
+        add(provider, "info.matter_condenser.1", "The catalyst slot must stay filled - catalysts are consumed while it runs.", "输入槽必须一直有催化剂，运行时会持续消耗。");
+        add(provider, "info.matter_condenser.2", "Catalysts: iron/copper/gold/nickel dust, Nether Wart, Chorus Fruit, Blaze Powder, Redstone, Glowstone Dust, Mushrooms.", "催化剂：铁/铜/金/镍粉、下界疣、紫颂果、烈焰粉、红石、荧石粉、蘑菇。");
+        add(provider, "info.matter_condenser.3", "Solidify the liquid in a Refiner to get Bizarrerie.", "把液态产物送进精炼机，即可固化成奇异物质。");
+        add(provider, "info.matter_condenser.4", "Where do those even come from?", "这些玩意从哪来的？");
         // Legacy cell keys (kept for compatibility)
         add(provider, "info.cell.0", "Stores plenty of energy.", "可以存储大量能量。");
         add(provider, "info.cell.1", "It can also charge items.", "另外，它还有能力充能物品。");
