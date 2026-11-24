@@ -9,13 +9,17 @@ import com.modularmc.ten.common.gui.MachineProgressShortcut;
 import com.modularmc.ten.common.blockentity.EngineFuelDisplay;
 import com.modularmc.ten.common.blockentity.EngineFuels;
 import com.modularmc.ten.common.blockentity.machine.BiomassBlockEntity;
+import com.modularmc.ten.common.blockentity.machine.CondenserBlockEntity;
 import com.modularmc.ten.common.blockentity.machine.ExtractorBlockEntity;
 import com.modularmc.ten.common.blockentity.machine.MetalizerBlockEntity;
 import com.modularmc.ten.common.data.TENBlocks;
+import com.modularmc.ten.common.data.TENFluids;
+import com.modularmc.ten.common.data.TENItems;
 import com.modularmc.ten.common.data.TENRecipeTypes;
 import com.modularmc.ten.network.JeiSyncState;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -23,12 +27,15 @@ import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.neoforged.neoforge.client.event.RecipesUpdatedEvent;
 import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.fluids.FluidStack;
 
 import com.lowdragmc.lowdraglib2.gui.holder.ModularUIContainerScreen;
 import com.lowdragmc.lowdraglib2.integration.xei.jei.ModularUIJEIHandlers;
 import mezz.jei.api.IModPlugin;
 import mezz.jei.api.JeiPlugin;
+import mezz.jei.api.constants.VanillaTypes;
 import mezz.jei.api.helpers.IGuiHelper;
+import mezz.jei.api.neoforge.NeoForgeTypes;
 import mezz.jei.api.recipe.IRecipeManager;
 import mezz.jei.api.recipe.category.IRecipeCategory;
 import mezz.jei.api.runtime.IJeiRuntime;
@@ -250,6 +257,27 @@ public class TENJeiPlugin implements IModPlugin {
         registration.addRecipes(METALIZER_FUEL, dedupSorted(metalizerRecipes, byItemIdThenComponents, EngineFuelDisplay::ingredients));
         registration.addRecipes(BIOMASS_FUEL, dedupSorted(biomassRecipes, byItemIdThenComponents, EngineFuelDisplay::ingredients));
         registration.addRecipes(COOLER_COOLANT, dedupSorted(coolantRecipes, coolantSortKey, CoolantRecipe::ingredients));
+
+        registerCondenserInfo(registration);
+    }
+
+    /**
+     * 物质结晶器的信息页。它没有配方类型（催化剂 + 能量直接换流体），JEI 里本来没有任何入口，
+     * 玩家查到「奇异物质」只能看到精炼机的固化配方、看不到流体从哪来——在这里补一条链路说明，
+     * 挂在机器方块、奇异物质、液态奇异物质（桶与流体本体）三处。
+     */
+    private static void registerCondenserInfo(IRecipeRegistration registration) {
+        Component[] lines = CondenserBlockEntity.infoPages().toArray(Component[]::new);
+        if (lines.length == 0) return;
+        registration.addIngredientInfo(TENBlocks.MACHINE_CONDENSER.asStack(), VanillaTypes.ITEM_STACK, lines);
+        registration.addItemStackInfo(new ItemStack(TENItems.BIZARRERIE.get()), lines);
+        ItemStack bucket = TENFluids.bucketOf("liquid_bizarrerie");
+        if (!bucket.isEmpty()) {
+            registration.addItemStackInfo(bucket, lines);
+        }
+        // FluidEntry#getSource() 是泛型返回值，直接传进 FluidStack 会因 Holder/Fluid 两个重载打架
+        FluidStack bizarrerie = new FluidStack((net.minecraft.world.level.material.Fluid) TENFluids.LIQUID_BIZARRERIE.getSource(), 1);
+        registration.addIngredientInfo(bizarrerie, NeoForgeTypes.FLUID_STACK, lines);
     }
 
     // ═══════════════════════════════════════════════════════════════════

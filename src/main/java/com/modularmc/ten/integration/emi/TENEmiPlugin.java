@@ -2,7 +2,10 @@ package com.modularmc.ten.integration.emi;
 
 import com.modularmc.ten.TEN;
 import com.modularmc.ten.api.recipe.FormsCombinedRecipe;
+import com.modularmc.ten.common.blockentity.machine.CondenserBlockEntity;
 import com.modularmc.ten.common.data.TENBlocks;
+import com.modularmc.ten.common.data.TENFluids;
+import com.modularmc.ten.common.data.TENItems;
 import com.modularmc.ten.common.data.TENRecipeTypes;
 import com.modularmc.ten.common.gui.MachineProgressShortcut;
 import com.modularmc.ten.integration.xei.TENRecipeWidget;
@@ -18,7 +21,9 @@ import com.lowdragmc.lowdraglib2.integration.xei.emi.ModularUIEMIHandlers;
 import dev.emi.emi.api.EmiEntrypoint;
 import dev.emi.emi.api.EmiPlugin;
 import dev.emi.emi.api.EmiRegistry;
+import dev.emi.emi.api.recipe.EmiInfoRecipe;
 import dev.emi.emi.api.recipe.EmiRecipeCategory;
+import dev.emi.emi.api.stack.EmiIngredient;
 import dev.emi.emi.api.stack.EmiStack;
 import dev.emi.emi.api.widget.Bounds;
 
@@ -104,6 +109,24 @@ public class TENEmiPlugin implements EmiPlugin {
         registerMachineCategories(registry);
         registerSmelterCategories(registry);
         registerEngineFuelCategories(registry);
+        registerCondenserInfo(registry);
+    }
+
+    /**
+     * 物质结晶器的信息页：它没有配方类型（催化剂 + 能量直接换流体），EMI 里原本查不到任何东西。
+     * 把链路说明挂到机器方块、奇异物质、液态奇异物质桶上，查任一个都能看到上游怎么来、下游怎么用。
+     */
+    private static void registerCondenserInfo(EmiRegistry registry) {
+        List<Component> lines = CondenserBlockEntity.infoPages();
+        if (lines.isEmpty()) return;
+        List<EmiIngredient> targets = new java.util.ArrayList<>();
+        targets.add(EmiStack.of(TENBlocks.MACHINE_CONDENSER.asStack()));
+        targets.add(EmiStack.of(TENItems.BIZARRERIE.asStack()));
+        ItemStack bucket = TENFluids.bucketOf("liquid_bizarrerie");
+        if (!bucket.isEmpty()) {
+            targets.add(EmiStack.of(bucket));
+        }
+        registry.addRecipe(new EmiInfoRecipe(targets, lines, TEN.id("matter_condenser_info")));
     }
 
     /** 5 个 FormsCombinedRecipe 机器类别（既有机型）。 */

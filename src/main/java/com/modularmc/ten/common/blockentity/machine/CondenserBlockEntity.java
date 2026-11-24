@@ -8,6 +8,7 @@ import com.modularmc.ten.common.gui.TENMachineBlockUIFactory;
 import com.modularmc.ten.utils.TagHelper;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
@@ -17,7 +18,29 @@ import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import com.lowdragmc.lowdraglib2.gui.factory.BlockUIMenuType;
 import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class CondenserBlockEntity extends ProcessingMachineBlockEntity {
+
+    /**
+     * 凝聚路线说明（语言键 {@code info.matter_condenser.N}，从 0 起遇到缺键即止）。
+     * <p>
+     * 这台机器没有配方类型——催化剂与能量直接换流体，JEI / EMI 里找不到任何配方入口，
+     * 所以「想法」页与两家的信息页共用这一组文案，让查奇异物质 / 液态奇异物质 / 机器本身
+     * 都能看到完整链路。改文案只改 {@code TENLangHandler}。
+     */
+    public static List<Component> infoPages() {
+        List<Component> lines = new ArrayList<>();
+        for (int i = 0;; i++) {
+            String key = "kenergyengineering.info.matter_condenser." + i;
+            Component line = Component.translatable(key);
+            if (line.getString().equals(key)) {
+                return lines;
+            }
+            lines.add(line);
+        }
+    }
 
     /**
      * Counter tracking successful processing ticks for periodic catalyst
