@@ -125,6 +125,10 @@ public class TENBlocks {
                         .sound(c == MapColor.DEEPSLATE ? SoundType.DEEPSLATE : SoundType.STONE))
                 .tag(BlockTags.NEEDS_IRON_TOOL, BlockTags.MINEABLE_WITH_PICKAXE)
                 .blockstate((ctx, prov) -> prov.simpleBlock(ctx.getEntry(), TENModels.cubeAll(prov, n)))
+                // 普通挖掘掉对应粗料（带时运加成）；精准采集仍掉矿石方块本身。
+                // 引用 TENItems 放在 lambda 里：DataGen 执行时注册早已完成，不扰动注册顺序。
+                .loot((tables, block) -> tables.add(block,
+                        tables.createOreDrop(block, n.contains("tin") ? TENItems.RAW_TIN.get() : TENItems.RAW_NICKEL.get())))
                 .simpleItem().register();
     }
 
