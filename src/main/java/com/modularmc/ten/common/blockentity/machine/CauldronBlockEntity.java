@@ -21,8 +21,10 @@ import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
 import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
+import org.jetbrains.annotations.Nullable;
 
 public class CauldronBlockEntity extends ProcessingMachineBlockEntity {
+
     public CauldronBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
         setCapacity(kFE(20));
@@ -30,6 +32,8 @@ public class CauldronBlockEntity extends ProcessingMachineBlockEntity {
         tanks.add(new MachineFluidTank(20000));
     }
 
+    @Nullable
+    private BlockPos lastPos;
     private boolean locked;
     private int currentType = 0;
     private int checkCooling = 0;
@@ -72,10 +76,21 @@ public class CauldronBlockEntity extends ProcessingMachineBlockEntity {
         }
         MachineFluidTank tank = tanks.getFirst();
         if (tank.getSpace() == 0) return false;
-        if (--checkCooling > 0){
+        if (--checkCooling > 0 || level == null){
             return false;
         }
-        int type = checkStalactiteDrip(level, worldPosition);
+
+        BlockPos tipPos;
+        //优先检查上次检查过的坐标
+        if (lastPos != null && PointedDripstoneBlock.canDrip(level.getBlockState(lastPos))){
+            tipPos = lastPos;
+        }else {
+            tipPos = PointedDripstoneBlock.findStalactiteTipAboveCauldron(level, worldPosition);
+            lastPos = tipPos;
+        }
+
+        int type = checkStalactiteDrip(level, tipPos);
+        //找不到滴水石锥，开始检查天气
         if (type == 0){
             if (level != null && level.canSeeSky(worldPosition.above()) && level.isRaining()){
                 Biome biome = level.getBiome(worldPosition).value();
@@ -104,8 +119,7 @@ public class CauldronBlockEntity extends ProcessingMachineBlockEntity {
         return DewMode.values()[type].produce();
     }
 
-    private static int checkStalactiteDrip(Level level, BlockPos pos){
-        BlockPos tipPos = PointedDripstoneBlock.findStalactiteTipAboveCauldron(level, pos);
+    private static int checkStalactiteDrip(Level level, BlockPos tipPos){
         if (tipPos == null) {
             return 0;
         }
@@ -114,7 +128,8 @@ public class CauldronBlockEntity extends ProcessingMachineBlockEntity {
             return 2;
         } else if (fluid == Fluids.WATER) {
             return 1;
-        }else return 0;
+        }
+        return 0;
     }
 
     public enum DewMode {
@@ -123,6 +138,6 @@ public class CauldronBlockEntity extends ProcessingMachineBlockEntity {
         LAVA  { public FluidStack produce() { return new FluidStack(Fluids.LAVA, 100); } },
         SNOW  { public FluidStack produce() { return new FluidStack(TENFluids.POWDER_SNOW, 100); } };
 
-        public abstract FluidStack produce();  // 每次返回新实例，避免 FluidStack 可变共享
+        public abstract FluidStack produce();  //每次返回新实例，避免 FluidStack 可变共享
     }
 }

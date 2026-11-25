@@ -17,7 +17,6 @@ import com.modularmc.ten.common.data.TENBlocks;
 import com.modularmc.ten.common.data.TENRecipeTypes;
 import com.modularmc.ten.network.JeiSyncState;
 
-import mezz.jei.api.constants.VanillaTypes;
 import mezz.jei.api.neoforge.NeoForgeTypes;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;

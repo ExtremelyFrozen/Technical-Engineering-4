@@ -14,6 +14,7 @@ import com.modularmc.ten.common.item.upgrades.UpgradeEffect;
 import com.modularmc.ten.common.item.upgrades.UpgradeItem;
 import com.modularmc.ten.utils.SkyLightHelper;
 
+import lombok.Getter;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
@@ -97,6 +98,7 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
     @Persisted
     @DescSynced
     public int redstoneMode = RedstoneMode.OFF;
+    @Getter
     @Persisted
     @DescSynced
     public boolean active = false;
@@ -417,10 +419,6 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
 
     public double getActualEfficiencyPercent() {
         return 1.0;
-    }
-
-    public boolean isActive() {
-        return active;
     }
 
     public void setActive(boolean a) {
