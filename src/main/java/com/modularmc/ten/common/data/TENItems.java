@@ -3,6 +3,7 @@ package com.modularmc.ten.common.data;
 import com.modularmc.ten.common.item.ChannelConnectorItem;
 import com.modularmc.ten.common.item.EnergyUnitItem;
 import com.modularmc.ten.common.item.SpannerItem;
+import com.modularmc.ten.common.item.VaultRester;
 import com.modularmc.ten.common.item.upgrades.*;
 
 import net.minecraft.tags.TagKey;
@@ -159,6 +160,8 @@ public class TENItems {
     public static final ItemEntry<? extends UpgradeItem> SPEED_LEVELUP = upgrade("speed_levelup", "Upgrade: Overclock Circuit I", "升级：超频回路 I", p -> new LevelupSpeed(1));
     public static final ItemEntry<? extends UpgradeItem> SPEED_LEVELUP_2 = upgrade("speed_levelup_2", "Upgrade: Overclock Circuit II", "升级：超频回路 II", p -> new LevelupSpeed(2));
     public static final ItemEntry<? extends UpgradeItem> SPEED_LEVELUP_3 = upgrade("speed_levelup_3", "Upgrade: Overclock Circuit III", "升级：超频回路 III", p -> new LevelupSpeed(3));
+
+    public static final ItemEntry<Item> REWIND_KEY = specialItem("rewind_key", "Rewind Key", "回溯钥匙", "item/rewind_key", VaultRester::new);
 
     private static ItemEntry<Item> item(String name, String englishName, String cn) {
         ZH_NAMES.put(name, cn);

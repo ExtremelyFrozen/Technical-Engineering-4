@@ -1,0 +1,25 @@
+{
+	"type": "kenergyengineering:refiner",
+	"inputs": [
+		{
+			"form": "item",
+			"type": "static",
+			"key": "minecraft:trial_key"
+		},
+		{
+			"form": "fluid",
+			"type": "static",
+      "key": "kenergyengineering:liquid_bizarrerie",
+      "amount": 250
+		}
+	],
+	"outputs": [
+		{
+			"form": "item",
+			"type": "static",
+			"key": "kenergyengineering:rewind_key",
+			"count": 1
+		}
+	],
+	"time": 250
+}

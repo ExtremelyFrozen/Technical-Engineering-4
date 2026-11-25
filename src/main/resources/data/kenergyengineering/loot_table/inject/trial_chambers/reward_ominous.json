@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:chest",
+  "pools": [
+    {
+      "bonus_rolls": 0.0,
+      "entries": [
+        {
+          "type": "minecraft:empty",
+          "weight": 44
+        },
+        {
+          "type": "minecraft:item",
+          "name": "kenergyengineering:relic_levelup",
+          "weight": 3
+        }
+      ],
+      "rolls": 1.0
+    }
+  ]
+}

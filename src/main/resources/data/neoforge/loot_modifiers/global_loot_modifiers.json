@@ -1,5 +1,7 @@
 {
-	"comment": "Entries will be loaded, parsed, and executed in order, first to last. Duplicate entries will override earlier entries and missing entries will be ignored while replace:true will clear the list first.",
-	"replace": false,
-	"entries": ["kenergyengineering:relic_levelup_end_city"]
+  "replace": false,
+	"entries": [
+    "kenergyengineering:relic_levelup_end_city",
+    "kenergyengineering:relic_levelup_trial_chambers"
+  ]
 }
