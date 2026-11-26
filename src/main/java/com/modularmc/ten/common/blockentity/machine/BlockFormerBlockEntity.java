@@ -134,6 +134,12 @@ public class BlockFormerBlockEntity extends RadiusMachineBlockEntity {
         return 5;
     }
 
+    /** 工作范围内的方块变化没有事件源，只能靠探针复查；缩短到 10 tick 以满足响应预算。 */
+    @Override
+    protected int idleProbePeriod() {
+        return 10;
+    }
+
     @Override
     public boolean conditionStart() {
         if (level == null || itemHandler == null) return false;

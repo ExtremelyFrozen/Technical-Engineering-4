@@ -71,8 +71,7 @@ public abstract class RecipeMachineBlockEntity extends ProcessingMachineBlockEnt
 
         if (currentRecipe == null) {
             clearLockedBatch();
-            // 空闲时也设置 64×理论B 堆叠（装并行运行升级即常驻生效，无需配方运行）
-            installDynamicSlotLimit();
+            // 堆叠上限 provider 由 initMachine 装一次即可：每次求值都现读理论 B，不需要随配方变化重装。
             return false;
         }
 
@@ -94,7 +93,6 @@ public abstract class RecipeMachineBlockEntity extends ProcessingMachineBlockEnt
 
             if (!validateAndLockB(B_theory, B_byItems, B_byFluids, B_byOutput, B_byEnergy)) {
                 // B < 1: cannot start — locks are cleared by validateAndLockB
-                installDynamicSlotLimit();
                 return false;
             }
         } else {
@@ -114,7 +112,6 @@ public abstract class RecipeMachineBlockEntity extends ProcessingMachineBlockEnt
             }
         }
 
-        installDynamicSlotLimit();
         return true;
     }
 

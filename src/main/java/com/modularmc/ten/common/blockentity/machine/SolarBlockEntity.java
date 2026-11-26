@@ -29,6 +29,12 @@ public class SolarBlockEntity extends EngineBlockEntity {
         setEfficiency(BASE_GENERATION_RATE);
     }
 
+    /** 天空光照/天气变化没有事件源，靠探针复查；缩短以满足响应预算。 */
+    @Override
+    protected int idleProbePeriod() {
+        return 10;
+    }
+
     @Override
     public int machineType() {
         return MachineType.ENGINE_SOLAR;

@@ -96,8 +96,13 @@ public abstract class EngineBlockEntity extends CmMachineBlockEntity {
 
     @Override
     public void tick() {
+        // 待机精简路径：无燃料且燃料槽空时只跑主动输出 IO 与输入指纹。
+        if (idleTick()) return;
         doBaseData();
+        tickEngine();
+    }
 
+    private void tickEngine() {
         if (!signalAllowRun() || !energyAllowRun()) return;
 
         int batchSize = getTheoreticalBatchSize();
@@ -113,6 +118,7 @@ public abstract class EngineBlockEntity extends CmMachineBlockEntity {
                 return;
             }
             fuel = Math.max(fuel - accepted, 0);
+            markDirty("fuel");
             setActive(true);
             return;
         }
@@ -128,7 +134,9 @@ public abstract class EngineBlockEntity extends CmMachineBlockEntity {
             // 燃料条的「总刻度」一并清零，免得空条上还挂着上一份的读数
             fuelRateMultiplier = 1.0;
             fuelTicksTotal = 0;
+            markDirty("fuelTicksTotal");
             setActive(false);
+            enterIdle();
             return;
         }
 
@@ -139,11 +147,14 @@ public abstract class EngineBlockEntity extends CmMachineBlockEntity {
         }
         fuelRateMultiplier = profile.rateMultiplier();
         fuel = safeMultiply(profile.budget(), portions);
+        markDirty("fuel");
         maxFuel = fuel;
+        markDirty("maxFuel");
         // 修正后的持续时间 = 本次装填的总能量 ÷ 实际产出率（已含升级功率倍率与并行运行数）。
         // 无升级时它就是配方的 durationTicks；装了倍率卡后按 Σpower 缩短。
         int perTick = safeMultiply(getActualEfficiency(), batchSize);
         fuelTicksTotal = perTick > 0 ? (int) Math.ceil((double) fuel / perTick) : 0;
+        markDirty("fuelTicksTotal");
         setActive(true);
     }
 

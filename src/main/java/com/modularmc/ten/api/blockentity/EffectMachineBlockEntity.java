@@ -29,6 +29,8 @@ public abstract class EffectMachineBlockEntity extends CmMachineBlockEntity {
 
     @Override
     public void tick() {
+        // 待机精简路径：只跑光合注能 / 主动 IO / 输入指纹。
+        if (idleTick()) return;
         doBaseData();
         process();
     }
@@ -118,10 +120,14 @@ public abstract class EffectMachineBlockEntity extends CmMachineBlockEntity {
             // 且信号放行时，进行中的进度作废归零——进度条立即清空，不保留半途进度。
             // 信号关闭（start 仍 true，等待恢复）与能量不足（Step 3 内 return）不受影响，
             // 仍走停机语义保留 progress 等待恢复。
-            if (!start && progress > 0) {
-                progress = 0;
-                clearLockedBatch();
-                markDirty("progress");
+            if (!start) {
+                if (progress > 0) {
+                    progress = 0;
+                    clearLockedBatch();
+                    markDirty("progress");
+                }
+                // 无任务且进度已归零 = 待机；缺能/输出满（start 仍为 true）保持 AWAKE。
+                enterIdle();
             }
         }
     }

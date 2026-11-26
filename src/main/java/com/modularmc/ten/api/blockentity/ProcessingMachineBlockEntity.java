@@ -36,6 +36,8 @@ public abstract class ProcessingMachineBlockEntity extends CmMachineBlockEntity 
 
     @Override
     public void tick() {
+        // 待机精简路径：确认无活时只跑光合注能 / 主动 IO / 输入指纹，唤醒与启动在同一 tick 完成。
+        if (idleTick()) return;
         doBaseData();
         process();
     }
@@ -115,10 +117,14 @@ public abstract class ProcessingMachineBlockEntity extends CmMachineBlockEntity 
             // 进行中的进度作废归零——进度条立即清空，不保留半途进度。
             // 信号关闭/能量不足/输出满时 start 仍 true（或早于 else 提前 return），
             // 不进此分支，仍走停机语义保留 progress 等待恢复。
-            if (!start && progress > 0) {
-                progress = 0;
-                clearLockedBatch();
-                markDirty("progress");
+            if (!start) {
+                if (progress > 0) {
+                    progress = 0;
+                    clearLockedBatch();
+                    markDirty("progress");
+                }
+                // 无任务且进度已归零 = 待机；缺能/断信号（start 仍为 true）保持 AWAKE。
+                enterIdle();
             }
         }
     }

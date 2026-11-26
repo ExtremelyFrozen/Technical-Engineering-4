@@ -19,18 +19,24 @@ public class MachineEnergyStorage extends EnergyStorage {
     }
 
     public void setEnergy(int energy) {
+        if (this.energy == energy) return;
         this.energy = energy;
         changeListener.run();
     }
 
     /**
      * 设置容量（频道共享存储动态容量用）。若当前储能超过新容量则截断。
+     * <p>
+     * 容量与存量都没变时直接返回，不触发监听：本方法被
+     * {@code CmMachineBlockEntity.doBaseData()} 每 tick 调用，无条件回调会让监听者
+     * （markDirty → setChanged + sendBlockUpdated）每 tick 跑一次并持续标脏区块。
      */
     public void setCapacity(int capacity) {
-        this.capacity = Math.max(0, capacity);
-        if (this.energy > this.capacity) {
-            this.energy = this.capacity;
-        }
+        int next = Math.max(0, capacity);
+        boolean truncated = this.energy > next;
+        if (this.capacity == next && !truncated) return;
+        this.capacity = next;
+        if (truncated) this.energy = next;
         changeListener.run();
     }
 

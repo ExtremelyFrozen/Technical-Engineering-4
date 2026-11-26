@@ -249,6 +249,12 @@ public class QuarryBlockEntity extends RadiusMachineBlockEntity {
         });
     }
 
+    /** 扫描游标/工作区变化没有事件源，靠探针复查；缩短以满足响应预算。 */
+    @Override
+    protected int idleProbePeriod() {
+        return 10;
+    }
+
     @Override
     public void tick() {
         super.tick();

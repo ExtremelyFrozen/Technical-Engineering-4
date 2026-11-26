@@ -272,17 +272,17 @@ public class FurnaceBlockEntity extends ProcessingMachineBlockEntity {
         };
     }
 
+    /** 三条 lane 同时运行的峰值能耗是单路的 LANES 倍，信息栏按真实峰值显示。 */
     @Override
-    public void doBaseData() {
-        super.doBaseData();
-        // 三条 lane 同时运行的峰值能耗是单路的 LANES 倍，信息栏按真实峰值显示。
-        energyUseMax = safeMultiply(energyUseMax, LANES);
-        markDirty("energyUseMax");
+    protected int energyUseMaxFactor() {
+        return LANES;
     }
 
     /** 不复用基类的单流水线 process()，改为逐 lane 独立推进。 */
     @Override
     public void tick() {
+        // 三路都无活时走待机精简路径（光合注能 / 主动 IO / 输入指纹）。
+        if (idleTick()) return;
         doBaseData();
         processLanes();
     }
@@ -352,17 +352,45 @@ public class FurnaceBlockEntity extends ProcessingMachineBlockEntity {
             }
         }
         setActive(anyRunning);
-        syncLaneData();
+        boolean anyLaneLive = false;
+        for (int lane = 0; lane < LANES; lane++) {
+            if (laneB[lane] > 0 || laneProgress(lane) > 0) {
+                anyLaneLive = true;
+                break;
+            }
+        }
+        if (anyLaneLive) {
+            syncLaneData();
+        } else {
+            // 三路都无活：镜像归零后进入待机，缺能/缺信号保留进度的 lane 不会走到这里。
+            progress = 0;
+            maxProgress = 0;
+            markDirty("progress");
+            markDirty("maxProgress");
+            enterIdle();
+        }
     }
 
     /**
      * 每 tick 把三条 lane 的进度写入客户端镜像，并维护基类的单进度镜像：
      * 取第一条在跑的 lane，供冷却器的 conditionStart / maxProgress 判定使用。
      */
+    private final int[] lastLaneProgress = { Integer.MIN_VALUE, Integer.MIN_VALUE, Integer.MIN_VALUE };
+    private final int[] lastLaneMaxProgress = { Integer.MIN_VALUE, Integer.MIN_VALUE, Integer.MIN_VALUE };
+
     private void syncLaneData() {
+        // 值比较后置脏：输出满停机时三路进度都不动，无条件置脏会让每台熔炉每 tick 白发 6 个字段。
         for (int lane = 0; lane < LANES; lane++) {
-            markDirty(laneProgressField(lane));
-            markDirty(laneMaxProgressField(lane));
+            int p = laneProgress(lane);
+            if (p != lastLaneProgress[lane]) {
+                lastLaneProgress[lane] = p;
+                markDirty(laneProgressField(lane));
+            }
+            int mp = laneMaxProgress(lane);
+            if (mp != lastLaneMaxProgress[lane]) {
+                lastLaneMaxProgress[lane] = mp;
+                markDirty(laneMaxProgressField(lane));
+            }
         }
         int mirror = -1;
         for (int lane = 0; lane < LANES; lane++) {
@@ -371,10 +399,16 @@ public class FurnaceBlockEntity extends ProcessingMachineBlockEntity {
                 break;
             }
         }
-        progress = mirror < 0 ? 0 : laneProgress(mirror);
-        maxProgress = mirror < 0 ? 0 : laneMaxProgress(mirror);
-        markDirty("progress");
-        markDirty("maxProgress");
+        int newProgress = mirror < 0 ? 0 : laneProgress(mirror);
+        if (newProgress != progress) {
+            progress = newProgress;
+            markDirty("progress");
+        }
+        int newMaxProgress = mirror < 0 ? 0 : laneMaxProgress(mirror);
+        if (newMaxProgress != maxProgress) {
+            maxProgress = newMaxProgress;
+            markDirty("maxProgress");
+        }
     }
 
     /**

@@ -244,6 +244,10 @@ public final class WrenchDismantleService {
             machine.facingVal = snap.facingVal;
             machine.active = snap.active;
             machine.upgradeSize = snap.upgradeSize;
+            // 三个字段都是 @LazyManaged：回滚路径直写，必须自己置脏，否则客户端停在失败拆除前的值。
+            machine.markDirty("redstoneMode");
+            machine.markDirty("facingVal");
+            machine.markDirty("active");
             machine.setChanged();
         } catch (Exception e) {
             TEN.LOGGER.error("Failed to restore machine at {} after failed dismantle", machine.getBlockPos(), e);
