@@ -29,8 +29,8 @@ public abstract class ProcessingMachineBlockEntity extends CmMachineBlockEntity 
     }
 
     /**
-     * Base processing time in ticks at 1 FE/t energy input.
-     * Higher energy input reduces processing time proportionally.
+     * 基础配方时长（tick）。周期刻度由 {@code durationMultiplier} 缩放，
+     * 进度由 {@code runSpeed} 推进。
      */
     public abstract int baseTickTime();
 
@@ -144,7 +144,5 @@ public abstract class ProcessingMachineBlockEntity extends CmMachineBlockEntity 
      * 完成判断之前执行。子类可覆盖用于周期逻辑（如冷凝器催化剂消耗）。
      * 停机（能量不足/输出满/条件不满足）时不调用。
      */
-    protected void onProcessTick() {
-        // Default: no-op. Subclasses override as needed.
-    }
+    protected void onProcessTick() {}
 }

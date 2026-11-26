@@ -154,7 +154,7 @@ public class ChannelItemBlockEntity extends AbstractChannelBlockEntity {
     @Override
     public ModularUI createUI(BlockUIMenuType.BlockUIHolder holder) {
         return buildChannelUI(holder, TENConstants.MACHINE_GUI, root -> {
-            // 3×3 槽群垂直居中（机器 GUI 布局规则 v4 内容区 y=5..77 中线 41）：
+            // 3×3 槽群垂直居中（机器 GUI 内容区 y=5..77，中线 y=41）：
             // 群范围 14..68（行距 18px 不变），上下留白对称 9px，与列表容器中线对齐。
             root.addChild(TENMachineBlockUIFactory.channelItemSlot(this, 0, 7, 14));
             root.addChild(TENMachineBlockUIFactory.channelItemSlot(this, 1, 25, 14));

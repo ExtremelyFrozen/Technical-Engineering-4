@@ -16,7 +16,7 @@ import java.util.Collection;
 import java.util.UUID;
 
 /**
- * 能量传输节点（移植自 TE4-New）：本地 buffer 仅在网络缺位（orphan）时兜底，
+ * 能量传输节点：本地 buffer 仅在网络缺位（orphan）时兜底，
  * 常态能量归网络所有；拆网时经 takeShare 拿回均分份额。
  */
 public class EnergyTransmitter extends BufferedTransmitter<IEnergyStorage, EnergyNetwork, Long, EnergyTransmitter> {

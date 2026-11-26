@@ -50,9 +50,7 @@ import java.util.function.ToDoubleFunction;
 
 public final class TENMachineBlockUIFactory {
 
-    // 26 线旧图集（统一走 TENConstants.LEGACY_SHEET 注册，本类不再私持路径）
-
-    // LDLib2 内置图标：小按钮不再自持图集，直接引用通用组件资源。
+    // 小按钮使用 LDLib2 通用组件图标。
     private static final ResourceLocation LDLIB_EYE = ResourceLocation.fromNamespaceAndPath("ldlib2", "textures/gui/icon/eye.png");
     private static final ResourceLocation LDLIB_EYE_OFF = ResourceLocation.fromNamespaceAndPath("ldlib2", "textures/gui/icon/eye_off.png");
     private static final ResourceLocation LDLIB_EDIT_ON = ResourceLocation.fromNamespaceAndPath("ldlib2", "textures/gui/icon/edit_on.png");
@@ -138,7 +136,6 @@ public final class TENMachineBlockUIFactory {
     private static final int PANEL_SRC_SIZE = 128;
     /** 九宫格边框厚度：四角 4×4 固定，边/心拉伸适配任意目标宽高。 */
     private static final int CONFIG_PANEL_BORDER = 4;
-    /** 面板展开/收起基准速度：现在由 CLIENT 配置 panelAnimation 组控制（统一+独立混合），保留常量作回退基准值。 */
     private static final int CONFIG_PANEL_SPEED = 6;
     /** 主 GUI 宽 176，tab 邻主 GUI 间隙 1px → tab 左缘 177。 */
     private static final int CONFIG_TAB_X = 176 + 1;
@@ -148,39 +145,33 @@ public final class TENMachineBlockUIFactory {
     private static final int CONFIG_PANEL_Y = 27;
     /** 低于此宽度不绘制面板（边角 4px×2 + 中缝最小可见宽）。 */
     private static final int CONFIG_PANEL_MIN_VISIBLE = 2 * CONFIG_PANEL_BORDER;
-    /** 升级面板内容区到九宫格底图内边框的恒等间距（四边一致 6px）。配置面板已改用内容间距 + 纹理原生留白推导，不再取此值。 */
+    /** 升级面板内容区到九宫格底图内边框的间距（四边均为 6px）。 */
     private static final int UPGRADE_CONTENT_GAP = 6;
     /**
      * 升级面板内容区原点 inset = border(4) + gap(6) = 10，仅供升级槽面板（尺寸/边框/槽位基准）。
-     * 配置面板的内容坐标系原点是 CONFIG_UNDERLAY_XY（=3，纹理像素坐标基准），两者不可混用。
+     * 配置面板的内容坐标系原点是 CONFIG_UNDERLAY_XY（=8），两者不可混用。
      */
     private static final int UPGRADE_CONTENT_INSET = CONFIG_PANEL_BORDER + UPGRADE_CONTENT_GAP;
-    /** 叠加层纹理尺寸（panel_config_legacy.png 50×75；2026-11 裁掉四边 5px 透明留白后的原生尺寸）。 */
+    /** 配置面板叠加层纹理尺寸（50×75）。 */
     private static final int OVERLAY_TEX_W = 50;
     private static final int OVERLAY_TEX_H = 75;
     /** 配置面板内边距：legacy 图形可见边缘到九宫格底图内边框，与升级面板附加底图对齐为 4px。 */
     private static final int CONFIG_CONTENT_GAP = 4;
     /**
      * 中间叠加层原点，同时是配置面板内容钮的坐标系原点：inset = border 4 + 内容间距 4 = 8。
-     * 纹理已裁掉原生透明留白，故叠加层元素矩形与可见图形矩形重合；纹理 1:1 不拉伸，
-     * 内容钮写「裁切后纹理像素坐标」即可与叠加层逐像素对齐。
+     * 叠加层元素矩形与可见图形矩形重合；纹理 1:1 不拉伸，内容钮使用纹理像素坐标即可逐像素对齐。
      */
     private static final int CONFIG_UNDERLAY_XY = CONFIG_PANEL_BORDER + CONFIG_CONTENT_GAP;
-    /**
-     * 展开面板目标尺寸 = 叠加层尺寸 + 四边 inset 8 → 50+16=66 × 75+16=91
-     * （与裁切前的 60+2×3 / 85+2×3 同值，面板外框不因裁切而变）。
-     */
+    /** 展开面板目标尺寸 = 叠加层尺寸 + 四边 inset 8 → 66×91。 */
     private static final int CONFIG_PANEL_WIDTH = OVERLAY_TEX_W + 2 * CONFIG_UNDERLAY_XY;
     private static final int CONFIG_PANEL_HEIGHT = OVERLAY_TEX_H + 2 * CONFIG_UNDERLAY_XY;
 
     // ───── 升级槽 tab（右缘、配置 tab 上侧，与左缘机器信息 tab 对齐 y=0）─────
-    /** 升级槽尺寸（ITEM_SLOT_SMALL 18x18）。 */
+    /** 升级槽尺寸（18×18）。 */
     private static final int UPGRADE_SLOT_SIZE = 18;
     /** 升级槽 2x3 网格：槽间距/行距 2px。 */
     private static final int UPGRADE_SLOT_GAP = 2;
-    /** 升级槽列数。 */
     private static final int UPGRADE_COLS = 2;
-    /** 升级槽行数。 */
     private static final int UPGRADE_ROWS = 3;
     /** 升级面板内容区宽：2×18 + 列间 2 = 38。 */
     private static final int UPGRADE_CONTENT_W = UPGRADE_COLS * UPGRADE_SLOT_SIZE + (UPGRADE_COLS - 1) * UPGRADE_SLOT_GAP;
@@ -191,7 +182,6 @@ public final class TENMachineBlockUIFactory {
     private static final int UPGRADE_PANEL_HEIGHT = UPGRADE_CONTENT_H + 2 * UPGRADE_CONTENT_INSET;
     /** 升级槽 tab 头 y：与左缘机器信息 tab（y=0）平齐，位于配置 tab（y=27）上侧。 */
     private static final int UPGRADE_TAB_Y = 0;
-    /** 升级面板锚定 y = tab 头 y。 */
     private static final int UPGRADE_PANEL_Y = UPGRADE_TAB_Y;
 
     /** 升级面板附加底图尺寸（42x62，内容区每边外扩 2px）。 */
@@ -225,7 +215,7 @@ public final class TENMachineBlockUIFactory {
             "kenergyengineering.info.adjust.offset_x", "kenergyengineering.info.adjust.offset_y", "kenergyengineering.info.adjust.offset_z" };
 
     public static void addCommonSidebar(UIElement root, BlockUIMenuType.BlockUIHolder holder, CmMachineBlockEntity machine, UIState uiState) {
-        // 侧栏 tab 全部引用独立 26×26 图标（icons/*.png），不再切旧图集
+        // 侧栏 tab 使用独立 26×26 图标（icons/*.png）。
         root.addChild(textureElement(-27, 0, 26, 26, fullTexture(TENConstants.ICON_INFO, 26, 26), () -> ideaTooltips(holder), null, null, null));
         root.addChild(textureElement(-27, 27, 26, 26, fullTexture(TENConstants.ICON_ENERGY_INFO, 26, 26), () -> energyInfoTooltips(machine), null, null, null));
 
@@ -246,7 +236,7 @@ public final class TENMachineBlockUIFactory {
         // 有升级槽机器与功率 tab 平齐（y=27）避免与升级 tab 重叠；面板左缘钉住 x=177，从左往右生长。
         int configTabY = machine.supportsUpgradeSlots() ? CONFIG_PANEL_Y : 0;
         // 展开动画期间九宫格拼接：四角 4×4 固定，边/心随目标宽高拉伸填充（可适配任意目标尺寸）。
-        // NOTE: 改 CONFIG_PANEL_WIDTH/HEIGHT 需同步 syncSidebar/syncUpgrade 两套动画逻辑（宽高按比例同步对角生长，见 panelHeightFor）。
+        // 修改 CONFIG_PANEL_WIDTH/HEIGHT 时需同步 syncSidebar/syncUpgrade 两套动画逻辑（宽高按比例同步对角生长，见 panelHeightFor）。
         var configButton = textureElement(CONFIG_TAB_X, configTabY, CONFIG_TAB_SIZE, CONFIG_TAB_SIZE,
                 fullTexture(TENConstants.ICON_CONFIG, CONFIG_TAB_SIZE, CONFIG_TAB_SIZE),
                 () -> controlTooltip(),
@@ -273,14 +263,8 @@ public final class TENMachineBlockUIFactory {
         for (PanelSlice s : configPanelSlices) {
             configPanel.addChild(s.element());
         }
-        // 附加底图（用户需求）：介入九宫格底图与内容钮之间——legacy 布局图 50×75 贴在面板 (8,8)
-        // （8 + 50 + 8 = 66 宽 / 8 + 75 + 8 = 91 高）；后 addChild → 同 zIndex(0) 下后画于切片，
-        // 内容钮 zIndex=1（root 子级）仍在其上
-        // [间距对齐 2026-09 v3] 底图伴随叠加层推导：叠加层保持 legacy 纹理原生尺寸不拉伸
-        // （v2 的 72×97 拉伸 1.2 倍会放大纹理内钮图示 → 与交互钮错位）。
-        // [内边距 v5] 纹理已裁掉四边 5px 透明留白（60×85 → 50×75），inset 直接 = border 4 + 内边距 4 = 8；
-        // 面板外框仍 66×91，内容钮坐标整体 −5，绝对位置与裁切前一致。
-        // 副作用：叠加层元素矩形与可见图形矩形重合，点击收起的热区由 3px 环变为 8px 环。
+        // 附加底图位于九宫格与内容钮之间：50×75 纹理贴在 (8,8)，四边 inset 8，面板为 66×91。
+        // 底图 zIndex=0，内容钮显式 zIndex=1；叠加层元素矩形与可见图形矩形重合。
         var configUnderlay = new UIElement().style(style -> style.backgroundTexture(
                 fullTexture(TENConstants.PANEL_CONFIG_LEGACY, OVERLAY_TEX_W, OVERLAY_TEX_H)));
         configUnderlay.layout(layout -> {
@@ -291,11 +275,9 @@ public final class TENMachineBlockUIFactory {
             layout.height(OVERLAY_TEX_H);
         });
         configPanel.addChild(configUnderlay);
-        // 层2+ 内容钮：坐标 = 叠加层原点 (8,8) + 裁切后的纹理像素坐标；仅 fullyOpen 后可交互。
-        // z 层规范（统一分层）：面板底图 zIndex=0、内容层（钮/槽）显式 zIndex=1——
-        // 同 zIndex 时排序按 addChild 索引降序、倒序绘制 → 后 addChild 者反而在下层，
-        // 故内容必须显式 zIndex 抬升才能盖过面板底图（勿删 zIndex(1)）。
-        // NOTE: 原点取 CONFIG_UNDERLAY_XY（=8，叠加层矩形原点），不可用 UPGRADE_CONTENT_INSET（=10）——
+        // 内容钮坐标 = 叠加层原点 (8,8) + 纹理像素坐标；仅 fullyOpen 后可交互。
+        // 面板底图 zIndex=0，内容钮显式 zIndex=1；不可删除 zIndex(1)，否则内容会被底图遮盖。
+        // 原点取 CONFIG_UNDERLAY_XY（=8，叠加层矩形原点），不可用 UPGRADE_CONTENT_INSET（=10）——
         // 后者含升级面板附加底图自己的 2px 外扩，与配置面板无关，误用会让全部内容钮右下偏 2px。
         int overlayOriginX = CONFIG_PANEL_LEFT_X + CONFIG_UNDERLAY_XY;
         int overlayOriginY = configTabY + CONFIG_UNDERLAY_XY;
@@ -327,7 +309,7 @@ public final class TENMachineBlockUIFactory {
         var upButton = faceModeElement(machine, uiState, overlayOriginX + 19, overlayOriginY + 3, 4, "kenergyengineering.info.up").style(style -> style.zIndex(1));
         var downButton = faceModeElement(machine, uiState, overlayOriginX + 19, overlayOriginY + 31, 5, "kenergyengineering.info.down").style(style -> style.zIndex(1));
         // close 热区（IGuiTexture.EMPTY，无图元可对齐）：钉面板右上角 10×10，同升级面板 close 锚法，
-        // 不越出面板上缘（像素扫描确认 legacy 纹理右上区仅棋盘格空位，无 X 图元，故不进纹理像素坐标系）
+        // 不越出面板上缘；legacy 纹理右上区仅棋盘格空位，无 X 图元，故不进入纹理像素坐标系。
         var closeButton = textureElement(CONFIG_PANEL_LEFT_X + CONFIG_PANEL_WIDTH - 14, configTabY, 10, 10, IGuiTexture.EMPTY,
                 () -> controlTooltip(), () -> uiState.setControlOpen(false), null, null)
                 .style(style -> style.zIndex(1));
@@ -335,8 +317,7 @@ public final class TENMachineBlockUIFactory {
         root.addChild(configPanel);
         // 点击面板空白处收起面板：CLICK target 为面板子树内背景元素（切片/underlay），
         // 冒泡路径含 configPanel；内容钮/槽位是 root 直接子元素，点击不经过 panel 子树，不会误触发。
-        // [收敛] 空位定义 = 面板子树内非交互背景，但中间叠加层区域排除（用户需求）：
-        // 点九宫格切片/overlay 空白收起，点叠加层（configUnderlay）不收起
+        // 点击九宫格切片或叠加层空白处收起；点击 configUnderlay 本体不收起。
         configPanel.addEventListener(UIEvents.CLICK, event -> {
             if (event.button == 0 && !isUnderlayTarget(event.target, configUnderlay)) {
                 uiState.setControlOpen(false);
@@ -356,7 +337,7 @@ public final class TENMachineBlockUIFactory {
 
         List<UIElement> configContents = new ArrayList<>(List.of(energyModeButton, itemModeButton, fluidModeButton,
                 frontButton, backButton, leftButton, rightButton, upButton, downButton, closeButton));
-        // 中间叠加层随内容层统一显隐（用户需求：面板完全展开后才出现，不随切片动画提前露出）
+        // 叠加层与内容层统一显隐，仅在面板完全展开后显示。
         configContents.add(configUnderlay);
 
         // 展开状态：-1 收起完成；0..目标宽展开中；目标宽展开完成（fullyOpen 以 >=CONFIG_PANEL_WIDTH 判定，复用终值）
@@ -438,9 +419,9 @@ public final class TENMachineBlockUIFactory {
 
     /**
      * 升级槽 tab（右缘，配置 tab 上侧，与左缘机器信息 tab y=0 对齐）：
-     * 面板内容 2×3 六升级槽（ITEM_SLOT_SMALL 18×18，间距 2px），内容区与九宫格底图内边框间距恒等 6px
-     * （面板尺寸由内容区 + 四边 border4+gap6 反推，见 UPGRADE_PANEL_WIDTH/HEIGHT）。
-     * 由 buildMachineUI 在 supportsUpgradeSlots() 时挂载（替代原顶部 -28 常显条）。
+     * 面板内容为 2×3 六升级槽（18×18，间距 2px），内容区与九宫格底图内边框间距恒为 6px；
+     * 面板尺寸由内容区 + 四边 border4+gap6 反推。
+     * 由 buildMachineUI 在 supportsUpgradeSlots() 时挂载。
      * 面板展开态只存在于客户端 UIState，而快捷移动在服务端容器执行，故开合时由 C→S RPC
      * 同步到服务端，升级槽据此决定能否接收 quickMove（展开时优先，收起时排除）。
      */
@@ -456,12 +437,9 @@ public final class TENMachineBlockUIFactory {
                 },
                 null, null).style(style -> style.zIndex(1));
 
-        // zIndex=1：面板底图层仅需盖过兄弟面板（配置面板 zIndex=0）的互斥动画残影——
-        // painter 层叠靠「zIndex 大者后画」，取 1 即满足；绝不能大抬升：
-        // LDLib2 2.2.37 槽内物品渲染 z = 元素 zIndex + 32（drawBackgroundAdditional -200 +
-        // drawItemStack +232，且深度测试开启），面板 zIndex 越大 → 槽物品 z 越大越远，
-        // 会被深度缓冲中更近内容剔除（旧 zIndex=200 → 物品 z=232 即此问题）。
-        // 主 GUI 机器槽（zIndex=0 → 物品 z=32）为已验证安全档；面板 1 → 槽物品 z=33 同档。
+        // 面板 zIndex=1，盖过配置面板（zIndex=0）的互斥动画残影。
+        // 槽内物品渲染 z = 面板 zIndex + 32，故面板 1 对应物品 z=33；
+        // 提高面板 zIndex 会使物品渲染更远，可能被深度缓冲剔除，必须保持当前值。
         var upgradePanel = absolute(new UIElement(), CONFIG_PANEL_LEFT_X, UPGRADE_PANEL_Y, UPGRADE_PANEL_WIDTH, UPGRADE_PANEL_HEIGHT)
                 .style(style -> style.zIndex(1));
         upgradePanel.setDisplay(false);
@@ -469,8 +447,7 @@ public final class TENMachineBlockUIFactory {
         for (PanelSlice s : upgradePanelSlices) {
             upgradePanel.addChild(s.element());
         }
-        // 附加底图（用户需求）：介入九宫格底图与内容之间——42×62 覆盖内容区 38×58 每边外扩 2px；
-        // 后 addChild → 同 zIndex(0) 下索引大者后画，压在九宫格切片之上、槽之下
+        // 附加底图位于九宫格与升级槽之间：42×62 覆盖内容区 38×58，每边外扩 2px。
         var upgradeUnderlay = new UIElement().style(style -> style.backgroundTexture(
                 fullTexture(TENConstants.PANEL_UPGRADE_UNDERLAY, PANEL_UPGRADE_UNDERLAY_W, PANEL_UPGRADE_UNDERLAY_H)));
         upgradeUnderlay.layout(layout -> {
@@ -482,19 +459,15 @@ public final class TENMachineBlockUIFactory {
         });
         upgradePanel.addChild(upgradeUnderlay);
 
-        // 层2+ 六升级槽：挂在面板子树内（内容区原点 = 面板原点 + (border4+gap6)=10；2×3 网格步长 18+2）
-        // NOTE: 同 zIndex 时按 addChild 索引降序排序、倒序绘制——切片（先 add，index 小）先画、
-        // 槽（后 add，index 大）后画，故槽底图/物品绘制在面板切片之上（painter 顶层）。
-        // 物品渲染 z = 面板 zIndex(1) + 槽 zIndex(0) + 32 = 33，与主 GUI 机器槽 z=32 同安全档。
+        // 六升级槽挂在面板子树内：内容区原点 = 面板原点 + (border4+gap6)=10，2×3 网格步长 18+2。
+        // 槽 zIndex=0、面板 zIndex=1；物品渲染 z = 1 + 0 + 32 = 33，与主 GUI 机器槽 z=32 同安全档。
         int slotBaseX = UPGRADE_CONTENT_INSET;
         int slotBaseY = UPGRADE_CONTENT_INSET;
         int upgradeSlots = machine.upgradeHandler.getSlots();
         List<UIElement> upgradeContents = new ArrayList<>();
 
         upgradePanel.addEventListener(UIEvents.CLICK, event -> {
-            // 空位收敛（用户需求）：点槽放取物品不收起；点中间叠加层（upgradeUnderlay）
-            // 区域也不收起——叠加层为非交互背景，但用户期望其范围与九宫格切片同样排除收起。
-            // target 命中判定：槽实例 / 叠加层元素（子树冒泡 target 不变）
+            // 点击升级槽或附加底图不收起；点击面板其余空白处收起。
             if (event.button == 0 && !(event.target instanceof ItemSlot) && !isUnderlayTarget(event.target, upgradeUnderlay)) {
                 uiState.setUpgradeOpen(false);
             }
@@ -519,7 +492,7 @@ public final class TENMachineBlockUIFactory {
                 () -> uiState.setUpgradeOpen(false), null, null).style(style -> style.zIndex(2));
         root.addChild(upgradeCloseButton);
         upgradeContents.add(upgradeCloseButton);
-        // 中间叠加层随内容层统一显隐（用户需求：面板完全展开后才出现，不随切片动画提前露出）
+        // 叠加层与内容层统一显隐，仅在面板完全展开后显示。
         upgradeContents.add(upgradeUnderlay);
 
         // 与配置面板同构的动画状态机：-1 收起完成；0..目标宽 展开中；目标宽 展开完成（从 tab 左上角对角生长）
@@ -559,9 +532,9 @@ public final class TENMachineBlockUIFactory {
                 for (UIElement content : upgradeContents) {
                     content.setDisplay(fullyOpen);
                 }
-                // 展开完成即请求全量升级数据（C→S，服务端 rpcToPlayer 回复单播）：
-                // 客户端 upgradeHandler 数据不经 readTileData/更新包（探针实证恒空），
-                // 仅靠本请求 + 服务端变化广播（rpcSyncUpgradeData）维持同步
+                // 展开完成即请求全量升级数据（C→S，服务端 rpcToTracking 广播）：
+                // 客户端 upgradeHandler 不经 readTileData/更新包同步，
+                // 由本请求与服务端变化广播（rpcSyncUpgradeData）维持数据。
                 if (fullyOpen && !upgradeDataRequested[0]) {
                     upgradeDataRequested[0] = true;
                     // 面板全开时容器必已就绪，重发一次展开态，兜底 GUI 构建期的首次上报
@@ -752,7 +725,7 @@ public final class TENMachineBlockUIFactory {
     }
 
     /**
-     * 升级面板内 18×18 槽：modular 小槽底图 + quickMovePriority(1000) + 空槽 tooltip。
+     * 升级面板内 18×18 槽：升级槽专用底图 + quickMovePriority(1000) + 空槽 tooltip。
      * mayPlace 叠加展开态门控：收起时把升级槽从快捷移动候选里剔除，物品不会被 Shift 进不可见的槽。
      * 展开时优先由「升级槽先于机器槽注册」保证（见 buildMachineUI），priority 是客户端样式计算后的加成：
      * 服务端 UI 树不跑 StyleEngine，slotStyle 的声明值在容器侧读不到。
@@ -769,7 +742,7 @@ public final class TENMachineBlockUIFactory {
                 return super.mayPlace(stack);
             }
         };
-        // 升级槽专用底图（用户需求）：不再借用小型物品槽
+        // 升级槽使用专用底图 UPGRADE_SLOT_BG。
         var itemSlot = itemSlot(slot, x, y, false, UPGRADE_SLOT_SIZE, fullTexture(TENConstants.UPGRADE_SLOT_BG, UPGRADE_SLOT_SIZE, UPGRADE_SLOT_SIZE));
         itemSlot.slotStyle(style -> style.quickMovePriority(1000));
         itemSlot.addEventListener(UIEvents.HOVER_TOOLTIPS, event -> {
@@ -825,14 +798,14 @@ public final class TENMachineBlockUIFactory {
         }
     }
 
-    /** 18x18 槽无底图（旧版背景 PNG 自绘槽框的机器专用）。 */
+    /** 18×18 无底图槽，槽框由机器背景 PNG 绘制。 */
     public static ItemSlot machineSlot(CmMachineBlockEntity machine, int index, int x, int y) {
         return machineSlot(machine, index, x, y, 18, IGuiTexture.EMPTY);
     }
 
     /**
      * 18x18 机器槽 + modular 小槽底图（ITEM_SLOT_SMALL）。
-     * 背景为 MACHINE_GUI 空面板的机器（翻新机）必须用此变体，否则槽框缺失。
+     * 使用 MACHINE_GUI 空面板的机器必须用此变体补充槽框。
      */
     public static ItemSlot machineSlotModular(CmMachineBlockEntity machine, int index, int x, int y) {
         return machineSlot(machine, index, x, y, 18, fullTexture(TENConstants.ITEM_SLOT_SMALL, 18, 18));
@@ -899,12 +872,7 @@ public final class TENMachineBlockUIFactory {
         return itemSlot(slot, x, y, false, size, background);
     }
 
-    /**
-     * 升级槽专用底图（modular/slots/upgrade_slot.png 18×18）+ quickMovePriority(1000)。
-     * 空槽显示 upgrade_slot 本地化 tooltip；非空保留原生物品 tooltip（不覆写事件）。
-     * 旧版叠加 textureElement 拦截鼠标导致不可交互，已移除。
-     */
-    /** 空升级槽本地化 tooltip（kenergyengineering.upgrade_slot）。 */
+    /** 空升级槽的本地化 tooltip（kenergyengineering.upgrade_slot）。 */
     private static Component emptyUpgradeSlotTooltip() {
         return ComponentHelper.translated("kenergyengineering.upgrade_slot");
     }
@@ -950,11 +918,8 @@ public final class TENMachineBlockUIFactory {
                 () -> {
                     Direction direction = logicalDirection(machine, logicalSide);
                     if (direction != null) {
-                        // [修复] 调节改由客户端发起：serverClick 在服务端 UI 树执行，其
-                        // UIState.selectedTransferMode 停留在面板打开时的快照页（类型按钮切页是
-                        // localClick，仅更新客户端实例）→ 服务端永远调节打开时那页。
-                        // localClick 在客户端树执行读到实时页，经 rpcToServer 标准 C→S 发包
-                        // （同 rpcRequestFaceSync 模式）。26.1.2 参照实现同样带病，未照抄。
+                        // 类型页由客户端 UIState 维护，服务端 UI 树只持打开时快照；
+                        // 在客户端 localClick 读取实时页，并经 rpcToServer 发包。
                         machine.rpcToServer("rpcCycleFaceMode", uiState.getSelectedTransferMode(), direction.get3DDataValue());
                     }
                 },
@@ -963,8 +928,6 @@ public final class TENMachineBlockUIFactory {
     }
 
     // ───── Modular 素材族 gauge ─────
-    // 注：旧图集版 energyGauge/fuelGauge/energyGaugeReveal/fuelGaugeReveal 已全量
-    // 切换至 modular 独立纹理（energy_gauge_background/fill.png 等）后删除。
 
     public static ProgressBar energyGaugeModular(CmMachineBlockEntity machine, int x, int y, boolean displayValue) {
         return verticalGaugeModular(machine, x, y, 14, 46,
@@ -1053,7 +1016,7 @@ public final class TENMachineBlockUIFactory {
 
     /**
      * 范围显示切换按钮（默认右缘：x=157、y=69，右/下均留 7px 边距）：点击经 rpcToServer 发包。
-     * 需 BE 侧 rpcToggleRangeVisible 支持（未移植该 RPC 的机器误用会在服务端静默忽略）。
+     * BE 必须提供 rpcToggleRangeVisible；不支持时服务端会忽略请求。
      */
     public static Button rangeDisplayToggleButton(CmMachineBlockEntity machine) {
         return rangeDisplayToggleButton(machine, TOGGLE_RIGHT_X, TOGGLE_Y);
@@ -1100,8 +1063,8 @@ public final class TENMachineBlockUIFactory {
                                                     java.util.function.ToDoubleFunction<CmMachineBlockEntity> percent,
                                                     Supplier<List<Component>> tooltipSupplier,
                                                     boolean displayValue) {
-        // 底图/覆盖层位置审计：bg（barContainer 背景）与 fill（bar 纹理）同为 0,0 起、同 width/height、
-        // 同一 absolute 锚点（x,y），层叠坐标完全重合；填充可见区域由 RevealProgressBar UV 裁切保证。
+        // bg（barContainer 背景）与 fill（bar 纹理）同为 0,0 起、同 width/height，共用 absolute 锚点 (x,y)；
+        // 填充可见区域由 RevealProgressBar UV 裁切保证。
         var filled = SpriteTexture.of(fillTexture).setSprite(0, 0, width, height);
         var progress = absolute(new RevealProgressBar(filled), x, y, width, height);
         progress.barContainer(container -> container.style(style -> style.backgroundTexture(SpriteTexture.of(bgTexture).setSprite(0, 0, width, height)))
@@ -1166,18 +1129,13 @@ public final class TENMachineBlockUIFactory {
         };
     }
 
-    // 注：HANDLER 图集版 fluidGauge（(0,92) 流体槽 overlay，HANDLER 素材）已全量切至
-    // fluidGaugeModular（FLUID_SLOT 独立纹理 18×50）后删除。
     /**
-     * 18x50 modular 流体槽（FLUID_SLOT 底图 + FLUID_SLOT_OVERLAY 覆盖层）：背景 MACHINE_GUI 空面板的机器用。
-     * TENFluidSlot 隐藏温度/气液态行。
-     * 层序（TENFluidSlot 覆写渲染顺序）：底图（流体下方）→ 流体柱 → 覆盖层（空槽时叠槽、
-     * 有流体时叠流体）→ hover 高亮。ldlib2 原生顺序是覆盖层先于流体（有流体时被完全遮住）。
+     * 18×50 流体槽，使用 FLUID_SLOT 底图与 FLUID_SLOT_OVERLAY 覆盖层，适用于 MACHINE_GUI 空面板。
+     * TENFluidSlot 隐藏温度/气液态行；渲染层序为底图 → 流体柱 → 覆盖层 → hover 高亮。
      */
     public static FluidSlot fluidGaugeModular(CmMachineBlockEntity machine, int x, int y, int width, int height, int tankIndex) {
         var slot = absolute(new TENFluidSlot(), x, y, width, height);
-        // FluidSlot 构造器默认 paddingAll(1) → 内容区 16×48，而底图/覆盖层/流体都画在内容区，
-        // 18×50 纹理被压缩（拉伸实锤非错觉）→ 归零后三者统一到全区域 18×50，与纹理尺寸一一对应
+        // FluidSlot 默认 paddingAll(1) 会压缩 18×50 纹理；置零后底图、覆盖层与流体共用完整内容区。
         slot.layout(layout -> layout.paddingAll(0));
         slot.style(style -> style.backgroundTexture(fullTexture(TENConstants.FLUID_SLOT, width, height)));
         slot.slotStyle(style -> style
@@ -1302,8 +1260,7 @@ public final class TENMachineBlockUIFactory {
 
     public static ResourceLocation backgroundFor(int machineType) {
         return switch (machineType) {
-            // 全部机器统一 MACHINE_GUI 空面板，
-            // 槽框/仪表由 modular 素材族绘制；专属背景 PNG 保留作回退素材不删。
+            // 机器使用 MACHINE_GUI 空面板，槽框与仪表由 modular 素材族绘制。
             case MachineType.FURNACE, MachineType.PULVERIZER, MachineType.COMPRESSOR, MachineType.REFINER, MachineType.INDUCTION_FURNACE, MachineType.PSIONICANT, MachineType.ENCHANTMENT_FLUSHER, MachineType.MATTER_CONDENSER, MachineType.BEACON, MachineType.MOB_RIPPER, MachineType.QUARRY, MachineType.FARM, MachineType.CELL, MachineType.CREATIVE_CELL, MachineType.ENGINE_SOLAR, MachineType.ENGINE_EXTRACTION, MachineType.ENGINE_METAL, MachineType.ENGINE_BIOMASS, MachineType.BLOCK_BREAKER, MachineType.BLOCK_FORMER, MachineType.COOLER -> TENConstants.MACHINE_GUI;
             default -> TENConstants.LEGACY_SHEET;
         };
@@ -1336,12 +1293,8 @@ public final class TENMachineBlockUIFactory {
 
     @Nullable
     private static Direction logicalDirection(CmMachineBlockEntity machine, int logicalSide) {
-        // 必须走 getFacing() 读方块状态的 FACING：facingVal 是持久化镜像，机器放置时
-        // BE 从未被写入（setFacing 无调用点），默认恒为 NORTH —— 直接读它会让面板的
-        // 「前/后/左/右」永远按北向解释，面配置看起来永远落在固定世界方向。
-        // 映射表收在 BE 侧（同一张表也用于拆卸重放的存档旋转）：任意朝向都是双射。
-        // 旧实现在 Y 轴朝向时把上/下固定成 UP/DOWN，频道朝上/朝下放置时「前」与「上」、
-        // 「后」与「下」落到同一方向，面板上改一个面会连带改另一个面。
+        // 逻辑面映射以 getFacing() 读到的方块状态 FACING 为准，facingVal 只是持久化镜像。
+        // BE 侧映射表与拆卸重放共用，任意朝向都必须保持双射。
         return CmMachineBlockEntity.faceForLogicalSide(machine.getFacing(), logicalSide);
     }
 
@@ -1359,7 +1312,6 @@ public final class TENMachineBlockUIFactory {
     }
 
     private static List<Component> fluidTooltip(CmMachineBlockEntity machine, int tankIndex, boolean showValue) {
-        // 唯一原调用者 fluidGauge 已删；保留备用（渠道终端历史 tooltip 逻辑参考）。
         if (tankIndex < 0 || tankIndex >= machine.tanks.size()) {
             return List.of();
         }

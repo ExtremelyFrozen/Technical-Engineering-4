@@ -69,7 +69,7 @@ public class MobRipBlockEntity extends RadiusMachineBlockEntity {
 
     @Override
     public boolean valid(int slot, ItemStack stack) {
-        // 槽 0 为武器输入：任何带 TOOL 组件的物品（原 TieredItem/SwordItem 判定过窄）
+        // 槽 0 为武器输入：仅接受带 TOOL 组件的物品。
         if (slot == 0) {
             return stack.has(DataComponents.TOOL);
         }
@@ -88,7 +88,6 @@ public class MobRipBlockEntity extends RadiusMachineBlockEntity {
 
     @Override
     public ModularUI createUI(BlockUIMenuType.BlockUIHolder holder) {
-        // 布局与 Quarry 逐坐标对齐（用户确认两者基本一致）：
         // 输入槽 (43,34)、12 输出槽 3×4 网格 (79/97/115/133 × 16/34/52)。
         // 输入槽中心 y=43 与输出网格第二行中心对齐，x 间距 18 不重叠。
         return buildMachineUI(holder, TENMachineBlockUIFactory.backgroundFor(machineType()), root -> {
@@ -130,8 +129,8 @@ public class MobRipBlockEntity extends RadiusMachineBlockEntity {
         // 武器槽上限 1 由基类统一规则给出（不可堆叠物品不倍增），无需在此自写 provider
         int B = getLockedBatchSize();
 
-        // 记录周期开始时武器是否存在：若原本有而中途损坏/耗尽则停止剩余份数，
-        // 不回退到徒手伤害；从未有武器则保留原语义（允许无武器运行）。
+        // 记录周期开始时武器是否存在：若原本有而中途损坏或耗尽，则停止剩余份数，
+        // 不回退到徒手伤害；周期开始时无武器则允许徒手运行。
         boolean weaponWasPresentAtStart = hasValidWeapon();
 
         for (int i = 0; i < B; i++) {
@@ -183,10 +182,6 @@ public class MobRipBlockEntity extends RadiusMachineBlockEntity {
         return true;
     }
 
-    /**
-     * 武器攻击伤害：取 ATTACK_DAMAGE 属性修饰符全量计算（玩家手持该武器时的真实伤害）。
-     * 无武器（或非武器物品）回落到玩家空手基础值 1.0；空手攻速基础 4.0。
-     */
     /**
      * 武器攻击伤害：取 ATTACK_DAMAGE 属性修饰符全量计算（玩家手持该武器时的真实伤害）。
      * 无武器（或非武器物品）回落到玩家空手基础值 1.0；负值兜底到 0（防极端修饰符致 hurt 负伤）。

@@ -54,8 +54,7 @@ public class NetworkLogicGameTest {
 
         helper.runAtTickTime(2, () -> {
             ChannelEnergyBlockEntity source = helper.getBlockEntity(sourcePos);
-            // 新频道系统：连接器是复制/应用面配置，不再硬链接
-            // 验证连接器复制面配置（非空即成功）
+            // 频道已接入，或连接器已复制面配置。
             helper.assertTrue(source.isJoined() || !source.energyFaceMode.isEmpty(), "expected connector to have copied face config");
             helper.succeed();
         });
@@ -170,7 +169,6 @@ public class NetworkLogicGameTest {
             String diag = "src=" + source.getItem(0) + " tgt=" + target.getItem(0) + " mode=" + pipe.getTransmitter().getConnectionTypeRaw(Direction.WEST) + " netSize=" + (net == null ? -1 : net.size());
             helper.assertTrue(source.getItem(0).isEmpty(), "expected PULL face to auto-extract: " + diag);
             helper.assertTrue(!target.getItem(0).isEmpty(), "expected item routed to target: " + diag);
-            // 二态轮询往返：PULL→NORMAL→PULL
             helper.assertTrue(spannerUseOn(helper, pipePos, Direction.WEST).consumesAction(), "second click");
             helper.assertTrue(pipe.getTransmitter().getConnectionTypeRaw(Direction.WEST) == ConnectionType.NORMAL,
                     "expected second click PULL->NORMAL, got " + pipe.getTransmitter().getConnectionTypeRaw(Direction.WEST));
@@ -182,8 +180,7 @@ public class NetworkLogicGameTest {
     }
 
     /**
-     * 机器相邻边二态轮询复现：与本 mod 机器（能量单元）相邻的管道面，扳手两次点击应
-     * NORMAL→PULL→NORMAL 往返（用户报告「与机器相邻始终被切换为双向」）。
+     * 机器相邻边按 NORMAL→PULL→NORMAL 二态轮询。
      */
     @TestHolder(value = TEN.MOD_ID + ":pipe_machine_face_two_state", enabledByDefault = true)
     @GameTest(template = "empty_5x5")
@@ -209,8 +206,7 @@ public class NetworkLogicGameTest {
     }
 
     /**
-     * 管道间断开复现：两管道相邻，扳手点连接处应 NONE（断开）→ 再点 NORMAL（连接）往返
-     * （用户报告「不能正确切换为断开」）。
+     * 相邻管道按 NONE→NORMAL 切换断开与重连。
      */
     @TestHolder(value = TEN.MOD_ID + ":pipe_pipe_disconnect_toggle", enabledByDefault = true)
     @GameTest(template = "empty_5x5")
@@ -225,7 +221,6 @@ public class NetworkLogicGameTest {
         PipeBlockEntity b = helper.getBlockEntity(pipeB);
 
         helper.runAtTickTime(5, () -> {
-            // 初始应同网
             var netA0 = a.getTransmitter().getNetwork();
             helper.assertTrue(netA0 != null && netA0 == b.getTransmitter().getNetwork(), "expected A/B initially in same network");
             // 第一次点击 A 的 EAST 面（朝 B）：NORMAL→NONE 断开；raw 同步生效，网络拆分延迟到 level tick 末
@@ -272,8 +267,8 @@ public class NetworkLogicGameTest {
             method.setAccessible(true);
             var player = helper.makeMockPlayer(GameType.CREATIVE);
             BlockPos abs = helper.absolutePos(rel);
-            // 落点取对应连接臂内（东臂 x∈[11,16] 局部 → 全局 x+13.5/16），非核心中心——
-            // 服务端 resolveClickedEdge 按落点所在臂判定方向，点核心会返回 null 不响应
+            // 落点取对应连接臂内并避开核心中心；服务端 resolveClickedEdge 按落点所在臂判定方向，
+            // 点核心会返回 null 不响应。
             Vec3 loc = face == Direction.EAST ? new Vec3(abs.getX() + 0.85, abs.getY() + 0.5, abs.getZ() + 0.5) : face == Direction.WEST ? new Vec3(abs.getX() + 0.15, abs.getY() + 0.5, abs.getZ() + 0.5) : Vec3.atCenterOf(abs);
             BlockHitResult hit = new BlockHitResult(loc, face, abs, false);
             return (ItemInteractionResult) method.invoke(state.getBlock(), new ItemStack(TENItems.SPANNER.get()),
@@ -298,16 +293,14 @@ public class NetworkLogicGameTest {
         CellBlockEntity target = helper.getBlockEntity(targetPos);
         source.initMachine();
         target.initMachine();
-        // 受端必须改被动输入：单元默认全 OUT（主动放电），不改的话线缆送来的电会被它
-        // 立刻推回线缆，tick 60 采样恒为 0——现象像「线缆不送电」，实为受端自己在放电。
+        // 受端必须改被动输入：单元默认全 OUT（主动放电），否则线缆送来的电会被立刻推回线缆。
         target.energyFaceMode.put(net.minecraft.core.Direction.WEST,
                 com.modularmc.ten.api.option.FaceOption.BE_IN);
         source.energyStorage.setEnergy(4000);
         target.energyStorage.setEnergy(0);
 
-        // 25 tick 是原始窗口；但 GameTestServer 起测时经常卡顿（实测 "Running 7~9 s / 150+ ticks behind"），
-        // 线缆网络在卡顿窗口内可能还没成形。25 tick 没动就再等到 60 tick 判一次，仍不动才失败，
-        // 并在断言里带上两端储能，便于区分「网络没成形」和「电真没走」。
+        // GameTestServer 启动时可能延迟网络成形；25 tick 未动则等到 60 tick 再判定，
+        // 断言附带两端储能与面配置，便于区分网络未成形和电未传输。
         helper.runAtTickTime(25, () -> {
             if (target.energyStorage.getEnergyStored() > 0) {
                 helper.succeed();
@@ -336,7 +329,7 @@ public class NetworkLogicGameTest {
         ChestBlockEntity source = helper.getBlockEntity(sourcePos);
         ChestBlockEntity target = helper.getBlockEntity(targetPos);
         source.setItem(0, new ItemStack(Items.IRON_INGOT, 1));
-        // 语义变更（TE4-New 基准）：默认 NORMAL 不主动抽，显式切 source 侧为 PULL
+        // 默认 NORMAL 不主动抽，显式切 source 侧为 PULL
         ((com.modularmc.ten.api.transmission.item.ItemTransmitter) ((PipeBlockEntity) helper.getBlockEntity(pipePos)).getTransmitter())
                 .setConnectionTypeRaw(Direction.WEST, ConnectionType.PULL);
 
@@ -363,7 +356,7 @@ public class NetworkLogicGameTest {
         PipeBlockEntity pipe = helper.getBlockEntity(pipePos);
         source.setItem(0, new ItemStack(Items.IRON_INGOT, 1));
         pipe.getFilterInventory().setStackInSlot(0, new ItemStack(Items.GOLD_INGOT));
-        // 语义变更（TE4-New 基准）：显式切 source 侧为 PULL 才会尝试抽取（验证白名单拦截的是抽取到的物品）
+        // 显式切 source 侧为 PULL 才会尝试抽取（验证白名单拦截的是抽取到的物品）
         ((com.modularmc.ten.api.transmission.item.ItemTransmitter) pipe.getTransmitter())
                 .setConnectionTypeRaw(Direction.WEST, ConnectionType.PULL);
 

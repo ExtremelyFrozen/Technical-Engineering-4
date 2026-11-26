@@ -32,8 +32,7 @@ public final class SkyLightHelper {
         if (level == null || pos == null || level.isClientSide()) return false;
         if (!level.canSeeSky(pos.above())) return false;
         if (level.isRaining()) return false;
-        // MC 1.21.1: getDayTime() 返回当前维度时钟（主世界 = 世界总 tick）
-        // 26.1.2 分支用 getOverworldClockTime()（固定 overworld 时钟），此处用 getDayTime() 对齐昼间语义。
+        // getDayTime() 返回当前维度时钟，昼间判定必须使用该值。
         return level.getDayTime() % 24000L < 12000L;
     }
 }

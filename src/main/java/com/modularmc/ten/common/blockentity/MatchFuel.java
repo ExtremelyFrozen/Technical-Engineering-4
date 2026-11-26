@@ -4,9 +4,9 @@ package com.modularmc.ten.common.blockentity;
  * 生产端燃料的共用数据结构。
  *
  * <p>
- * 自 2026-11 起，具体燃料表已移出代码，改由数据包配方
- * {@code kenergyengineering:engine_fuel} 定义（见 {@code EngineFuelRecipe}），
- * 本类只保留「一份燃料」的值对象与派生公式，不再有任何写死的物品 / 标签表。
+ * 具体燃料由数据包配方 {@code kenergyengineering:engine_fuel} 定义
+ * （见 {@code EngineFuelRecipe}）；本类只保存一份燃料的值对象与派生公式，
+ * 不含物品或标签表。
  */
 public final class MatchFuel {
 

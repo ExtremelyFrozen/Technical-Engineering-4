@@ -21,11 +21,9 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Auto-generates material variant recipes for every {@link Mat} entry.
+ * 为每个 {@link Mat} 条目生成材料变体配方。
  * <p>
- * Writes JSON directly to the data output directory.
- * Vanilla recipes (crafting/smelting) and custom machine recipes
- * (compressor/pulverizer) are all generated as JSON files.
+ * 直接输出 JSON：涵盖原版合成与熔炼，以及压缩机、粉碎机、感应炉等自定义机器配方。
  */
 public class TENRecipeGen implements DataProvider {
 
@@ -58,7 +56,7 @@ public class TENRecipeGen implements DataProvider {
                     futures.add(saveJson(cache, recipeDir.resolve("pulverizer/metal/" + mat.id + r.suffix() + ".json"), buildPulv(mat, r)));
             }
 
-            // 粗矿块→粉改由 ORE_CHAIN 的 block_dust 段承担（标签驱动，邻居材料同样能走）
+            // 粗矿块→粉由 ORE_CHAIN 的 block_dust 段生成，输入走标签，邻居材料同样适用。
 
             for (var r : SMELT) if (canSmelt(mat, r)) {
                 String inputId = smeltInput(mat, r);
@@ -68,7 +66,7 @@ public class TENRecipeGen implements DataProvider {
 
             for (var r : PACK) if (canPack(mat, r))
                 buildPack(cache, recipeDir, mat, r, futures);
-            // Large compress (9→1) and split (1→9) for mod materials
+            // 模组材料的 9→1 压缩与 1→9 拆分。
             if (mat.hasNugget && mat.hasIngot)
                 futures.add(saveJson(cache, recipeDir.resolve("compressor/cp_" + mat.id + "_nugget_ingot.json"), buildMouldPack(mat, "nugget", "ingot", 9, 1, "mould_compressed_large")));
             if (mat.hasBlock && mat.hasIngot) {
@@ -113,7 +111,7 @@ public class TENRecipeGen implements DataProvider {
     }
 
     // ══════════════════════════════════════════════════════════════════
-    // Recipe format templates
+    // 配方格式模板。
     // ══════════════════════════════════════════════════════════════════
 
     private record CompressFmt(String form, int ingots, String mould, int outputCount) {}
@@ -126,8 +124,8 @@ public class TENRecipeGen implements DataProvider {
 
     private record PulvFmt(String tagCat, int dustCount, int time, String suffix) {}
 
-    // 矿石与粗料段改由 ORE_CHAIN 的标签驱动配方承担（pulverizer/chain/），
-    // 这里只留锭→粉，避免同一输入标签出现两条可匹配配方。
+    // 矿石与粗料段由 ORE_CHAIN 的标签驱动配方生成（pulverizer/chain/）；
+    // 此处只生成锭→粉，避免同一输入标签出现两条可匹配配方。
     private static final List<PulvFmt> PULV = List.of(
             new PulvFmt("ingots", 1, 100, "_dust"));
 
@@ -253,17 +251,14 @@ public class TENRecipeGen implements DataProvider {
             new PackFmt("nugget", "ingot"),
             new PackFmt("raw", "raw_block"));
 
-    /**
-     * 模具统一来源：先做空白模具，再用切石机切成具体形状。
-     * 原有四种「锡锭摆形状」的工作台配方全部移除，避免同一模具两条来源。
-     */
+    /** 模具统一来源：先制作空白模具，再用切石机切成具体形状。 */
     private static final List<String> MOULDS = List.of(
             "mould_gear", "mould_plate", "mould_rod", "mould_string",
             "mould_compressed_small", "mould_compressed_large", "mould_split",
             "mould_coin", "mould_dense_plate");
 
     // ══════════════════════════════════════════════════════════════════
-    // Conditions
+    // 生成条件。
     // ══════════════════════════════════════════════════════════════════
 
     private static boolean canPulv(Mat mat, PulvFmt r) {
@@ -312,7 +307,7 @@ public class TENRecipeGen implements DataProvider {
     }
 
     // ══════════════════════════════════════════════════════════════════
-    // JSON builders
+    // JSON 构建器。
     // ══════════════════════════════════════════════════════════════════
 
     private JsonObject buildCompress(Mat mat, CompressFmt r) {
@@ -366,9 +361,8 @@ public class TENRecipeGen implements DataProvider {
     }
 
     /**
-     * 通用段（原来自设、现按标签驱动）：{@code c:storage_blocks/raw_X} → 粉 9 + 9×40% 掷骰。
-     * 耗时 200 对齐原生「1 进 8 出」那一档（{@code pulverizer/snow_ice_blue.json}），
-     * 原来按 9 倍写 900 是把「物料份数」当成了「操作次数」，粉碎机原生一律是 100–200 一级。
+     * 通用段：{@code c:storage_blocks/raw_X} → 粉 9 + 9×40% 掷骰。
+     * 耗时 200 tick 对齐原生「1 进 8 出」档位（{@code pulverizer/snow_ice_blue.json}）。
      */
     private void buildRawBlockToDust(List<CompletableFuture<?>> futures, CachedOutput cache, Path recipeDir, String mat,
                                      List<String> candidates) {
@@ -574,7 +568,7 @@ public class TENRecipeGen implements DataProvider {
         return j;
     }
 
-    /** Compressor pack/split recipe: inputForm + mould → outputForm (inputCount → outputCount). */
+    /** 压缩机压缩/拆分配方：inputForm + 模具 → outputForm，数量为 inputCount → outputCount。 */
     private JsonObject buildMouldPack(Mat mat, String inputForm, String outputForm,
                                       int inputCount, int outputCount, String mould) {
         var j = new JsonObject();
@@ -589,20 +583,18 @@ public class TENRecipeGen implements DataProvider {
     }
 
     // ══════════════════════════════════════════════════════════════════
-    // JSON helpers
+    // JSON 辅助方法。
     // ══════════════════════════════════════════════════════════════════
 
-    /** Raw block → 9 dust with 9×40% bonus dust（roll 掷骰配方）。 */
     private static JsonObject ref(String id) {
         return obj(id.startsWith("c:") ? "tag" : "item", id);
     }
 
-    /** Machine recipe ingredient. 5-param: form, type, key, count, chance. */
     private static JsonObject ingr(String form, String type, String key, Integer count, Double chance) {
         return ingr(form, type, key, count, chance, null);
     }
 
-    /** Machine recipe ingredient. 6-param: form, type, key, count, chance, rolls. */
+    /** 机器配方原料；chance 与 rolls 为 null 时不写入对应字段。 */
     private static JsonObject ingr(String form, String type, String key, Integer count, Double chance, Integer rolls) {
         var o = new JsonObject();
         o.addProperty("form", form);

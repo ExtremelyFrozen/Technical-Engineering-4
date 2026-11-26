@@ -21,7 +21,7 @@ import java.util.List;
  */
 public class EngineFuelEmiRecipe implements EmiRecipe {
 
-    // 布局常量（与 EngineFuelCategory v5 逐坐标一致）
+    // 布局常量（与 EngineFuelCategory 逐坐标一致）
     private static final int INPUT_SLOT_X = 10;
     private static final int INPUT_SLOT_Y = 16;
     private static final int FUEL_GAUGE_X = 37;

@@ -156,7 +156,7 @@ public class MachineItemHandler extends ItemStackHandler {
     }
 
     /**
-     * 提取：以槽内实际数量为上限，不再被物品自身堆叠上限（通常 64）截断。
+     * 提取：以槽内实际数量为上限，不受物品自身堆叠上限（通常 64）截断。
      * <p>
      * 父类实现取 {@code Math.min(amount, existing.getMaxStackSize())}，而本 handler 允许
      * 并行运行超堆叠（单槽上限 64×B）。若沿用父类，超堆叠槽一次最多只能交出 64 个，

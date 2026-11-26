@@ -27,9 +27,8 @@ import java.util.List;
  * 流体频道方块（末影箱模式）：接入后共享 2 tank 存储（每 tank 2000×成员数 mB 动态）。
  * 本地缓冲保留作断开回流源；接入态面能力指向共享 handler。
  * <p>
- * 1.21.1 适配：26.1.2 的 {@code getFluidResourceHandler}（NeoForge 26.1.2 Resource API）
- * 在经典 Capability 下由 {@link #getFluidHandler} 直接方法承担；UI 槽位绑定动态门面
- * {@link ChannelFluidHandlerFacade}（join/leave 切换后无需重建 UI）。
+ * 面能力由经典 Capability 的 {@link #getFluidHandler} 提供；UI 槽位绑定动态门面
+ * {@link ChannelFluidHandlerFacade}，join/leave 切换后无需重建 UI。
  */
 public class ChannelFluidBlockEntity extends AbstractChannelBlockEntity {
 
@@ -279,7 +278,7 @@ public class ChannelFluidBlockEntity extends AbstractChannelBlockEntity {
     @Override
     public ModularUI createUI(BlockUIMenuType.BlockUIHolder holder) {
         return buildChannelUI(holder, TENConstants.MACHINE_GUI, root -> {}, root -> {
-            // 2 tank 垂直居中（机器 GUI 布局规则 v4 内容区 y=5..77 中线 41）：
+            // 2 tank 垂直居中（机器 GUI 内容区 y=5..77，中线 y=41）：
             // 50px 高 → 16..66，上下留白对称 11px，与列表容器中线对齐。
             root.addChild(TENMachineBlockUIFactory.fluidGaugeModular(this, 7, 16, 18, 50, 0));
             root.addChild(TENMachineBlockUIFactory.fluidGaugeModular(this, 25, 16, 18, 50, 1));

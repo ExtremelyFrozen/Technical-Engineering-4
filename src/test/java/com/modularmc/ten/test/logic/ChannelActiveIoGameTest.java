@@ -215,7 +215,7 @@ public class ChannelActiveIoGameTest {
 
     // ───── 破坏 ─────
 
-    /** 已接入频道被破坏后必须真的消失（旧实现会在 setRemoved 里把方块写回成「未接入」）。 */
+    /** 已接入频道被破坏后必须真的消失。 */
     @TestHolder(value = TEN.MOD_ID + ":channel_break_removes_block", enabledByDefault = true)
     @GameTest(template = "empty_5x5")
     @PrefixGameTestTemplate(false)

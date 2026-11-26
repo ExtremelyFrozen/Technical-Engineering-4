@@ -11,14 +11,9 @@ import mezz.jei.api.gui.drawable.IDrawable;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * JEI slot overlay for chance percentage and rolls text.
+ * JEI 槽位覆盖层，显示 chance 百分比与 rolls 文本。
  * <p>
- * Implements {@link IDrawable} so the overlay is drawn by JEI's slot
- * rendering pipeline — after the item stack — avoiding the z-order bug
- * where text drawn in {@code IRecipeCategory.draw()} gets covered by
- * subsequent slot item rendering.
- * <p>
- * 1.21.1 适配：GuiGraphics 替代 GuiGraphicsExtractor。
+ * 实现 {@link IDrawable}，由 JEI 槽位渲染管线在物品之后绘制，保证文字不会被后续物品渲染遮盖。
  */
 public class TENJeiSlotOverlay implements IDrawable {
 
@@ -56,11 +51,9 @@ public class TENJeiSlotOverlay implements IDrawable {
     public void draw(GuiGraphics guiGraphics, int xOffset, int yOffset) {
         Font font = Minecraft.getInstance().font;
         if (chanceText != null) {
-            // Top-left: chance percentage at 75% scale
             drawScaled(guiGraphics, font, chanceText, xOffset, yOffset + CHANCE_TEXT_Y_OFFSET);
         }
         if (rollsText != null) {
-            // Bottom-left: rolls text at 75% scale
             drawScaled(guiGraphics, font, rollsText, xOffset, yOffset + ROLLS_TEXT_Y_OFFSET);
         }
     }

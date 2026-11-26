@@ -30,7 +30,7 @@ public class SpannerItem extends TENBaseItem {
         BlockState state = level.getBlockState(pos);
 
         if (player.isShiftKeyDown()) {
-            // 潜行 + 右键：拆解（合并后直接使用 machines 标签——原 wrench_dismantleable 仅全量转发 machines）
+            // 潜行 + 右键：仅 MACHINES 标签成员可拆。
             if (!state.is(TENTags.MACHINES)) {
                 return InteractionResult.PASS;
             }

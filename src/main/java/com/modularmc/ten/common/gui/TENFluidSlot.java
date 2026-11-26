@@ -9,9 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-/**
- * TEN fluid slot that hides temperature and gas/liquid state from the built-in LDLib2 tooltip.
- */
+/** 隐藏 LDLib2 内置流体 tooltip 中的温度与气液状态。 */
 public class TENFluidSlot extends FluidSlot {
 
     private static final Set<String> HIDDEN_TOOLTIP_KEYS = Set.of(
@@ -32,12 +30,9 @@ public class TENFluidSlot extends FluidSlot {
     }
 
     /**
-     * 覆写渲染顺序（对齐本 mod 覆盖层需求）：底图（原生 drawBackground）→ 流体柱 → 覆盖层 → hover。
+     * 渲染顺序：底图（原生 {@code drawBackground}）→ 流体柱 → 覆盖层 → hover。
      * <p>
-     * ldlib2 原生 {@code drawBackgroundAdditional} 顺序是 slotOverlay 先于 fluid：有流体时覆盖层
-     * 被完全遮住，玻璃质感失效。本覆写将流体提到覆盖层之下——空槽时覆盖层叠槽、
-     * 有流体时覆盖层叠在流体上（用户需求 2026-09）。
-     * 复刻自 LDLib2 1.21 分支 FluidSlot#drawBackgroundAdditional（仅调换 overlay/fluid 顺序）。
+     * 覆盖层必须位于流体之上：空槽时叠在槽底图上，有流体时叠在流体上；hover 高亮位于最顶层。
      */
     @Override
     public void drawBackgroundAdditional(com.lowdragmc.lowdraglib2.gui.ui.rendering.GUIContext guiContext) {

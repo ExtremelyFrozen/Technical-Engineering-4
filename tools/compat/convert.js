@@ -82,16 +82,14 @@ function ownSignatures(machineType) {
   const set = new Map();
   for (const root of [MAIN, GEN]) {
     for (const file of walk(path.join(root, "kenergyengineering/recipe"))) {
-      // 兼容层里机械生成的条目不参与基准；手写的压缩行要参与，否则导入行会与它撞同一输入
-      // 手写真身的行以 config.manualRows 为准：它们参与输入签名基准，机械导入撞到就跳过
+      // config.manualRows 中的手写行参与输入签名基准；其余 compat 目录下的机械生成行排除。
       const PROTECTED = new Set(CFG.manualRows || []);
       const short = rel(file);
       if (short.includes("/recipe/compat/") && !PROTECTED.has(path.basename(file, ".json"))) continue;
       const j = load(file);
       if (!j || j.type !== "kenergyengineering:" + machineType) continue;
-      // 带 not(mod_loaded) 的是「邻居缺席时才生效」的兜底分支，与导入行按条件互斥，
-      // 不能算作「本模组已有配方」，否则邻居那条永远不会被导入（石头/圆石族就是这个形状）。
-      // 兜底条件现在写成 not(and(mod_loaded, compat_enabled))，两种形状都要认。
+      // 邻居缺席时才生效的兜底分支与导入行互斥，不参与本模组配方基准。
+      // 兜底条件支持 not(mod_loaded)，以及包含 mod_loaded 的 not(and(...))；当前 compat 关闭分支为 not(and(mod_loaded, compat_enabled))。
       const isFallback = (j["neoforge:conditions"] || []).some(c => c && c.type === "neoforge:not"
         && c.value && (c.value.type === "neoforge:mod_loaded"
           || (c.value.type === "neoforge:and"
@@ -118,7 +116,7 @@ function extraGates(j, sourceNs) {
 
 /**
  * 行名 = 相对该机器配方目录的路径（`aluminum/ingot.json` → `aluminum_ingot`）。
- * 只取文件名会让 ATO 那种按材料分层的目录里几十个 `ingot.json` 写进同一个输出文件、互相覆盖。
+ * 保留目录路径，避免不同材料目录下的同名 `ingot.json` 互相覆盖。
  */
 function nameOf(file, dir) {
   return path.relative(dir, file).replace(/\.json$/, "").split(path.sep).join("_");
@@ -219,8 +217,7 @@ const notes = [];
         continue;
       }
       // 门控 = 来源模组 + 对方自带第三方门控 + 输出物品归属 + 具体物品输入的归属。
-      // 标签输入不再按「首个成员的所属模组」门控：标签存在性由 not(tag_empty) 兜住，
-      // 否则 ATO 行会因为 c:ingots/brass 的头部成员来自 EIO 而白带一个 enderio 条件。
+      // 标签输入不添加归属门控，由 not(tag_empty) 保证标签非空。
       const inputGate = inp.isTag ? null : gateOf(ownerOf(inp.key));
       const gates = [ns, ...extraGates(j, ns), ...outs.map(o => o.gate), inputGate]
         .filter((g, i, a) => g && a.indexOf(g) === i);

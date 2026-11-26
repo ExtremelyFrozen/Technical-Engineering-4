@@ -27,13 +27,11 @@ import java.util.Map;
 /**
  * 线缆/管道动态模型的零件库。
  * <p>
- * core/part/connect（及线缆的 active 版）本来就是 {@code src/main/resources} 下的独立模型，
- * 原先靠 blockstate 的 26 条 multipart 条件按方向旋转拼装。这里在 {@code RegisterAdditional}
- * 把它们登记成 standalone 模型，烘焙后取出 quad，用 {@link QuadTransformers} 预旋转到六个方向，
- * 交给 {@link CableBakedModel} 按 {@link CableRenderState} 动态组合。
+ * core/part/connect（及线缆的 active 版）是 {@code src/main/resources} 下的独立模型；
+ * 在 {@code RegisterAdditional} 登记为 standalone 模型，烘焙后取出 quad，用 {@link QuadTransformers}
+ * 预旋转到六个方向，交给 {@link CableBakedModel} 按 {@link CableRenderState} 动态组合。
  * <p>
- * 旋转角度与旧 multipart 生成器完全一致：{@code Direction.values()} 的顺序即
- * {@code CableRenderState} 打包时用的 {@code ordinal()}。
+ * 旋转表下标与 {@link Direction#ordinal()} 一致，也与 {@link CableRenderState} 的打包顺序一致。
  */
 public final class CableModelParts {
 

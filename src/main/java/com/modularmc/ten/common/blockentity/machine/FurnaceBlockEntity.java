@@ -46,14 +46,14 @@ import java.util.Optional;
  * <p>
  * 每条 lane 自持进度、配方身份与并行运行锁，逐 tick 各自推进；能量与 XP 罐为三路共享，
  * 按 lane 顺序扣减。基类 {@code progress}/{@code maxProgress} 只作单进度镜像，
- * 供冷却器等横切逻辑读取，不再驱动本机加工。
+ * 供冷却器等横切逻辑读取，不参与本机加工推进。
  */
 public class FurnaceBlockEntity extends ProcessingMachineBlockEntity {
 
     /** 并行流水线数量：每条 lane 独占一个输入槽、一个输出槽与一条进度箭头。 */
     public static final int LANES = 3;
 
-    /** 三条 lane 的槽位 y：lane 0 居中（沿用旧输入槽位置），1 在上、2 在下。 */
+    /** 三条 lane 的槽位 y：lane 0 居中，lane 1 在上，lane 2 在下。 */
     public static final int[] LANE_SLOT_Y = { 32, 14, 50 };
 
     /**
@@ -146,7 +146,7 @@ public class FurnaceBlockEntity extends ProcessingMachineBlockEntity {
         return IngredientType.OUTPUT;
     }
 
-    /** 基础周期 tick：配方 cookingTime 全值（旧版误除 2 导致处理速度快一倍，勿回退）。 */
+    /** 基础周期 tick：直接取配方 {@code cookingTime} 全值，耗时倍率在锁定周期时另行缩放。 */
     @Override
     public int baseTickTime() {
         return getCurrentRecipe(0).map(r -> r.value().getCookingTime()).orElse(200);
@@ -163,7 +163,7 @@ public class FurnaceBlockEntity extends ProcessingMachineBlockEntity {
         return lane < 0 ? super.progressFraction(lane) : laneProgressPercent(lane);
     }
 
-    /** 该 lane 的配方刻度总量：配方耗时 T，不随运行速度缩放。 */
+    /** 该 lane 的周期刻度：基础配方耗时按耗时倍率缩放后锁定，不随运行速度缩放。 */
     @Override
     public int progressTotalTicks(int lane) {
         if (lane < 0) return super.progressTotalTicks(lane);
@@ -278,7 +278,6 @@ public class FurnaceBlockEntity extends ProcessingMachineBlockEntity {
         return LANES;
     }
 
-    /** 不复用基类的单流水线 process()，改为逐 lane 独立推进。 */
     @Override
     public void tick() {
         // 三路都无活时走待机精简路径（光合注能 / 主动 IO / 输入指纹）。
@@ -464,8 +463,7 @@ public class FurnaceBlockEntity extends ProcessingMachineBlockEntity {
             ItemStack result = recipe.getResultItem(registry);
             int B_byInput = input.getCount();
 
-            // 输出容量按「物品上限 × 理论 B」的动态槽位上限算，不按原版 64 封顶
-            // （旧写法在非空槽上用 getMaxStackSize()，会让输出槽永远停在 64）。
+            // 输出容量按「物品上限 × 理论 B」的动态槽位上限计算，不使用原版 64 封顶。
             int outSlot = outputSlot(lane);
             ItemStack existingOutput = itemHandler.getStackInSlot(outSlot);
             int availOutputSpace;

@@ -6,7 +6,7 @@ import net.neoforged.neoforge.energy.IEnergyStorage;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 线缆对外能量能力适配层（移植自 TE4-New）：
+ * 线缆对外能量能力适配层：
  * 收发均受所在边连接模式门控（收须 isPullOrNormal、取须 isPushOrNormal）
  * 与节点吞吐限流；有网络时读写网络缓冲，orphan 时读写本地兜底缓冲。
  * NOTE: side == null 时模式判定为 NONE（全部拒绝）——注册能力时须提供具体方向。

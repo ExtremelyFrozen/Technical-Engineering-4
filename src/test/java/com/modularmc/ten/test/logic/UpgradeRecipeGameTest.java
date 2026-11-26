@@ -15,7 +15,7 @@ import net.neoforged.testframework.annotation.TestHolder;
 import java.util.Optional;
 
 /**
- * 十六张新增升级组件的合成配方必须真的进到配方管理器里。
+ * 十六张升级组件的合成配方必须真的进到配方管理器里。
  *
  * <p>
  * 配方是手写 JSON（{@code data/kenergyengineering/recipe/vanilla/upgrades/}），不经过数据生成，

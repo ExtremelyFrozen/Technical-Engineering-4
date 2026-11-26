@@ -1,8 +1,8 @@
 repositories {
     mavenLocal()
     mavenCentral()
-    // force gradle to download FastUtil & LWJGL from the central maven so we can get source artifacts
-    exclusiveContent { // Force
+    // FastUtil 与 LWJGL 仅从 Maven Central 获取，以便生成源码制品。
+    exclusiveContent {
         forRepository { mavenCentral() }
         filter {
             includeGroup("it.unimi.dsi")
@@ -30,7 +30,7 @@ repositories {
             includeGroup("net.mezzdev.config")
         }
     }
-    maven { // JEI mirror, AE2 (fallback)
+    maven { // JEI 镜像仓库，AE2 备用源
         name = "ModMaven"
         url = "https://modmaven.dev"
     }
@@ -47,7 +47,7 @@ repositories {
         forRepository { mavenCentral() }
         filter { includeGroup("org.projectlombok") }
     }
-    exclusiveContent { // tterrag - registrate（1.21.1 线只发布在 Gegy 的 maven；旧的 devos snapshots 已无引用）
+    exclusiveContent { // Registrate 1.21.1 仅从 Gegy Maven 获取
         forRepository { maven { url = "https://maven.gegy.dev/releases/" } }
         filter { includeGroup("com.tterrag.registrate") }
     }

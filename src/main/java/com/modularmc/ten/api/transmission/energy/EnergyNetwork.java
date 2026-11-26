@@ -22,9 +22,8 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * 能量网络（移植自 TE4-New，int FE 适配）：两阶段传输——
- * 先从 PULL 边收集能源拉入网络缓冲，再向 PUSH/NORMAL 边的受端均分推送。
- * 内部用 long 累计（多线缆聚合），IEnergyStorage 边界处限幅 int。
+ * 能量网络：先从 PULL 边收集能源拉入网络缓冲，再向 PUSH/NORMAL 边的受端均分推送。
+ * 内部以 long 累计多线缆能量，IEnergyStorage 边界处限幅 int。
  */
 public class EnergyNetwork extends BufferedNetwork<IEnergyStorage, EnergyNetwork, Long, EnergyTransmitter> {
 
@@ -88,7 +87,7 @@ public class EnergyNetwork extends BufferedNetwork<IEnergyStorage, EnergyNetwork
         if (level == null) {
             return;
         }
-        // 对齐旧版 5 tick 传输节奏（gameTime 全局相位，网络重建不重置相位）
+        // 按 gameTime 的全局 5 tick 相位执行，网络重建不重置相位。
         if (level.getGameTime() % 5 != 0) {
             return;
         }

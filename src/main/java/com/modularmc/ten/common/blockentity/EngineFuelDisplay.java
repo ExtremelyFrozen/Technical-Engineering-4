@@ -9,9 +9,9 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Shared recipe type for Extractor, Metalizer, and Biomass engine fuel in JEI.
+ * JEI 萃取、金属与生物质引擎燃料的共享展示记录。
  * <p>
- * 生产端口径（规范 v2）：产能只由引擎声明，配方只给「持续时间 + FE/t 修正倍率」。
+ * 生产端口径：产能只由引擎声明，配方只给「持续时间 + FE/t 修正倍率」。
  * 因此一个条目同时带三个数：
  * <ul>
  * <li>{@link #baseRate()} —— 引擎额定 FE/t（{@code BASE_GENERATION_RATE}）</li>
@@ -19,7 +19,7 @@ import java.util.List;
  * <li>{@link #rate()} —— 实际 FE/t = {@code round(baseRate × rateMultiplier)}</li>
  * </ul>
  * 总能量 = {@code rate × durationTicks}，其中 durationTicks 由配方直接声明，
- * 不再由引擎反推，所以显示出来的持续时间就是真实燃烧时间。
+ * 由配方直接声明，不经过引擎反推，显示值即真实燃烧时间。
  */
 public final class EngineFuelDisplay {
 

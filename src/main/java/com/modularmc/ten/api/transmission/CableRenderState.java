@@ -5,11 +5,7 @@ import net.neoforged.neoforge.client.model.data.ModelProperty;
 
 /**
  * 线缆/管道的渲染状态：六个方向的连接外观（0=无，1=管道间 part，2=设备 connect）加一个 active 位，
- * 打包进一个 int 交给 {@code ModelData} 同步。
- * <p>
- * 这份数据取代原先 {@code CableBased.CONNECTION} 的六个 {@code IntegerProperty}：那六个属性让单个方块
- * 有 3^6 × 2 × 2 = 2916 个 BlockState，7 个方块合计 2 万余状态，注册表冻结时逐个建 Cache、
- * 模型烘焙时逐状态匹配 multipart 条件。连接本质是渲染态，不该进 BlockState。
+ * 打包进一个 int 交给 {@code ModelData} 同步。连接外观不写入 BlockState。
  * <p>
  * {@link ModelProperty} 虽在 {@code client.model.data} 包，但它是 NeoForge 通用扩展点的一部分：
  * {@code IBlockEntityExtension#getModelData()} 位于 {@code common.extensions} 且签名直接返回
@@ -36,7 +32,7 @@ public record CableRenderState(int packed) {
         return isCable(name) ? "cable" : "pipe";
     }
 
-    /** 服务端从 transmitter 位图打包；客户端拿到的是 {@code @DescSynced} 推过来的同一份值。 */
+    /** 服务端从 transmitter 位图打包；客户端读取方块实体同步后的同一份值。 */
     public static int pack(Transmitter<?, ?, ?> transmitter, boolean active) {
         byte tran = transmitter.getTransmitterConnections();
         byte acc = transmitter.getAcceptorConnections();

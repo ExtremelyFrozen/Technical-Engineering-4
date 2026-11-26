@@ -156,7 +156,7 @@ public class QuarryBlockEntity extends RadiusMachineBlockEntity {
         return MachineType.QUARRY;
     }
 
-    /** 工具槽数量（用户设定 1→3：槽 0..2；GUI 在原工具槽 (43,34) 相邻上下 (43,16)/(43,52)）。 */
+    /** 工具槽数量：槽 0..2；GUI 坐标依次为 (43,34)、(43,16)、(43,52)。 */
     public static final int TOOL_SLOTS = 3;
     /**
      * 第一个输出槽索引：工具槽 0..2，输出槽 3..14。
@@ -193,7 +193,7 @@ public class QuarryBlockEntity extends RadiusMachineBlockEntity {
     @Override
     public boolean valid(int slot, ItemStack stack) {
         if (slot < TOOL_SLOTS) {
-            // 工具槽：任何带 TOOL 组件的物品（原 TieredItem 判定过窄）
+            // 工具槽仅接受带 TOOL 组件的物品。
             return stack.has(DataComponents.TOOL);
         }
         return true;
@@ -221,7 +221,7 @@ public class QuarryBlockEntity extends RadiusMachineBlockEntity {
     @Override
     public ModularUI createUI(BlockUIMenuType.BlockUIHolder holder) {
         return buildMachineUI(holder, TENMachineBlockUIFactory.backgroundFor(machineType()), root -> {
-            // 工具槽（用户设定 1→3）：原槽位 (43,34) 相邻上下各加一槽；输出槽 3..14 索引顺移
+            // 工具槽 0..2 使用 (43,34)/(43,16)/(43,52)，输出槽 3..14 按 3×4 网格排布
             root.addChild(TENMachineBlockUIFactory.machineSlotModular(this, 0, 43, 34));
             root.addChild(TENMachineBlockUIFactory.machineSlotModular(this, 1, 43, 16));
             root.addChild(TENMachineBlockUIFactory.machineSlotModular(this, 2, 43, 52));
@@ -240,7 +240,7 @@ public class QuarryBlockEntity extends RadiusMachineBlockEntity {
         }, root -> {
             root.addChild(TENMachineBlockUIFactory.energyGaugeModular(this, 8, 18, true));
             root.addChild(TENMachineBlockUIFactory.progressGaugeWide(this, 48, 74, true));
-            // 扫描 / 附魔切换留在左缘 7px 内缩处，范围显隐按用户要求挪到右缘（右侧默认坐标）
+            // 扫描 / 附魔切换位于左缘 7px 内缩处，范围显隐位于右缘默认坐标
             root.addChild(TENMachineBlockUIFactory.scanModeToggleButton(this::isScanFast, () -> rpcToServer("rpcToggleScanFast"),
                     TENMachineBlockUIFactory.TOGGLE_LEFT_X, TENMachineBlockUIFactory.TOGGLE_Y));
             root.addChild(TENMachineBlockUIFactory.useEnchantmentsToggleButton(this,
@@ -320,7 +320,7 @@ public class QuarryBlockEntity extends RadiusMachineBlockEntity {
         if (level == null || itemHandler == null) {
             return;
         }
-        // 挖尽停机：游标已初始化且 scanY 到世界底 → 立即停机并清锁，不再空转耗能。
+        // 挖尽停机：游标已初始化且 scanY 到世界底时立即停机并清锁，不空转耗能。
         if (scanCursorInitialized && scanExhausted()) {
             setActive(false);
             clearLockedBatch();
@@ -337,7 +337,7 @@ public class QuarryBlockEntity extends RadiusMachineBlockEntity {
     }
 
     /**
-     * 挖尽停机门禁：游标已初始化且 scanY 到世界底 → 不再锁定并行运行数/消耗能量。
+     * 挖尽停机门禁：游标已初始化且 scanY 到世界底时不锁定并行运行数、不消耗能量。
      * 游标未初始化（首次放置/旧存档）时放行，首个 applyEffect 周期会初始化游标。
      */
     @Override
@@ -354,7 +354,7 @@ public class QuarryBlockEntity extends RadiusMachineBlockEntity {
 
     @Override
     public boolean cooking() {
-        // 纯容量谓词：输出槽（1..12）无法容纳本周期 B 次操作产出时停机（保留 progress）。
+        // 纯容量谓词：输出槽（3..14）无法容纳本周期 B 次操作产出时停机（保留 progress）。
         if (itemHandler == null) {
             return false;
         }
@@ -402,7 +402,7 @@ public class QuarryBlockEntity extends RadiusMachineBlockEntity {
         if (tool.isEmpty()) {
             return false;
         }
-        // 首次运行 → 初始化游标（尊重存档 scanY，若在合法范围内）
+        // 首次运行从机器 Y-1 初始化游标，不读取存档 scanY。
         if (!scanCursorInitialized) {
             scanCursorInitialized = true;
             initScanCursor();
@@ -596,7 +596,7 @@ public class QuarryBlockEntity extends RadiusMachineBlockEntity {
             // 仅服务端扫描路径调用；ServerChunkCache.getChunk(…, requireChunk=false) 不触发同步加载
             chunk = ((ServerLevel) level).getChunkSource().getChunk(x >> 4, z >> 4, ChunkStatus.FULL, false);
             if (chunk == null) {
-                return null; // chunk 未加载
+                return null;
             }
             cache.put(key, chunk);
         }
@@ -638,12 +638,11 @@ public class QuarryBlockEntity extends RadiusMachineBlockEntity {
     }
 
     /**
-     * 首次运行初始化游标：一律从自身下方一格起扫。
+     * 首次运行初始化游标：从机器 Y-1 与扫描区西北角起扫，不读取存档 {@code scanY}，
+     * 避免新机器的默认值 0 在低处落入合法区间后从 y=0 开始扫描。
      * <p>
-     * 两条都不能加回来：① 不信任存档里的 {@code scanY}——新机器的默认值是 0，机器放得低时
-     * 它恰好落在合法区间内，扫描会从 y=0 开始而不是自身下方；② 起手不做不限步跳层——
-     * 机器悬空（高塔、浮空平台）时那会一步甩到几十层以下的地面。空气层之后由
-     * {@link #advanceCursorInLayer()} 按 {@link #MAX_LAYER_SKIP} 限步跳过。
+     * 首轮不做不限步跳层；后续极速或全空气层探测最多跳过 {@link #MAX_LAYER_SKIP} 层，
+     * 避免悬空机器一开始就跳到几十层以下。
      */
     private void initScanCursor() {
         scanY = worldPosition.getY() - 1;

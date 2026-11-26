@@ -161,7 +161,7 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
     public int offsetZ = 0;
     /**
      * 当前可调节半径上限（半单位）：{@link #baseRangeCap()} 打底、范围升级每张 ×2，
-     * 硬上限 {@link #ADJUST_RANGE_MAX}；由 {@code resetUpgradeEffects() + applyUpgradeEffects()} 每 tick 重算。
+     * 硬上限 {@link #ADJUST_RANGE_MAX}；由 {@code resetUpgradeEffects() + applyUpgradeEffects()} 在事件或配置重算时更新。
      */
     @DescSynced
     @LazyManaged
@@ -184,11 +184,8 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
     @LazyManaged
     public boolean useEnchantments = true;
 
-    // Face config for client display — server-authoritative mirror, rebuilt from faceMode
-    // maps in readTileData/doBaseData. NOT @Persisted (derived data; persistence lives in the
-    // faceMode maps via dire* keys). NOT @DescSynced: int[] sync is unreliable (initial sync
-    // fails, client keeps defaults until first manual sync) — instead buildMachineUI() pushes
-    // all faces on GUI open, and syncAllFacesToClients() pushes on every change.
+    // 服务端权威的面配置客户端镜像，由 readTileData/doBaseData 从 faceMode 重建。
+    // 不持久化、不走 @DescSynced：int[] 首次同步不可靠，GUI 打开与每次变更时主动全量推送。
     public int[] energyFaceData = new int[6];
     public int[] itemFaceData = new int[6];
     public int[] fluidFaceData = new int[6];
@@ -240,7 +237,7 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
     /** 是否已安装 LevelupSyn（光合注能）。 */
     public boolean photosynInstalled = false;
     /**
-     * 并行运行升级计数（Shulker +3 / Power +1）。服务端 doBaseData 每 tick 计算；
+     * 并行运行升级计数（Shulker +3 / Power +1）。服务端在升级效果重算时更新；
      * 客户端 @DescSynced 同步（范围预览 getRangeBoxes 需要读取真实 B）。
      */
     @Persisted
@@ -264,10 +261,7 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
     public double powerMultiplier = 1.0;
     /** 配方模式（Blast/Smoke 升级切换；默认熔炼）。 */
     public int recipeMode = IUpgradableMachine.RECIPE_MODE_SMELTING;
-    /**
-     * 无限能量传输（Stream 升级）。能量收发已不再限速，此标记当前无可观察效果，
-     * 保留待升级内容重构时重新定义。
-     */
+    /** Stream 升级兼容标记；当前能量传输不限速，该字段不改变运行行为。 */
     public boolean unlimitedEnergyTransfer = false;
 
     // ───── Machine fields ─────
@@ -303,9 +297,8 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
 
     public CmMachineBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
-        // 默认面取 initialFaceMode*()：产能类（引擎/单元/创造单元）覆写为主动输出，其余默认被动双向。
-        // 构造期调用可覆写方法有风险——这里所有覆写都只返回 FaceOption 常量，不读子类字段。
-        // 之前硬编码 BOTH 会让「默认面」覆写完全失效：被动面不再主动搬运后，引擎与电池就停止供电。
+        // 默认面取 initialFaceMode*()：普通机器能量面为 BE_IN，物品/流体面为 BOTH；
+        // 产能类能量面覆写为 OUT。构造期覆写只能返回常量，不能读取尚未初始化的子类字段。
         int energyMode = initialFaceModeEnergy();
         int itemMode = initialFaceModeItem();
         int fluidMode = initialFaceModeFluid();
@@ -472,9 +465,7 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         active = a;
         if (level != null) {
             BlockState state = getBlockState();
-            // [修复] BE 已被移除（破坏/替换流程中）时不得回写方块状态——
-            // 否则破坏 setBlock(air) 后 setActive(false) 会把旧 state 写回，
-            // 吞掉破坏（方块变成未连接态而非掉落）
+            // BE 已移除时不得回写方块状态，否则会把破坏位置重新写成未接入方块。
             if (isRemoved()) return;
             if (state.hasProperty(com.modularmc.ten.common.block.machine.BaseMachineBlock.ACTIVE) && state.getValue(com.modularmc.ten.common.block.machine.BaseMachineBlock.ACTIVE) != a) {
                 level.setBlock(worldPosition,
@@ -559,12 +550,11 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
      *
      * <p>
      * 任意朝向都是<b>双射</b>（六个方向互不重复），包括频道这类六向方块朝上/朝下的情形：
-     * 竖直朝向没有天然的「上」，以北方为向上参考，左右按水平叉积补齐。旧实现把上/下固定成
-     * UP/DOWN，竖直朝向下会与「前/后」落到同一方向——面板上改一个面会连带改另一个面。
+     * 竖直朝向以北方为向上参考，左右按水平叉积补齐，不能直接套用水平朝向的上下方向。
      */
     @Nullable
     public static Direction faceForLogicalSide(Direction facing, int logicalSide) {
-        // 朝上/朝下时没有屏幕意义上的「上」，固定取北方；水平朝向沿用世界 UP。
+        // 朝上/朝下时没有屏幕意义上的「上」，固定取北方；水平朝向取世界 UP。
         Direction up = facing.getAxis() == Direction.Axis.Y ? Direction.NORTH : Direction.UP;
         // 左 = front × up：水平朝向等价于 facing.getClockWise()（Y 轴朝向调用它会抛异常）。
         Direction left = facing.getAxis() == Direction.Axis.Y ? (facing == Direction.UP ? Direction.WEST : Direction.EAST) : facing.getClockWise();
@@ -1327,7 +1317,7 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
     }
 
     /**
-     * 计算并锁定 B_actual（四维约束取最小，钳位 0..19）。
+     * 计算并锁定 B_actual（四维约束取最小，钳位 0..{@link BatchMath#B_HARD_MAX}）。
      * 若 B_actual < 1 则清锁并返回 false（调用方应取消启动）。
      */
     protected boolean validateAndLockB(int B_theory, int B_byItems, int B_byFluids,
@@ -1437,7 +1427,7 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
     protected void enterIdle() {
         runState = STATE_IDLE;
         idleProbeCountdown = idleProbePeriod();
-        // 待机不再采样耗能：清空滑动窗口，否则面板「当前能量消耗」永久停在进待机前的平均值。
+        // 待机不采样耗能：清空滑动窗口，避免面板停留在进入待机前的平均值。
         Arrays.fill(energyUseSamples, 0);
         energyUseSampleIndex = 0;
         energyUseThisTick = 0;
@@ -1559,11 +1549,10 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         doBaseDataFast();
     }
 
-    /** 重算段：事件驱动，不再每 tick 执行。 */
+    /** 重算段：仅由事件或配置变化触发。 */
     private void doBaseDataHeavy() {
         resetUpgradeEffects();
-        // ── 单次 apply：每周期重置后仅应用一次（旧版双重 apply
-        // 使乘子升级效果平方化、radius/batch 每 tick 累加）──
+        // 每次重算先重置，再应用一次升级效果。
         applyUpgradeEffects();
 
         // ── 理论 B 并行运行数缩放储能：批量升级后每 tick 总能耗 fePerTick =
@@ -1638,8 +1627,7 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
 
     /** 每 tick 重算的低频 @LazyManaged 字段：值比较后置脏。 */
     private void pushLazyIfChanged() {
-        // 三个高频镜像也走值比较：BLOCKED（缺能/断信号）时它们不变，置脏会让整台机器每 tick 发包；
-        // 历史探针记载过 LDLib2 自动值比较不生效，所以这里不信自动比较、自己比一次。
+        // 高频镜像显式比较后置脏，避免 BLOCKED（缺能/断信号）时每 tick 发包。
         if (progress != lastProgress) {
             lastProgress = progress;
             markDirty("progress");
@@ -1809,7 +1797,7 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
                 if (installed.category() == UpgradeCategory.TIER) tiers++;
             }
         }
-        // 单机数量上限由升级组件自己声明（光合供能抑制等），不再逐卡硬编码
+        // 单机数量上限由升级组件自己声明（光合供能抑制等）。
         if (sameKind >= upgradeItem.maxPerMachine()) return false;
         // 冲突在放入时拦截，不靠 tooltip 声明：整合组件的全局倍率与独特组件的唯一效果
         // 整机各只能有一个，槽里已有同类时直接拒绝插入（含同卡重复）。旧存档里
@@ -1849,7 +1837,7 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
     }
 
     /**
-     * 三类别结算（每 tick 由 {@link #doBaseData()} 在重置后调用一次）：
+     * 三类别结算（每次事件或配置重算时由 {@link #doBaseDataHeavy()} 在重置后调用一次）：
      * 整合组件取最高档、独特组件取第一个、增益组件线性叠加。
      * 放入阶段已经拦住了第二张整合组件 / 独特组件卡，这里的「取最高档 / 取第一个」只是
      * 旧存档、导入库存等绕过校验的多张残留的兜底，不承担互斥语义。
@@ -1995,9 +1983,7 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
     // Capability access
     /**
      * 面 capability 缓存（6 面 + null 面，按 {@link Direction#get3DDataValue()} 索引）。
-     * 相邻设备（漏斗/管道/AE2）每 tick 都会查 capability，原先每次 new 一个匿名包装对象，
-     * 高密度场景下持续产生垃圾。缓存实例行为等价——匿名类读的都是本 BE 的实时字段
-     * （itemHandler/energyStorage/maxStorageEnergy/side），不持有任何快照值。
+     * 包装实例读取本 BE 的实时字段，不持有内容快照。
      */
     private final IEnergyStorage[] energyCaps = new IEnergyStorage[7];
     private final IItemHandler[] itemCaps = new IItemHandler[7];
@@ -2188,10 +2174,8 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
     }
 
     /**
-     * 服务端：全量推送 6 升级槽到追踪客户端（对齐 syncAllFacesToClients 的 RPC 模式）。
-     * 背景：客户端 BE 的 readTileData 恒收到空 tag（探针实证，LDLib2 接管同步只走 @DescSynced/RPC），
-     * writeTileData 数据不经更新包到客户端，升级槽（非 @DescSynced 引用 handler）客户端恒空——
-     * 故用已验证的 rpcToTracking 通道推送 ItemStack（RPCMethodMeta 经 AccessorRegistries 序列化，支持 ItemStack）。
+     * 服务端：全量推送 6 升级槽到追踪客户端。
+     * LDLib2 客户端同步不发送 writeTileData 内容，升级槽须经 rpcToTracking 推送 ItemStack。
      */
     private void syncUpgradesToClients() {
         if (level == null || level.isClientSide() || upgradeHandler == null) {
@@ -2216,7 +2200,7 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
         }
     }
 
-    /** C→S：升级面板打开时客户端请求全量升级数据（服务端回复单播）。 */
+    /** C→S：升级面板打开时客户端请求全量升级数据，服务端向追踪客户端广播。 */
     @RPCMethod
     public void rpcRequestUpgradeData(RPCSender sender) {
         if (sender.isRemote() && sender.asPlayer() != null) {
@@ -2289,24 +2273,16 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
             }
         }
         if (upgradeHandler != null) {
-            // 空 tag 守卫：LDLib2 GUI 同步以空 tag 反复触发 readTileData，deserialize 空 tag
-            // 会清空客户端升级数据（RPC rpcSyncUpgradeData 刚推送的物品立即被抹掉，探针实证
-            // 21:07:58.324 推送生效 / .346 被清）；对齐上方 itemHandler 的 !invTag.isEmpty() 守卫
+            // GUI 空同步不得反序列化升级数据，否则会清空 RPC 刚推送的客户端镜像。
             CompoundTag upgTag = tag.getCompound("upgrades");
             if (!upgTag.isEmpty()) {
                 upgradeHandler.deserializeNBT(registries, upgTag);
             }
         }
         upgradeSize = tag.contains("upgrade_size") ? tag.getInt("upgrade_size") : initialUpgradeSize;
-        // 客户端空同步守卫：LDLib2 GUI 同步以空 tag 反复触发 readTileData，faceMode maps 缺键读 0
-        // 会重置 maps 并经 rebuildFaceData 抹掉 RPC 推送的真实 faceData（面配置按钮调整后闪烁显示
-        // 应有状态又回退默认——与升级槽 deserialize 空 tag 清空同构）；writeTileData 恒写全部面配置，
-        // 仅当 tag 含面配置键（真实存档/更新包）时才应用
+        // 仅真实存档/更新包应用面配置；GUI 空同步缺键时不能把 RPC 镜像重置为 0。
         boolean hasFaceConfig = tag.contains("direEnergy" + Direction.NORTH.get3DDataValue());
-        // level null-safe：loadAdditional（存档加载）阶段 Minecraft 尚未 setLevel（level==null），
-        // 原直接解引用会在每次存档加载时 NPE → MC 吞错并 skip 整批 BE（数据丢失）→
-        // 下游 LDLib2 ReadOnlyManagedRef 读 null 硬崩。语义：loadAdditional 时 level 为 null
-        // 但必为真实存档（应用分支）；GUI 空同步仅发生在已在世界的 BE（level 非空）。
+        // 存档加载时 level 尚未绑定，按服务端存档处理；GUI 空同步只发生在已入世界的 BE。
         boolean clientSide = level != null && level.isClientSide();
         if (!clientSide || hasFaceConfig) {
             for (Direction direction : Direction.values()) {
@@ -2372,12 +2348,12 @@ public abstract class CmMachineBlockEntity extends CmBlockEntity implements IUpg
             tag.putInt("direItem" + direction.get3DDataValue(), itemFaceMode.getOrDefault(direction, initialFaceModeItem()));
             tag.putInt("direFluid" + direction.get3DDataValue(), fluidFaceMode.getOrDefault(direction, initialFaceModeFluid()));
         }
-        // 写入即视为已迁移：下次读档不再触发面语义改写
+        // 写入即视为已迁移，后续读档不重复改写面语义。
         tag.putInt(FACE_SEMANTICS_KEY, FACE_SEMANTICS_ENERGY_DIRECTIONS);
         saveSerializedHandlers(tag, registries);
     }
 
-    // ───── @RPCMethod: 替换自定义网络包 ─────
+    // ───── RPC 入口 ─────
     /** C→S: 切换红石模式 */
     @RPCMethod
     public void rpcSetRedstoneMode(RPCSender sender, int mode) {

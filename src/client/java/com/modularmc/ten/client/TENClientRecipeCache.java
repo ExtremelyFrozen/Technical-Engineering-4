@@ -19,12 +19,10 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * Client-only cache of TEN machine recipes received from the server via
- * NeoForge's {@link RecipesUpdatedEvent}.
+ * 客户端机器配方缓存，通过 NeoForge 的 {@link RecipesUpdatedEvent} 接收服务端同步的配方。
  * <p>
- * 1.21.1 适配：使用 {@link RecipesUpdatedEvent}（仅含 getRecipeManager）而非
- * 26.1.2 的 {@code RecipesReceivedEvent}（含 getRecipeTypes/getRecipeMap）。
- * 完整性检查通过 {@link RecipeManager#getAllRecipesFor(RecipeType)} 逐类型验证。
+ * 完整性检查通过 {@link RecipeManager#getAllRecipesFor(RecipeType)} 逐类型验证；
+ * 任一目标类型尚未收到配方时不接受快照。
  */
 public final class TENClientRecipeCache {
 
@@ -81,7 +79,7 @@ public final class TENClientRecipeCache {
         RecipeManager recipeManager = event.getRecipeManager();
         if (recipeManager == null) return;
 
-        // 1.21.1 适配：逐类型检查完整性（无 getRecipeTypes）
+        // 逐类型检查完整性。
         for (var type : TARGET_TYPES) {
             var recipes = recipeManager.getAllRecipesFor((RecipeType) type);
             if (recipes == null || recipes.isEmpty()) {
@@ -90,7 +88,6 @@ public final class TENClientRecipeCache {
             }
         }
 
-        // All target types received — accept snapshot
         Map<RecipeType<?>, List<FormsCombinedRecipe>> newCache = new HashMap<>();
         for (var type : TARGET_TYPES) {
             List<FormsCombinedRecipe> recipes = collectRecipes(recipeManager, type);
@@ -127,7 +124,6 @@ public final class TENClientRecipeCache {
         }
     }
 
-    // Package-private for use by TENJeiPlugin
     public static JeiSyncState getState() {
         return STATE;
     }

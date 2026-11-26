@@ -51,7 +51,7 @@ public class FormsCombinedIngredient {
     }
 
     /**
-     * 输出掷骰次数（1.21.1 配方无此字段时恒 1；与 26.1.2 无 rolls 配方一致）。
+     * 输出掷骰次数；配方未声明 {@code rolls} 时恒为 1。
      */
     public int rolls() {
         return rolls;

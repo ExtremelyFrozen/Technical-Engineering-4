@@ -19,13 +19,10 @@ import java.util.concurrent.CompletableFuture;
  * {@code data/kenergyengineering/recipe/engine_fuel/*.json}。
  *
  * <p>
- * 生成后这些 JSON 就是运行期的唯一事实源（{@code EngineFuels} 直接读配方），
- * 代码里不再保留任何物品 / 标签表；数据包或 KubeJS 覆盖同名文件即可改数值。
- *
+ * 生成的 JSON 是运行期事实源（{@code EngineFuels} 直接读配方），数据包或 KubeJS 覆盖同名文件即可改数值。
  * <p>
- * 每条配方只声明<b>持续时间</b>与<b>FE/t 修正倍率</b>：产出率由引擎额定功率乘修正倍率算出。
- * 这里的耗时按旧口径 {@code ceil(能量密度 × 原版燃烧 tick ÷ 引擎额定)} 反向排出，
- * 因此迁移后玩家可见的能量总量与持续时间逐位不变。
+ * 每条配方声明<b>持续时间</b>与<b>FE/t 修正倍率</b>：产出率由引擎额定功率乘修正倍率算出。
+ * 持续时间按 {@code ceil(能量密度 × 原版燃烧 tick ÷ 引擎额定)} 计算。
  */
 public class TENFuelGen implements DataProvider {
 
@@ -34,7 +31,7 @@ public class TENFuelGen implements DataProvider {
     private static final int METAL_RATE = 80;
     private static final int BIOMASS_RATE = 80;
 
-    // 能量密度（FE / 原版燃烧 tick），只用于把旧数值折算成持续时间
+    // 能量密度（FE / 原版燃烧 tick），用于计算持续时间。
     private static final int EXTRACTOR_DENSITY = 20;
     private static final int METAL_DENSITY = 20;
     private static final int BIOMASS_DENSITY = 60;
@@ -100,14 +97,14 @@ public class TENFuelGen implements DataProvider {
         };
     }
 
-    /** 持续时间 = ceil(能量密度 × 燃烧 tick ÷ 引擎额定)，与旧版 FuelProfile 的换算逐位一致。 */
+    /** 持续时间 = ceil(能量密度 × 燃烧 tick ÷ 引擎额定)，至少为 1 tick。 */
     private static int durationOf(int density, int burnTicks, int rate) {
         int budget = density * burnTicks;
         return Math.max(1, (budget + rate - 1) / rate);
     }
 
     // ══════════════════════════════════════════════════════════════════
-    // 默认燃料表（迁移自旧 MatchFuel 的硬编码表，数值不变）
+    // 默认燃料表。
     // ══════════════════════════════════════════════════════════════════
 
     private static List<Fuel> fuels() {

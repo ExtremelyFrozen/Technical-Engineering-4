@@ -27,10 +27,9 @@ import net.neoforged.testframework.annotation.TestHolder;
  * getStackInSlot / getFluidInTank 必须真实反映机器状态；只有写入与抽取受面权限门控。
  *
  * <p>
- * 反例来源：AE2 样板供应器的阻挡模式（PatternProviderLogic 的
- * {@code adapter.containsPatternInput(patternInputs)}）经 ExternalStorageFacade#getAvailableStacks
- * 逐槽 getStackInSlot 判定「上一批配方是否仍在目标机器里」。若机器/频道机在不可抽取面把读取一并藏空，
- * 供应器永远认为目标为空 → 阻挡失效、连发配方把机器塞满。
+ * AE2 样板供应器的阻挡模式（PatternProviderLogic 的 {@code adapter.containsPatternInput(patternInputs)}）
+ * 经 {@code ExternalStorageFacade#getAvailableStacks} 逐槽调用 {@code getStackInSlot}，判断上一批配方
+ * 是否仍在目标机器里；因此不可抽取面也不能把观察读藏空。
  */
 @GameTestHolder(TEN.MOD_ID)
 public class MachineFaceExposureGameTest {
@@ -56,7 +55,6 @@ public class MachineFaceExposureGameTest {
             return;
         }
 
-        // 观察读必须真实：AE2 阻挡模式据此判断上一批是否仍在机器内
         helper.assertTrue(!view.getStackInSlot(0).isEmpty(),
                 "OUT face must expose slot contents to external readers (AE2 blocking mode reads getStackInSlot)");
         // 插入/抽取权限不变：主动输出面仍可被塞入、仍不允许外部抽取
@@ -136,7 +134,7 @@ public class MachineFaceExposureGameTest {
             helper.fail("Expected the channel machine to join the test channel");
             return;
         }
-        // join 在后续 tick 生效，故断言延到 tick 2（与既有频道用例同节奏）
+        // join 在后续 tick 生效，故断言延到 tick 2。
         helper.runAtTickTime(2, () -> {
             if (channel.sharedStorage() == null) {
                 helper.fail("Expected the channel machine to be attached to a shared storage");
@@ -204,7 +202,6 @@ public class MachineFaceExposureGameTest {
         });
     }
 
-    /** 放置精炼机并完成机器初始化；失败时返回 null（已 fail）。 */
     private static CmMachineBlockEntity placeRefiner(GameTestHelper helper) {
         helper.setBlock(MACHINE_POS, TENBlocks.MACHINE_REFINER.get());
         CmMachineBlockEntity machine = helper.getBlockEntity(MACHINE_POS);
@@ -216,7 +213,6 @@ public class MachineFaceExposureGameTest {
         return machine;
     }
 
-    /** 取被测机器面 capability（物品）；失败时返回 null（已 fail）。 */
     private static IItemHandler machineFace(GameTestHelper helper) {
         IItemHandler view = helper.getLevel().getCapability(Capabilities.ItemHandler.BLOCK,
                 helper.absolutePos(MACHINE_POS), VIEW_SIDE);

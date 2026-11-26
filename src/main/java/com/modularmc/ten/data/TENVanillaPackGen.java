@@ -18,10 +18,9 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Auto-generates compressor pack/split recipes for vanilla items.
+ * 为原版物品生成压缩机压缩与拆分配方。
  * <p>
- * Separate from {@link TENRecipeGen} to avoid polluting mod material logic
- * with vanilla-specific mappings.
+ * 与 {@link TENRecipeGen} 分开维护，原版物品映射不混入模组材料逻辑。
  */
 public class TENVanillaPackGen implements DataProvider {
 
@@ -40,22 +39,22 @@ public class TENVanillaPackGen implements DataProvider {
         List<CompletableFuture<?>> futures = new ArrayList<>();
 
         for (var p : PACK_9TO1) {
-            // compress: 9 unit → 1 block/ingot
+            // 压缩：9 单位 → 1 方块或锭。
             futures.add(saveJson(cache, recipeDir.resolve(
                     "cp_" + key(p.unit) + ".json"),
                     buildVanilla(p.unit, p.result, 9, 1, "mould_compressed_large")));
-            // split: 1 block/ingot → 9 unit
+            // 拆分：1 方块或锭 → 9 单位。
             futures.add(saveJson(cache, recipeDir.resolve(
                     "sp_" + key(p.result) + ".json"),
                     buildVanilla(p.result, p.unit, 1, 9, "mould_split")));
         }
 
         for (var p : PACK_4TO1) {
-            // small compress: 4 unit → 1 block
+            // 小型压缩：4 单位 → 1 方块。
             futures.add(saveJson(cache, recipeDir.resolve(
                     "cp4_" + key(p.result) + ".json"),
                     buildVanilla(p.unit, p.result, 4, 1, "mould_compressed_small")));
-            // split: 1 block → 4 unit
+            // 拆分：1 方块 → 4 单位。
             futures.add(saveJson(cache, recipeDir.resolve(
                     "sp4_" + key(p.result) + ".json"),
                     buildVanilla(p.result, p.unit, 1, 4, "mould_split")));
@@ -79,8 +78,7 @@ public class TENVanillaPackGen implements DataProvider {
         j.addProperty("type", TEN.MOD_ID + ":compressor");
         j.add("inputs", arr(
                 ingr("item", "static", inputId, inputCount, null),
-                // [修复] 模具 chance=0.0 不消耗修饰符——与 TENRecipeGen.buildMouldPack 对齐
-                // （缺失时执行端按普通原料扣量，模具被消耗）
+                // chance=0.0 表示催化位，只参与匹配且不消耗。
                 ingr("item", "static", TEN.MOD_ID + ":" + mould, null, 0.0)));
         j.add("outputs", arr(
                 ingr("item", "static", outputId, outputCount, null)));
@@ -88,18 +86,18 @@ public class TENVanillaPackGen implements DataProvider {
         return j;
     }
 
-    // ── Data definitions ──────────────────────────────────────────────
+    // ── 数据定义 ──────────────────────────────────────────────
 
     private record PackFmt(String unit, String result) {}
 
-    /** 9:1 pairs — only entries NOT covered by mod material system (hasBlock/hasNugget+hasIngot). */
+    /** 9:1 配对，仅收录模组材料体系未覆盖的条目（hasBlock/hasNugget+hasIngot）。 */
     private static final List<PackFmt> PACK_9TO1 = List.of(
-            // Nugget → Ingot (9:1): mod hasNugget=true, hasIngot=false → no mod recipe
+            // 粒→锭（9:1）：mod hasNugget=true、hasIngot=false，无模组配方。
             new PackFmt("kenergyengineering:diamond_nugget", "minecraft:diamond"),
             new PackFmt("kenergyengineering:emerald_nugget", "minecraft:emerald"),
             new PackFmt("kenergyengineering:lapis_nugget", "minecraft:lapis_lazuli"),
             new PackFmt("kenergyengineering:quartz_nugget", "minecraft:quartz"),
-            // Ingot → Block (9:1): mod hasBlock=false → no mod recipe
+            // 锭→方块（9:1）：mod hasBlock=false，无模组配方。
             new PackFmt("minecraft:iron_ingot", "minecraft:iron_block"),
             new PackFmt("minecraft:gold_ingot", "minecraft:gold_block"),
             new PackFmt("minecraft:copper_ingot", "minecraft:copper_block"),
@@ -109,12 +107,12 @@ public class TENVanillaPackGen implements DataProvider {
             new PackFmt("minecraft:quartz", "minecraft:quartz_block"),
             new PackFmt("minecraft:netherite_ingot", "minecraft:netherite_block"),
             new PackFmt("minecraft:redstone", "minecraft:redstone_block"),
-            // Raw ore → Block (9:1): vanilla raw ores not covered by mod material system
+            // 粗矿→方块（9:1）：原版粗矿不在模组材料体系内。
             new PackFmt("minecraft:raw_iron", "minecraft:raw_iron_block"),
             new PackFmt("minecraft:raw_gold", "minecraft:raw_gold_block"),
             new PackFmt("minecraft:raw_copper", "minecraft:raw_copper_block"));
 
-    /** 4:1 pairs: unit → block. */
+    /** 4:1 配对：单位 → 方块。 */
     private static final List<PackFmt> PACK_4TO1 = List.of(
             new PackFmt("minecraft:snowball", "minecraft:snow_block"),
             new PackFmt("minecraft:amethyst_shard", "minecraft:amethyst_block"));
@@ -123,7 +121,7 @@ public class TENVanillaPackGen implements DataProvider {
         return id.replace(':', '_');
     }
 
-    // ── JSON helpers ─────────────────────────────────────────────────
+    // ── JSON 辅助方法 ─────────────────────────────────────────────────
 
     private static JsonObject ingr(String form, String type, String key, Integer count, Double chance) {
         var o = new JsonObject();

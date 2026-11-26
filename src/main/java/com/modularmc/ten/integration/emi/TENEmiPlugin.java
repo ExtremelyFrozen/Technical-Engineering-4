@@ -102,7 +102,7 @@ public class TENEmiPlugin implements EmiPlugin {
                     pathMatches,
                     TEN.MOD_ID);
         }
-        // Smelter — uses vanilla RecipeType.SMELTING
+        // 熔炼机使用原版 RecipeType.SMELTING。
         registry.addWorkstation(dev.emi.emi.api.recipe.VanillaEmiRecipeCategories.SMELTING,
                 dev.emi.emi.api.stack.EmiStack.of(com.modularmc.ten.common.data.TENBlocks.MACHINE_SMELTER));
 
@@ -113,8 +113,7 @@ public class TENEmiPlugin implements EmiPlugin {
     }
 
     /**
-     * 物质结晶器的信息页：它没有配方类型（催化剂 + 能量直接换流体），EMI 里原本查不到任何东西。
-     * 把链路说明挂到机器方块、奇异物质、液态奇异物质桶上，查任一个都能看到上游怎么来、下游怎么用。
+     * 为物质结晶器注册信息页：机器方块、奇异物质与液态奇异物质桶共用催化剂 + 能量换流体的链路说明。
      */
     private static void registerCondenserInfo(EmiRegistry registry) {
         List<Component> lines = CondenserBlockEntity.infoPages();
@@ -279,8 +278,7 @@ public class TENEmiPlugin implements EmiPlugin {
     }
 
     private static ResourceLocation recipeId(ResourceLocation categoryId, int index) {
-        // EMI 合成配方约定：路径以 '/' 开头 → EMI 视为 synthetic，跳过 vanilla RecipeManager
-        // 存在性校验（否则报 "not present in recipe manager" ERROR，996 条/次加载）
+        // EMI 合成配方路径以 '/' 开头，使其跳过 vanilla RecipeManager 存在性校验。
         return TEN.id("/" + categoryId.getPath() + "/" + index);
     }
 

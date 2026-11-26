@@ -22,10 +22,8 @@ public final class TENGuideMeClient {
     private TENGuideMeClient() {}
 
     public static void init() {
-        // folder 是跨命名空间内容根（listResources 在每个命名空间下找 assets/<ns>/<folder>/**.md，
-        // 页面 id =「<ns>:folder 内相对路径」含 .md）：与 AE2 共用 ae2guide 会被并进它的目录树
-        // startPage 不写——GuideBuilder 缺省即 <ns>:index.md（AE2/Powah 都不写），
-        // 上一版手写 "index" 少扩展名，取不到页，书打开是空的
+        // folder 是跨命名空间内容根：页面在 assets/<ns>/<folder>/**.md 中查找，
+        // 页面 id 为 <ns>:folder 内相对路径（含 .md）。不设置 startPage，使用 GuideME 缺省的 <ns>:index.md。
         Guide.builder(TEN.id("guide"))
                 .folder("kenergyguide")
                 .register(true)

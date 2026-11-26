@@ -85,7 +85,7 @@ public class HarvestSpecializationGameTest {
         helper.assertTrue(machine.hasUpgrade(LevelupOddGrowth.class), "the installed odd growth card must be visible");
         helper.assertTrue(!machine.hasUpgrade(LevelupReseed.class), "the reseed marker must stay off");
 
-        // 模拟旧档：validator 上线前就已存了两张独特组件
+        // 构造两张独特组件同时存在的旧存档布局。
         machine.upgradeHandler.setStackInSlot(1, TENItems.RESPROUT_LEVELUP.get().getDefaultInstance());
         machine.doBaseData();
         helper.assertTrue(machine.hasUpgrade(LevelupOddGrowth.class),

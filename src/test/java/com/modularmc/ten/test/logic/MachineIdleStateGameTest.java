@@ -23,7 +23,6 @@ public class MachineIdleStateGameTest {
 
     private static final BlockPos MACHINE_POS = new BlockPos(1, 1, 1);
 
-    /** 空机连续 tick 后必须进入待机；待机路径不能抛异常。 */
     @TestHolder(value = TEN.MOD_ID + ":idle_after_empty_ticks", enabledByDefault = true)
     @GameTest(template = "empty_5x5")
     @PrefixGameTestTemplate(false)
@@ -38,7 +37,6 @@ public class MachineIdleStateGameTest {
         helper.succeed();
     }
 
-    /** 物品槽变化经 changeListener 同步唤醒，不需要等到下一次 tick。 */
     @TestHolder(value = TEN.MOD_ID + ":idle_wake_on_item_change", enabledByDefault = true)
     @GameTest(template = "empty_5x5")
     @PrefixGameTestTemplate(false)
@@ -57,7 +55,7 @@ public class MachineIdleStateGameTest {
         helper.succeed();
     }
 
-    /** 待机机器的输入指纹必须能感知「换了一种物品」，`ItemStack.hashCode` 覆盖数量与数据组件。 */
+    /** 输入指纹必须同时感知物品数量与数据组件的变化。 */
     @TestHolder(value = TEN.MOD_ID + ":idle_fingerprint_tracks_stack_identity", enabledByDefault = true)
     @GameTest(template = "empty_5x5")
     @PrefixGameTestTemplate(false)

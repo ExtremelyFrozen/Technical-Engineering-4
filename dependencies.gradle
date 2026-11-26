@@ -9,12 +9,9 @@ dependencies {
     // Registrate
     jarJar(api(forge.registrate.get()))
 
-    // [移除] Configuration 3.1.1 jarJar：其 GUI 仅支持自家 @Config 注解类（全 jar 零处引用
-    // ModConfigSpec，反编译取证），与本项目已迁移至 NeoForge ModConfigSpec 的配置体系不兼容
-    // → 游戏内配置按钮打开空/异型屏幕。改用 NeoForge 内置 ConfigurationScreen（21.1 自带，
-    // 原生支持 ModConfigSpec + ValueSpec.langKey，双语已生成）
+    // 配置界面使用 NeoForge 内置 ConfigurationScreen，支持 ModConfigSpec 与 ValueSpec.langKey。
 
-    // Recipe Viewers
+    // 配方查看器
     compileOnly(forge.bundles.jei)
     compileOnly(forge.emi)
 
@@ -26,32 +23,32 @@ dependencies {
     localRuntime(forge.kubejs)
     localRuntime(forge.rhino)
 
-    // WAILA-likes
+    // WAILA 类信息模组
     compileOnly(forge.jade)
     clientCompileOnly(forge.jade)
 
-    // Rendering / Optimizations
+    // 渲染与优化
     compileOnly(forge.sodium)
     compileOnly(forge.iris)
     compileOnly(forge.modernfix)
 
-    // Curios API (optional - for curio slot support)
+    // Curios API（可选，用于饰品槽支持）
     compileOnly(forge.curios)
     localRuntime(forge.curios)
 
-    // Standard runtime mods //
-    // localRuntime(libs.testframework) // testframework is test-only; keep it off the client runtime
+    // 标准开发运行模组
+    // localRuntime(libs.testframework) // testframework 仅用于测试，不加入客户端运行期
 
     localRuntime(forge.jade)
     localRuntime(forge.spark)
     localRuntime(forge.modernfix)
 
-    // Runtime Recipe Viewers - only enable one at a time.
-    // 用户决策 2026-09：以 JEI 兼容层修补为主，EMI 暂时禁用
+    // 开发运行期配方查看器：同一时间只启用一个，当前选择 JEI。
+    // EMI 仅参与编译，不加入开发运行期。
 //    localRuntime(forge.emi)
     localRuntime(forge.jei.neoforge.impl)
 
-    // Client-only runtime mods //
+    // 客户端专用开发运行模组
     clientLocalRuntime(forge.sodium)
     clientLocalRuntime(forge.iris)
     clientLocalRuntime(forge.modernui)
@@ -61,54 +58,52 @@ dependencies {
     renderNurseCfg(libs.renderNurse)
 
     //////////////////////////////////////////////////////
-    // Runtime mods for dev testing with unclean client //
+    // 开发客户端共存测试用运行模组
     //////////////////////////////////////////////////////
 
     //////////////////////////
     localRuntime(forge.architectury)
     localRuntime("me.shedaniel.cloth:cloth-config-neoforge:15.0.140")
-    // Powah! Rearchitected - dev testing energy mod
+    // Powah! Rearchitected：开发用能量模组
     localRuntime("maven.modrinth:powah:6.2.8-neoforge")
     // 注：Powah 指南书的 GuideME 与 AE2 硬前置同源，统一在下方 AE2 段声明（不重复写坐标）
 
-    // Applied Energistics 2 - dev testing storage/automation mod
+    // Applied Energistics 2：开发用存储与自动化模组
     // 硬前置（读自 ae2-19.2.18.jar 的 META-INF/neoforge.mods.toml）：
     //   neoforge[21.1.169,) / minecraft[1.21.1] / guideme[21.1.1,) —— 缺 GuideME 直接启动失败
-    // 可选集成：jade（dev 已就绪）/ emi（本仓库已禁用）/ theoneprobe（未装）
+    // 可选集成：jade（dev 已就绪）/ emi（仅编译，未加入开发运行期）/ theoneprobe（未装）
     // compileOnly：集成代码可引用 appeng/guideme API（运行时是否在场需自判，前端仍不硬依赖）；
     // localRuntime：dev 跑图/GameTest 实测用
     compileOnly(forge.ae2)
     compileOnly(forge.guideme)
     localRuntime(forge.ae2)
     localRuntime(forge.guideme)
-    // AE2 自 1.21 起移除自带 JEI 集成（官方转用 EMI），由该桥接模组补回 JEI 侧
-    // （机器配方 / 幽灵物品拖拽 / 终端与 JEI 搜索同步）；自身前置仅 ae2 + jei，dev 环境已就绪。
+    // AE2-JEI Integration 提供 JEI 侧桥接：机器配方、幽灵物品拖拽、终端与 JEI 搜索同步。
+    // 前置为 AE2 与 JEI；开发运行期已同时提供。
     // 上游：CurseForge 项目 1074338（作者 Tamaized + mezz）/ github.com/Tamaized/AE2-JEI-Integration
-    // 注意：本模组硬依赖 jei（required / side=BOTH）——若按上方「only enable one at a time」切到 EMI，
+    // 注意：本模组硬依赖 jei（required / side=BOTH）——若按上方「同一时间只启用一个」切到 EMI，
     // 必须同时移除本行，否则 dev 侧因缺 jei 前置直接启动失败
     localRuntime(forge.ae2jeiintegration)
 
-    // AE2 Pattern Disk (dev testing) + its required AE2WTLib
+    // AE2 Pattern Disk（开发测试）及其硬前置 AE2WTLib
     localRuntime(forge.ae2patterndisk)
     localRuntime(forge.ae2wtlib)
 
-    // FTB Library (dev testing); Architectury 13.0.11+ is required
+    // FTB Library（开发测试）；需要 Architectury 13.0.11+
     localRuntime(forge.ftblibrary)
 
-    // NEO ECO AE Extension —— 用 21.2.18。
-    // 21.2.13 的 ldlib.AsyncThreadDataMixin 按 LDLib2 2.2.44 的 CopyOnWriteArrayList.add
-    // 注入且 require 跟随 defaultRequire=1；2.2.45 改成 Map 后加载期直接 InjectionError。
-    // 当前仓库把 LDLib2 固定在 2.2.44，让该 mixin 真正生效而不是被 21.2.18 的 require=0 静默跳过；
-    // ECO jarJar 内嵌的 Registrate 已对齐 1.4.8，与本项目和 dev 模块路径不再冲突。
+    // NEO ECO AE Extension 21.2.18。
+    // LDLib2 2.2.44 满足 ECO 21.2.18 的 AsyncThreadData mixin API；
+    // ECO 内嵌 Registrate 已对齐 1.4.8，与本项目及开发运行期一致。
     localRuntime(forge.neoecoae)
 
     // Ender IO（EIO）+ EIO 进化（Ender IO: Evolution）—— dev 共存与配方/管道对照
     // 硬前置（读自各 jar 的 META-INF/neoforge.mods.toml）：
-    //   enderio: neoforge 21.1.216（我们在 21.1.243）+ endercore 8.2.12-beta —— EnderCore 已随
+    //   enderio: neoforge 21.1.216+ / endercore 8.2.12-beta —— EnderCore 已随
     //     单体 jar jarJar 内嵌（META-INF/jarjar/com.enderio.endercore-*.jar），不用另声明坐标
     //   enderio_conduit_opt 1.1.6: enderio[8.2.11-beta,)（进化版硬依赖它，故三件一起装）
     //   enderio_evolution 3.1.5: enderio[8.2.7-beta,) + enderio_conduit_opt[1.0.3-1.21.1,)
-    // 可选集成 ftbultimine / mekanism 未装，缺场不报错
+    // 可选集成 ftbultimine 未安装；Mekanism 已加入开发运行期，缺场不报错。
     localRuntime(forge.enderio)
     localRuntime(forge.enderioconduitopt)
     localRuntime(forge.enderioevolution)
@@ -116,16 +111,16 @@ dependencies {
     // Mekanism + Immersive Engineering —— 兼容层的标签解析优先级里要用到它们的材料家族
     // （c:dusts/lead、c:raw_materials/osmium 等由 MEK 提供，铝粉一类仍无人提供）
     // 硬前置（读自各 jar 的 META-INF/neoforge.mods.toml）：
-    //   mekanism: minecraft[1.21.1] / neoforge[21.1.194,) / jei[19.19.0.219,) —— 我们 243 + JEI 19.64 ✓
-    //   immersiveengineering: minecraft[1.21.1] / neoforge[21.1.164,) / jei[19.10.0.126,) ✓
+    //   mekanism: minecraft[1.21.1] / neoforge[21.1.194,) / jei[19.19.0.219,)
+    //   immersiveengineering: minecraft[1.21.1] / neoforge[21.1.164,) / jei[19.10.0.126,)
     localRuntime(forge.mekanism)
     localRuntime(forge.immersiveengineering)
 
     // ATO - All the Ores（mod id alltheores，ATM 系的矿石统一）+ Allthemodium（ATM 顶级金属）
     // 硬前置（读自各 jar 的 META-INF/neoforge.mods.toml）：
     //   alltheores: neoforge[21.1.0,) / minecraft[1.21.1,1.22) ✓
-    //   allthemodium: neoforge[21.1.195,) / minecraft[1.21.1,) / geckolib[4.7.5.1,) —— 实测缺 GeckLib
-    //     会在预加载期直接 FATAL「Mod allthemodium requires geckolib 4.7.5.1 or above」，故一并装上
+    //   allthemodium: neoforge[21.1.195,) / minecraft[1.21.1,) / geckolib[4.7.5.1,)
+    //     GeckoLib 是硬前置，开发运行期一并提供。
     //   三者都没有 jarJar 内嵌，不会与我们的 Registrate 1.4.8 撞导出
     // 作用：给兼容层的标签解析补上 silver/zinc/iridium/platinum 家族与 allthemodium 系金属
     localRuntime(forge.alltheores)
@@ -136,8 +131,8 @@ dependencies {
     // compat.providerPriority 需要实测改值生效）。它的 Config 按钮与 NeoForge 自带 Mods 界面
     // 读的是同一个扩展点 IConfigScreenFactory，因此本模组在 TENClientSetup 里注册
     // ConfigurationScreen::new 才是关键，本模组不把它当依赖。
-    // Better ModList 未选：CF 上标到 1.21.1 的 fileId 无法核实，且其配置界面依赖额外的
-    // config-screen 库；Mod Menu 该版本 MIT、无声明前置。
+    // Better ModList 未选：1.21.1 fileId 无法核实，且配置界面额外依赖 config-screen。
+    // 当前 Mod Menu 版本为 MIT，无声明前置。
     localRuntime(forge.modmenu)
 
     // 万象担架 + 硬前置无用之物：dev 侧复现掉落物吸收与通配模具兼容。
@@ -145,7 +140,7 @@ dependencies {
     localRuntime(forge.uselessmod)
     localRuntime(forge.uselessstretcher)
 
-    // 星辉魔法（水晶石矿石的 player_nearby 掉落条件需要实机复现）。
+    // 星辉魔法：为水晶石矿石的 player_nearby 掉落条件提供开发运行环境。
     // ObserverLib 是它的硬前置；Curios 已由上面的 forge.curios 提供，排除 POM 里的
     // Maven 坐标以免 dev 类路径上出现两份 Curios。
     localRuntime(forge.astralsorcery) {

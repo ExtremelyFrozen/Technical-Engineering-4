@@ -43,11 +43,8 @@ public class CondenserBlockEntity extends ProcessingMachineBlockEntity {
     }
 
     /**
-     * Counter tracking successful processing ticks for periodic catalyst
-     * consumption. Every 20 processing ticks, one catalyst is consumed.
-     * Initialized to 20 so the first processing tick immediately consumes
-     * (matching the old {@code getAliveTime() % 20 == 0} behavior where
-     * tick 0 triggered consumption).
+     * 成功处理 tick 计数器：每累计 20 个成功处理 tick 消耗 1 个催化剂。
+     * 初值为 20，使首个成功处理 tick 立即消耗。
      */
     private int catalystTickCounter = 20;
 
@@ -91,7 +88,7 @@ public class CondenserBlockEntity extends ProcessingMachineBlockEntity {
     @Override
     public ModularUI createUI(BlockUIMenuType.BlockUIHolder holder) {
         return buildMachineUI(holder, TENMachineBlockUIFactory.backgroundFor(machineType()), root -> {
-            // 输入槽 (79,32)：中心 x=88 与宽进度条竖中线 (48+40) 对齐（翻新时 79→39 左移导致偏离，恢复）；
+            // 输入槽 (79,32)：中心 x=88 与宽进度条竖中线 (48+40) 对齐；
             // y=32 中心 41 符合主区中线，与流体槽 (143,17) 中心 42 协调
             root.addChild(TENMachineBlockUIFactory.machineSlotModular(this, 0, 79, 32));
         }, root -> {
@@ -114,10 +111,7 @@ public class CondenserBlockEntity extends ProcessingMachineBlockEntity {
         // B_byInput: catalyst must be present for any processing
         boolean hasCatalyst = !itemHandler.getStackInSlot(0).isEmpty();
 
-        // If catalyst is gone and we had a lock, clear it.
-        // NOTE: 催化剂耗尽即暂停（清锁返回 false）为接受现状，不改暂停语义：
-        // 最低生成速率规格 0.001 mB/s 远低于实际 0.1 mB/s，
-        // 暂停导致的平均速率下降不构成速率违约（用户以最低速率规格确认）。
+        // 催化剂耗尽即清锁停机；最低生成速率规格 0.001 mB/s 低于本机基础速率 0.1 mB/s。
         if (!hasCatalyst) {
             clearLockedBatch();
             return false;
@@ -158,7 +152,7 @@ public class CondenserBlockEntity extends ProcessingMachineBlockEntity {
         int B = getLockedBatchSize();
         FluidStack produced = new FluidStack((net.minecraft.world.level.material.Fluid) TENFluids.LIQUID_BIZARRERIE.getSource(), 5 * B);
         if (tanks.isEmpty() || tanks.get(0).fill(produced, IFluidHandler.FluidAction.SIMULATE) < produced.getAmount()) {
-            return true; // tank full → block processing
+            return true;
         }
         return false;
     }
@@ -167,7 +161,7 @@ public class CondenserBlockEntity extends ProcessingMachineBlockEntity {
     protected void onProcessTick() {
         // 催化剂消耗：每 20 个成功处理 tick 消耗 1 个。
         // 仅在实际处理（能量已扣、进度已推进）的 tick 消耗；停机/受阻 tick 不消耗。
-        // 单催化剂/周期（不随 B 倍增），与旧语义一致。
+        // 单催化剂/周期，不随 B 倍增。
         catalystTickCounter++;
         if (catalystTickCounter >= 20) {
             catalystTickCounter = 0;

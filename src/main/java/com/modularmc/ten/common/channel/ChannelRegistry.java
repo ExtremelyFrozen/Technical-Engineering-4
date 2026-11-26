@@ -31,7 +31,7 @@ import java.util.Set;
  * 成员跟踪：每个频道维护已接入成员集合（{@code 维度:坐标} 标识），join/leave 幂等；
  * 成员数=集合大小，驱动 {@link SharedStorage} 动态容量。
  * <p>
- * 1.21.1 适配：SavedDataType/Codec → SavedData.Factory + CompoundTag（loadAdditional/saveAdditional）。
+ * 反序列化由 {@link #FACTORY} 的 deserializer 调用 {@link #loadFromNbt} 完成。
  */
 public final class ChannelRegistry extends SavedData {
 
@@ -142,7 +142,7 @@ public final class ChannelRegistry extends SavedData {
         return true;
     }
 
-    // ───── 持久化（1.21.1 NBT）─────
+    // ───── 持久化 ─────
 
     @Override
     public CompoundTag save(CompoundTag tag, HolderLookup.Provider registries) {
@@ -165,10 +165,7 @@ public final class ChannelRegistry extends SavedData {
         return tag;
     }
 
-    /**
-     * 从 NBT 恢复（Factory deserializer 调用；1.21.1 的 SavedData 无 loadAdditional 钩子，
-     * 加载逻辑全部在 deserializer 侧完成）。
-     */
+    /** 从 NBT 恢复频道与共享存储，由 {@link #FACTORY} 的反序列化器调用。 */
     private void loadFromNbt(CompoundTag tag, HolderLookup.Provider registries) {
         ListTag channels = tag.getList("channels", Tag.TAG_COMPOUND);
         for (int i = 0; i < channels.size(); i++) {

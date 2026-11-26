@@ -17,12 +17,8 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * 物品网络（移植自 TE4-New，按目标工程语义裁剪）：成员图持久维护，
- * 每 5 tick 由网络对象自身执行一轮「source → 即时搬运到 sink」（网络单例驱动，无重复搬运）。
- * New 版的逐跳运输（TransitEntry/RouteFinder/运输动画）未移植——
- * 本工程管道不透明且保留即时传送语义；搬运结构直译旧版 processNetwork。
- * 连接模式门控（对齐 TE4-New 基准）：源边 ==PULL 才主动从设备抽取（默认 NORMAL 不主动抽，
- * 须扳手显式切 PULL）；受端边 isPushOrNormal（NORMAL/PUSH 接收投放，PULL 面拒投防抽投冲突）。
+ * 物品网络：成员图持久维护，由网络对象统一执行 source → sink 即时搬运，每 5 tick 使用 gameTime 全局相位。
+ * 源边仅 PULL 主动从设备抽取；受端边仅 PUSH/NORMAL 接收投放，PULL 面拒投以避免抽投冲突。
  */
 public class ItemNetwork extends Network<IItemHandler, ItemNetwork, ItemTransmitter> {
 
@@ -48,22 +44,18 @@ public class ItemNetwork extends Network<IItemHandler, ItemNetwork, ItemTransmit
         if (level == null) {
             return;
         }
-        // 对齐旧版 5 tick 传输节奏（用 gameTime 全局相位，网络重建时相位不重置）
+        // 按 gameTime 的全局 5 tick 相位执行，网络重建不重置相位。
         if (level.getGameTime() % 5 != 0) {
             return;
         }
         lastMoved = false;
 
         boolean moved = false;
-        // 对齐旧版 5 tick 传输节奏（用 gameTime 全局相位，网络重建时相位不重置）——见上。
-        // 受端（投放）门控 isPushOrNormal 语义：NORMAL/PUSH 面接收推送；
-        // 源端（主动抽取）门控 ==PULL 对齐 TE4-New 基准——默认 NORMAL 不主动抽，
-        // 须扳手显式切 PULL 才从该面设备抽物品（见 DuctInteractions 四态循环）。
         outer:
         for (Map.Entry<BlockPos, ItemTransmitter> sourceEntry : positionedTransmitters.entrySet()) {
             ItemTransmitter sourcePipe = sourceEntry.getValue();
             for (Direction sourceDir : Direction.values()) {
-                // 源边：仅显式 PULL 面才主动从设备抽物品（TE4-New 基准；NORMAL 不主动抽）
+                // 源边：仅显式 PULL 面才主动从设备抽物品，NORMAL 不主动抽。
                 if (sourcePipe.getConnectionTypeRaw(sourceDir) != ConnectionType.PULL) {
                     continue;
                 }

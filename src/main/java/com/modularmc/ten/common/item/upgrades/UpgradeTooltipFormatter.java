@@ -45,7 +45,7 @@ public final class UpgradeTooltipFormatter {
 
     /**
      * 整合组件：只给「全局倍率 ×k」这一个关键词行。
-     * 速度 / 耗时 / 耗电三者的变化已由该关键词定义，不再逐项展开；
+     * 速度 / 耗时 / 耗电三者的变化已由该关键词定义，不逐项展开；
      * 整合组件不带并行运行，也就不出并行运行行。
      */
     private static void addTier(List<Component> lines, UpgradeEffect effect) {

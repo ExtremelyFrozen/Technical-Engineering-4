@@ -1,6 +1,6 @@
 jar {
     exclude "**/.cache"
-    // client 源集不显式 from 就进不了主 jar；dev 靠 run 的 sourceSet 绑定掩盖了这个缺口
+    // 主 jar 必须显式包含 client 源集输出。
     from sourceSets.client.output
 }
 
@@ -15,13 +15,12 @@ java {
     withSourcesJar()
 }
 
-// Use delombok'd files for sources
 sourcesJar {
     exclude {
         sourceSets.main.allSource.contains it.file
     }
     from delombok
-    // client 源集不经 lombok，直接给源码即可
+    // client 源集不经 Lombok，直接提供源码。
     from sourceSets.client.allJava
 }
 

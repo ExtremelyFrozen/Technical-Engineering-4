@@ -18,7 +18,7 @@ import java.util.List;
  * 熔炼机三页（smelting/blasting/smoking）的 EMI 配方包装：
  * 输入槽 + 输出槽（ITEM_SLOT_SMALL 底图）+ 进度箭头动画 + 熔炼时间文本。
  * <p>
- * 布局常量与 {@code SmelterJeiCategory} v5 逐坐标一致。自持 {@link RecipeData}
+ * 布局常量与 {@code SmelterJeiCategory} 逐坐标一致。自持 {@link RecipeData}
  * （main 源集可用，不依赖 client 源集的 JEI 类别）。
  */
 public class SmelterEmiRecipe implements EmiRecipe {
@@ -81,7 +81,7 @@ public class SmelterEmiRecipe implements EmiRecipe {
 
     @Override
     public void addWidgets(WidgetHolder widgets) {
-        // 布局与 SmelterJeiCategory v5 一致：输入(25,16) 箭头(64,17) 输出(107,16) 时间(25,38)
+        // 布局与 SmelterJeiCategory 一致：输入(25,16) 箭头(64,17) 输出(107,16) 时间(25,38)
         // EMI customBackground 硬编码 256 图集采样，独立尺寸文件需真实 texW/texH
         widgets.addTexture(TENConstants.ITEM_SLOT_SMALL, INPUT_X, INPUT_Y, 18, 18, 0, 0, 18, 18, 18, 18);
         widgets.addSlot(EmiIngredient.of(

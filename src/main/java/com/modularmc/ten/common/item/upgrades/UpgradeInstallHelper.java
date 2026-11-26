@@ -9,11 +9,10 @@ import org.jetbrains.annotations.Nullable;
 import java.util.function.BiPredicate;
 
 /**
- * Pure-logic helper for upgrade installation operations.
+ * 升级安装的纯逻辑辅助。
  * <p>
- * All methods are stateless and testable without a game environment.
- * Used by {@link com.modularmc.ten.common.block.machine.BaseMachineBlock}
- * for shift-right-click quick-install behavior.
+ * 方法无状态，可在无游戏环境时测试；供
+ * {@link com.modularmc.ten.common.block.machine.BaseMachineBlock} 的普通右键快速安装使用。
  */
 public final class UpgradeInstallHelper {
 
@@ -59,7 +58,6 @@ public final class UpgradeInstallHelper {
         if (slot < 0) return false;
         if (!validator.test(slot, stack)) return false;
 
-        // Insert exactly 1 item
         ItemStack toInsert = stack.copyWithCount(1);
         ItemStack remainder = handler.insertItem(slot, toInsert, false);
         return remainder.isEmpty();

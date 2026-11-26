@@ -52,13 +52,8 @@ import java.util.Objects;
 import java.util.function.Supplier;
 
 /**
- * 升级版 JEI 插件（深度集成）：
- * <ul>
- *   <li>Smelter 三独立页（smelting/blasting/smoking）</li>
- *   <li>引擎燃料三分类（Extractor/Metalizer/Biomass）</li>
- *   <li>机器配方经 TENClientRecipeCache + JeiSyncState 状态机注入</li>
- *   <li>1.21.1 适配：RecipesUpdatedEvent 替代 RecipesReceivedEvent；JEI 19.x API</li>
- * </ul>
+ * JEI 插件：登记熔炼机三页、引擎燃料三页、冷却剂页与机器配方。
+ * 机器配方经 {@code TENClientRecipeCache} 与 {@code JeiSyncState} 协调后注入。
  */
 @JeiPlugin
 public class TENJeiPlugin implements IModPlugin {
@@ -122,9 +117,7 @@ public class TENJeiPlugin implements IModPlugin {
     private record CategoryDef(String name, ResourceLocation id, ItemStack icon) {}
 
     /**
-     * 非机器页面（熔炉桥接、引擎燃料、冷却剂）的登记清单。
-     * 类别与催化剂两处注册共用这一份，不再各写一遍：冷却剂页此前是末尾单独追一行，
-     * 与其余 KER 页面不同组，加页面时只改一处就会漏掉另一处。
+     * 非机器页面（熔炉桥接、引擎燃料、冷却剂）的共享登记清单，供类别与催化剂两处注册使用。
      */
     private record AuxDef(ItemStack icon, mezz.jei.api.recipe.RecipeType<?> type,
             java.util.function.Function<IGuiHelper, IRecipeCategory<?>> category) {}
@@ -195,7 +188,6 @@ public class TENJeiPlugin implements IModPlugin {
             registration.addRecipeCategories(new TENJeiCategory(helper, data.id, type, data.icon));
         }
 
-        // 非机器页面与机器页面同组登记：熔炉桥接、引擎燃料、冷却剂按同一份清单顺序进来
         for (var aux : buildAuxCategories()) {
             registration.addRecipeCategories(aux.category().apply(helper));
         }
@@ -262,9 +254,8 @@ public class TENJeiPlugin implements IModPlugin {
     }
 
     /**
-     * 物质结晶器的信息页。它没有配方类型（催化剂 + 能量直接换流体），JEI 里本来没有任何入口，
-     * 玩家查到「奇异物质」只能看到精炼机的固化配方、看不到流体从哪来——在这里补一条链路说明，
-     * 挂在机器方块、奇异物质、液态奇异物质（桶与流体本体）三处。
+     * 物质结晶器的信息页：它没有 {@code RecipeType}（催化剂 + 能量直接换流体），
+     * 说明挂在机器方块、奇异物质、液态奇异物质桶与流体本体上。
      */
     private static void registerCondenserInfo(IRecipeRegistration registration) {
         Component[] lines = CondenserBlockEntity.infoPages().toArray(Component[]::new);

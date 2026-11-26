@@ -22,13 +22,8 @@ import mezz.jei.api.recipe.RecipeType;
 import mezz.jei.api.recipe.category.IRecipeCategory;
 
 /**
- * 增强版 JEI 机器配方分类，适配 1.21.1：
- * <ul>
- *   <li>使用 modular 素材（ITEM_SLOT_SMALL/FLUID_SLOT）替代默认 slot drawable</li>
- *   <li>集成 TENJeiSlotOverlay（chance/rolls 文本覆盖）</li>
- *   <li>使用 ingredient.tooltipKind() 分类注册 tooltip</li>
- *   <li>取消 getBackground()，改用 draw 中渲染底图</li>
- * </ul>
+ * JEI 机器配方分类：背景在 {@code draw()} 中绘制，槽位覆盖层只显示 chance/rolls 文本。
+ * tooltip 按 {@code ingredient.tooltipKind()} 分类注册。
  */
 public class TENJeiCategory implements IRecipeCategory<FormsCombinedRecipe> {
 
@@ -45,7 +40,7 @@ public class TENJeiCategory implements IRecipeCategory<FormsCombinedRecipe> {
         this.layout = TENRecipeWidget.layout(categoryId);
         this.title = TENRecipeWidget.titleJei(categoryId);
         this.icon = helper.createDrawableItemStack(iconStack);
-        // 槽位底图用 LDLib2 modular 素材族（旧版手工 blit 已弃用）
+        // 槽位底图使用 LDLib2 modular 素材族。
         this.inputSlot = helper.drawableBuilder(TENConstants.ITEM_SLOT_SMALL, 0, 0, 18, 18).setTextureSize(18, 18).build();
         this.fluidSlot = helper.drawableBuilder(TENConstants.FLUID_SLOT, 0, 0, 18, 50).setTextureSize(18, 50).build();
         // 流体槽覆盖层（与 GUI 侧 fluidGaugeModular 同款）：JEI setOverlay 绘制在流体之上——

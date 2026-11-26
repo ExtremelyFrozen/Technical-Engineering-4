@@ -13,9 +13,8 @@ import java.util.UUID;
 import java.util.function.BiFunction;
 
 /**
- * 缓冲型网络基类（移植自 TE4-New）：网络级容量 = 成员容量之和，
+ * 缓冲型网络基类：网络级容量 = 成员容量之和，
  * 全网吞吐 = 各成员吞吐的最小值（木桶效应）。
- * 裁剪：内容液位 scale（无内容渲染）与 chunk 追踪（New 版无消费点的死数据）未移植。
  */
 public abstract class BufferedNetwork<AC, NET extends BufferedNetwork<AC, NET, BUF, T>, BUF, T extends BufferedTransmitter<AC, NET, BUF, T>>
                                      extends Network<AC, NET, T> {

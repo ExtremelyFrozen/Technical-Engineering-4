@@ -33,8 +33,7 @@ public class CoolerBlockEntity extends EffectMachineBlockEntity {
 
     /**
      * 当前冷却剂剩余作用次数。0 表示需要新冷却剂。
-     * 进度栏在客户端求值，故必须 @DescSynced（LDLib2 只同步 @DescSynced/RPC，见
-     * CmMachineBlockEntity#syncUpgradesToClients 的探针结论）。
+     * 进度栏在客户端求值，故必须 {@code @DescSynced}；LDLib2 只同步带该注解或 RPC 的字段。
      */
     @Persisted
     @DescSynced
@@ -142,8 +141,8 @@ public class CoolerBlockEntity extends EffectMachineBlockEntity {
     }
 
     /**
-     * 服务端每 tick 刷新冷却剂状态与客户端镜像。放入/更换冷却剂当刻即完成次数初始化
-     * （旧实现把初始化放在 applyEffect 里，代价是白丢一个完整周期），取出则立即清零。
+     * 服务端每 tick 刷新冷却剂状态与客户端镜像。放入或更换冷却剂时立即初始化次数，
+     * 取出时立即清零。
      */
     private int lastUsesRemaining = Integer.MIN_VALUE;
     private int lastCoolantTotalUses = Integer.MIN_VALUE;

@@ -15,18 +15,11 @@ import net.minecraft.world.phys.Vec3;
 import java.util.List;
 
 /**
- * 范围显示（Range Display）客户端渲染器。
+ * 范围显示客户端渲染器：{@code getRangeBoxes()} 返回世界绝对坐标，绘制前减去机器位置转为 BER 本地坐标；
+ * {@code rangeVisible} 控制是否绘制。
  * <p>
- * 参考 just-dire-things 的 {@code AreaAffectingBER}：
- * 用客户端 BlockEntityRenderer 每帧绘制工作范围线框，而非服务端粒子
- * （更稳定、不受粒子寿命/距离限制）。
- * <p>
- * 1.21.1 线为经典 BER 签名（无 RenderState 抽象）：render() 直接读
- * {@code rangeVisible}（@DescSynced 客户端同步）与 {@code getRangeBoxes()}
- * （世界绝对坐标），减去机器位置转为 BER 本地坐标后绘制。
- * <p>
- * 线框走原版 {@link RenderType#lines()}（lines shader，顶点 normal 表示线方向
- * 用于控制线宽），与原版结构线框同渲染管线。
+ * 工作范围由客户端 BER 绘制，不依赖服务端粒子的寿命和距离限制。
+ * 线框走原版 {@link RenderType#lines()}，顶点 normal 表示线方向，用于控制线宽。
  */
 public class RangeDisplayBER implements BlockEntityRenderer<CmMachineBlockEntity> {
 
@@ -56,7 +49,7 @@ public class RangeDisplayBER implements BlockEntityRenderer<CmMachineBlockEntity
 
     @Override
     public boolean shouldRenderOffScreen(CmMachineBlockEntity blockEntity) {
-        // 范围通常大于方块本体，视锥裁剪需按扩展包围盒判定
+        // 范围可见时允许离屏渲染，实际扩展包围盒由 getRenderBoundingBox() 提供。
         return blockEntity.rangeVisible;
     }
 
@@ -86,13 +79,11 @@ public class RangeDisplayBER implements BlockEntityRenderer<CmMachineBlockEntity
     }
 
     /**
-     * 沿 AABB 的 12 条棱绘制线框（每棱 2 顶点，normal 表示线方向，
-     * 供 rendertype_lines shader 计算线宽）。
+     * 沿 AABB 绘制线框；顶点 normal 表示线方向，供 rendertype_lines shader 计算线宽。
      */
     private static void drawBoxLines(PoseStack.Pose pose, VertexConsumer builder, AABB box) {
         float minX = (float) box.minX, minY = (float) box.minY, minZ = (float) box.minZ;
         float maxX = (float) box.maxX, maxY = (float) box.maxY, maxZ = (float) box.maxZ;
-        // 12 条棱
         line(pose, builder, minX, minY, minZ, maxX, minY, minZ, 1, 0, 0);
         line(pose, builder, maxX, minY, minZ, maxX, minY, maxZ, 0, 0, 1);
         line(pose, builder, maxX, minY, maxZ, minX, minY, maxZ, -1, 0, 0);

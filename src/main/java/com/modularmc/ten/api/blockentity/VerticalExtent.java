@@ -25,7 +25,7 @@ public final class VerticalExtent {
 
     /** 默认采样半径（区块）：1 → 3×3 = 9 个区块，覆盖机器周边 48×48 格。 */
     public static final int DEFAULT_CHUNK_RADIUS = 1;
-    /** 采样半径上限（区块）：5×5 = 25 个区块，再多也换不来多少精度，白多扫区块。 */
+    /** 采样半径上限（区块）：3×3 = 9 个区块，再多也换不来多少精度，白多扫区块。 */
     public static final int MAX_CHUNK_RADIUS = 2;
     /** 重探周期：附近挖 / 建会改变内容范围，5 秒对齐一次足够。 */
     public static final int REFRESH_TICKS = 100;
