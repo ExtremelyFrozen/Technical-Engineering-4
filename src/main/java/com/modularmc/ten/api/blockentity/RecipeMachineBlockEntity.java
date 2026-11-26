@@ -50,7 +50,6 @@ public abstract class RecipeMachineBlockEntity extends ProcessingMachineBlockEnt
 
     @Override
     public boolean conditionStart() {
-        // Capture previous recipe before looking up the new one
         FormsCombinedRecipe previousRecipe = currentRecipe;
         FormsCombinedRecipe nextRecipe = findRecipe();
 
@@ -71,8 +70,7 @@ public abstract class RecipeMachineBlockEntity extends ProcessingMachineBlockEnt
 
         if (currentRecipe == null) {
             clearLockedBatch();
-            // 空闲时也设置 64×理论B 堆叠（装并行运行升级即常驻生效，无需配方运行）
-            installDynamicSlotLimit();
+            // 堆叠上限 provider 由 initMachine 装一次即可：每次求值都现读理论 B，不需要随配方变化重装。
             return false;
         }
 
@@ -94,7 +92,6 @@ public abstract class RecipeMachineBlockEntity extends ProcessingMachineBlockEnt
 
             if (!validateAndLockB(B_theory, B_byItems, B_byFluids, B_byOutput, B_byEnergy)) {
                 // B < 1: cannot start — locks are cleared by validateAndLockB
-                installDynamicSlotLimit();
                 return false;
             }
         } else {
@@ -114,7 +111,6 @@ public abstract class RecipeMachineBlockEntity extends ProcessingMachineBlockEnt
             }
         }
 
-        installDynamicSlotLimit();
         return true;
     }
 
@@ -200,17 +196,15 @@ public abstract class RecipeMachineBlockEntity extends ProcessingMachineBlockEnt
     }
 
     /**
-     * Computes B_byOutput: maximum batch size constrained by worst-case output capacity.
-     * Uses target-aware candidate enumeration from min(B_theory,19) down to 1.
-     * For each candidate B, calls {@link #canFitOutputsForBatch(int)} which simulates
-     * worst-case placement per real target slot/tank with existing stack/fluid type,
-     * effective limit 99, and same-target aggregation across ingredients.
+     * 计算 B_byOutput：按真实输出槽与输出罐的容量约束可并行份数。
+     * 从 {@code min(B_theory, BatchMath.B_HARD_MAX)}（当前上限 76）递减枚举到 1，
+     * 逐个调用 {@link #canFitOutputsForBatch(int)}，按现有物品或流体类型、候选 B 的
+     * 动态槽位上限与同目标聚合，模拟最坏产出的落点。
      * <p>
-     * Returns the first (largest) B that fits, or 0 if none fits.
-     * Removes the old global totalSpace / unique-item-division approach which
-     * overestimated B when different items compete for the same target slot.
+     * 返回首个可容纳的最大 B；无输出约束时返回 {@code Integer.MAX_VALUE}，
+     * 所有候选都无法容纳时返回 0。
      *
-     * @return B_byOutput, or {@code Integer.MAX_VALUE} if no outputs constrain B
+     * @return B_byOutput，无输出约束时为 {@code Integer.MAX_VALUE}
      */
     protected int computeBByOutput() {
         if (currentRecipe == null) return 0;
@@ -415,11 +409,8 @@ public abstract class RecipeMachineBlockEntity extends ProcessingMachineBlockEnt
 
     /**
      * 重装统一的并行运行倍增堆叠上限（实现在
-     * {@link CmMachineBlockEntity#installBatchSlotLimit()}）。
-     * <p>
-     * 旧版在此按 {@code slotInfo.i1..i2 / o1..o2} 自建 provider，公式与基类一致但漏掉了
-     * 物品自身上限（对 maxStackSize 非 64 的物品会凭空放大），且各机器各写一份；
-     * 现在只留这一处委托，配方切换时重装只为保持幂等。
+     * {@link CmMachineBlockEntity#installBatchSlotLimit()}）。委托操作幂等，
+     * 上限由统一 provider 按当前理论 B 与物品自身上限计算。
      */
     protected void installDynamicSlotLimit() {
         installBatchSlotLimit();
@@ -533,13 +524,12 @@ public abstract class RecipeMachineBlockEntity extends ProcessingMachineBlockEnt
     }
 
     /**
-     * Computes the slot limit for a specific item using an explicit batch size.
-     * Slot limit = 64 × batchSize（简单固定倍率，与配方 amount/rolls 无关）。
-     * roll 类型配方不再影响堆叠。
+     * 按显式并行运行数计算物品槽位上限：{@code 64 × batchSize}。
+     * 上限只由并行运行数决定，与配方的 {@code amount} 或 {@code rolls} 无关。
      *
-     * @param item      the output item（保留签名，不再参与计算）
-     * @param batchSize the batch size to use (locked B for running, candidate for simulation)
-     * @return the slot limit for this item at the given batch size
+     * @param item      输出物品（保留签名，不参与计算）
+     * @param batchSize 并行运行数；运行时取锁定 B，容量模拟取候选 B
+     * @return 给定并行运行数对应的物品槽位上限
      */
     private int computeItemSlotLimit(Item item, int batchSize) {
         if (item == null) return 64;
@@ -718,7 +708,7 @@ public abstract class RecipeMachineBlockEntity extends ProcessingMachineBlockEnt
                         ItemStack base = ing.symbolItem();
                         if (base.isEmpty()) continue;
                         long totalCount = (long) base.getCount() * B;
-                        // 上限对齐 64×B 堆叠（不再按 99 拆），溢出上限由输出容量检查拦截
+                        // 确定性产出上限对齐 64×B 堆叠，溢出由输出容量检查拦截
                         long cap = 64L * Math.max(1, B);
                         if (totalCount > cap) return false;
                         if (totalCount > 0) {
@@ -951,19 +941,13 @@ public abstract class RecipeMachineBlockEntity extends ProcessingMachineBlockEnt
     }
 
     /**
-     * Re-validate that inputs are still sufficient for the current recipe at
-     * the locked batch size. Uses {@link InputConsumptionPlan#build} as a
-     * dry-run — if a plan can be constructed, inputs are sufficient.
+     * 按锁定并行运行数 {@code lockedB} 复核当前配方输入是否足够。
+     * 使用 {@link InputConsumptionPlan#build} 干跑，不修改库存或运行锁。
      * <p>
-     * Unlike the old {@link FormsCombinedRecipe#matches} (which checks at
-     * single-craft level), this method checks against B × consumable amount,
-     * ensuring alignment with the actual consumption that will happen in
-     * {@link #onCookFinish()}. Catalyst (chance ≤ 0) items are skipped
-     * (not multiplied by B).
-     * <p>
-     * Called at completion time (onCookFinish) before any mutation.
+     * 可消耗物品与流体按 {@code lockedB × amount} 计算；{@code chance ≤ 0} 的
+     * 催化物品跳过，不随 {@code lockedB} 倍增。
      *
-     * @return true if inputs still satisfy the recipe for lockedB batch units
+     * @return 输入是否足以完成 {@code lockedB} 份产出
      */
     protected boolean revalidateInputs() {
         if (currentRecipe == null || itemHandler == null || tanks == null) return false;
@@ -1193,12 +1177,8 @@ public abstract class RecipeMachineBlockEntity extends ProcessingMachineBlockEnt
     }
 
     /**
-     * Distributes an output stack across output slots using dynamic slot limits.
-     * Uses the machine's dynamic limit instead of
-     * {@link ItemStack#getMaxStackSize()} to allow overstacking.
-     * <p>
-     * If a remainder exists after all slots are filled, it is logged
-     * as an error (not silently dropped) to catch recipe/miscalculation bugs.
+     * 按机器动态槽位上限把输出堆分配到输出槽，支持超堆叠。
+     * 所有槽填满后仍有剩余时记录错误，避免配方或容量计算出错被静默吞掉。
      */
     protected void giveOutput(ItemStack stack, int start, int end) {
         if (stack == null || stack.isEmpty()) return;

@@ -10,47 +10,10 @@ import dev.vfyjxf.taffy.style.AlignItems;
 import dev.vfyjxf.taffy.style.FlexDirection;
 
 /**
- * A ProgressBar variant that uses UV clipping (reveal) instead of flex-only
- * shrinking, preventing texture distortion at partial fills.
+ * 使用 UV 裁切显示填充的进度条。
  * <p>
- * Root cause: LDLib2 {@link ProgressBar#updateProgressBarStyle} changes the bar element's
- * {@code widthPercent / heightPercent} based on the normalized progress. The full UV
- * SpriteTexture is then stretched/compressed into the reduced bar area, distorting
- * the texture pattern.
- * <p>
- * Fix: instead of relying on flex-only shrinkage (which compresses a full-UV sprite
- * into a smaller area), this override:
- * <ol>
- * <li>Sets the bar layout proportionally to progress (same bounds as super would)</li>
- * <li>Modifies the source rectangle ({@link SpriteTexture#spritePosition} /
- * {@link SpriteTexture#spriteSize}) to sample only the corresponding fraction
- * of the source image</li>
- * </ol>
- * Because both the element bounds and source UV shrink by the same factor, the drawn
- * texture maintains correct pixel density at every fill level — no distortion.
- * <p>
- * Supported directions:
- * <ul>
- * <li>{@link FillDirection#LEFT_TO_RIGHT} — bar widthPercent = progress × 100;
- * sample left progress fraction of source width</li>
- * <li>{@link FillDirection#RIGHT_TO_LEFT} — bar widthPercent = progress × 100;
- * sample right progress fraction</li>
- * <li>{@link FillDirection#UP_TO_DOWN} — bar heightPercent = progress × 100;
- * sample top progress fraction of source height</li>
- * <li>{@link FillDirection#DOWN_TO_UP} — bar heightPercent = progress × 100;
- * sample bottom progress fraction</li>
- * </ol>
- * <p>
- * Usage in {@code TENMachineBlockUIFactory}:
- *
- * <pre>{@code
- *
- * var filled = SpriteTexture.of(HANDLER).setSprite(xOff, yOff + height, width, height);
- * var progress = absolute(new RevealProgressBar(filled), x, y, width, height);
- * }</pre>
- *
- * @see TENMachineBlockUIFactory#verticalGauge
- * @see TENMachineBlockUIFactory#progressGauge
+ * 元素尺寸与 {@link SpriteTexture} 采样区域按同一比例同步缩放，避免部分填充时纹理被拉伸。
+ * 水平方向裁切宽度，竖直方向裁切高度；采样端随填充方向对齐。
  */
 public class RevealProgressBar extends ProgressBar {
 
@@ -62,8 +25,7 @@ public class RevealProgressBar extends ProgressBar {
     private boolean initialized;
 
     /**
-     * @param filledTexture a {@link SpriteTexture} already configured with its
-     *                      original sprite position and size via {@link SpriteTexture#setSprite}
+     * @param filledTexture 已通过 {@link SpriteTexture#setSprite} 设置原始采样位置与尺寸的填充纹理
      */
     public RevealProgressBar(SpriteTexture filledTexture) {
         super();
@@ -72,47 +34,31 @@ public class RevealProgressBar extends ProgressBar {
         this.origSpriteY = filledTexture.spritePosition.getY();
         this.origSpriteWidth = filledTexture.spriteSize.getWidth();
         this.origSpriteHeight = filledTexture.spriteSize.getHeight();
-        // Attach the filled sprite to the bar element (replaces default texture)
+        // 用填充纹理替换默认纹理
         this.bar(bar -> bar.style(style -> style.backgroundTexture(filledTexture)));
         this.initialized = true;
-        // Re-apply styling so the current value reflects UV clipping immediately
+        // 立即按当前值应用 UV 裁切
         this.onProgressBarStyleChanged();
     }
 
     /**
-     * Overrides the flex-percentage approach from {@link ProgressBar#updateProgressBarStyle}.
+     * 同步设置填充元素尺寸与源纹理采样区域，二者使用同一组整数像素值。
      * <p>
-     * Unlike super (which only changes {@code widthPercent / heightPercent} and lets the
-     * full-UV sprite stretch into the smaller area), this method does <b>both</b>:
-     * <ol>
-     * <li>Sets bar flex layout to the correct proportion (same as super)</li>
-     * <li>Clips the {@link SpriteTexture} source UV to match the same proportion</li>
-     * </ol>
-     * Because element bounds and source UV shrink by the same factor, texture pixel
-     * density is preserved at every fill level.
-     * <p>
-     * When constructed, super invokes this method before our fields are set.
-     * The {@link #initialized} guard falls back to super in that case.
+     * 父类构造期间会先调用本方法，此时字段尚未初始化；{@link #initialized} 守卫在此期间回退父类实现。
      */
     @Override
     protected void updateProgressBarStyle(float normalized) {
-        // Guard: super constructor calls this before our fields are initialized
+        // 父类构造期间字段尚未初始化
         if (!initialized || filledSprite == null) {
             super.updateProgressBarStyle(normalized);
             return;
         }
 
-        // NaN/Infinity safety: if normalized is not finite, treat as 0%
-        // Then clamp to [0, 1] — prevent negative or overflow UV coordinates
+        // 非有限值按 0 处理，并钳制到 [0, 1]，避免非法 UV 坐标
         float progress = Float.isFinite(normalized) ? Mth.clamp(normalized, 0.0f, 1.0f) : 0.0f;
 
-        // 完成重置检测（插值模式）：目标值低于当前显示值 → 直接跳到目标。
-        // 背景：interpolate(true) 下配方完成时进度 100%→0 会被插值反向播放（倒放被误读为缩放），
-        // 且反向动画尾帧（lastValue≤step）无法完全检测，残留细条闪现——因此下行一律瞬移，
-        // 仅保留上行填充的插值平滑（与 26.1.2 参照的瞬时语义一致）。能量条连续下降
-        // 本身就是逐 tick 平滑变化的，瞬移后视觉无差异。已知取舍：大幅下行
-        // （燃料切换/能量骤降）从多 tick 下滑动画变为单帧瞬移——设计上接受，
-        // 若未来需要区分场景，需引入下行速率阈值判据。
+        // 插值模式下进度下降时直接落到目标值，避免配方完成后从 100% 反向播放；
+        // 仅上行填充保留插值。能量连续下降按 tick 更新，无需额外下行动画。
         var style = getProgressBarStyle();
         if (style != null && style.interpolate()) {
             Float targetValue = getValue();
@@ -126,10 +72,7 @@ public class RevealProgressBar extends ProgressBar {
 
         FillDirection dir = getProgressBarStyle().fillDirection();
 
-        // ---- Step 1a: Mirror parent ProgressBar barBackground direction/alignment ----
-        // Parent bytecode sets flexDirection + alignItems on barBackground per FillDirection:
-        // L2R → COLUMN + FLEX_START, R2L → COLUMN + FLEX_END
-        // U2D → ROW + FLEX_START, D2U → ROW + FLEX_END
+        // 背景容器的主轴与对齐必须匹配填充方向
         barBackground.layout(bbLayout -> {
             switch (dir) {
                 case LEFT_TO_RIGHT -> {
@@ -151,8 +94,7 @@ public class RevealProgressBar extends ProgressBar {
             }
         });
 
-        // ---- Step 1b: Compute integer visible pixels (single quantization point) ----
-        // Both bar layout and UV use these same integer values — no sub-pixel mismatch.
+        // 可见像素只在这里取整，布局与 UV 共用同一组整数尺寸
         boolean isHorizontal = dir == FillDirection.LEFT_TO_RIGHT || dir == FillDirection.RIGHT_TO_LEFT;
         boolean isVertical = dir == FillDirection.UP_TO_DOWN || dir == FillDirection.DOWN_TO_UP;
 
@@ -166,12 +108,9 @@ public class RevealProgressBar extends ProgressBar {
             visibleHeight = isVertical ? Math.max(Math.round(origSpriteHeight * progress), 0) : origSpriteHeight;
         }
 
-        // ---- Step 1c: Set bar layout to absolute pixel dimensions ----
-        // Uses the same quantized pixel values as UV — no sub-pixel re-layout each tick.
-        // 注：与 26.1.2 工作参照（另一 MC 版本分支的对照工程，该行为已长期验证正常）保持一致，不做 setDisplay 切换 —— progress=0 时 width(0)
-        // 已使 bar 不渲染（零尺寸元素无绘制），display:none→FLEX 的恢复转换在
-        // LDLIB2 2.2.37 运行时存在不恢复风险（曾导致进度条永久隐藏）。
-        // bar（填充）与 UV 采样同用整数像素值 —— 无亚像素错位
+        // 布局与 UV 使用同一组整数像素尺寸
+        // progress=0 时用 width(0)（竖向为 height(0)）隐藏填充，不切换 setDisplay；
+        // 零尺寸元素不绘制，也无需恢复显示状态。
         bar.layout(layout -> {
             switch (dir) {
                 case LEFT_TO_RIGHT -> {
@@ -195,7 +134,7 @@ public class RevealProgressBar extends ProgressBar {
             layout.height(visibleHeight);
         });
 
-        // ---- Step 2: Clip source UV to match the same quantized pixel count ----
+        // 按同一整数像素尺寸裁切源纹理 UV
         int newX = origSpriteX;
         int newY = origSpriteY;
         int newW = origSpriteWidth;
@@ -211,7 +150,7 @@ public class RevealProgressBar extends ProgressBar {
         } else if (dir == FillDirection.DOWN_TO_UP) {
             newY = visibleHeight > 0 ? origSpriteY + (origSpriteHeight - visibleHeight) : origSpriteY;
             newH = visibleHeight;
-        } // ALWAYS_FULL and others: keep full sprite
+        } // ALWAYS_FULL 及其他方向保持完整纹理
 
         filledSprite.setSprite(newX, newY, newW, newH);
     }

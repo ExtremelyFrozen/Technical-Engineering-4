@@ -30,7 +30,7 @@ public class TENBaseBlockItem extends BlockItem {
             list.add(ttc);
         }
 
-        // 直接显示所有提示，不再需要 Shift
+        // 直接显示所有提示，无需按 Shift
         tooltip.addAll(list);
     }
 

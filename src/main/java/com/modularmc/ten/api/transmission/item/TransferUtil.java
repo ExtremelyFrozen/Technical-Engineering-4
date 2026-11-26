@@ -6,8 +6,7 @@ import net.neoforged.neoforge.items.IItemHandler;
 import java.util.function.Predicate;
 
 /**
- * 物品搬运工具（沿袭旧版 TransferNetworks.moveItems 语义）：
- * 遍历源槽 → SIMULATE 探测双方可移量 → 实际执行，返回实际搬运数。
+ * 物品搬运工具：遍历源槽，先模拟探测双方可移量，再实际执行，返回实际搬运数。
  */
 public final class TransferUtil {
 
@@ -39,7 +38,7 @@ public final class TransferUtil {
         return 0;
     }
 
-    /** 全槽遍历插入（旧版 TransferNetworks.insertItem 语义），返回剩余。 */
+    /** 全槽遍历插入，返回未插入的剩余物品。 */
     public static ItemStack insertItem(IItemHandler to, ItemStack stack, boolean simulate) {
         ItemStack remaining = stack.copy();
         for (int s = 0; s < to.getSlots() && !remaining.isEmpty(); s++) {

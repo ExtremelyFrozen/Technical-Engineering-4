@@ -28,8 +28,8 @@ import java.util.List;
  * 缩容硬约束（内容不丢）：成员减少时仅当 stored ≤ 新容量才应用新容量，否则保持
  * 当前容量直至清空。
  * <p>
- * 1.21.1 适配：持久化改用 NBT（CompoundTag + HolderLookup），由 {@link ChannelRegistry}
- * 经 SavedData loadAdditional/saveAdditional 调用。
+ * 持久化使用 CompoundTag 与 HolderLookup.Provider，由 {@link ChannelRegistry#save} 序列化，
+ * 并由 SavedData.Factory 的反序列化器经 {@link #loadFromNbt} 恢复。
  */
 public final class SharedStorage {
 
@@ -198,11 +198,9 @@ public final class SharedStorage {
         }
     }
 
-    // ───── 持久化（1.21.1 NBT）─────
+    // ───── 持久化 ─────
 
-    /**
-     * 保存到 NBT。经 {@link ChannelRegistry#saveAdditional} 调用。
-     */
+    /** 保存到 NBT，由 {@link ChannelRegistry#save} 调用。 */
     public void saveToNbt(CompoundTag tag, HolderLookup.Provider registries) {
         tag.putString("type", type.name());
         tag.putInt("memberCount", memberCount);
@@ -235,9 +233,7 @@ public final class SharedStorage {
         }
     }
 
-    /**
-     * 从 NBT 恢复。经 {@link ChannelRegistry#loadAdditional} 调用。
-     */
+    /** 从 NBT 恢复，由 {@link ChannelRegistry} 的 SavedData.Factory 反序列化器调用。 */
     public void loadFromNbt(CompoundTag tag, HolderLookup.Provider registries) {
         this.memberCount = tag.getInt("memberCount");
         switch (type) {

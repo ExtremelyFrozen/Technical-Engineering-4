@@ -77,8 +77,7 @@ public class IndfurBlockEntity extends RecipeMachineBlockEntity {
         var recipes = level.getRecipeManager().getAllRecipesFor(TENRecipeTypes.INDUCTION_FURNACE_T.get());
         for (var holder : recipes) {
             var recipe = holder.value();
-            // 1.21.1 的 matches 已内联严格语义（occupied == required），与 26.1.2 的
-            // matchesExactInputs 等价（多余输入槽占用时不匹配）
+            // matches 要求占用槽数等于所需种类数，多余输入槽占用时不匹配。
             if (recipe instanceof FormsCombinedRecipe r && r.matches(itemHandler, tanks, this::slotType, this::tankType)) {
                 r.recipeType = TENRecipeTypes.INDUCTION_FURNACE_T.get();
                 r.serializer = TENRecipeTypes.INDUCTION_FURNACE_S.get();

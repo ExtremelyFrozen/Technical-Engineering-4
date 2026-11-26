@@ -26,11 +26,7 @@ import java.util.Map;
  * 单机与联机都会在日志里出现同样的行。
  * <p>
  * <b>过滤必须按实例类型做，不能按 {@code TENRecipeTypes.TYPES} 强转</b>：那个注册表里不全是机器配方
- * （{@code engine_fuel} 是生产端的燃料表，没有「输入签名」）。早先这里把每个类型都当成
- * {@code RecipeType<FormsCombinedRecipe>} 再逐条取 {@code input()}，新类型一进来就抛
- * {@code ClassCastException}；而本监听器挂在 {@code RecipesUpdatedEvent} 上，该事件由
- * {@code ClientboundUpdateRecipesPacket} 在处理线程上触发，异常会直接断连——
- * 客户端看到的是「连接已丢失 / 网络协议错误」。
+ * （{@code engine_fuel} 是生产端的燃料表，没有「输入签名」）。
  */
 public final class TENRecipeAudit {
 
@@ -50,7 +46,6 @@ public final class TENRecipeAudit {
     }
 
     private static void audit(RecipesUpdatedEvent event) {
-        // 一次遍历全表，按类型与输入签名分组；非机器配方在 instanceof 处被丢掉
         Map<RecipeType<?>, Map<String, List<ResourceLocation>>> byType = new LinkedHashMap<>();
         for (var loaded : event.getRecipeManager().getRecipes()) {
             if (!(loaded.value() instanceof FormsCombinedRecipe recipe)) continue;

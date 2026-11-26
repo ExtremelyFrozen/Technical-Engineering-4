@@ -33,7 +33,7 @@ public class TENEmiRecipe implements EmiRecipe {
         this.category = category;
         this.recipe = recipe;
         // id 用 RecipeHolder 的注册 id：serializer Codec 解码不携带 id，recipe.getId() 本身为 null
-        // （见 FormsCombinedRecipe.assignId 注释）；机器侧 findRecipe 已回填，此处不再依赖它
+        // （见 FormsCombinedRecipe.assignId 注释）；机器侧 findRecipe 已回填，此处不依赖它
         this.id = holderId != null ? holderId : recipe.getId();
         this.categoryId = categoryId;
         this.layout = TENRecipeWidget.layout(categoryId);
@@ -89,7 +89,7 @@ public class TENEmiRecipe implements EmiRecipe {
 
         for (var slot : layout.slots()) {
             var ingredient = TENRecipeWidget.ingredientFor(recipe, slot);
-            // 空槽不隐藏（用户设定）：槽位与底图全部渲染；无配料/空配料 → 显示为空槽，
+            // 空槽不隐藏：槽位与底图全部渲染；无配料或空配料时显示为空槽，
             // 物品与 tooltip 仅在配料存在时填充/挂载
             if (slot.kind() == TENRecipeWidget.SlotKind.ITEM) {
                 // EMI customBackground 内部硬编码 256×256 图集采样（SlotWidget.drawBackground →

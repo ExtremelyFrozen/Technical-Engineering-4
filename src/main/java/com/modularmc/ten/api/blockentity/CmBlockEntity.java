@@ -32,12 +32,8 @@ public abstract class CmBlockEntity extends BlockEntity implements ISyncPersistR
     }
 
     /**
-     * 官方路径 A（LDLib2 ISyncPersistRPCBlockEntity 接口开关）：禁用异步 sync 线程。
-     * 背景：默认 useAsyncThread()=true 时，@DescSynced 字段由专用异步线程（50ms 周期）
-     * 轮询推送，与主线程写字段存在竞争（官方 blockentity.md 线程安全警告）——实测
-     * progress/maxProgress 镜像被异步推送的中间态覆盖为 0/0，导致渐现进度条闪烁。
-     * 注意：关闭后 asyncTick 增量同步整体停止（门禁 useAsyncThread() && isAsyncValid()），
-     * 因此必须在主线程 tick 末尾统一调用 passivelySync() 补上同步驱动（见 serverTick）。
+     * 禁用异步 sync 线程，避免 @DescSynced 轮询与主线程写字段竞争。
+     * 关闭后必须在主线程 tick 末尾调用 passivelySync() 驱动增量同步。
      */
     @Override
     public boolean useAsyncThread() {
@@ -59,8 +55,7 @@ public abstract class CmBlockEntity extends BlockEntity implements ISyncPersistR
             }
             tick();
             onEndTick();
-            // 统一同步入口（主线程）：字段全部写完后一次性推送脏字段，
-            // 替代被关闭的异步线程驱动（useAsyncThread()=false 停用了 asyncTick 增量同步）
+            // 主线程统一同步：字段全部写完后一次性推送脏字段。
             passivelySync();
         }
         onClientTick();

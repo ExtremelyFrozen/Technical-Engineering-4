@@ -4,7 +4,8 @@ package com.modularmc.ten.api.blockentity;
  * 可升级机器 SPI：升级物品（UpgradeItem/Levelup*）经此接口向机器施加效果。
  * <p>
  * 旧百分比接口 {@code onUpgradeApply} 保留兼容；乘法模型 API 采用乘子叠加
- * （total = Π factor_i），并行运行增量直接累加；全部 default no-op 保证未实现方不炸。
+ * （total = Π factor_i），并行运行增量直接累加。未实现的升级钩子使用空默认实现，
+ * 兼容只实现部分接口的机器。
  * 仅 {@link CmMachineBlockEntity} 实现。
  */
 public interface IUpgradableMachine {
@@ -76,9 +77,7 @@ public interface IUpgradableMachine {
      *
      * @param factor 正倍率（当前实现为每件 ×2）
      */
-    default void applyAdjustRangeCapMultiplier(int factor) {
-        // Default no-op for backward compatibility.
-    }
+    default void applyAdjustRangeCapMultiplier(int factor) {}
 
     /**
      * 该机器是否接入范围调节面板（面板的 XYZ 盒就是它的工作区）。
@@ -95,9 +94,7 @@ public interface IUpgradableMachine {
      * Only implemented on {@link com.modularmc.ten.api.blockentity.CmMachineBlockEntity}.
      * Default no-op for backward compatibility.
      */
-    default void applyPhotosyn() {
-        // Default no-op
-    }
+    default void applyPhotosyn() {}
 
     /**
      * 该机器是否真的消费并行运行（`getLockedBatchSize()` / 每 lane 的 `laneB`）。
@@ -147,9 +144,7 @@ public interface IUpgradableMachine {
      * <p>
      * Default no-op for backward compatibility.
      */
-    default void setRecipeMode(int mode) {
-        // Default no-op
-    }
+    default void setRecipeMode(int mode) {}
 
     /**
      * @return the current recipe mode (default: {@link #RECIPE_MODE_SMELTING})
@@ -158,24 +153,18 @@ public interface IUpgradableMachine {
         return RECIPE_MODE_SMELTING;
     }
 
-    // ───── Unlimited energy transfer (Stream) ─────
+    // ───── 传输升级（Stream）兼容标记 ─────
 
     /**
-     * Records whether a Stream upgrade is installed.
+     * 记录「星辉能量传输」升级是否安装的兼容标记。
      * <p>
-     * Currently has no observable effect: machine energy transfer no longer has a
-     * rate limit at all, so there is nothing left to lift. Kept for the pending
-     * upgrade redesign.
-     * <p>
-     * Default no-op for backward compatibility. Only implemented on
-     * {@link com.modularmc.ten.api.blockentity.CmMachineBlockEntity}.
+     * 机器能量传输当前不限速，该标记不改变行为。默认空实现用于兼容未覆盖此钩子的机器；
+     * 仅 {@link com.modularmc.ten.api.blockentity.CmMachineBlockEntity} 保存该状态。
      */
-    default void setUnlimitedEnergyTransfer(boolean unlimited) {
-        // Default no-op
-    }
+    default void setUnlimitedEnergyTransfer(boolean unlimited) {}
 
     /**
-     * @return true if unlimited energy transfer is enabled
+     * 返回「星辉能量传输」兼容标记是否已设置；能量传输始终不限速。
      */
     default boolean hasUnlimitedEnergyTransfer() {
         return false;

@@ -63,7 +63,12 @@ public class ChannelEnergyBlockEntity extends AbstractChannelBlockEntity {
                 // doBaseData 的 batch 容量缩放只作用于本地缓冲；共享容量由成员数决定，
                 // 此处把 @DescSynced 镜像字段修正为共享存储的权威值
                 energyStored = shared.getEnergy().getEnergyStored();
-                maxEnergyStored = shared.getEnergy().getMaxEnergyStored();
+                int sharedMax = shared.getEnergy().getMaxEnergyStored();
+                if (sharedMax != maxEnergyStored) {
+                    maxEnergyStored = sharedMax;
+                    // maxEnergyStored 是 @LazyManaged：直写必须自己置脏。
+                    markDirty("maxEnergyStored");
+                }
                 maxStorageEnergy = maxEnergyStored;
             }
         }

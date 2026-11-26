@@ -35,10 +35,9 @@ enumExtensions = "META-INF/enum_extensions.json"
     ordering = "NONE"
     side = "BOTH"
 
-# LDLib2 是机器框架的硬前置，由玩家按此 required 依赖自行安装，不再 jarJar 内嵌。
+# LDLib2 是机器框架的硬前置，由玩家按此 required 依赖自行安装。
 # 下限对齐 gradle/forge.versions.toml 的 ldlib2 条目（2.2.44），升级时两处同步。
-# 2.2.44 是最后一个保留 CopyOnWriteArrayList 型 AsyncThreadData 的版本，
-# NEO ECO AE Extension 的 ldlib mixin 依赖该结构；2.2.45 起该注入会静默跳过。
+# 2.2.44 保留 NEO ECO AE Extension 的 ldlib mixin 所需的 CopyOnWriteArrayList 型 AsyncThreadData。
 [[dependencies.${mod_id}]]
     modId = "ldlib2"
     type = "required"

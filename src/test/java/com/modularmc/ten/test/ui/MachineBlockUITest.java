@@ -134,7 +134,7 @@ public class MachineBlockUITest {
         helper.succeed();
     }
 
-    /** 升级槽的快捷移动准入跟随面板展开态，且展开态按玩家隔离。 */
+    /** 升级槽面板展开态按玩家隔离。 */
     @TestHolder(value = TEN.MOD_ID + ":upgrade_slot_quick_move_follows_panel_state", enabledByDefault = true)
     @GameTest(template = "empty_5x5")
     @PrefixGameTestTemplate(false)

@@ -7,7 +7,7 @@ import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 缓冲型传输节点基类（移植自 TE4-New）：容量与吞吐由宿主配置注入，
+ * 缓冲型传输节点基类：容量与吞吐由宿主配置注入，
  * 本地缓冲仅在网络缺位（orphan）时兜底，常态缓冲归网络所有。
  */
 public abstract class BufferedTransmitter<AC, NET extends BufferedNetwork<AC, NET, BUF, T>, BUF, T extends BufferedTransmitter<AC, NET, BUF, T>>

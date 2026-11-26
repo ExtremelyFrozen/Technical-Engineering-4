@@ -141,9 +141,9 @@ CmBlockEntity (implements ISyncPersistRPCBlockEntity)
 3. 检查 `conditionStart()`、`signalAllowRun()`、`energyAllowRun()`。
 4. 计算期望 FE/t：`getActualEfficiency() × getLockedBatchSize()`；越界则停机。
 5. 能量不足、输出满 → 保留进度，等待恢复。
-6. 首次进入周期时锁定 `maxProgress = max(1, baseTickTime())`（配方耗时，不再乘任何倍率）。
+6. 首次进入周期时锁定 `maxProgress = scaledDuration(baseTickTime())`，耗时倍率只在此刻计入。
 7. 原子扣能：先 `simulate` 验证全量可提取，再真实提取；真实提取少于期望直接抛异常。
-8. `advanceProgressBySpeed()` 推进 `runSpeed`（非整数靠 `progressCarry` 余数累积），执行 `onProcessTick()`；
+8. `advanceProgressBySpeed()` 按自然数 `runSpeed` 推进，执行 `onProcessTick()`；
    到 `maxProgress` 调用 `onCookFinish()`，清并行运行数锁定并归零。
 
 停机的边界：
@@ -346,7 +346,7 @@ lane，不要直接改基类字段。信息栏峰值能耗按三路放大。旧�
 **结算公式**：
 
 ```
-派生量（applyUpgradeEffects 每 tick 一次性写入）：
+派生量（每次事件/配置重算时一次性写入）：
 运行速度 N   = (1 + Σ速度增量) × k            自然数，基准 1；速度增量与 k 都是整数
 运行耗时倍率 D = 1 + Σ(耗时系数 − 1)          基准 1.0（工序精简给 0.90 / 0.80 / 0.70）
 并行运行数 B = (1 + Σ并行增量) × k            不支持并行运行的机器恒为 1
@@ -436,8 +436,8 @@ FE / 流体 / 堆叠容量 = 基础容量 × B
   后四张按能力声明放行：`supportsByproductTuning()` 与 `supportsHarvestSpecialization()`，
   不往 `isType()` 的机型字符串分支里继续塞条目。
 
-结算入口是 `CmMachineBlockEntity.applyUpgradeEffects()`，每 tick 由 `doBaseData()` 在
-`resetUpgradeEffects()` 之后调用一次：先筛 `canApply` 与 `maxPerMachine`，再按类别分组，
+结算入口是 `CmMachineBlockEntity.applyUpgradeEffects()`，每次事件或配置重算时由
+`doBaseDataHeavy()` 在 `resetUpgradeEffects()` 之后调用一次：先筛 `canApply` 与 `maxPerMachine`，再按类别分组，
 整合组件取最高档（放入已被拦截为一张，此分支只兜底旧存档、导入库存等多张残留）、
 独特组件取第一个、增益组件线性叠加，然后一次性写入四个派生量——
 `powerMultiplier = Σpower`、`runSpeed = (1 + Σ速度增量) × 整合组件 k`、
@@ -478,7 +478,7 @@ tooltip 由 `UpgradeTooltipFormatter` 生成，只写升级组件自身带来的
   `LevelupRg` 不再 `setCurrentRadius`，只调用 `applyAdjustRangeCapMultiplier(2)`：每张把面板的
   **可设上限**翻倍，实际范围始终由面板决定。上限底数由 `baseRangeCap()` 给出——采矿场 16、
   模拟信标 48、农场与生物粉碎器 9、破坏器与成型器 `ADJUST_BASE_CAP=1`（半单位），硬上限 64；
-  `resetUpgradeEffects()` 每 tick 重新打底再叠升级，`doBaseData()` 把越界的范围与偏移收回。
+  `resetUpgradeEffects()` 在每次事件或配置重算时重新打底再叠升级，`doBaseData()` 把越界的范围与偏移收回。
   旧档里 `rangeX/Y/Z` 是未接面板时的占位值 1，`RadiusMachineBlockEntity` 用 `@Persisted rangeMigrated`
   哨兵在首次 tick 把设备默认跨度写回，破坏器 / 成型器不迁移（它们本来就在用面板）。
 
@@ -1035,3 +1035,30 @@ blockstate 占位核心模型与 `src/main/resources` 下的零件模型（见 5
 - **源码注释只写当前契约**：单位、取值范围、调用前提、反直觉约束（「必须九宫格不能等比压」
   「这段代码不能挪到客户端」）留在注释里；**为什么改、改过什么、哪次迭代纠正了什么**写进本文档、
   更新日志或提交说明，不进源码。注释越堆越长的根因是把沿革当契约，后来的人分不清哪句还有效。
+
+---
+
+## 11. 维护日志
+
+### 2026-11-26 注释清理归档
+
+- 升级效果曾在一轮内重复应用，乘子升级被平方，范围与并行运行数逐 tick 累加。
+- LDLib2 的自动值比较曾漏掉高频镜像变化，导致待机时仍每 tick 发包。
+- GUI 空同步标签曾清掉 RPC 刚推送的升级槽、面配置与管道过滤标记。
+- 配置面板底图裁掉四边 5px 透明留白后，内容坐标与点击热区一起变化；当前叠加层为 50×75、内缩 8px，保留像素测量约束。
+- 升级面板 `zIndex=200` 曾让槽内物品落入更深的深度层级并被内容剔除；当前安全值为 1。
+- 面配置的 `serverClick` 曾读到面板打开时的旧页；当前必须由客户端读取实时页后经 RPC 提交。
+- `RevealProgressBar` 的 flex-only 缩放曾拉伸整张 UV，`setDisplay` 切换也可能无法恢复；当前尺寸与 UV 同步裁切，零进度使用 `width(0)`。
+- JEI 在分类绘制阶段输出的 chance/rolls 文本曾被后续槽内物品遮盖；当前由 `IDrawable` 在物品之后绘制。
+- 升级组件安装曾依赖潜行右键，交互链被开 GUI 分支抢先消费；当前普通右键直接安装且不开 GUI。
+- 流体槽覆盖层曾画在流体柱之下而失去玻璃质感；当前顺序固定为底图、流体、覆盖层、悬停。
+- 配方审计曾把注册表里的每个 `RecipeType` 强转为机器配方，非机器类型触发异常并踢出客户端；当前按实例类型过滤，诊断异常不得逃逸。
+- GuideME 不自动登记各册自带的 `itemModel`，遗漏 `RegisterAdditional` 会得到 missing model；当前指南物品模型显式登记。
+- KubeJS 的 Rhino 不能直接把 JS 对象转成 `FormsCombinedIngredient`；当前先转 JSON 再交 codec，字符串走简写。
+- 熔炼机基础周期曾误将配方 `cookingTime` 除以 2；当前直接返回配方值。
+- 物质结晶器曾把催化剂次数初始化放在周期效果里，首 tick 白丢一个周期；当前放入或更换催化剂时立即初始化。
+- Configuration 3.1.1 的配置屏不支持 `ModConfigSpec`，曾打开空屏；当前界面选型见 §3.3。
+- Allthemodium 缺少 GeckoLib 4.7.5.1 时会在预加载阶段直接终止；当前开发运行期同时提供该硬前置。
+- NEO ECO AE Extension 21.2.18 的 `AsyncThreadDataMixin` 依赖 LDLib2 2.2.44 的 `CopyOnWriteArrayList`；当前版本目录保留这组兼容约束。
+- 客户端源集曾只在开发运行期生效、未进入发布 jar。
+- GameTest 的能量网络用例曾把启动卡顿误判为传输失败；当前 tick 25 未动时延后到 tick 60，并输出两端储能辅助诊断。

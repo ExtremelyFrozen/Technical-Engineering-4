@@ -30,6 +30,14 @@ public class FormsCombinedRecipe implements RandRecipe {
     protected List<FormsCombinedIngredient> output;
     protected int time;
 
+    /**
+     * 需求物品原料条数（{@code form == "item"} 且非 ALLOW_ALL 占位），构造时预计算。
+     * <p>
+     * {@link #matches} 在空闲机器上每 tick 被全部配方各调用一次，若每份配方都现算这个数
+     * 就会在失配路径上反复分配集合；预计算后失配只需一次整数比较。
+     */
+    private final int itemIngredientCount;
+
     public RecipeSerializer<?> serializer;
     public RecipeType<?> recipeType;
 
@@ -41,6 +49,12 @@ public class FormsCombinedRecipe implements RandRecipe {
         this.input = input;
         this.output = output;
         this.time = time;
+
+        int itemCount = 0;
+        for (var ing : input) {
+            if (ing != null && "item".equals(ing.form) && !ing.isAllowAll()) itemCount++;
+        }
+        this.itemIngredientCount = itemCount;
     }
 
     public List<FormsCombinedIngredient> allOutputFluids() {
@@ -70,19 +84,25 @@ public class FormsCombinedRecipe implements RandRecipe {
         // Strict exact matching: occupied input slot count must equal required ingredient count.
         // ALLOW_ALL 占位（serializer 对不足槽位的 air 填充）不计入需求，否则 2 输入配方会被
         // 迫要求放满全部机器槽位（"还需要输入一个空气"）。
+        //
+        // 第一遍只计数、不分配：空闲机器（全空槽）在这里就以 0 != itemIngredientCount 返回，
+        // 省掉两个 ArrayList 与逐槽装箱——这是空闲每 tick × 全部配方的热路径。
         int occupiedSlots = 0;
-        List<Integer> occupiedSlotIndices = new ArrayList<>();
-        for (int i = 0; i < inv.getSlots(); i++) {
-            if (slotType.get(i).canIn() && !inv.getStackInSlot(i).isEmpty()) {
-                occupiedSlots++;
-                occupiedSlotIndices.add(i);
-            }
+        int slots = inv.getSlots();
+        for (int i = 0; i < slots; i++) {
+            if (slotType.get(i).canIn() && !inv.getStackInSlot(i).isEmpty()) occupiedSlots++;
         }
-        List<FormsCombinedIngredient> itemIngredients = new ArrayList<>();
+        if (occupiedSlots != itemIngredientCount) return false;
+
+        // 第二遍：确定需要做一一分配，才构建集合。
+        List<Integer> occupiedSlotIndices = new ArrayList<>(occupiedSlots);
+        for (int i = 0; i < slots; i++) {
+            if (slotType.get(i).canIn() && !inv.getStackInSlot(i).isEmpty()) occupiedSlotIndices.add(i);
+        }
+        List<FormsCombinedIngredient> itemIngredients = new ArrayList<>(itemIngredientCount);
         for (var ing : input) {
             if ("item".equals(ing.form) && !ing.isAllowAll()) itemIngredients.add(ing);
         }
-        if (occupiedSlots != itemIngredients.size()) return false;
 
         // 一一分配：每个 item ingredient 独占一个匹配槽（含催化剂 chance=0），回溯求解。
         // 防串配方：两个 ingredient 的匹配集有交集时（如两个 tag 均含同一物品），

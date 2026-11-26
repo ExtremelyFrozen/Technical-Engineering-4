@@ -11,10 +11,9 @@ import java.util.List;
 import java.util.function.Supplier;
 
 /**
- * NeoForge ModConfigSpec definitions for TEN (Kenergy Engineering).
+ * TEN 的 NeoForge ModConfigSpec 配置定义。
  * <p>
- * Replaces the {@code dev.toma.configuration} annotation system used in origin/1.21.
- * Split into COMMON ({@code te4-config.toml}) and CLIENT ({@code te4-client.toml}) specs.
+ * COMMON 注册到 {@code te4-config.toml}，CLIENT 注册到 {@code te4-client.toml}。
  */
 public final class TENConfig {
 
@@ -257,7 +256,7 @@ public final class TENConfig {
 
             builder.pop();
 
-            // ── 展开面板动画（用户需求 2026-09）：反馈展开过慢 → 可动态调速/关闭 ──
+            // 展开面板动画：统一速度与升级面板独立覆盖，均以 px/tick 计。
             builder.push("panelAnimation").comment("Expandable panel animation")
                     .translation(key("panelAnimation"));
 
@@ -283,7 +282,7 @@ public final class TENConfig {
             return showCableHUD.get();
         }
 
-        /** 统一函数+独立函数混合：独立项 0 = 回退统一速度。 */
+        /** 升级面板独立速度为 0 时回退统一速度。 */
         public int panelAnimationSpeed(String panel) {
             if (!panelAnimationEnabled.get()) {
                 return Integer.MAX_VALUE; // 动画关闭 → 单 tick 直达目标宽
@@ -297,7 +296,7 @@ public final class TENConfig {
 
     /**
      * 邻居兼容层开关。按来源模组关闭：列出的来源其 compat 配方在加载期整体消失，
-     * JEI 也不再显示——1.21.1 没有加载后摘除配方的钩子，只能靠条件过滤。
+     * JEI 也不会显示；配方只能在加载期按条件过滤。
      * 取值见 {@link CompatConfig#KNOWN_SOURCES}（不在表内的 id 会被 validator 拒绝）。
      * <p>
      * {@code providerPriority} 是同一材料被多个模组提供时的归属顺序，由
@@ -335,8 +334,7 @@ public final class TENConfig {
                             "A switched-off source loses its compat recipes and stops owning shared",
                             "materials, so the ore chain falls through to the next provider.")
                     .translation(key("compat.disabledSources"))
-                    // 必须给 newElementSupplier：不带 supplier 的重载在配置界面里无法新增条目，
-                    // 默认空列表时整页是空白的（4.0.2 的「关闭的兼容来源」就是这个症状）。
+                    // defineListAllowEmpty 必须提供 newElementSupplier，配置界面才能新增条目。
                     .defineListAllowEmpty("disabledSources", List.of(), () -> "",
                             s -> s instanceof String str && KNOWN_SOURCES.contains(str));
             providerPriority = builder
@@ -372,7 +370,7 @@ public final class TENConfig {
             List<String> sorted = new ArrayList<>(candidates);
             sorted.sort(Comparator.comparingInt(mod -> providerRank(order, mod)));
             for (var mod : sorted) {
-                // 关掉的来源既不贡献 compat 配方，也不再拥有共享材料，两个开关语义一致
+                // 关掉的来源不贡献 compat 配方，也不参与共享材料归属，两个开关语义一致
                 if (enabled(mod) && ModList.get().isLoaded(mod)) return mod;
             }
             return null;

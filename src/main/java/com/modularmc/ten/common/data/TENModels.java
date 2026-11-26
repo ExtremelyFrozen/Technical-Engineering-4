@@ -117,11 +117,10 @@ public class TENModels {
     /**
      * 线缆/管道的 blockstate 只登记一个占位核心模型。
      * <p>
-     * 连接外观不再靠 26 条 multipart 条件拼——那需要六个方向各一个 0..2 属性，单方块 2916 个状态。
-     * 现在由客户端 {@code CableBakedModel} 读 {@link CableRenderState} 动态组合核心/连接部件；
-     * 这里四个 ACTIVE × WATERLOGGED 组合都指向同一个模型，保证每个状态都能解析到模型。
-     * 零件模型（core/part/connect 及 active 版）是 {@code src/main/resources} 下的手写资源，
-     * 由客户端在 {@code ModelEvent.RegisterAdditional} 里登记后烘焙。
+     * 客户端 {@code CableBakedModel} 读取 {@link CableRenderState} 动态组合核心与连接部件；
+     * ACTIVE × WATERLOGGED 四种组合都指向同一模型，保证每个状态都能解析到模型。
+     * 零件模型（core/part/connect 及 active 版）位于 {@code src/main/resources}，
+     * 由客户端在 {@code ModelEvent.RegisterAdditional} 登记为 standalone 模型后烘焙。
      */
     public static void cableDynamic(BlockStateProvider prov, Block block, String name) {
         String dir = CableRenderState.modelDir(name);

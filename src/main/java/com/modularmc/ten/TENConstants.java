@@ -9,11 +9,8 @@ public class TENConstants {
 
     // ───── 频道 UI 素材（modular 独立切片）─────
     public static final ResourceLocation CHANNEL_LIST_BG = TEN.id("textures/gui/channels/list_bg.png"); // 69x73
-                                                                                                        // 频道目录列表容器底图
     public static final ResourceLocation CHANNEL_ENTRY_BG_HOVER = TEN.id("textures/gui/channels/entry_bg_hover.png"); // 46x13
-                                                                                                                      // 条目行悬停高亮
     public static final ResourceLocation CHANNEL_ENTRY_BG_NORMAL = TEN.id("textures/gui/channels/entry_bg_normal.png"); // 46x13
-                                                                                                                        // 条目行普通背景
     // 条目行右侧接入状态小按钮雪碧图：2列×2行，每格 10x15（列0=未接入/列1=已接入；行0=normal、行1=hover）
     public static final ResourceLocation CHANNEL_ENTRY_STATE = TEN.id("textures/gui/channels/entry_states.png"); // 20x30
     // 频道面板翻页/创建/删除/断开按钮雪碧图：5列×2行，每格 12x12（列0▲/列1▼/列2＋/列3✕/列4断连；行0=normal、行1=hover）
@@ -82,11 +79,11 @@ public class TENConstants {
     public static final ResourceLocation PANEL_ADJUST = TEN.id("textures/gui/panels/panel_adjust.png");
     /** 范围调节按钮图集（24x24，格 12x12：列=增加/减少，行=默认/光标悬停） */
     public static final ResourceLocation ADJUST_BUTTONS = TEN.id("textures/gui/panels/adjust_buttons.png");
-    /** 配置面板附加底图（60x85）：介入九宫格底图与内容钮之间 */
+    /** 配置面板附加底图（50x75）：介入九宫格底图与内容钮之间 */
     public static final ResourceLocation PANEL_CONFIG_LEGACY = TEN.id("textures/gui/panels/panel_config_legacy.png");
     /** 升级面板附加底图（42x62）：内容区 38x58 每边外扩 2px */
     public static final ResourceLocation PANEL_UPGRADE_UNDERLAY = TEN.id("textures/gui/panels/panel_upgrade_underlay.png");
-    /** 升级面板升级槽底图（18x18，替代借用的小型物品槽） */
+    /** 升级面板升级槽底图（18x18） */
     public static final ResourceLocation UPGRADE_SLOT_BG = TEN.id("textures/gui/slots/upgrade_slot.png");
     /** 升级 tab 头（26x26） */
     public static final ResourceLocation ICON_UPGRADE = TEN.id("textures/gui/icons/upgrade.png");

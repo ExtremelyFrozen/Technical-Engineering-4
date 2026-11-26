@@ -5,7 +5,7 @@ import com.modularmc.ten.api.blockentity.IUpgradableMachine;
 /**
  * 增益组件·并行处理核心三档：只加并行运行数，功率与运行耗时都不动。
  * 能不能装由 {@link IUpgradableMachine#supportsBatch()} 在放入时判定，
- * 卡面不再写「仅某类机器可用」——那属于拦截层的职责。
+ * 卡面不写「仅某类机器可用」，适用性由拦截层判定。
  */
 public class LevelupParallel extends UpgradeItem {
 

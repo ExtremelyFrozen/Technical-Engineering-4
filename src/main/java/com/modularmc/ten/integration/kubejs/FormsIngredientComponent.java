@@ -20,9 +20,7 @@ import dev.latvian.mods.rhino.type.TypeInfo;
  * {@code count} 或 {@code amount} / {@code chance} / {@code rolls}），与 KER 的序列化器完全一致，
  * 所以不需要额外写 {@code RecipeMapping} 做形状转换。
  * <p>
- * {@link #wrap} 必须重写：默认实现走 {@code Context.jsToJava(from, typeInfo())}，Rhino 无法把
- * JS 对象直接构造成 {@link FormsCombinedIngredient}（没有对应构造器），实测会抛
- * 「Cannot convert {form: item, ...} to FormsCombinedIngredient」。这里改成两步：
+ * {@link #wrap} 必须重写：Rhino 无法把 JS 对象直接构造成 {@link FormsCombinedIngredient}。
  * 脚本值先转 JSON，再交给 codec 解析；纯字符串走简写解析。
  */
 public record FormsIngredientComponent(RecipeComponentType<?> typeOverride) implements RecipeComponent<FormsCombinedIngredient> {

@@ -70,10 +70,9 @@ const ownerOf = id => (id.includes(":") ? id.split(":")[0] : "minecraft");
 const gateOf = ns => (ns === "minecraft" || ns === "kenergyengineering" ? null : ns);
 
 /**
- * 耗时尺规（见 config.json 的 timeRule）：邻居能量**不**参与时长换算。
- * 原来是「对方每次总 FE ÷ 我们的 15 FE/t」，IE 一次冲压机给 51200 FE 就变成 1200 tick 上限，
- * 与本模组原生（压缩机恒 100、感应炉 50–300）差一个数量级，实测就是「耗时失控」的来源。
- * 感应炉按用户定的尺规：每个输入物料 +50 tick。
+ * 耗时尺规（见 config.json 的 timeRule）：邻居能量不参与换算。
+ * 感应炉取 perUnit × max(1, 输入份数)；粉碎机在 inputUnits >= blockUnits 时取 blockTime，否则取 base；
+ * 压缩机固定取 flat。
  */
 function alignTicks(kind, inputUnits) {
   const rules = CFG.timeRule;

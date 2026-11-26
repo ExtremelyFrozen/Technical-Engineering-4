@@ -39,21 +39,19 @@ import java.util.concurrent.atomic.AtomicReferenceArray;
 /**
  * 线缆/管道的公共方块基类。
  * <p>
- * 继承 {@link BaseMachineBlock} 而不是 {@code HorizontalMachineBlock}：后者多带一个用不到的 {@code FACING}。
- * 连接外观与 active 也不再进 BlockState，改由 {@link CableRenderState} 经 {@code ModelData} 驱动——
- * 原先六个方向各一个 0..2 属性让单个方块有 3^6 × 2 × 2 = 2916 个状态，7 个方块合计 2 万余个，
- * 注册表冻结时逐个建 Cache、模型烘焙时逐状态匹配 multipart 条件，是启动期最大的一笔固定开销。
- * 现在只剩 {@code ACTIVE}（父类约束，恒为 false）与 {@code WATERLOGGED}，共 4 个状态/方块。
+ * 继承 {@link BaseMachineBlock} 而非 {@code HorizontalMachineBlock}，避免引入未使用的 {@code FACING}。
+ * BlockState 仅含 {@code ACTIVE}（父类约束，恒为 false）与 {@code WATERLOGGED}；
+ * 连接外观与运行活性由 {@link CableRenderState} 经 {@code ModelData} 驱动。
  */
 public class CableBased extends BaseMachineBlock implements SimpleWaterloggedBlock {
 
     public static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
 
     protected static final VoxelShape CORE_SHAPE = Block.box(5, 5, 5, 11, 11, 11);
-    // ── Shape helpers matching JSON model sizes ──────────────────────────
-    // Type 1 (part) — 6×6×5 connector: core face → block edge
+    // 形状尺寸对应 JSON 零件模型。
+    // part：从核心表面延伸到方块边缘的 6×6×5 连接件。
     private static final VoxelShape[] PART_SHAPES = new VoxelShape[6];
-    // Type 2 (connect) — 6×6×4 inner + 8×8×2 flange at block edge
+    // connect：6×6×4 内段与边缘 8×8×2 法兰。
     private static final VoxelShape[] CONNECT_SHAPES = new VoxelShape[6];
     /** 固定遍历顺序，下标与 PART_SHAPES / CONNECT_SHAPES 一致（{@code Direction.values()} 每次调用都会克隆数组）。 */
     private static final Direction[] DIRECTION_ORDER = Direction.values();
@@ -200,11 +198,8 @@ public class CableBased extends BaseMachineBlock implements SimpleWaterloggedBlo
     }
 
     /**
-     * 连接位/模式变化后只刷新 BE 的渲染态，不再 setBlock。
-     * <p>
-     * 旧实现把六个连接值写进 BlockState：每次连接变化都是一次 setBlock(flags=3)，
-     * 连带邻居更新、光照重算、区块重绘与网络同步。现在渲染态存在 BE 的 {@code renderPacked}，
-     * 由 BE 覆写的更新标签随方块更新下发，客户端落值后再请求重绘。
+     * 连接位/模式变化后刷新 BE 的 {@code renderPacked}，
+     * 并由 BE 的更新标签随方块实体更新同步到客户端。
      */
     public void updateConnections(Level level, BlockPos pos) {
         if (level.getBlockEntity(pos) instanceof ITransmitterProvider provider) {
@@ -246,10 +241,8 @@ public class CableBased extends BaseMachineBlock implements SimpleWaterloggedBlo
     }
 
     /**
-     * 扳手右键：切换连接模式（移植自 TE4-New DuctInteractions）。
-     * 管道↔设备边 PULL（抽取）↔ NORMAL（被动）二态轮询：ker 体系管道对设备只有两种有效语义
-     * （PULL=主动抽取，NORMAL=被动接收投放，PUSH/NONE 对设备边无意义且会让轮询偏离预期）；
-     * 管道↔管道边 NONE↔NORMAL（断开/连接）。
+     * 扳手右键切换连接模式：设备边仅在 PULL（主动抽取）与 NORMAL（接收投放）间轮换；
+     * 管道间边仅在 NONE（断开）与 NORMAL（连接）间轮换。
      */
     @Override
     protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos,
@@ -257,7 +250,7 @@ public class CableBased extends BaseMachineBlock implements SimpleWaterloggedBlo
         if (!stack.is(TENTags.SPANNER)) {
             return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
         }
-        // 潜行+右键：放行到 Item.useOn → SpannerItem 拆解分支（管道/线缆均在 wrench_dismantleable tag 内）。
+        // 潜行+右键：放行到 Item.useOn → SpannerItem 拆解分支（仅 MACHINES 标签成员可拆）。
         // 必须在客户端分支之前：客户端同样需放行，否则拆解包不发出。
         if (player.isShiftKeyDown()) {
             return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;

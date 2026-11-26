@@ -59,7 +59,7 @@ public final class TENRecipeWidget {
     /**
      * 左下角工作时长标签位置（150×50 面板，对齐熔炼机 TEXT(25,38)）：
      * 默认 (25,38)；compressor/refiner 底部左侧被槽位（25..43 列 / fluid 竖槽 16..34）占用，
-     * 右移至槽位边界之后。引擎兼容层不调用本位置表（用户设定：引擎不显示时间）。
+     * 右移至槽位边界之后。引擎兼容层不调用本位置表，也不显示时间。
      */
     private static final Map<String, int[]> TIME_LABEL_POS = Map.of(
             "compressor", new int[] { 46, 38 },
@@ -83,15 +83,9 @@ public final class TENRecipeWidget {
     }
 
     /**
-     * 布局规则 v5（移除能量条，组件群居中 + 间距自适应）：
-     * <ol>
-     * <li>不再绘制能量条（ENERGY_GAUGE 已从 xei 界面移除）</li>
-     * <li>组件群中心 = 75 = 面板中心（150×50），左右对称</li>
-     * <li>固定宽 = 输入组宽 + 箭头22 + 输出组宽；间隔总量均分到 2 个间隔</li>
-     * <li>连续同种槽（多输入/多输出组）算一个整体：组内紧贴</li>
-     * <li>垂直方向组件组在面板 50 高内居中：18×18 槽 y=16、箭头 y=17、竖排/2×2 组 y=7、fluid y=0</li>
-     * </ol>
-     * 底图统一 JEI_RECIPE_BG（LDLib2 modular 素材族），进度箭头按机器映射独立背景/填充素材。
+     * 150×50 布局：组件群以面板中心 x=75 居中，输入组、22px 进度箭头与输出组之间的间隔均分。
+     * 连续同种槽作为一个整体紧贴排列；垂直方向在 50px 高内居中，18×18 槽 y=16、箭头 y=17、
+     * 竖排或 2×2 组 y=7、fluid y=0。底图使用 JEI_RECIPE_BG，进度箭头按机器映射独立素材。
      */
     private static final Layout DEFAULT_LAYOUT = new Layout(
             TENConstants.JEI_RECIPE_BG, 0, 0, 150, 50,
@@ -107,7 +101,7 @@ public final class TENRecipeWidget {
     private static final Map<String, Layout> LAYOUTS = buildLayouts();
 
     private static Map<String, Layout> buildLayouts() {
-        // 布局规则 v5：150×50 JEI_RECIPE_BG，无能量条，组件居中
+        // 各分类使用 150×50 JEI_RECIPE_BG，组件群居中。
         return Map.of(
                 "pulverizer", new Layout(
                         TENConstants.JEI_RECIPE_BG, 0, 0, 150, 50,
@@ -181,10 +175,8 @@ public final class TENRecipeWidget {
      * </ul>
      * JEI 侧经 TENJeiSlotOverlay 由 JEI 槽位管线绘制（物品之后，z 序正确）；
      * EMI 侧无槽位 overlay 管线，由 TENEmiRecipe 经 addDrawable 调本方法。
-     * EMI 渲染机制（1.1.22 源码）：widget 按插入顺序绘制，层级由 Z 深度裁决——
-     * DrawableWidget 默认 Z=0 且深度测试可能被关闭，退化为插入顺序时文本先于后绘物品。
-     * 对齐 EMI 官方 overlay 惯例（EmiRenderHelper.renderAmount）：绘制内 translate(0,0,300)
-     * + enableDepthTest，确保覆盖层稳定位于物品（Z≈150）之上。
+     * EMI 的 widget 按插入顺序绘制；覆盖层需显式抬高 Z 并开启深度测试，确保稳定位于物品之上。
+     * 绘制时 translate(0,0,300) + enableDepthTest，与 EMI overlay 惯例一致。
      * 视觉坐标对齐 JEI 挂载（X_OFFSET=-1/Y_OFFSET=-1 + CHANCE=-1/ROLLS=11）：
      * chance 绝对 slot.y-2、rolls 绝对 slot.y+10。
      */
@@ -202,11 +194,11 @@ public final class TENRecipeWidget {
             String chanceText = ingredient.chanceOverlayText();
             String rollsText = ingredient.rollsOverlayText();
 
-            // Top-left: chance percentage (e.g., "40%") at 75% scale
+            // 左上角概率百分比（如 40%），75% 缩放。
             if (chanceText != null) {
                 drawScaledText(graphics, font, chanceText, slot.x() + 1, slot.y() - 2);
             }
-            // Bottom-left: rolls (e.g., "R9") at 75% scale
+            // 左下角掷骰次数（如 R9），75% 缩放。
             if (rollsText != null) {
                 drawScaledText(graphics, font, rollsText, slot.x() + 1, slot.y() + 10);
             }
@@ -276,8 +268,8 @@ public final class TENRecipeWidget {
     }
 
     /**
-     * @param chance raw probability in [0,1] range
-     * @return percentage as integer (0-100), rounded
+     * @param chance {@code [0,1]} 内的原始概率
+     * @return 四舍五入后的整数百分比（0..100）
      */
     public static int chancePercent(double chance) {
         return (int) Math.round(chance * 100.0d);

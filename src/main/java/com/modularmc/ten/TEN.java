@@ -39,7 +39,7 @@ public class TEN {
     public TEN(IEventBus modBus, FMLModContainer container) {
         TEN.tenModBus = modBus;
 
-        // 配置系统：NeoForge ModConfigSpec（取代旧 dev.toma.configuration 注解方案）
+        // NeoForge ModConfigSpec：COMMON 与 CLIENT 分别注册到对应配置文件。
         container.registerConfig(ModConfig.Type.COMMON, TENConfig.COMMON_SPEC, "te4-config.toml");
         container.registerConfig(ModConfig.Type.CLIENT, TENConfig.CLIENT_SPEC, "te4-client.toml");
 

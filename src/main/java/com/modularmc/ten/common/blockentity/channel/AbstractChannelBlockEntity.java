@@ -52,14 +52,12 @@ import java.util.regex.Pattern;
  * 频道方块基类（末影箱模式）。
  * <p>
  * 接入（{@link #join}）后与同名称+同类型的其他频道方块共享同一虚拟存储
- * （{@link SharedStorage}，全局跨维度）；零 tick 传输——接入后槽位直接绑定
- * 共享存储，不再有逐 tick 轮询搬运。退出（{@link #leave}）时本地缓冲内容
- * 优先回流频道共享存储，频道满则留本地缓冲。
+ * （{@link SharedStorage}，全局跨维度）；接入后槽位直接绑定共享存储，无需逐 tick
+ * 轮询搬运。退出（{@link #leave}）时本地缓冲内容优先回流频道共享存储，频道满则留本地缓冲。
  * <p>
- * RPC 语义（移植自 26.1.2，保持一致）：C→S 经 {@code rpcToServer} 发起，服务端
- * 处理器以 {@code sender.isRemote()} 守卫；S→C 单播经 {@code rpcToPlayer}、广播经
- * {@code rpcToTracking}，客户端处理器以 {@code sender.isServer()} 守卫。
- * 26.1.2 的 Identifier 在 1.21.1 以 {@link ResourceLocation} 替代。
+ * RPC 语义：C→S 经 {@code rpcToServer} 发起，服务端处理器以 {@code sender.isRemote()}
+ * 守卫；S→C 单播经 {@code rpcToPlayer}、广播经 {@code rpcToTracking}，客户端处理器以
+ * {@code sender.isServer()} 守卫。
  */
 public abstract class AbstractChannelBlockEntity extends CmMachineBlockEntity {
 
@@ -170,7 +168,7 @@ public abstract class AbstractChannelBlockEntity extends CmMachineBlockEntity {
         return reg == null || key == null ? null : reg.get(key);
     }
 
-    // ───── join / leave ─────
+    // ───── 接入 / 退出 ─────
 
     /**
      * 接入频道。本地内容并入共享存储（频道满留本地）；同一成员重复接入同一
@@ -222,8 +220,8 @@ public abstract class AbstractChannelBlockEntity extends CmMachineBlockEntity {
         ChannelRegistry reg = registry();
         ChannelKey key = joinedKey();
         if (reg != null && key != null) {
-            // [修复问题3] 先注销成员（容量立即重算）再回流内容——
-            // pushLocalToShared 若异常不会残留幽灵成员占用共享上限
+            // 先注销成员使共享容量按剩余成员数重算，再回流本地内容；
+            // 回流异常时不会残留幽灵成员占用共享上限。
             reg.leave(key, memberId());
             try {
                 pushLocalToShared();
@@ -291,9 +289,8 @@ public abstract class AbstractChannelBlockEntity extends CmMachineBlockEntity {
     @Override
     public void setRemoved() {
         boolean shouldLeave = !chunkUnloadingLocal && level != null && !level.isClientSide() && isJoined();
-        // 先置 removed 标记再 leave()：leave → setActive(false) 会尝试回写方块状态，
-        // 若在 super 之前执行，方块刚被破坏的位置会被重新写回「未接入」的频道方块，
-        // 表现为「破坏不掉落、只是解绑」。setActive 已按 isRemoved() 跳过回写。
+        // 必须先标记 removed 再 leave：leave 会调用 setActive(false) 回写方块状态，
+        // 而 setActive 仅在 isRemoved() 时跳过回写。
         super.setRemoved();
         if (shouldLeave) {
             leave();
@@ -768,7 +765,7 @@ public abstract class AbstractChannelBlockEntity extends CmMachineBlockEntity {
 
     private record ChannelEntry(String name, int members) {}
 
-    /** 1.21.1 HoverTooltips 构造兼容（26.1.2 的 HoverTooltips.create 在 2.2.37 不存在）。 */
+    /** LDLib2 2.2.37 无 HoverTooltips.create 工厂，使用兼容构造器。 */
     private static HoverTooltips tooltip(Component... components) {
         return new HoverTooltips(List.of(components), null, null, null);
     }

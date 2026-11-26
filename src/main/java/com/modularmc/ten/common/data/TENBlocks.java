@@ -83,7 +83,7 @@ public class TENBlocks {
 
     // === Channels ===
     // 频道是共享存储的接入点：主动输入由 AbstractChannelBlockEntity 实现（拉进 sharedStorage），
-    // 主动输出在 supportsFaceDirection 里统一拒绝。这里不再打 no_active_face_* 标签——
+    // 主动输出在 supportsFaceDirection 里统一拒绝；这里不打 no_active_face_* 标签——
     // 基础模组不使用这些标签，全部留给整合包整体收回某类资源的主动面。
     public static final BlockEntry<ChannelBlock> CHANNEL_ENERGY = REGISTRATE
             .block("channel_energy", ChannelBlock::new)

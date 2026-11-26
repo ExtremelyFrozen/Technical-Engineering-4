@@ -33,8 +33,7 @@ public class CoolerBlockEntity extends EffectMachineBlockEntity {
 
     /**
      * 当前冷却剂剩余作用次数。0 表示需要新冷却剂。
-     * 进度栏在客户端求值，故必须 @DescSynced（LDLib2 只同步 @DescSynced/RPC，见
-     * CmMachineBlockEntity#syncUpgradesToClients 的探针结论）。
+     * 进度栏在客户端求值，故必须 {@code @DescSynced}；LDLib2 只同步带该注解或 RPC 的字段。
      */
     @Persisted
     @DescSynced
@@ -142,9 +141,12 @@ public class CoolerBlockEntity extends EffectMachineBlockEntity {
     }
 
     /**
-     * 服务端每 tick 刷新冷却剂状态与客户端镜像。放入/更换冷却剂当刻即完成次数初始化
-     * （旧实现把初始化放在 applyEffect 里，代价是白丢一个完整周期），取出则立即清零。
+     * 服务端每 tick 刷新冷却剂状态与客户端镜像。放入或更换冷却剂时立即初始化次数，
+     * 取出时立即清零。
      */
+    private int lastUsesRemaining = Integer.MIN_VALUE;
+    private int lastCoolantTotalUses = Integer.MIN_VALUE;
+
     @Override
     public void doBaseData() {
         super.doBaseData();
@@ -162,8 +164,15 @@ public class CoolerBlockEntity extends EffectMachineBlockEntity {
             }
             coolantTotalUses = data.uses();
         }
-        markDirty("usesRemaining");
-        markDirty("coolantTotalUses");
+        // 值比较后置脏：冷却剂换装才是真变化，其余时候这两个镜像每 tick 重算但值不变。
+        if (usesRemaining != lastUsesRemaining) {
+            lastUsesRemaining = usesRemaining;
+            markDirty("usesRemaining");
+        }
+        if (coolantTotalUses != lastCoolantTotalUses) {
+            lastCoolantTotalUses = coolantTotalUses;
+            markDirty("coolantTotalUses");
+        }
     }
 
     @Override
@@ -187,6 +196,12 @@ public class CoolerBlockEntity extends EffectMachineBlockEntity {
             itemHandler.setStackInSlot(0, coolant);
         }
         setChanged();
+    }
+
+    /** 天空光照/天气变化没有事件源，靠探针复查；缩短以满足响应预算。 */
+    @Override
+    protected int idleProbePeriod() {
+        return 10;
     }
 
     @Override

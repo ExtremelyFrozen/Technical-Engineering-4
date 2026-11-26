@@ -6,9 +6,8 @@
 中心图案必须是独立绘制的符号；只调色会让玩家在升级槽里分不清谁是谁。
 
 做法分两层：
-1. 外壳逐像素继承 ``mineral_levelup.png``——22 张旧卡共享同一套 8 阶立体边框，
-   重画容易漂移，继承才能保证风格同构。外壳只按主题换色系，明暗关系原样保留。
-2. 中心 8x9 内容区用字符画声明，改一行字符即可调整图案，不需要图像编辑器。
+1. 外壳逐像素继承 ``mineral_levelup.png`` 的灰阶，四张卡各用 9 阶色系按主题换色，明暗关系保持一致。
+2. 中心 10x11 图案区用字符画声明，改一行字符即可调整图案，不需要图像编辑器。
 
 用法：
     python tools/gen_upgrade_textures.py             # 写入资源目录
@@ -28,11 +27,10 @@ TEXTURE_DIR = ROOT / "src/main/resources/assets/kenergyengineering/textures/item
 SHELL_SOURCE = TEXTURE_DIR / "mineral_levelup.png"
 PREVIEW_PATH = ROOT / "build/tmp_upgrade_textures_preview.png"
 
-# 外壳提取时排除的区域（内框之内）。图案区比它大一圈，压在边框内沿上——
-# mineral 的晶体本来就是这么画的，8x9 装不下有叶片和压板的符号。
+# 外壳只提取内框之外，图案区可外扩覆盖内沿高光。
 SHELL_X0, SHELL_Y0, SHELL_X1, SHELL_Y1 = 3, 3, 10, 11
 
-# 图案区：10x11，起点 (2,2)，覆盖内框高光
+# 图案区向内框外扩，覆盖内框高光。
 ART_X0, ART_Y0 = 2, 2
 ART_W, ART_H = 10, 11
 
@@ -96,7 +94,7 @@ def hex_to_rgba(value: str) -> tuple[int, int, int, int]:
 # 外壳色系：阶数与 SHELL_RAMP 相同，索引一一对应（0 = 最暗的描边，末位 = 最亮的高光）
 CARDS: dict[str, dict] = {
     "press_levelup": {
-        # 钢蓝灰：压机、砧座、金属夹具的冷色。中段贴近旧卡的 #323837，只在偏色上区分
+        # 钢蓝灰：压机、砧座与金属夹具的冷色。
         "shell": ["#08090b", "#141920", "#1e242b", "#2b333b", "#3a444e", "#4c5966", "#64727f", "#83919e", "#a8b6c2"],
         "palette": {
             "P": "#cfdae6",  # 压板亮面
@@ -211,12 +209,10 @@ def build_card(spec: dict) -> Image.Image:
     image = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
     pixels = image.load()
 
-    # 1. 外壳：继承明暗档位，换成目标色系
     for (x, y), level in SHELL_LEVELS.items():
         pixels[x, y] = ramp[level]
 
-    # 2. 图案区：内框之内铺底面，内框之外只有实心字符才落笔——
-    #    `.` 在内框外表示「透出外壳」，否则内框高光会被一圈暗底盖掉，边框立体感全失。
+    # 图案区外扩时，`.` 保持透明以露出外壳高光。
     for row_index, row in enumerate(art):
         for col_index, symbol in enumerate(row):
             x = ART_X0 + col_index
@@ -225,7 +221,7 @@ def build_card(spec: dict) -> Image.Image:
             if symbol == ".":
                 if not inside_hole:
                     continue
-                # 底面取色阶 5/6，与旧卡的 #525b5b / #6b7776 同档；3x3 周期噪点避免死平
+                # 底面在色阶 5/6 间加噪点，避免图案区死平。
                 noise = (x * 5 + y * 3) % 7
                 pixels[x, y] = ramp[6] if noise < 4 else ramp[5]
             else:

@@ -22,10 +22,7 @@ import mezz.jei.api.recipe.category.IRecipeCategory;
 import java.util.List;
 
 /**
- * JEI category for the three Smelter recipe pages (Smelting/Blasting/Smoking).
- * <p>
- * 1.21.1 适配：GuiGraphics 替代 GuiGraphicsExtractor，ResourceLocation 替代 Identifier，
- * Ingredient.items() 替代 getValues()。
+ * JEI 熔炼机分类，覆盖熔炼、高炉、烟熏三种配方页。
  */
 public class SmelterJeiCategory implements IRecipeCategory<SmelterJeiCategory.Recipe> {
 
@@ -103,10 +100,8 @@ public class SmelterJeiCategory implements IRecipeCategory<SmelterJeiCategory.Re
     public void draw(Recipe recipe, IRecipeSlotsView slotsView, GuiGraphics graphics, double mouseX, double mouseY) {
         background.draw(graphics);
 
-        // Draw progress arrow background + animated fill
         var pose = graphics.pose();
         pose.pushPose();
-        // 1.21.1 blit signature: blit(ResourceLocation, x, y, u, v, width, height, textureWidth, textureHeight)
         graphics.blit(TENConstants.PROGRESS_ARROW_SMELTER_BG, ARROW_X, ARROW_Y, 0, 0, ARROW_W, ARROW_H, ARROW_W, ARROW_H);
         int filledWidth = (int) (progressPercent() * ARROW_W);
         if (filledWidth > 0) {
@@ -114,7 +109,6 @@ public class SmelterJeiCategory implements IRecipeCategory<SmelterJeiCategory.Re
         }
         pose.popPose();
 
-        // Cooking time text
         var font = Minecraft.getInstance().font;
         Component timeText = Component.translatable("kenergyengineering.jei.duration_short", recipe.cookingTime());
         graphics.drawString(font, timeText, TEXT_X, TEXT_Y, 0xFF404040, false);

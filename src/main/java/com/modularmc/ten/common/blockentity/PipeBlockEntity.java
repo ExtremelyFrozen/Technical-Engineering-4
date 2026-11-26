@@ -45,10 +45,9 @@ import com.lowdragmc.lowdraglib2.syncdata.rpc.RPCSender;
 import dev.vfyjxf.taffy.style.TaffyPosition;
 
 /**
- * 物品管道方块实体：持有 {@link ItemTransmitter}，组网/拆网由
- * TransmitterNetworkRegistry 延迟驱动；网络搬运在 ItemNetwork.onUpdate 内
- * 由 root 节点统一执行（本 BE 不再自带 BFS 扫描）。
- * 白/黑名单过滤语义、transportHandler 外部插入入口、GUI 均沿袭旧版。
+ * 物品管道方块实体：持有 {@link ItemTransmitter}，网络所有权归物品网络；
+ * 组网/拆网由 {@link TransmitterNetworkRegistry} 延迟驱动，搬运由 {@link ItemNetwork#onUpdate()} 统一执行。
+ * 白/黑名单过滤由 {@code filterInventory} 提供；{@code transportHandler} 将外部插入即时投递到网络受端。
  */
 public class PipeBlockEntity extends CmBlockEntity implements ITransmitterProvider {
 
@@ -72,7 +71,7 @@ public class PipeBlockEntity extends CmBlockEntity implements ITransmitterProvid
     public byte pullFacesMask;
 
     /**
-     * 打包后的连接外观 + active 渲染态：服务端权威，取代原先写进 BlockState 的六个连接属性。
+     * 打包后的连接外观 + active 渲染态，由服务端权威维护，不写入 BlockState。
      * 随方块实体数据包下发（{@link #getUpdateTag} → {@code writeTileData}），客户端在
      * {@link #applyRenderTag} 里写入并请求重绘；{@code @DescSynced} 另走 LDLib2 的字段同步，
      * 供 GUI 等场景读取。
@@ -127,8 +126,7 @@ public class PipeBlockEntity extends CmBlockEntity implements ITransmitterProvid
         @Override
         public void setItem(int slot, ItemStack stack) {
             filterInventory.setStackInSlot(slot, stack);
-            // 必须 setChanged：幽灵槽交互经此写入，不通知则不发 BE 更新包，
-            // 客户端槽视图残留交互前数据（表现：标记交互后消失，重开 GUI 才恢复）
+            // 幽灵槽写入后必须通知 BE，否则客户端槽视图不会更新。
             setChanged();
         }
 
@@ -153,7 +151,7 @@ public class PipeBlockEntity extends CmBlockEntity implements ITransmitterProvid
         }
     };
 
-    /** 外部插入入口（保持旧签名）：经网络找可达 sink 即时投递，过滤不匹配则拒收。 */
+    /** 外部插入入口：经网络找可达 sink 即时投递；过滤不匹配则拒收，否则返回未投递的剩余物品。 */
     private final IItemHandler transportHandler = new IItemHandler() {
 
         @Override
@@ -231,7 +229,7 @@ public class PipeBlockEntity extends CmBlockEntity implements ITransmitterProvid
     }
 
     public boolean hasUi() {
-        // 沿袭旧版语义：仅白/黑名单变体（pipe_white/pipe_black）有过滤 UI，普通 pipe 无界面
+        // 仅白/黑名单变体（pipe_white/pipe_black）有过滤 UI，普通 pipe 无界面。
         return isFiltered();
     }
 
@@ -244,8 +242,7 @@ public class PipeBlockEntity extends CmBlockEntity implements ITransmitterProvid
     }
 
     private void joinNetwork() {
-        // 延迟到服务端首 tick：注册回调（onLoad）期间查询邻居会触发
-        // 邻居 BE 创建→邻居 join→互查的无限递归（GameTest StackOverflow 已验证）。
+        // 延迟到服务端首 tick：onLoad 期间查询邻居会触发相邻 BE 创建与互查，造成递归组网。
         if (level != null && !level.isClientSide()) {
             joinPending = true;
         }
@@ -274,8 +271,8 @@ public class PipeBlockEntity extends CmBlockEntity implements ITransmitterProvid
 
     @Override
     public void notifyChanges() {
-        // 不走 markDirty/sendBlockUpdated：那会触发邻居 neighborChanged → refreshConnections 递归。
-        // 连接外观改由渲染态字段承载，无需 setBlock。
+        // 标记 BE 数据变化并刷新渲染态；方块更新只在渲染态变化时由 markRenderDirty 发出，
+        // 且不触发邻居更新，避免 neighborChanged → refreshConnections 递归。
         setChanged();
         if (level != null && !level.isClientSide()) {
             refreshRenderState();
@@ -303,9 +300,8 @@ public class PipeBlockEntity extends CmBlockEntity implements ITransmitterProvid
 
     /**
      * 服务端唯一的重绘请求入口：{@code sendBlockUpdated} 既让客户端区块重新烘焙，
-     * 又经 {@code ChunkHolder#broadcastBlockEntity} 把 {@link #getUpdateTag} 里的渲染态一并送到
-     * （AE2 {@code AEBaseBlockEntity#markForClientUpdate} 同款）。flags=2 不含 UPDATE_NEIGHBORS，
-     * 不会走 neighborChanged → refreshConnections 递归。
+     * 又经 {@code ChunkHolder#broadcastBlockEntity} 把 {@link #getUpdateTag} 里的渲染态一并送到。
+     * flags=2 不含 UPDATE_NEIGHBORS，不会走 neighborChanged → refreshConnections 递归。
      */
     private void markRenderDirty() {
         if (level != null && !level.isClientSide()) {
@@ -315,11 +311,10 @@ public class PipeBlockEntity extends CmBlockEntity implements ITransmitterProvid
     }
 
     /**
-     * 渲染态必须随方块实体数据包下发（AE2 的 {@code #upd} 同款）。
+     * 渲染态必须随方块实体数据包下发。
      * <p>
-     * 原版 {@code BlockEntity#getUpdateTag} 默认返回空标签、{@link #getUpdatePacket()} 默认返回 null，
-     * 不覆写就既不会在区块下发时带上渲染态，也不会响应 {@code sendBlockUpdated}——
-     * 客户端建 BE 时 {@code renderPacked} 恒为 0，外观只能等某次偶然重绘才正确。
+     * 原版 {@code BlockEntity#getUpdateTag} 默认返回空标签、{@link #getUpdatePacket()} 默认返回 null；
+     * 两者都要覆写，区块加载与 {@code sendBlockUpdated} 才能把 {@code renderPacked} 送到客户端。
      */
     @Override
     public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
@@ -342,10 +337,8 @@ public class PipeBlockEntity extends CmBlockEntity implements ITransmitterProvid
     @Override
     protected void readTileData(CompoundTag tag, HolderLookup.Provider registries) {
         transmitter.read(registries, tag);
-        // 空 tag + Size 迁移双重保护：LDLib2 GUI 同步以空 tag 反复触发 readTileData（空 tag 清空客户端残留）；
-        // 旧存档（1 行 9 槽弃用时代）filter tag Size=9，deserializeNBT 按旧 Size 重建数组会把 27 槽
-        // 缩回 9（GUI 只挂 9 个真实槽、二三排成纹理假槽、过滤/去重只管前 9 格——探针实证
-        // filterInventorySlots=9），故 Size≠27 时逐槽读入不重建，对齐 CmMachineBlockEntity itemHandler 迁移模式
+        // 空 filter tag 不得反序列化；兼容 filter.Size=9 的旧存档时按槽读入，
+        // 避免直接反序列化把 27 槽缩回 9。
         CompoundTag filterTag = tag.getCompound("filter");
         if (!filterTag.isEmpty()) {
             int savedSize = filterTag.contains("Size") ? filterTag.getInt("Size") : FILTER_SLOTS;
@@ -405,12 +398,11 @@ public class PipeBlockEntity extends CmBlockEntity implements ITransmitterProvid
         setActive(net != null && net.hasLastMoved());
     }
 
-    // ───── GUI（沿袭旧版过滤槽布局）─────
+    // ───── GUI（27 槽过滤标记）─────
 
     public ModularUI createUI(BlockUIMenuType.BlockUIHolder holder) {
         UIElement root = TENMachineBlockUIFactory.createRoot(TENConstants.MACHINE_GUI);
         if (isFiltered()) {
-            // 白/黑名单模式标题
             String modeKey = isWhitelist() ? "kenergyengineering.pipe.filter.whitelist" : "kenergyengineering.pipe.filter.blacklist";
             Label modeLabel = new Label();
             modeLabel.setText(ComponentHelper.translated(modeKey));
@@ -420,10 +412,8 @@ public class PipeBlockEntity extends CmBlockEntity implements ITransmitterProvid
                 layout.top(6);
             });
             root.addChild(modeLabel);
-            // 三排 3×9=27 过滤槽：统一 ghostFilterSlot 纯展示槽（mayPlace/mayPickup 全 false）；
-            // 标记写入走 MOUSE_DOWN 事件 + rpcToServer，服务端 setFilterMark 统一去重后广播：
-            // 左键+持物=标记到点击槽（去重时移动标记）、右键=清空点击槽、shift+左键+持物=标记到最小空槽；
-            // acceptQuickMove(false) 保持阻断 quickMove（物品不再进转移流程，无短暂遮盖）
+            // 三排 3×9=27 过滤槽使用纯展示槽，标记写入走 MOUSE_DOWN + RPC，
+            // 由服务端 setFilterMark 统一去重后广播；acceptQuickMove(false) 阻断 quickMove。
             for (int i = 0; i < FILTER_SLOTS; i++) {
                 int x = 7 + (i % 9) * 18;
                 int y = 24 + (i / 9) * 18;
@@ -438,14 +428,14 @@ public class PipeBlockEntity extends CmBlockEntity implements ITransmitterProvid
                         carried = mui.getMenu().getCarried();
                     }
                     if (event.button == 1) {
-                        // 3.1 右键：清空点击槽标记
+                        // 右键：清空点击槽标记。
                         rpcToServer("rpcSetFilterMark", idx, ItemStack.EMPTY);
                     } else if (event.button == 0 && !carried.isEmpty()) {
                         if (Screen.hasShiftDown()) {
-                            // 3.3 shift+左键：标记到最小序号空槽（去重拒绝语义在服务端）
+                            // Shift+左键：标记到最小序号空槽，去重由服务端处理。
                             rpcToServer("rpcSetFilterMark", -1, carried.copy());
                         } else {
-                            // 3.2 左键：标记到/更新到点击槽（同物品已在其他槽时移动标记）
+                            // 左键：标记或更新点击槽；同物品在其他槽时移动标记。
                             rpcToServer("rpcSetFilterMark", idx, carried.copy());
                         }
                     }
@@ -454,9 +444,7 @@ public class PipeBlockEntity extends CmBlockEntity implements ITransmitterProvid
             }
         }
         TENMachineBlockUIFactory.addPlayerInventory(root);
-        // 3.3 shift+点击背包物品 → 标记到最小序号空槽：
-        // 过滤 GUI 上下文接管背包 quickMove——背包槽 acceptQuickMove(false) 阻断原版转移，
-        // MOUSE_DOWN 拦截 shift+左键 rpcToServer 标记（LDLib2 InventorySlots 组件 36 槽逐个挂）
+        // Shift+点击背包物品：请求标记到最小序号空槽；背包槽阻断 quickMove，由 MOUSE_DOWN 接管。
         java.util.Deque<UIElement> invDfs = new java.util.ArrayDeque<>();
         for (UIElement child : root.getChildren()) {
             if (child instanceof com.lowdragmc.lowdraglib2.gui.ui.elements.inventory.InventorySlots inv) {
@@ -481,9 +469,8 @@ public class PipeBlockEntity extends CmBlockEntity implements ITransmitterProvid
                 });
             }
         }
-        // GUI 打开请求全量标记（C→S）：服务端 createUI 也会执行（ModularUIContainerMenu 构建链），
-        // rpcToServer 经 PacketDistributor.sendToServer 在专用服务器（dist=SERVER）会抛
-        // IllegalStateException——必须加客户端守卫（对齐 AbstractChannelBlockEntity 目录同步模式）
+        // GUI 打开时由客户端请求全量标记；createUI 也会在服务端执行，
+        // rpcToServer 必须限制在客户端，专用服上调用会抛 IllegalStateException。
         if (holder.player.level().isClientSide()) {
             rpcToServer("rpcRequestFilterSync");
         }
@@ -491,10 +478,9 @@ public class PipeBlockEntity extends CmBlockEntity implements ITransmitterProvid
     }
 
     /**
-     * 幽灵标记槽（纯展示）：展示服务端 filterInventory 的标记副本，不参与任何物品转移。
-     * mayPlace/mayPickup/remove 全 false 零副作用——标记写入/清除全部走 GUI 层 MOUSE_DOWN 事件
-     * + RPC（rpcSetFilterMark），服务端统一去重后广播。彻底规避 quickMove 试探副作用
-     * （shift+点击只写第一格）与原版转移乐观更新残留（shift+连点短暂遮盖）。
+     * 幽灵标记槽仅展示服务端 filterInventory 的标记副本，不参与物品转移。
+     * mayPlace/mayPickup/remove 均无副作用；写入与清除统一走 GUI MOUSE_DOWN + RPC，
+     * 由服务端去重后广播。
      */
     private Slot ghostFilterSlot(int index) {
         return new Slot(filterContainer, index, 0, 0) {
@@ -641,7 +627,7 @@ public class PipeBlockEntity extends CmBlockEntity implements ITransmitterProvid
         return allowed;
     }
 
-    /** active 只改渲染态位，不再 setBlock 切 BlockState.ACTIVE。 */
+    /** active 仅修改渲染态位，保持 BlockState.ACTIVE 为 false。 */
     private void setActive(boolean active) {
         int next = CableRenderState.withActive(renderPacked, active);
         if (renderPacked != next) {

@@ -14,10 +14,8 @@ import snownee.jade.api.ITooltip;
 import snownee.jade.api.config.IPluginConfig;
 
 /**
- * Jade 管道状态 provider：对准管道方块（pipe/pipe_white/pipe_black）时显示过滤模式。
- * <p>
- * 1.21.1 适配：管道为旧 root 撮合模型（冻结维护，不重构），无 isPullSide/getBuffer，
- * 仅显示过滤模式（白/黑名单）。
+ * Jade 管道状态 provider：对准管道方块时显示白/黑名单过滤模式。
+ * PULL 面信息由 {@link PipePullProvider} 单独显示。
  */
 public class PipeJadeProvider implements IBlockComponentProvider {
 

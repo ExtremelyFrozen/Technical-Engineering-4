@@ -87,9 +87,8 @@ public class BaseMachineBlock extends Block implements EntityBlock, BlockUIMenuT
 
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
-        // 扳手守卫（用户需求）：useItemOn 对扳手返回 PASS_TO_DEFAULT_BLOCK_INTERACTION 后
-        // 1.21.1 会继续调用本方法（空手默认行为）→ GUI 被打开，与 SpannerItem 的旋转/拆解冲突。
-        // 同手判定：usedItemHand 在交互包处理时已设置，与 useItemOn 的 hand 一致。
+        // 交互链放行扳手，避免打开 GUI 与 SpannerItem 的旋转/拆解冲突。
+        // usedItemHand 已由交互包处理设置，与 useItemOn 的 hand 一致。
         if (player.getItemInHand(player.getUsedItemHand()).is(TENTags.SPANNER)) {
             return InteractionResult.PASS;
         }
@@ -112,14 +111,11 @@ public class BaseMachineBlock extends Block implements EntityBlock, BlockUIMenuT
     @Override
     protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         BlockEntity be = level.getBlockEntity(pos);
-        // 扳手（SPANNER tag）右键：不打开机器 GUI——1.21.1 调用链 Block.useItemOn 先于 Item.useOn，
-        // 若此处 CONSUME（打开 GUI）则 SpannerItem.useOn（旋转/拆解）永不执行；
-        // 放行到 Item.useOn，由 SpannerItem 分流（管道连接模式切换在 CableBased.useItemOn 已处理）。
+        // 扳手右键不打开机器 GUI，放行到 Item.useOn，由 SpannerItem 分流旋转/拆解。
         if (stack.is(TENTags.SPANNER)) {
             return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
         }
-        // 右键快捷安装（用户决策）：手持升级组件直接安装且不开 GUI——复用扳手式提前拦截，
-        // 原「潜行+右键」门禁移除（探针证实普通右键全部落在开 GUI 分支，安装永不可达）
+        // 普通右键手持升级组件直接安装且不开 GUI；仅支持升级槽的机器进入此分支。
         if (be instanceof CmMachineBlockEntity machine && stack.getItem() instanceof UpgradeItem && machine.supportsUpgradeSlots()) {
             if (level.isClientSide()) {
                 return ItemInteractionResult.SUCCESS;

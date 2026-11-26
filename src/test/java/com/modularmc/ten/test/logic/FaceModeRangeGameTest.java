@@ -208,10 +208,6 @@ public class FaceModeRangeGameTest {
 
     /**
      * 逻辑面 → 世界方向必须是双射：六个按钮各自落在一个不同方向，任何朝向都不例外。
-     *
-     * <p>
-     * 回归的是「频道朝上/朝下放置时，面板上改一个面会连带改另一个面」：旧实现把上/下固定成
-     * UP/DOWN，朝下放置时「前」与「下」都映射到 DOWN、「后」与「上」都映射到 UP。
      */
     @TestHolder(value = TEN.MOD_ID + ":face_logical_mapping_is_bijective", enabledByDefault = true)
     @GameTest(template = "empty_5x5")
@@ -233,7 +229,7 @@ public class FaceModeRangeGameTest {
                     "facing " + facing + " must cover all six directions, got " + seen);
         }
 
-        // 水平朝向沿用既有语义：前=正面、后=背面、左=顺时针、右=逆时针、上/下=世界上下
+        // 水平朝向：前=正面、后=背面、左=顺时针、右=逆时针、上/下=世界上下。
         helper.assertTrue(CmMachineBlockEntity.faceForLogicalSide(Direction.NORTH, 0) == Direction.NORTH,
                 "north-facing front must be NORTH");
         helper.assertTrue(CmMachineBlockEntity.faceForLogicalSide(Direction.NORTH, 2) == Direction.EAST,
@@ -247,7 +243,7 @@ public class FaceModeRangeGameTest {
      * 频道只有朝向外侧的那一面是面入口：其余五面一律只允许关闭，旧档残留的档位在读档时归零。
      *
      * <p>
-     * 这一条与上一条共同保证「改一个面不会连带改另一个面」：映射不再重号，死面也不再收配置。
+     * 这一条与上一条共同保证「改一个面不会连带改另一个面」：映射不重号，死面不接收配置。
      */
     @TestHolder(value = TEN.MOD_ID + ":channel_only_configures_facing_side", enabledByDefault = true)
     @GameTest(template = "empty_5x5")

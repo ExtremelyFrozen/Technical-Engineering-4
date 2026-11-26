@@ -19,9 +19,7 @@ import mezz.jei.api.recipe.RecipeType;
 import mezz.jei.api.recipe.category.IRecipeCategory;
 
 /**
- * JEI category for engine fuel recipes (Extractor, Metalizer, Biomass).
- * <p>
- * 1.21.1 适配：GuiGraphics 替代 GuiGraphicsExtractor，ResourceLocation 替代 Identifier。
+ * JEI 引擎燃料分类，覆盖萃取、金属、生物质三种引擎。
  */
 public class EngineFuelCategory implements IRecipeCategory<EngineFuelDisplay> {
 

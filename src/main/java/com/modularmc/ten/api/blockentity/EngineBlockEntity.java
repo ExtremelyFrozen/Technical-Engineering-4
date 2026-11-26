@@ -19,9 +19,9 @@ import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
  * 引擎基类：由燃料匹配（MatchFuel）或天空光照驱动产能，
  * 能量面强制 OUT 主动向相邻机器推送。
  * <p>
- * 规范 v2 生产端：<b>FE/t 只由引擎声明</b>（{@code BASE_GENERATION_RATE}），
+ * 生产端：<b>FE/t 只由引擎声明</b>（{@code BASE_GENERATION_RATE}），
  * 配方只给「耗时 T」与「FE/t 修正倍率 m」。实际产出 {@code P × m × s × B}，
- * 燃料总能量 {@code P × m × T × B}——配方不再声明绝对 FE/t。
+ * 燃料总能量 {@code P × m × T × B}；配方不声明绝对 FE/t。
  */
 public abstract class EngineBlockEntity extends CmMachineBlockEntity {
 
@@ -85,7 +85,7 @@ public abstract class EngineBlockEntity extends CmMachineBlockEntity {
     }
 
     /**
-     * 规范 v2 ⑥：并行运行对生产端 = 同时燃烧 B 份燃料。
+     * 并行运行对生产端表示同时燃烧 B 份燃料。
      * 产出 ×B、燃料消耗 ×B、总能量 ×B，每份燃料烧的时间仍为 {@code T ÷ s}，
      * 不随 B 缩短（否则等于从同一份燃料里凭空多榨能量）。
      */
@@ -96,14 +96,19 @@ public abstract class EngineBlockEntity extends CmMachineBlockEntity {
 
     @Override
     public void tick() {
+        // 待机精简路径：无燃料且燃料槽空时只跑主动输出 IO 与输入指纹。
+        if (idleTick()) return;
         doBaseData();
+        tickEngine();
+    }
 
+    private void tickEngine() {
         if (!signalAllowRun() || !energyAllowRun()) return;
 
         int batchSize = getTheoreticalBatchSize();
 
         if (fuel > 0) {
-            // 产出与燃料扣减用同一个数：实际写入量。缓冲满时不再扣燃料，
+            // 产出与燃料扣减用同一个数：实际写入量。缓冲满时不扣燃料，
             // 否则 receiveEnergy 截断会造成「燃料烧掉、电没发出来」的能量损失。
             // 末 tick 按剩余预算封顶，避免最后一下多发一份超出燃料总能量。
             int requested = Math.min(safeMultiply(getActualEfficiency(), batchSize), fuel);
@@ -113,6 +118,7 @@ public abstract class EngineBlockEntity extends CmMachineBlockEntity {
                 return;
             }
             fuel = Math.max(fuel - accepted, 0);
+            markDirty("fuel");
             setActive(true);
             return;
         }
@@ -128,7 +134,9 @@ public abstract class EngineBlockEntity extends CmMachineBlockEntity {
             // 燃料条的「总刻度」一并清零，免得空条上还挂着上一份的读数
             fuelRateMultiplier = 1.0;
             fuelTicksTotal = 0;
+            markDirty("fuelTicksTotal");
             setActive(false);
+            enterIdle();
             return;
         }
 
@@ -139,11 +147,14 @@ public abstract class EngineBlockEntity extends CmMachineBlockEntity {
         }
         fuelRateMultiplier = profile.rateMultiplier();
         fuel = safeMultiply(profile.budget(), portions);
+        markDirty("fuel");
         maxFuel = fuel;
+        markDirty("maxFuel");
         // 修正后的持续时间 = 本次装填的总能量 ÷ 实际产出率（已含升级功率倍率与并行运行数）。
         // 无升级时它就是配方的 durationTicks；装了倍率卡后按 Σpower 缩短。
         int perTick = safeMultiply(getActualEfficiency(), batchSize);
         fuelTicksTotal = perTick > 0 ? (int) Math.ceil((double) fuel / perTick) : 0;
+        markDirty("fuelTicksTotal");
         setActive(true);
     }
 

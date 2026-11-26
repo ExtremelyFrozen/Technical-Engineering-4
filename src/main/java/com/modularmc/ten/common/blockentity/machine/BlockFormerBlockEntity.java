@@ -21,7 +21,7 @@ import java.util.List;
 /**
  * 方块成型器（Block Former）。
  * 槽 0 当前放置物块（输入），槽 1..12 候选栏。
- * 工作范围由面板的 XYZ 范围与 XYZ 相对偏移决定（世界轴向三轴盒子），不再随并行运行 B 变化；
+ * 工作范围由面板的 XYZ 范围与 XYZ 相对偏移决定（世界轴向三轴盒子），不随并行运行 B 变化；
  * 范围升级只抬高可调节半径上限。
  */
 public class BlockFormerBlockEntity extends RadiusMachineBlockEntity {
@@ -132,6 +132,12 @@ public class BlockFormerBlockEntity extends RadiusMachineBlockEntity {
     @Override
     public double effectInterval() {
         return 5;
+    }
+
+    /** 工作范围内的方块变化没有事件源，只能靠探针复查；缩短到 10 tick 以满足响应预算。 */
+    @Override
+    protected int idleProbePeriod() {
+        return 10;
     }
 
     @Override

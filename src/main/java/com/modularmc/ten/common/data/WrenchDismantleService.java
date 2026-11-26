@@ -24,10 +24,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 扳手拆解服务（1.21.1 适配版：CompoundTag 替代 26.1.2 的 TagValueOutput）。
+ * 扳手拆解服务。
  * <p>
- * 事务顺序：快照 → fireBlockBreak → 编码 NBT → extractItem → destroy → 掉落物。
- * 任何关键步骤失败则恢复原方块。
+ * 事务顺序：快照 → fireBlockBreak → 使用 CompoundTag 编码 NBT → 提取物品 → destroy → 掉落物。
+ * onDestroyedByPlayer 拒绝移除时，按快照恢复机器。
  */
 public final class WrenchDismantleService {
 
@@ -84,7 +84,7 @@ public final class WrenchDismantleService {
         if (CommonHooks.fireBlockBreak(level, player.gameMode.getGameModeForPlayer(), player, pos, state).isCanceled())
             return false;
 
-        // 3. 编码配置数据到 NBT（1.21.1 用 CompoundTag，无 TagValueOutput）
+        // 3. 使用 CompoundTag 编码配置数据
         CompoundTag preEncoded = null;
         if (be instanceof CmMachineBlockEntity machine && snapshot != null) {
             HolderLookup.Provider registries = level.registryAccess();
@@ -106,13 +106,12 @@ public final class WrenchDismantleService {
                 preEncoded.putInt("direFluid" + idx, snapshot.fluidFaceData[idx]);
             }
             preEncoded.putInt("upgrade_size", snapshot.upgradeSize);
-            // 1.21.1 readTileData 不读 redstoneMode/facingVal/active，但存着无妨
+            // readTileData 不读取 redstoneMode/facingVal/active，仍写入快照以便完整保留。
             preEncoded.putInt("redstoneMode", snapshot.redstoneMode);
             preEncoded.putInt("facingVal", snapshot.facingVal);
             preEncoded.putBoolean("active", snapshot.active);
-            // [修复问题1] 频道面板：拆解后掉落物不携带频道接入状态——
-            // BE 侧 setRemoved 已注销成员，残留 channelId 的掉落物重放置后会以
-            // 脏接入态读取不存在的成员身份（表现为“替换为未连接的面板”）
+            // 掉落物必须清除频道接入状态：BE 移除时已注销成员，
+            // 重放置不能继承旧 channelId 与 joinedMemberCount。
             preEncoded.putString("channelId", "");
             preEncoded.putInt("joinedMemberCount", 0);
         }
@@ -137,7 +136,7 @@ public final class WrenchDismantleService {
             extracted = true;
         }
 
-        // 6. onDestroyedByPlayer（1.21.1 无 6 参重载，用 5 参：Level, BlockPos, Player, canHarvest, FluidState）
+        // 6. 使用五参 onDestroyedByPlayer：Level, BlockPos, Player, canHarvest, FluidState
         boolean removed = state.onDestroyedByPlayer(level, pos, player,
                 state.canHarvestBlock(level, pos, player), level.getFluidState(pos));
         if (!removed) {
@@ -244,6 +243,10 @@ public final class WrenchDismantleService {
             machine.facingVal = snap.facingVal;
             machine.active = snap.active;
             machine.upgradeSize = snap.upgradeSize;
+            // 三个字段都是 @LazyManaged：回滚路径直写，必须自己置脏，否则客户端停在失败拆除前的值。
+            machine.markDirty("redstoneMode");
+            machine.markDirty("facingVal");
+            machine.markDirty("active");
             machine.setChanged();
         } catch (Exception e) {
             TEN.LOGGER.error("Failed to restore machine at {} after failed dismantle", machine.getBlockPos(), e);

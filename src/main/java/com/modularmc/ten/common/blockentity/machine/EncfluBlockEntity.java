@@ -153,10 +153,10 @@ public class EncfluBlockEntity extends ProcessingMachineBlockEntity {
     public boolean cooking() {
         // 进度推进前检查输出槽与罐容量（罐满时停机，不消耗目标空转）
         ItemStack output = itemHandler.getStackInSlot(2);
-        if (!output.isEmpty()) return true; // 输出槽被占 → 阻塞
+        if (!output.isEmpty()) return true;
 
         ItemStack tool = itemHandler.getStackInSlot(0);
-        if (!tool.isEnchanted()) return true; // 工具耗尽 → 阻塞
+        if (!tool.isEnchanted()) return true;
 
         // 检查 XP 罐至少能容纳一组
         if (!tanks.isEmpty()) {
@@ -164,7 +164,7 @@ public class EncfluBlockEntity extends ProcessingMachineBlockEntity {
             int xpPerGroup = enchantments.isEmpty() ? 25 : Math.max(1, enchantments.size() * 25);
             FluidStack xpFluid = new FluidStack((net.minecraft.world.level.material.Fluid) TENFluids.LIQUID_XP.getSource(), xpPerGroup);
             int filled = tanks.get(0).fill(xpFluid, IFluidHandler.FluidAction.SIMULATE);
-            if (filled < xpPerGroup) return true; // 罐满 → 阻塞
+            if (filled < xpPerGroup) return true;
         }
 
         return false;

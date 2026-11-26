@@ -16,10 +16,9 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * 传输网络注册表（移植自 TE4-New）：服务端权威网络池 + 延迟组网队列。
+ * 传输网络注册表：服务端权威网络池与延迟组网队列。
  * 组网/拆网由 {@link #onLevelTick} 在 level tick 末集中处理，避免
- * BE 加载顺序与放置/拆除事件中的并发修改问题。
- * 裁剪：客户端网络镜像与流体冲突特效未移植（本工程无流体管道）。
+ * 方块实体加载顺序与拓扑变更期间的并发修改。
  */
 @EventBusSubscriber(modid = TEN.MOD_ID)
 public final class TransmitterNetworkRegistry {

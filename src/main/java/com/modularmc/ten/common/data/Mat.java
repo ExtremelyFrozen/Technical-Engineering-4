@@ -86,7 +86,7 @@ public enum Mat {
         this.hasBlock = hasBlock;
     }
 
-    // ── Name helpers (moved from TENItems.Mat) ───────────────────────
+    // ── 名称辅助方法 ──────────────────────────────────────────────
 
     /** English name of this material alone, e.g. "Powered Tin". */
     public String englishName() {

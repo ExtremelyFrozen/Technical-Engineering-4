@@ -25,38 +25,38 @@ public class DataGenerators {
         var generator = event.getGenerator();
         var output = generator.getPackOutput();
 
-        // Registrate handles block/item models, blockstates, and English lang entries automatically.
+        // Registrate 自动生成方块/物品模型、blockstate 与英文语言条目。
 
-        // Chinese localization — reads from all ZH_NAMES/ZH_ENTRIES maps
+        // 中文本地化：汇总各 ZH_NAMES/ZH_ENTRIES 映射。
         generator.addProvider(event.includeClient(), new LanguageProvider(output, TEN.MOD_ID, "zh_cn") {
 
             @Override
             protected void addTranslations() {
-                // 1. From 4 static maps (blocks, items, fluids, lang entries)
+                // 1. 四类静态映射：方块、物品、流体与语言条目。
                 TENBlocks.ZH_NAMES.forEach((id, cn) -> add("block." + TEN.MOD_ID + "." + id, cn));
                 TENItems.ZH_NAMES.forEach((id, cn) -> add("item." + TEN.MOD_ID + "." + id, cn));
                 TENFluids.ZH_NAMES.forEach((id, cn) -> add("block." + TEN.MOD_ID + "." + id, cn));
                 TENLangHandler.ZH_ENTRIES.forEach(this::add);
 
-                // Creative tabs
+                // 创造模式物品栏。
                 TENCreativeModeTabs.ZH_NAMES.forEach(this::add);
 
-                // 2a. Auto-generate standalone keys from item and block registrations
+                // 2a. 从物品与方块注册信息生成裸键。
                 TENItems.ZH_NAMES.forEach((id, cn) -> add(TEN.MOD_ID + "." + id, cn));
                 TENBlocks.ZH_NAMES.forEach((id, cn) -> add(TEN.MOD_ID + "." + id, cn));
                 TENFluids.ZH_FLUID_KEYS.forEach((key, cn) -> add(key, cn));
 
-                // 2b. Tag translations → 已迁至独立文件 TENTagLangGen（含 JEI/NeoForge 标准键 + 双语）
+                // 2b. 标签翻译由 TENTagLangGen.ZH_ENTRIES 提供，包含 JEI/NeoForge 标准键与兼容短键。
                 TENTagLangGen.ZH_ENTRIES.forEach(this::add);
 
-                // 2b5. 流体桶物品名；裸键已清理，避免中文侧出现英文缺失的孤儿键
+                // 2b5. 补充流体桶物品名，供背包与容器界面显示。
                 add("item.kenergyengineering.liquid_bizarrerie_bucket", "奇异物质桶");
                 add("item.kenergyengineering.liquid_honey_bucket", "蜂蜜桶");
                 add("item.kenergyengineering.liquid_royal_jelly_bucket", "蜂王浆桶");
                 add("item.kenergyengineering.liquid_spicy_jelly_bucket", "香辣蜂王浆桶");
                 add("item.kenergyengineering.liquid_xp_bucket", "液态经验桶");
 
-                // 2c. Supplement from hand-written zh_cn.json
+                // 2c. 从手写 zh_cn.json 补充条目。
                 try {
                     var file = new java.io.File("src/main/resources/assets/" + TEN.MOD_ID + "/lang/zh_cn.json");
                     if (file.exists()) {
@@ -66,21 +66,21 @@ public class DataGenerators {
                         json.entrySet().forEach(entry -> add(entry.getKey(), entry.getValue().getAsString()));
                     }
                 } catch (Exception e) {
-                    // Silently skip if file doesn't exist
+                    // 文件不存在时跳过。
                 }
             }
         });
-        // Material variant recipes
+        // 材料变体配方。
         generator.addProvider(event.includeServer(), new TENRecipeGen(output, event.getLookupProvider()));
-        // c:mats/* 聚合标签（锭或粉）
+        // c:mats/* 聚合标签（锭或粉）。
         generator.addProvider(event.includeServer(), new TENMaterialTagGen(output));
-        // 邻居模组兼容配方（EIO 系，条件门控）
+        // 邻居模组兼容配方（EIO 系，条件门控）。
         generator.addProvider(event.includeServer(), new TENCompatGen(output));
-        // Vanilla pack/split recipes
+        // 原版物品的压缩与拆分配方。
         generator.addProvider(event.includeServer(), new TENVanillaPackGen(output));
-        // 引擎燃料配方（数据包 engine_fuel，运行期唯一事实源）
+        // 引擎燃料配方（数据包 engine_fuel，运行期事实源）。
         generator.addProvider(event.includeServer(), new TENFuelGen(output));
-        // 主世界锡与镍的矿石生成（configured/placed feature 与 biome modifier）
+        // 主世界锡与镍的矿石生成（configured/placed feature 与 biome modifier）。
         generator.addProvider(event.includeServer(), new DatapackBuiltinEntriesProvider(output, event.getLookupProvider(), TENWorldGenGen.BUILDER, Set.of(TEN.MOD_ID)));
     }
 }

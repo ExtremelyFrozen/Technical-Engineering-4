@@ -21,7 +21,7 @@ import java.util.concurrent.CompletableFuture;
  * <p>
  * 自动化靠两点，不需要运行期写标签：成员一律 {@code required:false}，材料缺席时条目自动为空、
  * 引用它的配方因输入标签为空而永不匹配；成员表由 {@link Mat} 的注册形态推导，
- * 加材料不必再手抄标签文件。NeoForge 1.21.1 没有受支持的加载期标签写入点
+ * 加材料无需手抄标签文件。当前 NeoForge 没有受支持的加载期标签写入点
  * （{@code TagsUpdatedEvent} 在冻结之后），所以这条链只能在 DataGen 侧完成。
  */
 public class TENMaterialTagGen implements DataProvider {

@@ -9,7 +9,7 @@ import com.tterrag.registrate.providers.RegistrateLangProvider;
 import java.util.LinkedHashMap;
 
 /**
- * Tag 名称本地化（独立文件，2026-09 用户需求）。
+ * Tag 名称本地化。
  * <p>
  * JEI 的标签名显示链路：JEI RenderHelper.getName(TagKey) → NeoForge
  * {@code Tags.getTagTranslationKey(tag)} → 键格式
@@ -17,7 +17,7 @@ import java.util.LinkedHashMap;
  * {@code #<namespace>:<path>} 显示裸 id。
  * 因此本文件为 KER 注册/引用的全部标签生成标准键
  * （如 {@code tag.item.c.ingots.tin}），并保留旧短键
- * {@code tag.c.ingots.tin}（历史第三方/EMI 查询兼容）。
+ * {@code tag.c.ingots.tin}（第三方/EMI 查询兼容）。
  * <p>
  * 覆盖范围 = src/main/resources/data 下全部 tags json：
  * <ul>
@@ -33,7 +33,7 @@ public final class TENTagLangGen {
     /** 已写入键去重：item/block 同名类别在旧短键体系下同 key，值相同则合并。 */
     private static final java.util.Set<String> WRITTEN = new java.util.HashSet<>();
 
-    /** Registrate en_us provider 入口（与 TENLangHandler.init 同挂载点）。 */
+    /** Registrate en_us 语言提供器入口（与 TENLangHandler.init 同挂载点）。 */
     public static void init(RegistrateLangProvider provider) {
         // ── c: 物品类别（单段）──
         addTag(provider, "item", "c", "coolants", "Coolants", "冷却剂");
@@ -151,7 +151,7 @@ public final class TENTagLangGen {
         addTag(provider, "block", "minecraft", "needs_iron_tool", "Requires Iron Tool", "需要铁质工具");
     }
 
-    /** 材质家族条目：en "{Material} {FormEn}" / zh "{cn}{FormCn}"。 */
+    /** 材质家族条目：英文为「Material + FormEn」，中文为「cn + FormCn」。 */
     private static void addMatForm(RegistrateLangProvider provider, String category,
                                    String formEn, String formCn, Mat mat) {
         addTag(provider, "item", "c", category + "/" + mat.id,
@@ -159,9 +159,9 @@ public final class TENTagLangGen {
     }
 
     /**
-     * 写入标准 JEI/EMI/NeoForge 键 + 旧短键（EMI 第三层兕底）。
-     * 标准：tag.item.c.ingots.tin（JEI 与 EMI 在 NeoForge 下同构）；旧：tag.c.ingots.tin。
-     * 旧短键 item/block 同名类别（ores/storage_blocks）值相同，合并写入（WRITTEN 去重）。
+     * 同时写入标准 JEI/EMI/NeoForge 键与第三方/EMI 兼容短键。
+     * 标准键形如 tag.item.c.ingots.tin，兼容短键形如 tag.c.ingots.tin。
+     * item/block 同名类别（ores/storage_blocks）的短键值相同，由 WRITTEN 去重合并。
      */
     private static void addTag(RegistrateLangProvider provider, String registry,
                                String namespace, String path, String en, String cn) {

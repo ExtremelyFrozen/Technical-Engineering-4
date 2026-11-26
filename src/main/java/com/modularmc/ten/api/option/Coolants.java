@@ -13,7 +13,7 @@ import java.util.Map;
 /**
  * 冷却剂查询（数据驱动）。
  * <p>
- * 准入与数值都来自物品标签，与 {@code MatchFuel} 的「金属燃料按品位标签分档」同构：
+ * 准入与数值都来自物品标签：
  * <ul>
  * <li>{@code c:coolants} —— 准入。不在该标签内的物品不能当冷却剂。</li>
  * <li>{@code c:coolants/basic|standard|premium} —— 分档，决定周期/推进量/次数。</li>

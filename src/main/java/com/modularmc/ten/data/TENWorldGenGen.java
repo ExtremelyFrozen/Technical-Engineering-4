@@ -85,7 +85,7 @@ public final class TENWorldGenGen {
 
     private TENWorldGenGen() {}
 
-    // ── configured feature ─────────────────────────────────────────
+    // ── 配置 feature ─────────────────────────────────────────
     private static void bootstrapConfigured(BootstrapContext<ConfiguredFeature<?, ?>> ctx) {
         ctx.register(TIN_MAIN_CF, ore(Feature.ORE, TENBlocks.TIN_ORE.get(), TENBlocks.DEEP_TIN_ORE.get(), TIN_MAIN_SIZE));
         ctx.register(TIN_SCATTER_CF, ore(Feature.SCATTERED_ORE, TENBlocks.TIN_ORE.get(), TENBlocks.DEEP_TIN_ORE.get(), TIN_SCATTER_SIZE));
@@ -99,7 +99,7 @@ public final class TENWorldGenGen {
                 OreConfiguration.target(new TagMatchTest(BlockTags.DEEPSLATE_ORE_REPLACEABLES), deep.defaultBlockState())), size));
     }
 
-    // ── placed feature ────────────────────────────────────────────
+    // ── 放置 feature ────────────────────────────────────────────
     private static void bootstrapPlaced(BootstrapContext<PlacedFeature> ctx) {
         HolderGetter<ConfiguredFeature<?, ?>> configured = ctx.lookup(Registries.CONFIGURED_FEATURE);
         // BiomeFilter 必须自带：PlacementUtils.register 不会补，缺了它群系过滤不生效
@@ -117,7 +117,7 @@ public final class TENWorldGenGen {
                 HeightRangePlacement.uniform(WORLD_FLOOR, NICKEL_SCATTER_CEIL), BiomeFilter.biome());
     }
 
-    // ── biome modifier ────────────────────────────────────────────
+    // ── 群系修改器 ────────────────────────────────────────────
     private static void bootstrapModifiers(BootstrapContext<BiomeModifier> ctx) {
         HolderGetter<PlacedFeature> placed = ctx.lookup(Registries.PLACED_FEATURE);
         HolderSet<Biome> overworld = ctx.lookup(Registries.BIOME).getOrThrow(BiomeTags.IS_OVERWORLD);

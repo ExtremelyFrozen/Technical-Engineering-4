@@ -178,7 +178,6 @@ public class FarmBlockEntity extends RadiusMachineBlockEntity {
             currentRowIndex++;
         }
 
-        // If all rows processed, sort by maturity and restart
         if (currentRowIndex >= xRowOrder.length) {
             sortRowsByMaturity();
             currentRowIndex = 0;

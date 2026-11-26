@@ -30,7 +30,6 @@ public class MachineActivePullGameTest {
 
     /**
      * 能量 IN 面从相邻「被动输出」的创造能量单元抽电。
-     * 旧实现只有自推、没有自拉，普通机器的能量主动输入面完全不动作。
      */
     @TestHolder(value = TEN.MOD_ID + ":in_face_pulls_energy_from_passive_cell", enabledByDefault = true)
     @GameTest(template = "empty_5x5")
@@ -62,7 +61,6 @@ public class MachineActivePullGameTest {
 
     /**
      * 流体 IN 面从相邻机器的输出罐抽液。
-     * 旧实现同样只有自推、没有自拉，相邻容器里的流体永远进不来。
      */
     @TestHolder(value = TEN.MOD_ID + ":in_face_pulls_fluid_from_neighbour", enabledByDefault = true)
     @GameTest(template = "empty_5x5")
@@ -89,7 +87,6 @@ public class MachineActivePullGameTest {
         helper.succeed();
     }
 
-    /** 放置一台机器并初始化；失败时 helper.fail 并返回 null。 */
     private static CmMachineBlockEntity placeMachine(GameTestHelper helper, BlockPos pos, Block block) {
         helper.setBlock(pos, block);
         CmMachineBlockEntity machine = helper.getBlockEntity(pos);

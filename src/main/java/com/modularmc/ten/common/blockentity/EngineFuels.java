@@ -22,8 +22,8 @@ import java.util.WeakHashMap;
  *
  * <p>
  * 匹配优先级：精确物品优先于标签（按 ingredient 解析出的物品数升序），同优先级取先注册者。
- * 数据包没有覆盖的物品再回退到原版燃烧时间（{@code getBurnTime}），
- * 这条兜底只为兼容「别的模组给物品加了燃烧时间」的情况，不参与本模组的燃料定义。
+ * 数据包未覆盖的物品仅萃取引擎回退到原版燃烧时间（{@code getBurnTime}），
+ * 用于兼容其他模组添加的燃烧时间；金属与生物质引擎不参与这条兜底。
  */
 public final class EngineFuels {
 
@@ -33,7 +33,7 @@ public final class EngineFuels {
     public static final String BIOMASS = "biomass";
     public static final String SOLAR = "solar";
 
-    /** 兜底口径的能量密度（FE / 燃烧 tick），与旧版萃取引擎一致。 */
+    /** 兜底口径的能量密度：20 FE / 燃烧 tick。 */
     private static final int FALLBACK_DENSITY = 20;
 
     /** 缓存按 RecipeManager 实例失效：重载数据包会换一个新实例。 */
@@ -62,7 +62,7 @@ public final class EngineFuels {
             int rate = rateOf(engineRate, recipe.rateMultiplier());
             return new FuelProfile(rate, recipe.duration(), recipe.rateMultiplier());
         }
-        // 兜底只给萃取引擎：它历史上就吃「任何有原版燃烧时间的物品」。
+        // 兜底只给萃取引擎：允许任何具有原版燃烧时间的物品。
         // 金属引擎与生物质引擎的燃料是白名单（锭 / 植物标签），不能被兜底放进来。
         return EXTRACTOR.equals(engineId) ? vanillaBurnFallback(engineRate, stack) : FuelProfile.EMPTY;
     }
@@ -100,7 +100,7 @@ public final class EngineFuels {
         });
     }
 
-    /** 兼容兜底：别的模组给物品加了原版燃烧时间时，按旧口径（20 FE / 燃烧 tick）折算。 */
+    /** 兼容兜底：其他模组添加的原版燃烧时间按 20 FE / 燃烧 tick 折算。 */
     private static FuelProfile vanillaBurnFallback(int engineRate, ItemStack stack) {
         int ticks = stack.getBurnTime(RecipeType.SMELTING);
         if (ticks <= 0) return FuelProfile.EMPTY;

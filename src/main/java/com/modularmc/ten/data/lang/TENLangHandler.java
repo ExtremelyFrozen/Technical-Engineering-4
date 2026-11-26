@@ -18,8 +18,8 @@ public final class TENLangHandler {
     public static final java.util.LinkedHashMap<String, String> ZH_ENTRIES = new java.util.LinkedHashMap<>();
 
     public static void init(RegistrateLangProvider provider) {
-        // Bare keys (kenergyengineering.xxx) = same value as item./block. prefixed keys.
-        // Registrate generates prefixed keys from .lang() calls but not bare keys.
+        // 裸键（kenergyengineering.xxx）与 item./block. 前缀键同值；
+        // Registrate 的 .lang() 只生成前缀键，裸键在此补充。
         TENItems.EN_NAMES.forEach((id, en) -> provider.add(TEN.MOD_ID + "." + id, en));
         TENBlocks.EN_NAMES.forEach((id, en) -> provider.add(TEN.MOD_ID + "." + id, en));
 
@@ -55,9 +55,7 @@ public final class TENLangHandler {
         add(provider, "cable.tooltip.rate", "Transfer: %s FE/t", "传输速率：%s FE/t");
         add(provider, "cable.tooltip.buffer", "Buffer: %s FE", "能量缓冲：%s FE");
         add(provider, "cable.tooltip.infinite", "Infinite", "无限");
-        // Removed: spanner — now auto-derived from item registration
         add(provider, "not_consumed", "Not consumed", "不消耗");
-        // Removed: energy_capacity — now auto-derived from item registration
         add(provider, "shift", "Press [SHIFT] to see more", "按住 [SHIFT] 查看更多信息");
         add(provider, "info.too_much_upgrades", "This machine has too many upgrades!", "这台机器的升级组件太多了！");
         add(provider, "info.not_support_upgrade", "This machine does not support this upgrade!", "这台机器不支持这个升级！");
@@ -66,8 +64,7 @@ public final class TENLangHandler {
         add(provider, "locked_slot", "This slot has not been unlocked yet.", "未解锁槽位");
         add(provider, "energy_capacity.charging_on", "Charging enabled", "全身充能已开启");
         add(provider, "energy_capacity.charging_off", "Charging disabled", "全身充能已关闭");
-        // 按键键名由游戏直接查表，不经 MOD_ID 前缀；用 addRaw 而不是 add，否则会多出一层
-        // kenergyengineering.，界面上就显示原始键名（4.0.2 的 key.categories.kenergyengineering 即此）。
+        // 按键键名由游戏直接查表，不经 MOD_ID 前缀；必须用 addRaw，避免再叠加一层 kenergyengineering.。
         addRaw(provider, TEN.KEY_CATEGORY, "Kenergy Engineering Retechnicalized", "科能工程:再技术化");
         addRaw(provider, TEN.KEY_TOGGLE_CHARGE, "Toggle Energy Module Charging", "切换能量模块充能");
     }
@@ -105,7 +102,7 @@ public final class TENLangHandler {
     private static void addUpgradeTips(RegistrateLangProvider provider) {
         // 通用格式键（跨升级共享，UpgradeTooltipFormatter 消费）。
         // 术语口径：卡面只写真正被声明的量——运行速度（+N）、运行耗时（±n%）、
-        // 运行功率（FE/t）、并行运行数。没有变化的维度整行不写（不再有「不变」行）；
+        // 运行功率（FE/t）、并行运行数。没有变化的维度不生成整行；
         // 速度与耗时是两条独立通道（每 tick 推进几格 / 配方有多长），两张卡各写各的行；
         // 完成一次配方的耗电是功率与耗时的乘积，作为派生量不设词条。
         // 数值写法：运行速度是自然数增量（+1 / +2 / +3），其余倍率是整数 xN 或百分比（+20% / -25%）。
@@ -299,7 +296,7 @@ public final class TENLangHandler {
         add(provider, "info.matter_condenser.2", "Catalysts: iron/copper/gold/nickel dust, Nether Wart, Chorus Fruit, Blaze Powder, Redstone, Glowstone Dust, Mushrooms.", "催化剂：铁/铜/金/镍粉、下界疣、紫颂果、烈焰粉、红石、荧石粉、蘑菇。");
         add(provider, "info.matter_condenser.3", "Solidify the liquid in a Refiner to get Bizarrerie.", "把液态产物送进精炼机，即可固化成奇异物质。");
         add(provider, "info.matter_condenser.4", "Where do those even come from?", "这些玩意从哪来的？");
-        // Legacy cell keys (kept for compatibility)
+        // 能量单元旧语言键，保留用于第三方兼容。
         add(provider, "info.cell.0", "Stores plenty of energy.", "可以存储大量能量。");
         add(provider, "info.cell.1", "It can also charge items.", "另外，它还有能力充能物品。");
         // 新机器信息文案
@@ -340,8 +337,7 @@ public final class TENLangHandler {
     }
 
     private static void addEmi(RegistrateLangProvider provider) {
-        // 注意：EMI 分类标题查找键为裸键 emi.category.<ns>.<path>（TENRecipeWidget.titleEmi），
-        // 不加 kenergyengineering 前缀；26.1.2 生成的双前缀键是其 add() 自动前缀的死键，勿照搬。
+        // EMI 分类标题使用裸键 emi.category.<ns>.<path>（TENRecipeWidget.titleEmi），不叠加模组前缀。
         addRaw(provider, "emi.category.kenergyengineering.pulverizer", "Pulverizer", "粉碎机");
         addRaw(provider, "emi.category.kenergyengineering.compressor", "Compressor", "压缩机");
         addRaw(provider, "emi.category.kenergyengineering.refiner", "Refiner", "精炼机");

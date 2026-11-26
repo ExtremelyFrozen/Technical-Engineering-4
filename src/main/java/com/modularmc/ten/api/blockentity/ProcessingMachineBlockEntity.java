@@ -29,13 +29,15 @@ public abstract class ProcessingMachineBlockEntity extends CmMachineBlockEntity 
     }
 
     /**
-     * Base processing time in ticks at 1 FE/t energy input.
-     * Higher energy input reduces processing time proportionally.
+     * 基础配方时长（tick）。周期刻度由 {@code durationMultiplier} 缩放，
+     * 进度由 {@code runSpeed} 推进。
      */
     public abstract int baseTickTime();
 
     @Override
     public void tick() {
+        // 待机精简路径：确认无活时只跑光合注能 / 主动 IO / 输入指纹，唤醒与启动在同一 tick 完成。
+        if (idleTick()) return;
         doBaseData();
         process();
     }
@@ -115,10 +117,14 @@ public abstract class ProcessingMachineBlockEntity extends CmMachineBlockEntity 
             // 进行中的进度作废归零——进度条立即清空，不保留半途进度。
             // 信号关闭/能量不足/输出满时 start 仍 true（或早于 else 提前 return），
             // 不进此分支，仍走停机语义保留 progress 等待恢复。
-            if (!start && progress > 0) {
-                progress = 0;
-                clearLockedBatch();
-                markDirty("progress");
+            if (!start) {
+                if (progress > 0) {
+                    progress = 0;
+                    clearLockedBatch();
+                    markDirty("progress");
+                }
+                // 无任务且进度已归零 = 待机；缺能/断信号（start 仍为 true）保持 AWAKE。
+                enterIdle();
             }
         }
     }
@@ -138,7 +144,5 @@ public abstract class ProcessingMachineBlockEntity extends CmMachineBlockEntity 
      * 完成判断之前执行。子类可覆盖用于周期逻辑（如冷凝器催化剂消耗）。
      * 停机（能量不足/输出满/条件不满足）时不调用。
      */
-    protected void onProcessTick() {
-        // Default: no-op. Subclasses override as needed.
-    }
+    protected void onProcessTick() {}
 }

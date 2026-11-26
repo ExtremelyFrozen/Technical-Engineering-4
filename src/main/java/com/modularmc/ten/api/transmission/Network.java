@@ -15,10 +15,10 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * 传输网络基类（移植自 TE4-New）：服务端权威图结构，成员按 BlockPos 索引。
+ * 传输网络基类：服务端权威图结构，成员按 BlockPos 索引。
  * 拓扑变更（加入/合并/分裂）由 {@link TransmitterNetworkRegistry} 在 level tick
- * 内集中延迟处理，防 chunk 加载顺序问题。
- * 裁剪：客户端网络镜像未移植（本工程渲染走 blockstate，无客户端网络需求）。
+ * 内集中延迟处理，避免区块加载顺序影响。
+ * 客户端不持有网络镜像；连接外观由 {@link CableRenderState} 经 {@code ModelData} 同步，不写入 BlockState。
  */
 public abstract class Network<AC, NET extends Network<AC, NET, T>, T extends Transmitter<AC, NET, T>> {
 

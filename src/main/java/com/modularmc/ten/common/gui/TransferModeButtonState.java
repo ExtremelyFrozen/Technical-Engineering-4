@@ -1,56 +1,35 @@
 package com.modularmc.ten.common.gui;
 
 /**
- * Pure state computation for transfer mode buttons (energy/item/fluid).
+ * 传输模式按钮的纯状态计算，无 Minecraft、LDLib 或客户端依赖。
  * <p>
- * Each button has 4 visual states in handler.png, arranged at v offsets:
- *
- * <pre>
- *   state 0: v = 126  — unselected, not hovered
- *   state 1: v = 140  — unselected, hovered
- *   state 2: v = 154  — selected, not hovered
- *   state 3: v = 168  — selected, hovered
- * </pre>
- *
- * Formula: {@code stateIndex = (selected ? 2 : 0) + (hovered ? 1 : 0)}.
- * <p>
- * Thread-safe and stateless. No dependencies on Minecraft / LDLib / client code.
+ * 按钮使用 handler.png，四种状态的 V 坐标依次为 126、140、154、168，每格高 14px；
+ * 状态顺序为未选中未悬停、未选中悬停、已选中未悬停、已选中悬停。
  */
 public final class TransferModeButtonState {
 
     private TransferModeButtonState() {}
 
-    /** Base V coordinate for the first (unselected, not hovered) state. */
     public static final int BASE_V = 126;
-
-    /** Height of each state region, also the step between consecutive states. */
     public static final int STATE_SIZE = 14;
-
-    /** Width and height of every transfer mode button. */
     public static final int SIZE = 14;
-
-    /** U coordinate of the fluid mode button in handler.png. */
     public static final int U_FLUID = 76;
-
-    /** U coordinate of the energy mode button in handler.png. */
     public static final int U_ENERGY = 91;
-
-    /** U coordinate of the item mode button in handler.png. */
     public static final int U_ITEM = 106;
 
     /**
-     * @param selected whether this button's mode is the currently active one
-     * @param hovered  whether the mouse is over this button
-     * @return state index in {@code [0, 3]}
+     * @param selected 是否为当前选中的模式
+     * @param hovered  鼠标是否悬停
+     * @return {@code [0, 3]} 内的纹理状态索引
      */
     public static int stateIndex(boolean selected, boolean hovered) {
         return (selected ? 2 : 0) + (hovered ? 1 : 0);
     }
 
     /**
-     * @param stateIndex result of {@link #stateIndex(boolean, boolean)}
-     * @return the V texture coordinate in handler.png
-     * @throws IllegalArgumentException if stateIndex is not in {@code [0, 3]}
+     * @param stateIndex {@link #stateIndex(boolean, boolean)} 的结果
+     * @return 纹理 V 坐标
+     * @throws IllegalArgumentException stateIndex 不在 {@code [0, 3]} 内
      */
     public static int textureV(int stateIndex) {
         if (stateIndex < 0 || stateIndex > 3) {
@@ -60,13 +39,12 @@ public final class TransferModeButtonState {
     }
 
     /**
-     * Radio-button click: clicking a different mode selects it;
-     * clicking the already-selected mode keeps it (no cancellation).
+     * 单选按钮点击：选择所点模式，重复点击已选中模式时保持不变。
      *
-     * @param currentMode the currently selected mode {@code [0, 2]}
-     * @param clickedMode the mode that was just clicked {@code [0, 2]}
-     * @return the new selected mode
-     * @throws IllegalArgumentException if either argument is outside {@code [0, 2]}
+     * @param currentMode 当前选中的模式 {@code [0, 2]}
+     * @param clickedMode 本次点击的模式 {@code [0, 2]}
+     * @return 新的选中模式
+     * @throws IllegalArgumentException 任一参数不在 {@code [0, 2]} 内
      */
     public static int click(int currentMode, int clickedMode) {
         if (currentMode < 0 || currentMode > 2) {

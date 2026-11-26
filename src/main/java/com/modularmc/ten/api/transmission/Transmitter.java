@@ -13,17 +13,10 @@ import java.util.Collection;
 import java.util.UUID;
 
 /**
- * 传输节点基类（移植自 TE4-New，有裁剪）：服务端权威的连接状态与网络归属。
+ * 传输节点基类：服务端权威的连接状态与网络归属。
  * <p>
- * 裁剪项及原因（与 New 版差异）：
- * <ul>
- * <li>染色（DyeColor）：本工程管道资源无染色渲染支持，染色会成无视觉反馈的孤立功能</li>
- * <li>Filter/Blocker：无逐跳运输过滤门，无红石控制器变体</li>
- * <li>客户端网络镜像/reduced update tag：连接外观走 CableRenderState 的 ModelData 同步</li>
- * <li>内容兼容钩子（isContentsCompatible）：本工程无流体管道，无内容约束场景</li>
- * </ul>
- * 连接位语义：transmitter 位=管道间连接（渲染为 connect）；acceptor 位=管道-设备
- * 连接（有效模式取自 connectionTypes，PUSH/PULL 在此生效）。
+ * 连接位语义：transmitter 位表示管道间连接（渲染为 part）；acceptor 位表示管道与设备连接
+ * （渲染为 connect）。设备边模式取自 connectionTypes，扳手仅在 PULL/NORMAL 间切换。
  */
 public abstract class Transmitter<AC, NET extends Network<AC, NET, T>, T extends Transmitter<AC, NET, T>> {
 
@@ -90,8 +83,8 @@ public abstract class Transmitter<AC, NET extends Network<AC, NET, T>, T extends
     }
 
     /**
-     * 边的有效连接模式：无连接位 → NONE；管道间连接恒为 NORMAL；
-     * 管道-设备连接取本方向的设定模式（PUSH/PULL 在此生效）。
+     * 边的有效连接模式：无连接位为 NONE；管道间连接恒为 NORMAL；
+     * 设备边取本方向设定模式，扳手仅在 PULL/NORMAL 间切换。
      */
     public ConnectionType getConnectionType(Direction side) {
         int i = side.ordinal();
@@ -133,8 +126,8 @@ public abstract class Transmitter<AC, NET extends Network<AC, NET, T>, T extends
     }
 
     /**
-     * 网络归属切换。服务端返回 true 表示归属发生变化、调用方需处理更新
-     * （客户端无网络镜像，恒返回 false 的客户端分支已随镜像一并裁剪）。
+     * 网络归属切换。服务端返回 true 表示归属发生变化、调用方需处理更新；
+     * requestNow 控制是否立即通知宿主刷新。
      */
     public boolean setNetwork(@Nullable NET net, boolean requestNow) {
         if (network == net) {
@@ -160,7 +153,7 @@ public abstract class Transmitter<AC, NET extends Network<AC, NET, T>, T extends
 
     protected abstract boolean isValidAcceptor(Direction side);
 
-    /** 全量刷新连接位：新增位通知邻居重连、消失位通知邻居断开，最后刷新 blockstate。 */
+    /** 全量刷新连接位：新增位通知邻居重连、消失位通知邻居断开，最后通知宿主刷新持久化与渲染态。 */
     public void refreshConnections() {
         if (isRemote()) {
             return;

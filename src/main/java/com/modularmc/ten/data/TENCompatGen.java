@@ -25,15 +25,14 @@ import java.util.concurrent.CompletableFuture;
  * <ol>
  * <li>每条都带 {@code neoforge:mod_loaded} 条件，邻居缺席时整条在加载期消失；生成结果与本机
  * 是否安装邻居无关，CI 与本地产出一致。</li>
- * <li>耗时不按对方能量换算，而是统一到本模组的尺规（{@code tools/compat/config.json} 的 timeRule）：
+ * <li>耗时统一到本模组的尺规（{@code tools/compat/config.json} 的 timeRule）：
  * 感应炉 50 tick × 输入物料份数、粉碎机一次操作 120（粗矿块这类 9 份输入 200）、
- * 压缩机恒 100 不看份数。原来的「对方总 FE ÷ 15 FE/t」在 IE 的 51200 FE 前会顶到 1200 tick 上限，
- * 与原生配方差一个数量级。</li>
+ * 压缩机恒 100 不看份数。</li>
  * <li>金属输入写 {@code c:ingots/X}；只有感应炉走 {@link #matIngot} 才升级成 {@code c:mats/X}（锭或粉皆可入），
  * 粉碎机与压缩机不收粉——{@code c:mats/X} 只服务感应炉。</li>
  * <li>对方的 compound 输入（如 soul_sand｜soul_soil）展开成多条——本模组格式没有 any_of 输入。</li>
  * <li>输入签名与本模组已有配方相同的条目一律不导入：同一台机器不允许两条可匹配配方，
- * 本模组的语义优先（矿石三段式已覆盖 {@code c:ores/*}，不再导入对方的 ore 研磨）。
+ * 本模组的语义优先（矿石三段式已覆盖 {@code c:ores/*}，不导入对方的 ore 研磨）。
  * 落盘前再由 {@link RecipeSignature#claim} 断言一次：两张表在同一次 DataGen 里互相登记，
  * 同一签名出现在两个文件直接让生成失败，不靠人记得去重。</li>
  * <li>输出必须是具体物品：标准语义里配方输出是一个确定的 ItemStack，标签输出按标准处理会得到空产物。
@@ -47,8 +46,8 @@ import java.util.concurrent.CompletableFuture;
  * 造出一条只在别的模组包里成立的配方。例外：对方另有<b>不带该第三方门控</b>的等价路线时按等价路线放宽——
  * {@code neoecoae} 的两条水晶行就是如此，对方的 {@code inscriber} 路线不需要通用机械。</li>
  * <li>同一输入有多家邻居提供、产物或副产不同时走 {@link #GRIND_SPLIT}：条件成对互斥，加载期只有一条成立。
- * 素材全是原版的条目不再进兼容层——转正为 {@code recipe/pulverizer/*.json} 的原生配方，
- * 并在 {@code tools/compat/config.json} 的 {@code droppedRows} 登记，重跑转换器不会塞回来。</li>
+ * 素材全是原版的条目归入 {@code recipe/pulverizer/*.json} 原生配方，不在兼容层生成；
+ * 在 {@code tools/compat/config.json} 的 {@code droppedRows} 登记后，重跑转换器不会再次导入。</li>
  * </ol>
  */
 public class TENCompatGen implements DataProvider {
@@ -231,10 +230,10 @@ public class TENCompatGen implements DataProvider {
      * 三个分流点：
      * <ul>
      * <li>煤：EIO 煤粉优先（Mek 在时带 10% 硫粉副产），没有 EIO 才退到 Mek 煤粉；</li>
-     * <li>木炭、焦炭：IE 在时按 IE 语义（黑染料 / 焦炭粉），否则按 EIO/Mek 磨成煤粉。
-     * 三种碳燃料因此各自只命中一条，原来是 {@code minecraft:coals} 一条全吃、木炭会被磨成煤粉；</li>
-     * <li>砂岩：IE 在时用 IE 表（带硝石），只有 EIO 时用 EIO 表（双倍概率），红砂岩两版都出红沙——
-     * EIO 原数据把红砂岩也算进 {@code c:sandstone/blocks}、产物是普通沙，这里纠正。</li>
+     * <li>木炭、焦炭：IE 在时按 IE 语义（黑染料 / 焦炭粉），否则按 EIO/Mek 磨成煤粉；
+     * 三种碳燃料各自只命中一条。</li>
+     * <li>砂岩：IE 在时用 IE 表（带硝石），只有 EIO 时用 EIO 表（双倍概率）；
+     * 红砂岩两版都输出红沙。</li>
      * </ul>
      */
     private static final Recipe[] GRIND_SPLIT = {
@@ -509,7 +508,7 @@ public class TENCompatGen implements DataProvider {
         }
     }
 
-    /** 与 {@link #machine} 同构，但条件由调用方给全（不再从 mod 串推导），用于分流表。 */
+    /** 与 {@link #machine} 同构，条件由调用方完整提供，用于分流表。 */
     private static Recipe machineWith(String source, String type, String name, List<JsonObject> conds,
                                       JsonArray inputs, JsonArray outputs, int time) {
         checkSource(source);

@@ -36,10 +36,10 @@ import com.lowdragmc.lowdraglib2.syncdata.annotation.Persisted;
 import dev.vfyjxf.taffy.style.TaffyPosition;
 
 /**
- * 能量线缆方块实体：持有 {@link EnergyTransmitter}，组网/拆网由
- * TransmitterNetworkRegistry 在 level tick 内延迟驱动，本 BE 不再自带 BFS 扫描。
- * 能量常态归网络所有；BE 持久化存网络均分份额（区块卸载不丢能），orphan 时用本地缓冲兜底。
- * 对外能力入口 getEnergy(side) 签名不变（CommonProxy 注册点无需改动）。
+ * 能量线缆方块实体：持有 {@link EnergyTransmitter}，网络所有权归能量网络；
+ * 组网/拆网由 {@link TransmitterNetworkRegistry} 在 level tick 内延迟驱动。
+ * 能量常态归网络所有，BE 持久化保存网络能量份额（区块卸载不丢能），orphan 时用本地缓冲兜底。
+ * 对外能量能力入口为 {@code getEnergy(side)}。
  */
 public class CableBlockEntity extends CmBlockEntity implements ITransmitterProvider {
 
@@ -57,7 +57,7 @@ public class CableBlockEntity extends CmBlockEntity implements ITransmitterProvi
     public byte pullFacesMask;
 
     /**
-     * 打包后的连接外观 + active 渲染态：服务端权威，取代原先写进 BlockState 的六个连接属性。
+     * 打包后的连接外观 + active 渲染态，由服务端权威维护，不写入 BlockState。
      * 随方块实体数据包下发（{@link #getUpdateTag} → {@code writeTileData}），客户端在
      * {@link #applyRenderTag} 里写入并请求重绘；{@code @DescSynced} 另走 LDLib2 的字段同步，
      * 供 GUI 等场景读取。
@@ -110,8 +110,7 @@ public class CableBlockEntity extends CmBlockEntity implements ITransmitterProvi
     }
 
     private void joinNetwork() {
-        // 延迟到服务端首 tick：注册回调（onLoad）期间查询邻居会触发
-        // 邻居 BE 创建→邻居 join→互查的无限递归（GameTest StackOverflow 已验证）。
+        // 延迟到服务端首 tick：onLoad 期间查询邻居会触发相邻 BE 创建与互查，造成递归组网。
         if (level != null && !level.isClientSide()) {
             joinPending = true;
         }
@@ -140,8 +139,8 @@ public class CableBlockEntity extends CmBlockEntity implements ITransmitterProvi
 
     @Override
     public void notifyChanges() {
-        // 不走 markDirty/sendBlockUpdated：那会触发邻居 neighborChanged → refreshConnections 递归。
-        // 连接外观改由渲染态字段承载，无需 setBlock。
+        // 标记 BE 数据变化并刷新渲染态；方块更新只在渲染态变化时由 markRenderDirty 发出，
+        // 且不触发邻居更新，避免 neighborChanged → refreshConnections 递归。
         setChanged();
         if (level != null && !level.isClientSide()) {
             refreshRenderState();
@@ -169,9 +168,8 @@ public class CableBlockEntity extends CmBlockEntity implements ITransmitterProvi
 
     /**
      * 服务端唯一的重绘请求入口：{@code sendBlockUpdated} 既让客户端区块重新烘焙，
-     * 又经 {@code ChunkHolder#broadcastBlockEntity} 把 {@link #getUpdateTag} 里的渲染态一并送到
-     * （AE2 {@code AEBaseBlockEntity#markForClientUpdate} 同款）。flags=2 不含 UPDATE_NEIGHBORS，
-     * 不会走 neighborChanged → refreshConnections 递归。
+     * 又经 {@code ChunkHolder#broadcastBlockEntity} 把 {@link #getUpdateTag} 里的渲染态一并送到。
+     * flags=2 不含 UPDATE_NEIGHBORS，不会走 neighborChanged → refreshConnections 递归。
      */
     private void markRenderDirty() {
         if (level != null && !level.isClientSide()) {
@@ -181,11 +179,10 @@ public class CableBlockEntity extends CmBlockEntity implements ITransmitterProvi
     }
 
     /**
-     * 渲染态必须随方块实体数据包下发（AE2 的 {@code #upd} 同款）。
+     * 渲染态必须随方块实体数据包下发。
      * <p>
-     * 原版 {@code BlockEntity#getUpdateTag} 默认返回空标签、{@link #getUpdatePacket()} 默认返回 null，
-     * 不覆写就既不会在区块下发时带上渲染态，也不会响应 {@code sendBlockUpdated}——
-     * 客户端建 BE 时 {@code renderPacked} 恒为 0，外观只能等某次偶然重绘才正确。
+     * 原版 {@code BlockEntity#getUpdateTag} 默认返回空标签、{@link #getUpdatePacket()} 默认返回 null；
+     * 两者都要覆写，区块加载与 {@code sendBlockUpdated} 才能把 {@code renderPacked} 送到客户端。
      */
     @Override
     public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
@@ -214,7 +211,7 @@ public class CableBlockEntity extends CmBlockEntity implements ITransmitterProvi
         pullFacesMask = mask;
     }
 
-    // ───── 持久化（含旧版单 BE 存储迁移）─────
+    // ───── 持久化（含单 BE 能量格式兼容）─────
 
     @Override
     protected void readTileData(CompoundTag tag, HolderLookup.Provider registries) {
@@ -312,7 +309,7 @@ public class CableBlockEntity extends CmBlockEntity implements ITransmitterProvi
         return label;
     }
 
-    /** active 只改渲染态位，不再 setBlock 切 BlockState.ACTIVE。 */
+    /** active 仅修改渲染态位，保持 BlockState.ACTIVE 为 false。 */
     private void setActive(boolean active) {
         int next = CableRenderState.withActive(renderPacked, active);
         if (renderPacked != next) {
